@@ -1,7 +1,8 @@
 ﻿import 'dotenv/config';
 
 import chalk from 'chalk';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -22,6 +23,49 @@ interface NewsroomDraftPayload {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const draftsDir = path.resolve(__dirname, '..', 'drafts');
+const envPath = path.resolve(process.cwd(), '.env');
+
+function isPlaceholderValue(value: string | undefined): boolean {
+  if (!value || value.trim().length === 0) {
+    return true;
+  }
+
+  const normalized = value.trim().toLowerCase();
+
+  return (
+    normalized.startsWith('your_') ||
+    normalized.includes('placeholder') ||
+    normalized.includes('changeme') ||
+    normalized === 'your-api-key' ||
+    normalized === 'your_api_key' ||
+    normalized.includes('<your') ||
+    normalized.includes('example')
+  );
+}
+
+async function warnIfMissingApiKeys(): Promise<void> {
+  const envFileExists = existsSync(envPath);
+  let envFileContent = '';
+
+  if (envFileExists) {
+    envFileContent = await readFile(envPath, 'utf8');
+  }
+
+  const openRouterValue = process.env.OPENROUTER_API_KEY ?? '';
+  const geminiValue = process.env.GEMINI_API_KEY ?? '';
+  const hasValidOpenRouterKey =
+    !isPlaceholderValue(openRouterValue) &&
+    (!envFileExists || /OPENROUTER_API_KEY\s*=\s*.+/i.test(envFileContent));
+  const hasValidGeminiKey =
+    !isPlaceholderValue(geminiValue) &&
+    (!envFileExists || /GEMINI_API_KEY\s*=\s*.+/i.test(envFileContent));
+
+  if (!hasValidOpenRouterKey || !hasValidGeminiKey) {
+    console.log(
+      chalk.bgYellow.black.bold('⚠️ ВНИМАНИЕ: Добавь реальные API ключи в файл .env перед запуском!')
+    );
+  }
+}
 
 function createTimestampSlug(date: Date): string {
   return date
@@ -55,7 +99,9 @@ async function saveDraft(payload: NewsroomDraftPayload): Promise<string> {
 }
 
 export async function main(): Promise<void> {
-  const limit = 12;
+  await warnIfMissingApiKeys();
+
+  const limit = 3;
   const articles = await fetchHackerNewsTopStories(limit);
 
   for (const article of articles) {
