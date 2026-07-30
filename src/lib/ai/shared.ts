@@ -1,4 +1,6 @@
-﻿import OpenAI from 'openai';
+﻿import 'dotenv/config';
+
+import OpenAI from 'openai';
 import { GoogleGenerativeAI, type GenerationConfig } from '@google/generative-ai';
 
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';

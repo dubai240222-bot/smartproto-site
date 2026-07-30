@@ -35,6 +35,7 @@ export const metadata: Metadata = {
   },
 };
 
+// UTF-8 marquee text for the global banner.
 const marqueeText = 'Идут технические работы. SmartProto обновляется...';
 
 export default function RootLayout({

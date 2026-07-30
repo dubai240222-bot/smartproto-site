@@ -40,18 +40,18 @@ export default function HomePage() {
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="font-mono text-xs uppercase tracking-[0.35em] text-cyan-400">
-                SmartProto feed
+                Лента SmartProto
               </p>
               <h1 className="mt-3 text-4xl font-semibold tracking-tight text-white md:text-6xl">
-                AI articles, curated
+                AI-статьи, отобранные вручную
               </h1>
               <p className="mt-4 max-w-2xl text-sm leading-7 text-gray-400 md:text-base">
-                Dark-mode editorial cards for the latest published materials.
+                Тёмные редакционные карточки с последними опубликованными материалами.
               </p>
             </div>
             <div className="inline-flex items-center gap-2 rounded-full border border-gray-800 bg-gray-900 px-4 py-2 font-mono text-xs uppercase tracking-[0.25em] text-cyan-400">
               <BookOpen className="h-4 w-4" />
-              Published feed
+              Опубликованные материалы
             </div>
           </div>
         </header>
@@ -75,7 +75,7 @@ export default function HomePage() {
                     {getCategoryIcon(article)}
                   </div>
                   <span className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.2em] text-cyan-400">
-                    published
+                    опубликовано
                   </span>
                 </div>
 
