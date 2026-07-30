@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0B0C10;
+  --surface: #1F2833;
+  --primary: #66FCF1;
+  --secondary: #45A29E;
+  --text: #C5C6C7;
+  --heading: #FFFFFF;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--text);
+  min-height: 100vh;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.top-banner {
+  overflow: hidden;
+  border-bottom: 1px solid rgba(102, 252, 241, 0.16);
+  background: linear-gradient(180deg, rgba(7, 10, 14, 0.98) 0%, rgba(10, 14, 20, 0.92) 100%);
+  color: rgba(197, 198, 199, 0.92);
+  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.top-banner__track {
+  display: flex;
+  width: max-content;
+  min-width: 100%;
+  align-items: center;
+  gap: 2.5rem;
+  padding: 0.45rem 1rem;
+  animation: top-banner-scroll 18s linear infinite;
+}
+
+.top-banner__track span {
+  white-space: nowrap;
+  text-shadow: 0 0 12px rgba(102, 252, 241, 0.12);
+}
+
+@keyframes top-banner-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-33.333%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .top-banner__track {
+    animation: none;
+  }
+}
+
+/* D-?,?,D?D??, ??D?D??D?D?D,?? D'D??? D?D????,D_??D?D? D???D, D?D?D?D?D'D?D?D,D, */
+.glow-card {
+  transition: all 0.3s ease;
+}
+.glow-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 30px -10px rgba(102, 252, 241, 0.15);
+  border-color: var(--primary);
+}

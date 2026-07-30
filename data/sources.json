@@ -1,0 +1,83 @@
+[
+  {
+    "id": "hacker-news-show-hn",
+    "url": "https://hn.algolia.com/api/v1/search?tags=show_hn",
+    "type": "hackernews",
+    "name": "Hacker News Show HN",
+    "enabled": true,
+    "discoveredAt": "2026-07-30T00:00:00.000Z",
+    "lastScrapedAt": null,
+    "lastErrorAt": null,
+    "successRate": 100,
+    "qualityScore": 85,
+    "keywords": [
+      "prototype",
+      "show",
+      "demo"
+    ],
+    "metadata": {
+      "api": true,
+      "feedKind": "show_hn"
+    }
+  },
+  {
+    "id": "hackaday-feed",
+    "url": "https://hackaday.com/blog/feed/",
+    "type": "rss",
+    "name": "Hackaday RSS",
+    "enabled": true,
+    "discoveredAt": "2026-07-30T00:00:00.000Z",
+    "lastScrapedAt": null,
+    "lastErrorAt": null,
+    "successRate": 100,
+    "qualityScore": 82,
+    "keywords": [
+      "hardware",
+      "maker",
+      "prototype"
+    ],
+    "metadata": {
+      "feedKind": "rss"
+    }
+  },
+  {
+    "id": "raspberry-pi-news-feed",
+    "url": "https://www.raspberrypi.com/news/feed/",
+    "type": "rss",
+    "name": "Raspberry Pi News",
+    "enabled": true,
+    "discoveredAt": "2026-07-30T00:00:00.000Z",
+    "lastScrapedAt": null,
+    "lastErrorAt": null,
+    "successRate": 100,
+    "qualityScore": 80,
+    "keywords": [
+      "embedded",
+      "hardware",
+      "maker"
+    ],
+    "metadata": {
+      "feedKind": "rss"
+    }
+  },
+  {
+    "id": "adafruit-blog-feed",
+    "url": "https://www.adafruit.com/blog/feed/",
+    "type": "rss",
+    "name": "Adafruit Blog",
+    "enabled": true,
+    "discoveredAt": "2026-07-30T00:00:00.000Z",
+    "lastScrapedAt": null,
+    "lastErrorAt": null,
+    "successRate": 100,
+    "qualityScore": 78,
+    "keywords": [
+      "electronics",
+      "hardware",
+      "tutorial"
+    ],
+    "metadata": {
+      "feedKind": "rss"
+    }
+  }
+]
