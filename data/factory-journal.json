@@ -411,17 +411,17 @@
     {
       "id": "https://newatlas.com/automotive/geely-galaxy-cruiser-700/",
       "url": "https://newatlas.com/automotive/geely-galaxy-cruiser-700/",
-      "title": "Geely Galaxy Cruiser: Гибридный внедорожник мощностью 1113 л.с. для бездорожья",
-      "processedAt": "2026-08-01T23:46:59.057Z",
+      "title": "Geely Galaxy Cruiser 700: Гибридный внедорожник мощностью 1113 л.с.",
+      "processedAt": "2026-08-01T23:47:32.571Z",
       "status": "published",
       "slug": "1-113-hp-galaxy-cruiser-hybrid-suv-redefines-off-road-power",
-      "kind": "news"
+      "kind": "article"
     },
     {
       "id": "https://www.theverge.com/?p=974199",
       "url": "https://www.theverge.com/entertainment/974199/spider-man-brand-new-day-leak-box-office-records",
-      "title": "Утечка «Человека-паука» набрала миллионы просмотров до удаления",
-      "processedAt": "2026-08-01T23:47:56.009Z",
+      "title": "Утечка «Человека-паука» набрала миллионы просмотров и побила рекорды",
+      "processedAt": "2026-08-01T23:48:32.239Z",
       "status": "published",
       "slug": "spider-man-brand-new-day-leak-racks-up-millions-of-views",
       "kind": "news"
@@ -429,26 +429,26 @@
     {
       "id": "https://www.theverge.com/?p=974197",
       "url": "https://www.theverge.com/policy/974197/trump-tim-walz-minnesota-water-hacks-iran",
-      "title": "Трамп обвиняет губернатора Миннесоты в кибератаках на водоснабжение, несмотря на подозрения в адрес Ирана",
-      "processedAt": "2026-08-01T23:48:56.390Z",
+      "title": "Трамп обвинил губернатора Миннесоты в кибератаках на водные системы",
+      "processedAt": "2026-08-01T23:49:32.261Z",
       "status": "published",
       "slug": "trump-blames-tim-walz-for-water-hacks-even-though-it-s-probably-iran",
-      "kind": "article"
+      "kind": "news"
     },
     {
       "id": "https://www.yankodesign.com/?p=638953",
       "url": "https://www.yankodesign.com/2026/08/01/a-natural-history-museum-that-actually-looks-like-nature/?utm_source=rss&utm_medium=rss&utm_campaign=a-natural-history-museum-that-actually-looks-like-nature",
-      "title": "Музей естественной истории в Шэньчжэне: архитектура, вдохновленная природой",
-      "processedAt": "2026-08-01T23:49:55.715Z",
+      "title": "Музей естественной истории в Шэньчжэне: архитектура, сливающаяся с природой",
+      "processedAt": "2026-08-01T23:50:33.619Z",
       "status": "published",
       "slug": "a-natural-history-museum-that-actually-looks-like-nature",
-      "kind": "news"
+      "kind": "article"
     },
     {
       "id": "https://newatlas.com/architecture/meet-londons-secret-skyscraper-landmark-didnt-exist/",
       "url": "https://newatlas.com/architecture/meet-londons-secret-skyscraper-landmark-didnt-exist/",
-      "title": "Лондонский небоскреб, которого официально не существовало",
-      "processedAt": "2026-08-01T23:50:56.254Z",
+      "title": "Секретный небоскреб Лондона: знаменитый памятник, которого официально не существовало",
+      "processedAt": "2026-08-01T23:51:32.846Z",
       "status": "published",
       "slug": "meet-london-s-secret-skyscraper-the-landmark-that-didn-t-exist",
       "kind": "news"
@@ -456,20 +456,20 @@
     {
       "id": "https://www.theverge.com/?p=968645",
       "url": "https://www.theverge.com/gadgets/968645/back-to-school-shopping-guide-gifts",
-      "title": "Гид по покупкам к школе от The Verge: практичные и желанные гаджеты для студентов",
-      "processedAt": "2026-08-01T23:51:56.230Z",
+      "title": "The Verge представил гид по выбору гаджетов для студентов к новому учебному году",
+      "processedAt": "2026-08-01T23:52:32.326Z",
       "status": "published",
       "slug": "the-verge-s-2026-back-to-school-shopping-guide",
-      "kind": "article"
+      "kind": "news"
     },
     {
       "id": "https://www.theverge.com/?p=973055",
       "url": "https://www.theverge.com/tech/973055/how-to-take-better-smartphone-photos",
-      "title": "Улучшите качество фото на смартфоне: советы от The Verge",
-      "processedAt": "2026-08-01T23:52:55.760Z",
+      "title": "Улучшите качество фото на смартфоне: советы и приложения",
+      "processedAt": "2026-08-01T23:53:32.380Z",
       "status": "published",
       "slug": "you-could-be-taking-way-better-photos-on-your-phone",
-      "kind": "news"
+      "kind": "article"
     }
   ]
 }
