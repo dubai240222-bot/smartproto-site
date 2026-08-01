@@ -31,7 +31,8 @@
     "https://www.yankodesign.com/2026/08/01/a-chess-set-so-well-designed-it-doubles-as-desk-art/?utm_source=rss&utm_medium=rss&utm_campaign=a-chess-set-so-well-designed-it-doubles-as-desk-art",
     "https://www.theverge.com/report/974226/angela-nissel-interview-good-grief-pass-the-bread-mom-is-dead",
     "https://newatlas.com/architecture/rotterdam-rocks-mvrdv/",
-    "https://www.yankodesign.com/2026/08/01/smart-glasses-run-hot-a-1mm-fan-might-finally-fix-that/?utm_source=rss&utm_medium=rss&utm_campaign=smart-glasses-run-hot-a-1mm-fan-might-finally-fix-that"
+    "https://www.yankodesign.com/2026/08/01/smart-glasses-run-hot-a-1mm-fan-might-finally-fix-that/?utm_source=rss&utm_medium=rss&utm_campaign=smart-glasses-run-hot-a-1mm-fan-might-finally-fix-that",
+    "https://www.theverge.com/ai-artificial-intelligence/974209/fenix-flexin-billboard-hot-100-rubberz-ai-slop"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -65,7 +66,8 @@
     "https://www.yankodesign.com/?p=639140",
     "https://www.theverge.com/?p=974226",
     "https://newatlas.com/architecture/rotterdam-rocks-mvrdv/",
-    "https://www.yankodesign.com/?p=639152"
+    "https://www.yankodesign.com/?p=639152",
+    "https://www.theverge.com/?p=974209"
   ],
   "entries": [
     {
@@ -371,6 +373,15 @@
       "status": "published",
       "slug": "smart-glasses-run-hot-a-1mm-fan-might-finally-fix-that",
       "kind": "article"
+    },
+    {
+      "id": "https://www.theverge.com/?p=974209",
+      "url": "https://www.theverge.com/ai-artificial-intelligence/974209/fenix-flexin-billboard-hot-100-rubberz-ai-slop",
+      "title": "Хит Billboard Hot 100 вызвал споры: создан ли трек с помощью ИИ?",
+      "processedAt": "2026-08-01T23:45:32.057Z",
+      "status": "published",
+      "slug": "is-this-billboard-hot-100-hit-ai-slop",
+      "kind": "news"
     }
   ]
 }
