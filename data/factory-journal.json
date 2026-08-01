@@ -27,7 +27,8 @@
     "https://techcrunch.com/2026/08/01/apps-that-help-you-break-free-from-doomscrolling-and-get-active/",
     "https://techcrunch.com/2026/08/01/whats-the-best-handheld-mini-fan/",
     "https://www.yankodesign.com/2026/08/01/this-iron-frying-plate-sears-food-on-bare-steel-goes-straight-from-the-stove-to-your-table/?utm_source=rss&utm_medium=rss&utm_campaign=this-iron-frying-plate-sears-food-on-bare-steel-goes-straight-from-the-stove-to-your-table",
-    "https://www.yankodesign.com/2026/08/01/replace-100-tutorial-videos-with-this-one-smart-keyboard/?utm_source=rss&utm_medium=rss&utm_campaign=replace-100-tutorial-videos-with-this-one-smart-keyboard"
+    "https://www.yankodesign.com/2026/08/01/replace-100-tutorial-videos-with-this-one-smart-keyboard/?utm_source=rss&utm_medium=rss&utm_campaign=replace-100-tutorial-videos-with-this-one-smart-keyboard",
+    "https://www.yankodesign.com/2026/08/01/a-chess-set-so-well-designed-it-doubles-as-desk-art/?utm_source=rss&utm_medium=rss&utm_campaign=a-chess-set-so-well-designed-it-doubles-as-desk-art"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -57,7 +58,8 @@
     "https://techcrunch.com/?p=3145781",
     "https://techcrunch.com/?p=3148853",
     "https://www.yankodesign.com/?p=639012",
-    "https://www.yankodesign.com/?p=638911"
+    "https://www.yankodesign.com/?p=638911",
+    "https://www.yankodesign.com/?p=639140"
   ],
   "entries": [
     {
@@ -327,6 +329,15 @@
       "status": "published",
       "slug": "replace-100-tutorial-videos-with-this-one-smart-keyboard",
       "kind": "news"
+    },
+    {
+      "id": "https://www.yankodesign.com/?p=639140",
+      "url": "https://www.yankodesign.com/2026/08/01/a-chess-set-so-well-designed-it-doubles-as-desk-art/?utm_source=rss&utm_medium=rss&utm_campaign=a-chess-set-so-well-designed-it-doubles-as-desk-art",
+      "title": "CHEKT: Шахматы как арт-объект и предмет искусства",
+      "processedAt": "2026-08-01T23:41:32.941Z",
+      "status": "published",
+      "slug": "a-chess-set-so-well-designed-it-doubles-as-desk-art",
+      "kind": "article"
     }
   ]
 }
