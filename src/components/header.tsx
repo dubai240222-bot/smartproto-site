@@ -185,6 +185,12 @@ export function Header() {
           <Link href="/" className="transition hover:text-[var(--accent)]">
             Главная
           </Link>
+          <Link
+            href="/all"
+            className="font-semibold text-[var(--accent)] transition hover:opacity-90"
+          >
+            Новости
+          </Link>
           <Link href="/?category=Гаджеты" className="transition hover:text-[var(--accent)]">
             Гаджеты
           </Link>
