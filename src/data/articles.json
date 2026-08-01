@@ -1,22 +1,24 @@
 [
   {
-    "sourceUrl": "https://www.engadget.com/2228464/ayaneo-game-boy-advance-remake-konkr-pocket-advance/",
-    "slug": "ayaneo-konkr-pocket-advance-gba",
-    "id": "ayaneo-konkr-pocket-advance-gba",
-    "readTime": "1 мин",
-    "imageUrl": "https://www.engadget.com/img/gallery/ayaneo-reveals-its-game-boy-advance-remake-called-the-konkr-pocket-advance/l-intro-1785600976.jpg",
-    "category": "ГАДЖЕТЫ / ИГРЫ",
+    "id": "smart-glasses-run-hot-a-1mm-fan-might-finally-fix-that",
+    "slug": "smart-glasses-run-hot-a-1mm-fan-might-finally-fix-that",
+    "title": "Мини-вентилятор для умных очков: решение проблемы перегрева",
+    "category": "НОВИНКА / ПОЛЕЗНО",
     "tags": [
+      "#новинка",
+      "#полезно",
       "#гаджет",
-      "#игры",
-      "#бренд-Ayaneo",
-      "#handheld",
-      "#новинка"
+      "#умныеочки",
+      "#технологии",
+      "#охлаждение",
+      "#xMEMS"
     ],
-    "publishedAt": "2026-08-01T23:43:39.594Z",
-    "summary": "Ayaneo показала Konkr Pocket Advance — горизонтальный handheld в стиле GBA, выпуск в navy и orange.",
-    "content": "Ayaneo представила Konkr Pocket Advance — горизонтальную портативную консоль в духе Game Boy Advance. Устройство выйдет в тёмно-синей и оранжевой расцветках.\n\nЭто прямой продукт для ретро- и portable-гейминга, а не абстрактная tech-новость. Источник: Engadget.",
-    "title": "Ayaneo Konkr Pocket Advance: ремейк Game Boy Advance в двух цветах"
+    "summary": "Умные очки часто страдают от перегрева из-за компактного размещения мощных компонентов, что делает их использование некомфортным.",
+    "content": "Умные очки часто страдают от перегрева из-за компактного размещения мощных компонентов, что делает их использование некомфортным. Компания xMEMS Labs представила XMC-1200 – революционный твердотельный микровентилятор, разработанный специально для AR, XR и AI-очков. Этот вентилятор толщиной всего 1 мм и площадью 46 мм² потребляет минимум энергии (70 мВт), сравнимый с наушниками Bluetooth, но способен снизить температуру до 10°C при тепловой нагрузке 1 Вт.\n\n- Уменьшает температуру до 10°C.\n- Компактный размер (1 мм толщина).\n- Низкое энергопотребление (70 мВт).\n- Защита от воды и пыли (IP68).\n- Инновационное решение для охлаждения в узких пространствах.\n\nРешение xMEMS нацелено на устранение перегрева, который сдерживал развитие категории умных очков. Хотя XMC-1200 пока доступен только для OEM-производителей, его появление сигнализирует о том, что индустрия начинает уделять должное внимание тепловому менеджменту как приоритету дизайна. Это шаг к созданию действительно удобных и мощных умных очков.\n\nИсточник: Yanko Design.",
+    "sourceUrl": "https://www.yankodesign.com/2026/08/01/smart-glasses-run-hot-a-1mm-fan-might-finally-fix-that/?utm_source=rss&utm_medium=rss&utm_campaign=smart-glasses-run-hot-a-1mm-fan-might-finally-fix-that",
+    "publishedAt": "2026-08-01T23:44:33.150Z",
+    "readTime": "1 мин",
+    "imageUrl": "https://www.yankodesign.com/images/design_news/2026/07/smart-glasses-run-hot-a-1mm-fan-might-finally-fix-that/xmc-01.jpg"
   },
   {
     "id": "extraordinary-tower-emerges-from-stack-of-mossy-boulders",
