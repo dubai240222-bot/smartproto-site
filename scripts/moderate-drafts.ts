@@ -123,11 +123,17 @@ function buildArticle(raw: RawRecord, fileName: string): Article {
   const readTime = asString(draft?.readTime) ?? asString(raw.readTime) ?? estimateReadTime(content || summary || title);
   const imageUrl = asString(draft?.imageUrl) ?? asString(raw.imageUrl) ?? asString(article?.imageUrl);
 
+  const tagsRaw = draft?.tags ?? raw.tags ?? article?.tags;
+  const tags = Array.isArray(tagsRaw)
+    ? tagsRaw.filter((t): t is string => typeof t === 'string' && t.trim().length > 0).map((t) => t.trim())
+    : ['#гаджет'];
+
   return {
     id,
     slug,
     title,
     category,
+    tags,
     summary,
     content,
     sourceUrl,
