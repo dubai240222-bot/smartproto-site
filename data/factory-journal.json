@@ -26,7 +26,8 @@
     "https://techcrunch.com/2026/08/01/ubers-autonomous-vehicle-deal-tracker/",
     "https://techcrunch.com/2026/08/01/apps-that-help-you-break-free-from-doomscrolling-and-get-active/",
     "https://techcrunch.com/2026/08/01/whats-the-best-handheld-mini-fan/",
-    "https://www.yankodesign.com/2026/08/01/this-iron-frying-plate-sears-food-on-bare-steel-goes-straight-from-the-stove-to-your-table/?utm_source=rss&utm_medium=rss&utm_campaign=this-iron-frying-plate-sears-food-on-bare-steel-goes-straight-from-the-stove-to-your-table"
+    "https://www.yankodesign.com/2026/08/01/this-iron-frying-plate-sears-food-on-bare-steel-goes-straight-from-the-stove-to-your-table/?utm_source=rss&utm_medium=rss&utm_campaign=this-iron-frying-plate-sears-food-on-bare-steel-goes-straight-from-the-stove-to-your-table",
+    "https://www.yankodesign.com/2026/08/01/replace-100-tutorial-videos-with-this-one-smart-keyboard/?utm_source=rss&utm_medium=rss&utm_campaign=replace-100-tutorial-videos-with-this-one-smart-keyboard"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -55,7 +56,8 @@
     "https://techcrunch.com/?p=3143162",
     "https://techcrunch.com/?p=3145781",
     "https://techcrunch.com/?p=3148853",
-    "https://www.yankodesign.com/?p=639012"
+    "https://www.yankodesign.com/?p=639012",
+    "https://www.yankodesign.com/?p=638911"
   ],
   "entries": [
     {
@@ -315,6 +317,15 @@
       "processedAt": "2026-08-01T23:39:36.026Z",
       "status": "published",
       "slug": "this-iron-frying-plate-sears-food-on-bare-steel-goes-straight-from-the-stove-to",
+      "kind": "news"
+    },
+    {
+      "id": "https://www.yankodesign.com/?p=638911",
+      "url": "https://www.yankodesign.com/2026/08/01/replace-100-tutorial-videos-with-this-one-smart-keyboard/?utm_source=rss&utm_medium=rss&utm_campaign=replace-100-tutorial-videos-with-this-one-smart-keyboard",
+      "title": "KeyFlowAI: умная клавиатура заменит сотни обучающих видео",
+      "processedAt": "2026-08-01T23:40:32.400Z",
+      "status": "published",
+      "slug": "replace-100-tutorial-videos-with-this-one-smart-keyboard",
       "kind": "news"
     }
   ]
