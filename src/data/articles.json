@@ -9,7 +9,7 @@
     "sourceUrl": "https://smartproto.ru/editorial",
     "publishedAt": "2026-07-30T08:00:00.000Z",
     "readTime": "3 мин",
-    "imageUrl": "https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1200&q=80"
+    "imageUrl": "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1400&q=85"
   },
   {
     "id": "hn-signal-filter",
@@ -21,7 +21,7 @@
     "sourceUrl": "https://news.ycombinator.com",
     "publishedAt": "2026-07-30T09:15:00.000Z",
     "readTime": "4 мин",
-    "imageUrl": "https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=1200&q=80"
+    "imageUrl": "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1400&q=85"
   },
   {
     "id": "brief-format-rus",
@@ -33,7 +33,7 @@
     "sourceUrl": "https://smartproto.ru",
     "publishedAt": "2026-07-30T10:20:00.000Z",
     "readTime": "4 мин",
-    "imageUrl": "https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=1200&q=80"
+    "imageUrl": "https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a?auto=format&fit=crop&w=1400&q=85"
   },
   {
     "id": "deploy-playbook",
@@ -45,7 +45,7 @@
     "sourceUrl": "https://smartproto.ru/docs",
     "publishedAt": "2026-07-30T11:30:00.000Z",
     "readTime": "5 мин",
-    "imageUrl": "https://images.unsplash.com/photo-1605745341112-85968b19335b?auto=format&fit=crop&w=1200&q=80"
+    "imageUrl": "https://images.unsplash.com/photo-1555949963-aa79dcee981c?auto=format&fit=crop&w=1400&q=85"
   },
   {
     "id": "pico-projector-shenzhen",
@@ -57,7 +57,7 @@
     "sourceUrl": "https://smartproto.ru",
     "publishedAt": "2026-07-30T12:30:00.000Z",
     "readTime": "3 мин",
-    "imageUrl": "https://images.unsplash.com/photo-1561557944-6e7860d1a7eb?auto=format&fit=crop&w=1200&q=80"
+    "imageUrl": "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1400&q=85"
   },
   {
     "id": "open-source-robotic-hand-learns-delicate-manipulation-using-low-cost-tactile-sen",
@@ -69,7 +69,7 @@
     "sourceUrl": "https://github.com",
     "publishedAt": "2026-08-01T21:18:24.147Z",
     "readTime": "1 мин",
-    "imageUrl": "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=1200&q=80"
+    "imageUrl": "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=1400&q=85"
   },
   {
     "id": "defcon-s-new-badge-is-a-security-key-you-can-see-inside",
@@ -81,6 +81,6 @@
     "sourceUrl": "https://arstechnica.com/security/2026/08/defcons-new-badge-is-a-security-key-you-can-see-inside/",
     "publishedAt": "2026-08-01T22:52:46.413Z",
     "readTime": "1 мин",
-    "imageUrl": "https://cdn.arstechnica.net/wp-content/uploads/2026/07/defconbadge-1152x648.jpg"
+    "imageUrl": "https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=1400&q=85"
   }
 ]

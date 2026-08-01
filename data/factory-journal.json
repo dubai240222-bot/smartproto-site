@@ -9,7 +9,17 @@
     "https://arstechnica.com/culture/2026/08/review-yes-were-still-arguing-about-nolans-the-odyssey/",
     "https://arstechnica.com/ai/2026/08/reddit-ceo-on-ai-overviews-were-still-looking-for-that-win-win/",
     "https://arstechnica.com/tech-policy/2026/08/after-noise-complaints-judge-orders-waymo-to-stop-overnight-charging-in-santa-monica/",
-    "https://arstechnica.com/security/2026/08/defcons-new-badge-is-a-security-key-you-can-see-inside/"
+    "https://arstechnica.com/security/2026/08/defcons-new-badge-is-a-security-key-you-can-see-inside/",
+    "https://hackaday.com/2026/08/01/a-compact-game-controller-for-your-phone/",
+    "https://arstechnica.com/science/2026/08/how-fruit-flies-chase-invisible-ribbons-of-smell-to-get-to-their-source/",
+    "https://arstechnica.com/science/2026/07/not-just-neanderthals-ghost-lineage-in-africa-left-its-mark-on-our-dna/",
+    "https://arstechnica.com/health/2026/07/doctors-took-a-look-at-mans-painful-shoulder-they-found-the-joint-was-missing/",
+    "https://arstechnica.com/gadgets/2026/07/google-plans-to-exempt-sanctioned-nations-from-android-developer-verification/",
+    "https://techcrunch.com/2026/08/01/inside-one-london-founder-house-rewriting-the-founder-house-rules/",
+    "https://techcrunch.com/2026/08/01/judge-denies-xais-request-to-block-minnesota-ban-on-nudify-apps/",
+    "https://techcrunch.com/2026/08/01/youtuber-hank-green-says-his-ai-usage-is-not-healthy/",
+    "https://techcrunch.com/2026/08/01/should-you-still-buy-your-next-smartphone-or-subscribe-to-it-instead/",
+    "https://techcrunch.com/2026/08/01/sam-altman-is-still-making-the-case-for-parenting-via-chatgpt/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -21,7 +31,17 @@
     "https://arstechnica.com/culture/2026/08/review-yes-were-still-arguing-about-nolans-the-odyssey/",
     "https://arstechnica.com/ai/2026/08/reddit-ceo-on-ai-overviews-were-still-looking-for-that-win-win/",
     "https://arstechnica.com/tech-policy/2026/08/after-noise-complaints-judge-orders-waymo-to-stop-overnight-charging-in-santa-monica/",
-    "https://arstechnica.com/security/2026/08/defcons-new-badge-is-a-security-key-you-can-see-inside/"
+    "https://arstechnica.com/security/2026/08/defcons-new-badge-is-a-security-key-you-can-see-inside/",
+    "https://hackaday.com/?p=1131231",
+    "https://arstechnica.com/science/2026/08/how-fruit-flies-chase-invisible-ribbons-of-smell-to-get-to-their-source/",
+    "https://arstechnica.com/science/2026/07/not-just-neanderthals-ghost-lineage-in-africa-left-its-mark-on-our-dna/",
+    "https://arstechnica.com/health/2026/07/doctors-took-a-look-at-mans-painful-shoulder-they-found-the-joint-was-missing/",
+    "https://arstechnica.com/gadgets/2026/07/google-plans-to-exempt-sanctioned-nations-from-android-developer-verification/",
+    "https://techcrunch.com/?p=3146052",
+    "https://techcrunch.com/?p=3149027",
+    "https://techcrunch.com/?p=3149017",
+    "https://techcrunch.com/?p=3149003",
+    "https://techcrunch.com/?p=3149010"
   ],
   "entries": [
     {
@@ -122,6 +142,104 @@
       "scoutScore": 92,
       "reason": "涉及定制开源安全芯片设计，由知名硬件黑客bunnie Huang主导，深度结合硬件安全、透明性和可信计算，工程价值高，开源属性明确。",
       "slug": "defcon-s-new-badge-is-a-security-key-you-can-see-inside"
+    },
+    {
+      "id": "https://hackaday.com/?p=1131231",
+      "url": "https://hackaday.com/2026/08/01/a-compact-game-controller-for-your-phone/",
+      "title": "A Compact Game Controller For Your Phone",
+      "processedAt": "2026-08-01T22:57:16.748Z",
+      "status": "rejected",
+      "scoutScore": 45,
+      "reason": "Проект демонстрирует практическую инженерную работу: создание игрового контроллера на базе Raspberry Pi Pico с USB HID и 3D-печатным корпусом. Однако глубина технологии невысока (стандартные компоненты, без сложных алгоритмов), open-source не подтверждён явно, а новость носит характер любительской разработки, а не прорыва."
+    },
+    {
+      "id": "https://arstechnica.com/science/2026/08/how-fruit-flies-chase-invisible-ribbons-of-smell-to-get-to-their-source/",
+      "url": "https://arstechnica.com/science/2026/08/how-fruit-flies-chase-invisible-ribbons-of-smell-to-get-to-their-source/",
+      "title": "How fruit flies chase invisible ribbons of smell to get to their source",
+      "processedAt": "2026-08-01T22:57:34.191Z",
+      "status": "rejected",
+      "scoutScore": 30,
+      "reason": "Новость о биологическом исследовании механизма навигации плодовых мушек. Хотя работа научно значима, она не относится к deep tech, open-source или инженерным разработкам. Инженерная ценность косвенная (возможное применение в робототехнике), но без конкретной реализации или открытых данных. Кликбейт отсутствует, но тема выходит за рамки критериев оценки."
+    },
+    {
+      "id": "https://arstechnica.com/science/2026/07/not-just-neanderthals-ghost-lineage-in-africa-left-its-mark-on-our-dna/",
+      "url": "https://arstechnica.com/science/2026/07/not-just-neanderthals-ghost-lineage-in-africa-left-its-mark-on-our-dna/",
+      "title": "Not just Neanderthals: Ghost lineage in Africa left its mark on our DNA",
+      "processedAt": "2026-08-01T22:57:41.848Z",
+      "status": "rejected",
+      "scoutScore": 30,
+      "reason": "Новость о генетическом открытии, но не связана с технологиями, open-source или инженерной ценностью; скорее научно-популярная, чем техническая."
+    },
+    {
+      "id": "https://arstechnica.com/health/2026/07/doctors-took-a-look-at-mans-painful-shoulder-they-found-the-joint-was-missing/",
+      "url": "https://arstechnica.com/health/2026/07/doctors-took-a-look-at-mans-painful-shoulder-they-found-the-joint-was-missing/",
+      "title": "Doctors took a look at man's painful shoulder—they found the joint was missing",
+      "processedAt": "2026-08-01T22:57:46.169Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Новость относится к медицинскому случаю, не имеет технологической глубины, связи с open-source или инженерной ценности."
+    },
+    {
+      "id": "https://arstechnica.com/gadgets/2026/07/google-plans-to-exempt-sanctioned-nations-from-android-developer-verification/",
+      "url": "https://arstechnica.com/gadgets/2026/07/google-plans-to-exempt-sanctioned-nations-from-android-developer-verification/",
+      "title": "Google plans to exempt sanctioned nations from Android developer verification",
+      "processedAt": "2026-08-01T22:58:06.006Z",
+      "status": "rejected",
+      "scoutScore": 10,
+      "reason": "Новость касается политических и регуляторных аспектов верификации разработчиков, не содержит технической глубины, не связана с open-source и не представляет инженерной ценности."
+    },
+    {
+      "id": "https://arstechnica.com/tech-policy/2026/07/reddit-keeps-weird-dmca-lawsuit-against-web-scraper-alive-despite-googles-loss/",
+      "url": "https://arstechnica.com/tech-policy/2026/07/reddit-keeps-weird-dmca-lawsuit-against-web-scraper-alive-despite-googles-loss/",
+      "title": "Reddit keeps its strange DMCA fight over Google search results alive",
+      "processedAt": "2026-08-01T22:58:12.495Z",
+      "status": "error",
+      "reason": "Model response was not valid JSON: {\n  \"interesting\": false,\n  \"score\": 15,\n  \"reason\": \"Новость о"
+    },
+    {
+      "id": "https://techcrunch.com/?p=3146052",
+      "url": "https://techcrunch.com/2026/08/01/inside-one-london-founder-house-rewriting-the-founder-house-rules/",
+      "title": "Inside the London hacker house taking a stand against founder burnout",
+      "processedAt": "2026-08-01T22:58:16.325Z",
+      "status": "rejected",
+      "scoutScore": 10,
+      "reason": "Новость посвящена культуре стартапов и балансу работы/жизни, а не технологиям, open-source или инженерным достижениям, поэтому не соответствует критериям оценки."
+    },
+    {
+      "id": "https://techcrunch.com/?p=3149027",
+      "url": "https://techcrunch.com/2026/08/01/judge-denies-xais-request-to-block-minnesota-ban-on-nudify-apps/",
+      "title": "Judge denies xAI’s request to block Minnesota ban on ‘nudify’ apps",
+      "processedAt": "2026-08-01T22:58:29.178Z",
+      "status": "rejected",
+      "scoutScore": 5,
+      "reason": "Новость носит юридический/политический характер, не связана с глубиной технологий, открытым исходным кодом или инженерной ценностью."
+    },
+    {
+      "id": "https://techcrunch.com/?p=3149017",
+      "url": "https://techcrunch.com/2026/08/01/youtuber-hank-green-says-his-ai-usage-is-not-healthy/",
+      "title": "YouTuber Hank Green says his AI usage is ‘not healthy’",
+      "processedAt": "2026-08-01T22:58:31.854Z",
+      "status": "rejected",
+      "scoutScore": 10,
+      "reason": "Личное мнение ютубера о дофамине от LLM, нет технической глубины, open-source или инженерной ценности"
+    },
+    {
+      "id": "https://techcrunch.com/?p=3149003",
+      "url": "https://techcrunch.com/2026/08/01/should-you-still-buy-your-next-smartphone-or-subscribe-to-it-instead/",
+      "title": "Should you still buy your next smartphone — or subscribe to it instead?",
+      "processedAt": "2026-08-01T22:58:35.200Z",
+      "status": "rejected",
+      "scoutScore": 10,
+      "reason": "Новость о бизнес-модели подписки на смартфоны, не содержит технической глубины, open-source или инженерной ценности."
+    },
+    {
+      "id": "https://techcrunch.com/?p=3149010",
+      "url": "https://techcrunch.com/2026/08/01/sam-altman-is-still-making-the-case-for-parenting-via-chatgpt/",
+      "title": "Sam Altman is still making the case for parenting via ChatGPT",
+      "processedAt": "2026-08-01T22:58:41.457Z",
+      "status": "rejected",
+      "scoutScore": 10,
+      "reason": "Новость не содержит технической глубины, не связана с open-source или инженерной ценностью, а представляет собой общее обсуждение использования ChatGPT в воспитании, что не является значимой технологической новостью."
     }
   ]
 }
