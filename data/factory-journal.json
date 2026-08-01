@@ -29,7 +29,8 @@
     "https://www.yankodesign.com/2026/08/01/this-iron-frying-plate-sears-food-on-bare-steel-goes-straight-from-the-stove-to-your-table/?utm_source=rss&utm_medium=rss&utm_campaign=this-iron-frying-plate-sears-food-on-bare-steel-goes-straight-from-the-stove-to-your-table",
     "https://www.yankodesign.com/2026/08/01/replace-100-tutorial-videos-with-this-one-smart-keyboard/?utm_source=rss&utm_medium=rss&utm_campaign=replace-100-tutorial-videos-with-this-one-smart-keyboard",
     "https://www.yankodesign.com/2026/08/01/a-chess-set-so-well-designed-it-doubles-as-desk-art/?utm_source=rss&utm_medium=rss&utm_campaign=a-chess-set-so-well-designed-it-doubles-as-desk-art",
-    "https://www.theverge.com/report/974226/angela-nissel-interview-good-grief-pass-the-bread-mom-is-dead"
+    "https://www.theverge.com/report/974226/angela-nissel-interview-good-grief-pass-the-bread-mom-is-dead",
+    "https://newatlas.com/architecture/rotterdam-rocks-mvrdv/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -61,7 +62,8 @@
     "https://www.yankodesign.com/?p=639012",
     "https://www.yankodesign.com/?p=638911",
     "https://www.yankodesign.com/?p=639140",
-    "https://www.theverge.com/?p=974226"
+    "https://www.theverge.com/?p=974226",
+    "https://newatlas.com/architecture/rotterdam-rocks-mvrdv/"
   ],
   "entries": [
     {
@@ -348,6 +350,15 @@
       "processedAt": "2026-08-01T23:42:32.089Z",
       "status": "published",
       "slug": "angela-nissel-faces-down-grief-with-a-laugh",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/architecture/rotterdam-rocks-mvrdv/",
+      "url": "https://newatlas.com/architecture/rotterdam-rocks-mvrdv/",
+      "title": "MVRDV представили проект здания из «мшистых валунов» в Роттердаме",
+      "processedAt": "2026-08-01T23:43:32.122Z",
+      "status": "published",
+      "slug": "extraordinary-tower-emerges-from-stack-of-mossy-boulders",
       "kind": "news"
     }
   ]
