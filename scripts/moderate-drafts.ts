@@ -121,6 +121,7 @@ function buildArticle(raw: RawRecord, fileName: string): Article {
   const summary = asString(draft?.summary) ?? asString(raw.summary) ?? summarizeContent(content || title);
   const sourceUrl = buildSourceUrl(raw, id);
   const readTime = asString(draft?.readTime) ?? asString(raw.readTime) ?? estimateReadTime(content || summary || title);
+  const imageUrl = asString(draft?.imageUrl) ?? asString(raw.imageUrl) ?? asString(article?.imageUrl);
 
   return {
     id,
@@ -132,6 +133,7 @@ function buildArticle(raw: RawRecord, fileName: string): Article {
     sourceUrl,
     publishedAt: generatedAt,
     readTime,
+    ...(imageUrl ? { imageUrl } : {}),
   };
 }
 

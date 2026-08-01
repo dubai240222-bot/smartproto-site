@@ -1,4 +1,6 @@
-﻿const HN_API_BASE_URL = 'https://hacker-news.firebaseio.com/v0';
+﻿import { extractArticleImage } from './image-extractor';
+
+const HN_API_BASE_URL = 'https://hacker-news.firebaseio.com/v0';
 const TOP_STORIES_URL = `${HN_API_BASE_URL}/topstories.json`;
 const ITEM_URL = `${HN_API_BASE_URL}/item`;
 
@@ -17,6 +19,7 @@ export interface HackerNewsStory {
   url: string;
   text: string | undefined;
   score: number;
+  imageUrl?: string;
 }
 
 async function fetchJson<T>(url: string): Promise<T | null> {
@@ -63,7 +66,22 @@ export async function fetchHackerNewsTopStories(limit: number = 10): Promise<Hac
   const stories = await Promise.all(
     topIds.map(async (id) => {
       const item = await fetchJson<HackerNewsApiItem>(`${ITEM_URL}/${id}.json`);
-      return item ? toStory(item) : null;
+      if (!item) return null;
+      const story = toStory(item);
+      if (!story) return null;
+
+      if (story.url && !story.url.includes('news.ycombinator.com/item?id=')) {
+        try {
+          const img = await extractArticleImage(story.url);
+          if (img) {
+            story.imageUrl = img;
+          }
+        } catch {
+          // Graceful fallback to null
+        }
+      }
+
+      return story;
     }),
   );
 

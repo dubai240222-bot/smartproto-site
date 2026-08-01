@@ -1,4 +1,5 @@
 import Parser from 'rss-parser';
+import { extractArticleImage } from './image-extractor';
 
 export interface RssItem {
   id: string;
@@ -226,7 +227,18 @@ export async function fetchRssFeed(
       const text = cleanedText.slice(0, 6000);
 
       const publishedAt = toIsoDate(item.pubDate, item.isoDate);
-      const imageUrl = extractImageUrl(item as Record<string, any>);
+      let imageUrl = extractImageUrl(item as Record<string, any>);
+
+      if (!imageUrl && url && /^https?:\/\//i.test(url)) {
+        try {
+          const extracted = await extractArticleImage(url);
+          if (extracted) {
+            imageUrl = extracted;
+          }
+        } catch {
+          // Graceful fallback to null
+        }
+      }
 
       result.push({
         id,

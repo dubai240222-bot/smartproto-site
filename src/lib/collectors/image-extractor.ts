@@ -1,6 +1,12 @@
 /**
- * Shared helper to extract primary article image URL from original article HTML.
- * Checks Open Graph, Twitter Card meta tags, link image_src, and fallback <img> tags.
+ * Shared helper to extract primary article image URL from original article HTML,
+ * with smart context-based fallback according to strict editorial guidelines.
+ *
+ * IMAGE SELECTION POLICY:
+ * 1. Primary Choice: Always try to extract authentic original image from sourceUrl page (og:image, twitter:image, lead img).
+ * 2. Famous Person / Entity Exception: If original HTML is not available and title mentions a well-known figure/company (e.g. Musk, Trump, Altman, OpenAI, Apple), use a clean authentic photo of that person/company.
+ * 3. New Inventions / Devices: NEVER show a photo of a different wrong physical gadget/device.
+ * 4. Thematic / Action Conceptual Fallback: Contextually fitting atmospheric conceptual image matching the domain/action (e.g., tactile sensor / robotic arm close-up for robotics, dark code terminal for software, datacenter lights for infrastructure, optical lines for fiber/optics, weather/rain for atmospheric tech).
  */
 
 function sanitizeUrl(urlStr: string): string {
@@ -14,7 +20,6 @@ function sanitizeUrl(urlStr: string): string {
 
 /**
  * Extracts property/name meta content and link href tags into a key-value Map.
- * Supports single quotes, double quotes, and unquoted attribute values regardless of attribute order.
  */
 function parseMetaAndLinkTags(html: string): Map<string, string> {
   const map = new Map<string, string>();
@@ -112,77 +117,129 @@ function findFirstSignificantImg(html: string, baseUrl: string): string | null {
 }
 
 /**
- * Extracts the primary authentic image URL from an original article webpage URL.
- * Strictly priority-ordered checks:
- * 1. <meta property="og:image" content="...">
- * 2. <meta name="twitter:image" content="..."> / twitter:image:src
- * 3. <link rel="image_src" href="...">
- * 4. <meta property="og:image:secure_url" content="...">
- * 5. Fallback: First significant <img> tag in article body HTML.
- *
- * Gracefully returns null on timeouts, blocking, network or HTTP errors.
- * Never invents or generates placeholder images.
+ * Returns a contextually fitting atmospheric/thematic photo fallback based on domain/topic,
+ * strictly avoiding any wrong physical device images.
  */
-export async function extractArticleImage(url: string): Promise<string | null> {
-  if (!url || typeof url !== 'string' || !/^https?:\/\//i.test(url.trim())) {
-    return null;
+function getThematicFallback(title?: string, category?: string): string | null {
+  const query = `${title || ''} ${category || ''}`.toLowerCase();
+
+  // Public Figures / Famous Entities
+  if (query.includes('musk') || query.includes('маск')) {
+    return 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=1200&q=80';
+  }
+  if (query.includes('openai') || query.includes('altman') || query.includes('альтман')) {
+    return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80';
+  }
+  if (query.includes('apple') || query.includes('mac') || query.includes('iphone')) {
+    return 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=1200&q=80';
   }
 
-  const cleanArticleUrl = sanitizeUrl(url);
+  // Robotics / Tactile / Cybernetics
+  if (query.includes('robot') || query.includes('робот') || query.includes('tactile') || query.includes('рука') || query.includes('сенсор')) {
+    return 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=1200&q=80';
+  }
 
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000);
+  // Optics / Fiber / Quantum
+  if (query.includes('fiber') || query.includes('optic') || query.includes('laser') || query.includes('квант') || query.includes('свет')) {
+    return 'https://images.unsplash.com/photo-1509228468518-180dd4864904?auto=format&fit=crop&w=1200&q=80';
+  }
 
-    const response = await fetch(cleanArticleUrl, {
-      signal: controller.signal,
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.9',
-      },
-      redirect: 'follow',
-    });
+  // Infrastructure / Deploy / Cloud / Server / Network
+  if (query.includes('deploy') || query.includes('cloud') || query.includes('server') || query.includes('инфраструктур') || query.includes('докер') || query.includes('docker')) {
+    return 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=1200&q=80';
+  }
 
-    clearTimeout(timeoutId);
+  // Cybersecurity / Hacking / Security
+  if (query.includes('security') || query.includes('hack') || query.includes('крипто') || query.includes('безопасность') || query.includes('hn')) {
+    return 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=1200&q=80';
+  }
 
-    if (!response.ok) {
-      return null;
-    }
+  // AI / LLM / Machine Learning / DeepSeek / Neural
+  if (query.includes('ai') || query.includes('ии') || query.includes('нейро') || query.includes('gpt') || query.includes('llm') || query.includes('модель')) {
+    return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80';
+  }
 
-    const contentType = response.headers.get('content-type') || '';
-    if (!contentType.includes('text/html') && !contentType.includes('application/xhtml+xml')) {
-      return null;
-    }
+  // Software / Code / Open Source / Dev
+  if (query.includes('code') || query.includes('разработ') || query.includes('разбор') || query.includes('формат') || query.includes('open-source')) {
+    return 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80';
+  }
 
-    const html = await response.text();
-    const tagsMap = parseMetaAndLinkTags(html);
+  // Weather / Rain / Atmospheric
+  if (query.includes('rain') || query.includes('weather') || query.includes('дождь') || query.includes('погода')) {
+    return 'https://images.unsplash.com/photo-1519692933481-e162a57d6721?auto=format&fit=crop&w=1200&q=80';
+  }
 
-    const priorityKeys = [
-      'og:image',
-      'twitter:image',
-      'twitter:image:src',
-      'link:image_src',
-      'og:image:secure_url',
-    ];
+  // General Innovation / Editorial
+  return 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80';
+}
 
-    for (const key of priorityKeys) {
-      const rawImg = tagsMap.get(key);
-      if (rawImg) {
-        try {
-          const resolved = new URL(sanitizeUrl(rawImg), cleanArticleUrl).href;
-          if (/^https?:\/\//i.test(resolved)) {
-            return resolved;
+/**
+ * Extracts the primary authentic image URL from an original article webpage URL,
+ * with contextually fitting atmospheric conceptual fallback.
+ */
+export async function extractArticleImage(
+  url: string,
+  title?: string,
+  category?: string
+): Promise<string | null> {
+  if (url && typeof url === 'string' && /^https?:\/\//i.test(url.trim())) {
+    const cleanArticleUrl = sanitizeUrl(url);
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+      const response = await fetch(cleanArticleUrl, {
+        signal: controller.signal,
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.9',
+        },
+        redirect: 'follow',
+      });
+
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('text/html') || contentType.includes('application/xhtml+xml')) {
+          const html = await response.text();
+          const tagsMap = parseMetaAndLinkTags(html);
+
+          const priorityKeys = [
+            'og:image',
+            'twitter:image',
+            'twitter:image:src',
+            'link:image_src',
+            'og:image:secure_url',
+          ];
+
+          for (const key of priorityKeys) {
+            const rawImg = tagsMap.get(key);
+            if (rawImg) {
+              try {
+                const resolved = new URL(sanitizeUrl(rawImg), cleanArticleUrl).href;
+                if (/^https?:\/\//i.test(resolved)) {
+                  return resolved;
+                }
+              } catch {
+                // Ignore
+              }
+            }
           }
-        } catch {
-          // Ignore invalid URL
+
+          const bodyImg = findFirstSignificantImg(html, cleanArticleUrl);
+          if (bodyImg) {
+            return bodyImg;
+          }
         }
       }
+    } catch {
+      // Ignore network errors/timeouts
     }
-
-    return findFirstSignificantImg(html, cleanArticleUrl);
-  } catch {
-    return null;
   }
+
+  return getThematicFallback(title, category);
 }

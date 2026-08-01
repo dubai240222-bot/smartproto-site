@@ -17,6 +17,7 @@ interface NewsroomCandidate {
   score?: number;
   by?: string;
   time?: number;
+  imageUrl?: string;
 }
 
 interface NewsroomDraftPayload {
@@ -25,7 +26,7 @@ interface NewsroomDraftPayload {
   article: NewsroomCandidate;
   scout: ScoutResult;
   review: ReviewResult;
-  draft: DraftResult;
+  draft: DraftResult & { imageUrl?: string };
 }
 
 const __filename = fileURLToPath(import.meta.url);
@@ -197,6 +198,18 @@ async function processCandidate(
   };
 
   try {
+    if (!article.imageUrl && article.url && /^https?:\/\//i.test(article.url)) {
+      try {
+        const { extractArticleImage } = await import('../src/lib/collectors/image-extractor');
+        const extracted = await extractArticleImage(article.url);
+        if (extracted) {
+          article.imageUrl = extracted;
+        }
+      } catch {
+        // Fallback gracefully
+      }
+    }
+
     console.log(chalk.cyan(`Scouting... ${article.title}`));
     console.log(chalk.gray(`Scout model: ${models.scoutModel}`));
     const scout = await pipeline.scoutArticle(article.title, article.text ?? '');
@@ -231,7 +244,10 @@ async function processCandidate(
       article,
       scout,
       review,
-      draft,
+      draft: {
+        ...draft,
+        ...(article.imageUrl ? { imageUrl: article.imageUrl } : {}),
+      },
     });
 
     console.log(chalk.green(`Draft saved to ${path.relative(process.cwd(), outcome.draftPath)}`));
@@ -359,6 +375,7 @@ export async function main(): Promise<void> {
           text: item.text,
           by: item.sourceName,
           time,
+          ...(item.imageUrl ? { imageUrl: item.imageUrl } : {}),
         },
       ];
     }
@@ -385,6 +402,7 @@ export async function main(): Promise<void> {
       url: story.url,
       text: story.text,
       score: story.score,
+      ...(story.imageUrl ? { imageUrl: story.imageUrl } : {}),
     }));
   }
 
