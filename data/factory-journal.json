@@ -41,7 +41,9 @@
     "https://newatlas.com/architecture/meet-londons-secret-skyscraper-landmark-didnt-exist/",
     "https://www.theverge.com/gadgets/968645/back-to-school-shopping-guide-gifts",
     "https://www.theverge.com/tech/973055/how-to-take-better-smartphone-photos",
-    "https://www.yankodesign.com/2026/08/01/the-fridge-screen-your-family-can-update-from-anywhere-without-texting/?utm_source=rss&utm_medium=rss&utm_campaign=the-fridge-screen-your-family-can-update-from-anywhere-without-texting"
+    "https://www.yankodesign.com/2026/08/01/the-fridge-screen-your-family-can-update-from-anywhere-without-texting/?utm_source=rss&utm_medium=rss&utm_campaign=the-fridge-screen-your-family-can-update-from-anywhere-without-texting",
+    "https://www.theverge.com/tech/973929/instapaper-app-pastebot-spiderman-movie-installer",
+    "https://www.yankodesign.com/2026/07/31/gen-z-is-buying-old-ipods-to-quit-spotify-fiios-50-hi-fi-mp3-player-does-it-better/?utm_source=rss&utm_medium=rss&utm_campaign=gen-z-is-buying-old-ipods-to-quit-spotify-fiios-50-hi-fi-mp3-player-does-it-better"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -85,7 +87,9 @@
     "https://newatlas.com/architecture/meet-londons-secret-skyscraper-landmark-didnt-exist/",
     "https://www.theverge.com/?p=968645",
     "https://www.theverge.com/?p=973055",
-    "https://www.yankodesign.com/?p=639193"
+    "https://www.yankodesign.com/?p=639193",
+    "https://www.theverge.com/?p=973929",
+    "https://www.yankodesign.com/?p=639342"
   ],
   "entries": [
     {
@@ -480,6 +484,24 @@
       "processedAt": "2026-08-01T23:53:55.703Z",
       "status": "published",
       "slug": "the-fridge-screen-your-family-can-update-from-anywhere-without-texting",
+      "kind": "news"
+    },
+    {
+      "id": "https://www.theverge.com/?p=973929",
+      "url": "https://www.theverge.com/tech/973929/instapaper-app-pastebot-spiderman-movie-installer",
+      "title": "The OG reading app just got a big update",
+      "processedAt": "2026-08-01T23:55:28.467Z",
+      "status": "rejected",
+      "reason": "editor hard-reject: non-gadget/culture",
+      "kind": "news"
+    },
+    {
+      "id": "https://www.yankodesign.com/?p=639342",
+      "url": "https://www.yankodesign.com/2026/07/31/gen-z-is-buying-old-ipods-to-quit-spotify-fiios-50-hi-fi-mp3-player-does-it-better/?utm_source=rss&utm_medium=rss&utm_campaign=gen-z-is-buying-old-ipods-to-quit-spotify-fiios-50-hi-fi-mp3-player-does-it-better",
+      "title": "Дожили! MP3-плеер за $50 против Spotify — ваш мозг скажет спасибо!",
+      "processedAt": "2026-08-01T23:56:00.897Z",
+      "status": "published",
+      "slug": "gen-z-is-buying-old-ipods-to-quit-spotify-fiio-s-50-hi-fi-mp3-player-does-it-bet",
       "kind": "news"
     }
   ]
