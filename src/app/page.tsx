@@ -224,6 +224,7 @@ export default async function HomePage({
                     <MediaPlaceholder
                       category={mainStory.category}
                       title={mainStory.title}
+                      imageUrl={mainStory.imageUrl}
                       aspectRatio="aspect-[16/9]"
                       className="rounded-lg shadow-sm"
                     />

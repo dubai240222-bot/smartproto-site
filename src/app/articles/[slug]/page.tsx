@@ -224,6 +224,7 @@ export default async function ArticlePage({
             <MediaPlaceholder
               category={article.category}
               title={article.title}
+              imageUrl={article.imageUrl}
               description="Иллюстрация к материалу"
             />
           </div>

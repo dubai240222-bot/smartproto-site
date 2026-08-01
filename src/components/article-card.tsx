@@ -55,7 +55,7 @@ export function ArticleCard({ article, variant = 'default', eyebrow, className }
           <MediaPlaceholder
             category={article.category}
             title={article.title}
-            imageUrl={(article as { imageUrl?: string }).imageUrl}
+            imageUrl={article.imageUrl}
             aspectRatio="aspect-[16/9]"
             className="mb-4"
           />
@@ -71,7 +71,7 @@ export function ArticleCard({ article, variant = 'default', eyebrow, className }
           <span>{formatPublishedAt(article.publishedAt)}</span>
           <span className="flex items-center gap-1 text-[var(--accent)] font-medium">
             {article.readTime}
-            <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+            <ArrowRight className="h-3.5 w-3.5" />
           </span>
         </div>
       </article>
@@ -85,7 +85,7 @@ export function ArticleCard({ article, variant = 'default', eyebrow, className }
           className ?? ''
         }`}
       >
-        <div className="flex-1 space-y-1">
+        <div className="flex-1 space-y-1 min-w-0">
           <CategoryTags category={article.category} />
           <h3 className="font-serif text-base font-bold text-[var(--text)] transition-colors group-hover:text-[var(--accent)] leading-snug">
             <Link href={`/articles/${article.slug}`}>{article.title}</Link>
@@ -96,6 +96,15 @@ export function ArticleCard({ article, variant = 'default', eyebrow, className }
             <span>{article.readTime}</span>
           </div>
         </div>
+        {article.imageUrl && (
+          <div className="shrink-0 w-20 h-16 rounded overflow-hidden border border-[var(--border)] bg-[var(--surface)]">
+            <img
+              src={article.imageUrl}
+              alt={article.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+            />
+          </div>
+        )}
       </article>
     );
   }
@@ -107,6 +116,13 @@ export function ArticleCard({ article, variant = 'default', eyebrow, className }
       }`}
     >
       <div className="space-y-2.5">
+        <MediaPlaceholder
+          category={article.category}
+          title={article.title}
+          imageUrl={article.imageUrl}
+          aspectRatio="aspect-[16/9]"
+          className="mb-3"
+        />
         <CategoryTags category={article.category} />
         <h3 className="font-serif text-lg font-bold text-[var(--text)] transition-colors group-hover:text-[var(--accent)] leading-snug">
           <Link href={`/articles/${article.slug}`}>{article.title}</Link>
@@ -136,8 +152,8 @@ export function VergeNumberedItem({
   const formattedIndex = String(index).padStart(2, '0');
 
   return (
-    <article className="group flex items-start gap-3 sm:gap-4 py-3.5 border-b border-[var(--border)] last:border-b-0">
-      <span className="font-serif text-2xl sm:text-3xl font-black text-[var(--accent)] shrink-0 select-none w-8 text-right leading-none pt-0.5">
+    <article className="group flex items-center gap-3 sm:gap-4 py-3.5 border-b border-[var(--border)] last:border-b-0">
+      <span className="font-serif text-2xl sm:text-3xl font-black text-[var(--accent)] shrink-0 select-none w-8 text-right leading-none">
         {formattedIndex}
       </span>
       <div className="flex-1 space-y-1 min-w-0">
@@ -151,6 +167,15 @@ export function VergeNumberedItem({
           <span>{article.readTime}</span>
         </div>
       </div>
+      {article.imageUrl && (
+        <div className="shrink-0 w-16 h-16 sm:w-20 sm:h-16 rounded overflow-hidden border border-[var(--border)] bg-[var(--surface)]">
+          <img
+            src={article.imageUrl}
+            alt={article.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+          />
+        </div>
+      )}
     </article>
   );
 }
@@ -166,7 +191,7 @@ export function ArsTechnicaCard({ article }: { article: Article }) {
           <MediaPlaceholder
             category={article.category}
             title={article.title}
-            imageUrl={(article as { imageUrl?: string }).imageUrl}
+            imageUrl={article.imageUrl}
             aspectRatio="aspect-[16/10]"
           />
         </div>
@@ -199,22 +224,33 @@ export function ArsTechnicaCard({ article }: { article: Article }) {
 /* -------------------------------------------------------------------------- */
 export function QuickUpdateItem({ article }: { article: Article }) {
   return (
-    <article className="group py-3.5 border-b border-[var(--border)] last:border-b-0 space-y-1.5">
-      <div className="flex flex-wrap items-center gap-2 text-xs">
-        <span className="text-[11px] font-mono font-semibold text-[var(--muted)]">
-          {formatPublishedAt(article.publishedAt)}
-        </span>
-        <span className="text-[var(--muted)] opacity-40">•</span>
-        <CategoryTags category={article.category} />
+    <article className="group py-3.5 border-b border-[var(--border)] last:border-b-0 flex items-start gap-4">
+      <div className="flex-1 space-y-1.5 min-w-0">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-[11px] font-mono font-semibold text-[var(--muted)]">
+            {formatPublishedAt(article.publishedAt)}
+          </span>
+          <span className="text-[var(--muted)] opacity-40">•</span>
+          <CategoryTags category={article.category} />
+        </div>
+
+        <h3 className="font-serif text-base sm:text-lg font-bold text-[var(--text)] transition-colors group-hover:text-[var(--accent)] leading-snug">
+          <Link href={`/articles/${article.slug}`}>{article.title}</Link>
+        </h3>
+
+        <p className="text-xs sm:text-sm text-[var(--muted)] leading-relaxed line-clamp-2 max-w-4xl">
+          {article.summary}
+        </p>
       </div>
-
-      <h3 className="font-serif text-base sm:text-lg font-bold text-[var(--text)] transition-colors group-hover:text-[var(--accent)] leading-snug">
-        <Link href={`/articles/${article.slug}`}>{article.title}</Link>
-      </h3>
-
-      <p className="text-xs sm:text-sm text-[var(--muted)] leading-relaxed line-clamp-2 max-w-4xl">
-        {article.summary}
-      </p>
+      {article.imageUrl && (
+        <div className="shrink-0 w-24 h-20 sm:w-32 sm:h-24 rounded overflow-hidden border border-[var(--border)] bg-[var(--surface)]">
+          <img
+            src={article.imageUrl}
+            alt={article.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+          />
+        </div>
+      )}
     </article>
   );
 }
@@ -239,6 +275,16 @@ export function StratecheryDeepDive({ article }: { article: Article }) {
         <h2 className="font-serif text-2xl sm:text-3xl font-bold leading-tight text-[var(--text)] hover:text-[var(--accent)] transition-colors">
           <Link href={`/articles/${article.slug}`}>{article.title}</Link>
         </h2>
+
+        {article.imageUrl && (
+          <MediaPlaceholder
+            category={article.category}
+            title={article.title}
+            imageUrl={article.imageUrl}
+            aspectRatio="aspect-[21/9]"
+            className="rounded-lg my-4"
+          />
+        )}
 
         <div className="border-l-2 border-[var(--accent)] pl-4 py-1 my-3 bg-[var(--bg)] rounded-r">
           <p className="font-serif italic text-sm sm:text-base text-[var(--text)] leading-relaxed">

@@ -10,6 +10,7 @@ export interface Article {
   sourceUrl: string;
   publishedAt: string;
   readTime: string;
+  imageUrl?: string;
 }
 
 const typedArticles = articles as Article[];
