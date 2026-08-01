@@ -34,7 +34,8 @@
     "https://www.yankodesign.com/2026/08/01/smart-glasses-run-hot-a-1mm-fan-might-finally-fix-that/?utm_source=rss&utm_medium=rss&utm_campaign=smart-glasses-run-hot-a-1mm-fan-might-finally-fix-that",
     "https://www.theverge.com/ai-artificial-intelligence/974209/fenix-flexin-billboard-hot-100-rubberz-ai-slop",
     "https://www.yankodesign.com/2026/08/01/artefilo-makes-home-objects-from-elephant-grass-and-hospital-cabinets/?utm_source=rss&utm_medium=rss&utm_campaign=artefilo-makes-home-objects-from-elephant-grass-and-hospital-cabinets",
-    "https://newatlas.com/automotive/geely-galaxy-cruiser-700/"
+    "https://newatlas.com/automotive/geely-galaxy-cruiser-700/",
+    "https://www.theverge.com/entertainment/974199/spider-man-brand-new-day-leak-box-office-records"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -71,7 +72,8 @@
     "https://www.yankodesign.com/?p=639152",
     "https://www.theverge.com/?p=974209",
     "https://www.yankodesign.com/?p=639256",
-    "https://newatlas.com/automotive/geely-galaxy-cruiser-700/"
+    "https://newatlas.com/automotive/geely-galaxy-cruiser-700/",
+    "https://www.theverge.com/?p=974199"
   ],
   "entries": [
     {
@@ -399,11 +401,20 @@
     {
       "id": "https://newatlas.com/automotive/geely-galaxy-cruiser-700/",
       "url": "https://newatlas.com/automotive/geely-galaxy-cruiser-700/",
-      "title": "Geely Galaxy Cruiser 700: Гибридный внедорожник мощностью 1113 л.с.",
-      "processedAt": "2026-08-01T23:47:32.571Z",
+      "title": "Geely Galaxy Cruiser: Гибридный внедорожник мощностью 1113 л.с. для бездорожья",
+      "processedAt": "2026-08-01T23:46:59.057Z",
       "status": "published",
       "slug": "1-113-hp-galaxy-cruiser-hybrid-suv-redefines-off-road-power",
-      "kind": "article"
+      "kind": "news"
+    },
+    {
+      "id": "https://www.theverge.com/?p=974199",
+      "url": "https://www.theverge.com/entertainment/974199/spider-man-brand-new-day-leak-box-office-records",
+      "title": "Утечка «Человека-паука» набрала миллионы просмотров до удаления",
+      "processedAt": "2026-08-01T23:47:56.009Z",
+      "status": "published",
+      "slug": "spider-man-brand-new-day-leak-racks-up-millions-of-views",
+      "kind": "news"
     }
   ]
 }
