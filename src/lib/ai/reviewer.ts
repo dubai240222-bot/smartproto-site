@@ -5,7 +5,7 @@ export interface ReviewResult {
   keyAspects: string[];
 }
 
-const REVIEW_MODEL = process.env.OPENROUTER_REVIEW_MODEL ?? 'qwen/qwen-2.5-32b';
+const REVIEW_MODEL = process.env.OPENROUTER_REVIEW_MODEL ?? 'google/gemini-2.5-flash-lite';
 const REVIEW_SYSTEM_PROMPT = 'Ты технический эксперт. Проанализируй присланный материал. Подтверди техническую достоверность и выдели 3 ключевых инженерных аспекта.';
 
 function normalizeKeyAspects(value: unknown): string[] {
@@ -24,8 +24,9 @@ export async function reviewArticle(articleData: object): Promise<ReviewResult> 
   const client = getOpenRouterClient();
   const completion = await client.chat.completions.create({
     model: REVIEW_MODEL,
-    temperature: 0.3,
-    max_tokens: 350,
+    temperature: 0.1,
+    top_p: 0.9,
+    max_tokens: 500,
     messages: [
       { role: 'system', content: REVIEW_SYSTEM_PROMPT },
       {

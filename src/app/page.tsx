@@ -1,100 +1,317 @@
 import Link from 'next/link';
-import type { ReactNode } from 'react';
-import { BookOpen, Cpu, Globe, Shield, Sparkles, Zap } from 'lucide-react';
 import articles, { type Article } from '@/data/articles';
+import { MediaPlaceholder } from '@/components/media-placeholder';
+import { formatPublishedAt, sortArticlesByPublishedDate } from '@/lib/article-utils';
+import {
+  CategoryTags,
+  VergeNumberedItem,
+  ArsTechnicaCard,
+  QuickUpdateItem,
+  StratecheryDeepDive,
+} from '@/components/article-card';
 
-const categoryIcons: Record<string, ReactNode> = {
-  AI: <Cpu className="h-5 w-5 text-cyan-400" />,
-  Cloud: <Globe className="h-5 w-5 text-cyan-400" />,
-  Security: <Shield className="h-5 w-5 text-cyan-400" />,
-  Automation: <Zap className="h-5 w-5 text-cyan-400" />,
-};
+function filterArticlesByCategory(categoryName: string, list: Article[]): Article[] {
+  const norm = categoryName.toLowerCase().trim();
+  if (!norm) return list;
 
-function getCategoryIcon(article: Article): ReactNode {
-  return categoryIcons[article.category] ?? (
-    <Sparkles className="h-5 w-5 text-cyan-400" />
-  );
+  return list.filter((a) => {
+    const cat = a.category.toLowerCase();
+    const title = a.title.toLowerCase();
+    const summary = a.summary.toLowerCase();
+    const content = a.content.toLowerCase();
+
+    if (norm === 'гаджеты') {
+      return cat.includes('гаджет') || title.includes('проектор') || title.includes('гаджет');
+    }
+    if (norm === 'робототехника') {
+      return cat.includes('робот') || title.includes('робот');
+    }
+    if (norm === 'искусственный интеллект' || norm === 'ии') {
+      return (
+        cat.includes('искусственный интеллект') ||
+        cat.includes('ии') ||
+        title.includes('интеллект') ||
+        title.includes('обучается')
+      );
+    }
+    if (norm === 'open source') {
+      return (
+        cat.includes('open source') ||
+        title.includes('open source') ||
+        content.includes('открытым исходным кодом')
+      );
+    }
+    if (norm === 'аналитика') {
+      return cat.includes('аналитика') || cat.includes('hn') || title.includes('hacker news');
+    }
+    if (norm === 'инфраструктура') {
+      return cat.includes('инфраструктура') || cat.includes('deploy') || title.includes('продакшен');
+    }
+    if (norm === 'редакция') {
+      return cat.includes('редакция') || cat.includes('live feed') || title.includes('живая лента');
+    }
+    if (norm === 'разборы') {
+      return cat.includes('разборы') || cat.includes('формат') || title.includes('разбор');
+    }
+
+    return cat.includes(norm) || title.includes(norm) || summary.includes(norm);
+  });
 }
 
-function formatPublishedAt(value: string): string {
-  const date = new Date(value);
+// Extract all unique semantic tag topics for navigation
+function getNavigationTopics(list: Article[]): string[] {
+  const defaultTopics = [
+    'Гаджеты',
+    'Робототехника',
+    'Искусственный интеллект',
+    'Open Source',
+    'Аналитика',
+    'Инфраструктура',
+    'Редакция',
+    'Разборы',
+  ];
 
-  if (Number.isNaN(date.getTime())) {
-    return value;
+  const extracted = new Set<string>();
+  for (const item of list) {
+    if (item.category) {
+      const parts = item.category.split('/').map((s) => s.trim());
+      for (const p of parts) {
+        if (p && p.length > 2) {
+          // Normalize title case
+          const capitalized = p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+          extracted.add(capitalized);
+        }
+      }
+    }
   }
 
-  return new Intl.DateTimeFormat('ru-RU', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  }).format(date);
+  for (const t of defaultTopics) {
+    extracted.add(t);
+  }
+
+  return Array.from(extracted);
 }
 
-export default function HomePage() {
-  const publishedArticles: Article[] = articles;
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ category?: string }>;
+}) {
+  const params = await searchParams;
+  const activeCategory = params.category?.trim();
+
+  const sortedArticles = sortArticlesByPublishedDate(articles);
+  const navigationTopics = getNavigationTopics(sortedArticles);
+
+  // Articles for specific editorial slots
+  const mainStory = sortedArticles[0];
+  const editorialPicks = sortedArticles.slice(0, 5); // 1 to 5 numbered picks
+  const visualFeatureStories = sortedArticles.slice(1, 4); // Ars Technica 2-3 visual blocks
+  
+  // Stratechery Deep Dive candidate (prefer deploy playbook or longform analysis)
+  const deepDiveStory =
+    sortedArticles.find(
+      (a) => a.slug.includes('deploy') || a.category.toLowerCase().includes('разбор'),
+    ) || sortedArticles[2] || sortedArticles[0];
+
+  // Quick updates stream
+  const quickUpdates = sortedArticles;
+
+  // Filtered view if a category is selected
+  const filteredArticles = activeCategory
+    ? filterArticlesByCategory(activeCategory, sortedArticles)
+    : [];
 
   return (
-    <main className="min-h-screen bg-black text-gray-100">
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <header className="mb-12 border-b border-gray-800 pb-8">
-          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div>
-              <p className="font-mono text-xs uppercase tracking-[0.35em] text-cyan-400">
-                Лента SmartProto
-              </p>
-              <h1 className="mt-3 text-4xl font-semibold tracking-tight text-white md:text-6xl">
-                AI-статьи, отобранные вручную
-              </h1>
-              <p className="mt-4 max-w-2xl text-sm leading-7 text-gray-400 md:text-base">
-                Тёмные редакционные карточки с последними опубликованными материалами.
-              </p>
-            </div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-gray-800 bg-gray-900 px-4 py-2 font-mono text-xs uppercase tracking-[0.25em] text-cyan-400">
-              <BookOpen className="h-4 w-4" />
-              Опубликованные материалы
-            </div>
+    <main className="min-h-screen bg-[var(--bg)] text-[var(--text)] transition-colors py-6 sm:py-10">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-10 sm:space-y-14">
+        
+        {/* SEMANTIC TAG / CATEGORY NAVIGATION BAR */}
+        <section className="border-b border-[var(--border)] pb-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-[var(--muted)]">
+              Тематический навигатор
+            </span>
+            {activeCategory && (
+              <Link
+                href="/"
+                className="text-xs text-[var(--accent)] hover:underline font-medium"
+              >
+                Сбросить фильтр
+              </Link>
+            )}
           </div>
-        </header>
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-1">
+            <Link
+              href="/"
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                !activeCategory
+                  ? 'bg-[var(--text)] text-[var(--bg)] shadow-sm'
+                  : 'bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] hover:border-[var(--accent)]'
+              }`}
+            >
+              Все материалы
+            </Link>
+            {navigationTopics.map((topic) => {
+              const isActive =
+                activeCategory?.toLowerCase() === topic.toLowerCase();
+              return (
+                <Link
+                  key={topic}
+                  href={`/?category=${encodeURIComponent(topic)}`}
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                    isActive
+                      ? 'bg-[var(--accent)] text-white shadow-sm'
+                      : 'bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--accent)]'
+                  }`}
+                >
+                  {topic}
+                </Link>
+              );
+            })}
+          </div>
+        </section>
 
-        {publishedArticles.length === 0 ? (
-          <section className="rounded-2xl border border-gray-800 bg-gray-900 p-8 text-gray-300">
-            <p className="text-lg leading-8">
-              Пока нет опубликованных материалов. AI-конвейер работает...
-            </p>
+        {/* ACTIVE CATEGORY FILTER VIEW */}
+        {activeCategory ? (
+          <section className="space-y-6">
+            <div className="p-4 rounded-lg border border-[var(--border)] bg-[var(--surface)] flex items-center justify-between">
+              <div>
+                <h1 className="font-serif text-xl font-bold text-[var(--text)]">
+                  Рубрика: <span className="text-[var(--accent)]">{activeCategory}</span>
+                </h1>
+                <p className="text-xs text-[var(--muted)] mt-0.5">
+                  Найдено материалов: {filteredArticles.length}
+                </p>
+              </div>
+              <Link
+                href="/"
+                className="text-xs font-semibold px-3 py-1.5 rounded border border-[var(--border)] bg-[var(--bg)] hover:bg-[var(--surface)] transition-colors"
+              >
+                Показать всю ленту
+              </Link>
+            </div>
+
+            {filteredArticles.length > 0 ? (
+              <div className="space-y-4">
+                {filteredArticles.map((article) => (
+                  <QuickUpdateItem key={article.slug} article={article} />
+                ))}
+              </div>
+            ) : (
+              <div className="p-8 text-center border border-[var(--border)] rounded-lg bg-[var(--surface)]">
+                <p className="text-sm text-[var(--muted)]">
+                  В выбранной рубрике пока нет материалов.
+                </p>
+                <Link
+                  href="/"
+                  className="mt-3 inline-block text-xs font-semibold text-[var(--accent)] hover:underline"
+                >
+                  Вернуться на главную
+                </Link>
+              </div>
+            )}
           </section>
         ) : (
-          <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {publishedArticles.map((article) => (
-              <Link
-                key={article.slug}
-                href={`/articles/${article.slug}`}
-                className="group flex h-full flex-col rounded-2xl border border-gray-800 bg-gray-900 p-6 transition-transform duration-200 hover:-translate-y-1 hover:border-cyan-400/40"
-              >
-                <div className="mb-6 flex items-start justify-between gap-4">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-gray-800 bg-black">
-                    {getCategoryIcon(article)}
+          /* DIVERSE EDITORIAL HOMEPAGE (No uniform card wall!) */
+          <>
+            {/* 1. HERO STORY + "ВЫБОР РЕДАКЦИИ" (The Verge Style Split Grid) */}
+            <section className="grid gap-8 lg:grid-cols-12 lg:items-start pb-10 border-b border-[var(--border)]">
+              {/* LEFT (8 Cols): Hero Main Story */}
+              {mainStory && (
+                <div className="lg:col-span-8 lg:pr-8 lg:border-r border-[var(--border)] space-y-4">
+                  <div className="group space-y-4">
+                    <MediaPlaceholder
+                      category={mainStory.category}
+                      title={mainStory.title}
+                      aspectRatio="aspect-[16/9]"
+                      className="rounded-lg shadow-sm"
+                    />
+
+                    <CategoryTags category={mainStory.category} className="pt-1" />
+
+                    <h1 className="font-serif text-2xl sm:text-4xl font-black leading-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)]">
+                      <Link href={`/articles/${mainStory.slug}`}>{mainStory.title}</Link>
+                    </h1>
+
+                    <p className="text-sm sm:text-base leading-relaxed text-[var(--muted)]">
+                      {mainStory.summary}
+                    </p>
+
+                    <div className="flex items-center gap-3 text-xs text-[var(--muted)] pt-1 border-t border-[var(--border)]">
+                      <span>{formatPublishedAt(mainStory.publishedAt)}</span>
+                      <span>•</span>
+                      <span>Время чтения: {mainStory.readTime}</span>
+                    </div>
                   </div>
-                  <span className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.2em] text-cyan-400">
-                    опубликовано
+                </div>
+              )}
+
+              {/* RIGHT (4 Cols): "Выбор редакции" Numbered List 1-5 (The Verge Style) */}
+              <div className="lg:col-span-4 space-y-4">
+                <div className="flex items-center justify-between border-b-2 border-[var(--accent)] pb-2">
+                  <h2 className="font-serif text-sm font-bold uppercase tracking-wider text-[var(--text)]">
+                    Выбор редакции
+                  </h2>
+                  <span className="text-[10px] font-mono text-[var(--accent)] font-bold">
+                    TOP 1–5
                   </span>
                 </div>
 
-                <div className="font-mono text-xs uppercase tracking-[0.25em] text-cyan-400">
-                  {article.category}
+                <div className="divide-y divide-[var(--border)]">
+                  {editorialPicks.map((article, idx) => (
+                    <VergeNumberedItem
+                      key={article.slug}
+                      index={idx + 1}
+                      article={article}
+                    />
+                  ))}
                 </div>
-                <h2 className="mt-3 text-2xl font-semibold leading-tight text-white transition-colors group-hover:text-cyan-300">
-                  {article.title}
+              </div>
+            </section>
+
+            {/* 2. "ВИЗУАЛЬНЫЕ ИСТОРИИ" (Ars Technica Style Feature Blocks) */}
+            <section className="space-y-6 pb-10 border-b border-[var(--border)]">
+              <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-1 bg-[var(--accent)] rounded-full"></div>
+                  <h2 className="font-serif text-xl sm:text-2xl font-bold text-[var(--text)]">
+                    Визуальные истории
+                  </h2>
+                </div>
+                <span className="text-xs font-mono text-[var(--muted)]">Ars Technica Style</span>
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-3">
+                {visualFeatureStories.map((article) => (
+                  <ArsTechnicaCard key={article.slug} article={article} />
+                ))}
+              </div>
+            </section>
+
+            {/* 3. "ГЛУБОКИЙ РАЗБОР" (Stratechery Style Calm Reading Column) */}
+            {deepDiveStory && (
+              <section className="pb-10 border-b border-[var(--border)]">
+                <StratecheryDeepDive article={deepDiveStory} />
+              </section>
+            )}
+
+            {/* 4. "ПОСЛЕДНИЕ ОБНОВЛЕНИЯ" (Chronological Quick Updates Feed) */}
+            <section className="space-y-6">
+              <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+                <h2 className="font-serif text-xl sm:text-2xl font-bold text-[var(--text)]">
+                  Последние обновления
                 </h2>
-                <p className="mt-4 flex-1 text-sm leading-7 text-gray-300">
-                  {article.summary}
-                </p>
-                <div className="mt-6 flex items-center justify-between text-xs text-gray-500">
-                  <span>{formatPublishedAt(article.publishedAt)}</span>
-                  <span>{article.readTime}</span>
-                </div>
-              </Link>
-            ))}
-          </section>
+                <span className="text-xs font-mono text-[var(--muted)]">Хроника событий</span>
+              </div>
+
+              <div className="space-y-1 divide-y divide-[var(--border)]">
+                {quickUpdates.map((article) => (
+                  <QuickUpdateItem key={article.slug} article={article} />
+                ))}
+              </div>
+            </section>
+          </>
         )}
       </div>
     </main>

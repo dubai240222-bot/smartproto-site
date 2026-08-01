@@ -1,7 +1,6 @@
 ﻿import 'dotenv/config';
 
 import OpenAI from 'openai';
-import { GoogleGenerativeAI, type GenerationConfig } from '@google/generative-ai';
 
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 const DEFAULT_OPENROUTER_SITE_URL = 'https://smartproto.site';
@@ -17,7 +16,7 @@ function requireApiKey(value: string | undefined, name: string): string {
 
 export function getOpenRouterClient(): OpenAI {
   const apiKey = requireApiKey(
-    process.env.OPENROUTER_API_KEY ?? process.env.OPENAI_API_KEY,
+    process.env.OPENROUTER_API_KEY,
     'OPENROUTER_API_KEY',
   );
 
@@ -46,20 +45,6 @@ export function parseJsonObject<T>(content: string): T {
   }
 
   return JSON.parse(normalized.slice(start, end + 1)) as T;
-}
-
-export function getGeminiModel(modelName: string, systemInstruction: string, generationConfig?: GenerationConfig) {
-  const apiKey = requireApiKey(
-    process.env.GOOGLE_API_KEY ?? process.env.GEMINI_API_KEY ?? process.env.GOOGLE_GENERATIVE_AI_API_KEY,
-    'GOOGLE_API_KEY',
-  );
-
-  const client = new GoogleGenerativeAI(apiKey);
-  return client.getGenerativeModel({
-    model: modelName,
-    systemInstruction,
-    generationConfig,
-  });
 }
 
 export function clampText(text: string, maxLength: number): string {

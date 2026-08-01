@@ -1,27 +1,17 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Header } from '@/components/header';
 import './globals.css';
-
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
-  title: 'SmartProto - техно-новости и AI-дайджест',
+  title: 'SmartProto — Цифровая газета о технологиях',
   description:
-    'SmartProto — редакционный сайт о ранних технологиях, прототипах, инженерных находках и AI-новостях.',
+    'SmartProto — интернет-издание о ранних технологиях, прототипах, инженерных решениях и научных открытиях.',
   openGraph: {
-    title: 'SmartProto - техно-новости и AI-дайджест',
+    title: 'SmartProto — Цифровая газета о технологиях',
     description:
-      'SmartProto — редакционный сайт о ранних технологиях, прототипах, инженерных находках и AI-новостях.',
+      'SmartProto — интернет-издание о ранних технологиях, прототипах, инженерных решениях и научных открытиях.',
     url: '/',
     siteName: 'SmartProto',
     type: 'website',
@@ -29,14 +19,11 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'SmartProto - техно-новости и AI-дайджест',
+    title: 'SmartProto — Цифровая газета о технологиях',
     description:
-      'SmartProto — редакционный сайт о ранних технологиях, прототипах, инженерных находках и AI-новостях.',
+      'SmartProto — интернет-издание о ранних технологиях, прототипах, инженерных решениях и научных открытиях.',
   },
 };
-
-// UTF-8 marquee text for the global banner.
-const marqueeText = 'Идут технические работы. SmartProto обновляется...';
 
 export default function RootLayout({
   children,
@@ -44,19 +31,39 @@ export default function RootLayout({
   children: ReactNode;
 }>) {
   return (
-    <html lang="ru" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang="ru" className="h-full antialiased" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var t = localStorage.getItem('theme') || 'system';
+                  var isDark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                  if (isDark) {
+                    document.documentElement.classList.add('dark');
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                    document.documentElement.setAttribute('data-theme', 'light');
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
       </head>
-      <body className="min-h-screen bg-[#0a0a0a] text-gray-100">
-        <div className="top-banner" role="status" aria-live="polite">
-          <div className="top-banner__track" aria-hidden="true">
-            <span>{marqueeText}</span>
-            <span>{marqueeText}</span>
-            <span>{marqueeText}</span>
+      <body className="flex min-h-screen flex-col bg-[var(--bg)] text-[var(--text)] transition-colors duration-150">
+        <Header />
+        <div className="flex-1">{children}</div>
+        <footer className="mt-16 border-t border-[var(--border)] bg-[var(--surface)] py-8 text-xs text-[var(--muted)]">
+          <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
+            <p className="font-serif text-sm font-bold text-[var(--text)]">SMARTPROTO</p>
+            <p className="mt-1">Технологии раньше, чем они станут мейнстримом</p>
+            <p className="mt-4 text-[11px]">© {new Date().getFullYear()} SmartProto. Все права защищены.</p>
           </div>
-        </div>
-        {children}
+        </footer>
       </body>
     </html>
   );

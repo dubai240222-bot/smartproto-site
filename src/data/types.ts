@@ -13,6 +13,7 @@ export interface Article {
   links: { name: string; url: string }[];
   reviewedAt?: string;
   reviewedBy?: string;
+  imageUrl?: string;
 }
 
 export interface Draft extends Partial<Omit<Article, 'status'>> {

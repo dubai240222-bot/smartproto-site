@@ -6,7 +6,7 @@ export interface ScoutResult {
   reason: string;
 }
 
-const SCOUT_MODEL = process.env.OPENROUTER_SCOUT_MODEL ?? 'deepseek/deepseek-chat';
+const SCOUT_MODEL = process.env.OPENROUTER_SCOUT_MODEL ?? 'deepseek/deepseek-v4-flash:latest';
 const SCOUT_SYSTEM_PROMPT = 'Ты разведчик. Оцени новость от 0 до 100 по критериям: глубина технологии, open-source, инженерная ценность. Игнорируй кликбейт и обычные IT-новости.';
 
 export async function scoutArticle(title: string, text: string): Promise<ScoutResult> {
@@ -14,7 +14,14 @@ export async function scoutArticle(title: string, text: string): Promise<ScoutRe
   const completion = await client.chat.completions.create({
     model: SCOUT_MODEL,
     temperature: 0.1,
-    max_tokens: 150,
+    top_p: 0.9,
+    max_tokens: 500,
+    include_reasoning: false,
+    reasoning: { max_tokens: 0 },
+    extra_body: {
+      include_reasoning: false,
+      reasoning: { max_tokens: 0 },
+    },
     messages: [
       { role: 'system', content: SCOUT_SYSTEM_PROMPT },
       {
@@ -28,11 +35,24 @@ export async function scoutArticle(title: string, text: string): Promise<ScoutRe
         ].join('\n'),
       },
     ],
-  });
+  } as any);
 
-  const content = completion.choices[0]?.message?.content;
-  if (typeof content !== 'string') {
-    throw new Error('Scout model returned an empty response.');
+  const choice = completion.choices[0];
+  const content = choice?.message?.content;
+  if (!content || typeof content !== 'string' || content.trim() === '') {
+    const finishReason = choice?.finish_reason ?? 'unknown';
+    const msg = choice?.message as any;
+    const choiceObj = choice as any;
+    const hasReasoning = Boolean(
+      msg?.reasoning ||
+      msg?.reasoning_content ||
+      msg?.reasoning_details ||
+      choiceObj?.reasoning ||
+      choiceObj?.reasoning_content
+    );
+    throw new Error(
+      `Scout model (${SCOUT_MODEL}) returned an empty response. finish_reason: ${finishReason}, reasoning present: ${hasReasoning}`
+    );
   }
 
   const parsed = parseJsonObject<Partial<ScoutResult>>(content);

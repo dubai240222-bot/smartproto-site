@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import { useEffect, useState } from 'react';
-import { ExternalLink, Loader2 } from 'lucide-react';
+import { ArrowUpRight, ExternalLink, Loader2 } from 'lucide-react';
 
 type HackerNewsItem = {
   id: number;
@@ -74,100 +74,98 @@ export function LiveFeedSection() {
   }, []);
 
   return (
-    <section className="max-w-6xl mx-auto px-4 pb-12">
-      <div className="flex justify-between items-end mb-8">
-        <div>
-          <span
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium mb-4 border"
-            style={{
-              backgroundColor: 'var(--surface)',
-              color: 'var(--primary)',
-              borderColor: 'rgba(102, 252, 241, 0.2)',
-            }}
-          >
-            Live Signal
+    <section className="mx-auto max-w-7xl px-4 pb-16">
+      <div className="rounded-[2rem] border border-white/8 bg-slate-950/60 p-6 shadow-[0_30px_110px_-55px_rgba(69,162,158,0.5)] md:p-8">
+        <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl">
+            <span className="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.28em] text-cyan-300">
+              Live signal
+            </span>
+            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white md:text-4xl">
+              Hacker News top stories, shown as a news-style feed
+            </h2>
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300 md:text-base">
+              This block keeps the site visibly alive before any AI model is connected. It pulls current signals from
+              the public feed and presents them as clean editorial cards.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <div className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3">
+              <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-slate-400">Stories</p>
+              <p className="mt-2 text-2xl font-semibold text-white">{loading ? '—' : items.length}</p>
+            </div>
+            <div className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3">
+              <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-slate-400">Refresh</p>
+              <p className="mt-2 text-2xl font-semibold text-white">5 min</p>
+            </div>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center gap-3 rounded-2xl border border-white/8 bg-slate-950/80 px-5 py-4">
+            <Loader2 className="h-5 w-5 animate-spin text-cyan-300" />
+            <span className="text-sm text-slate-300">Loading live signal...</span>
+          </div>
+        ) : error ? (
+          <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 px-5 py-4 text-sm text-amber-100">
+            <p>{error}</p>
+          </div>
+        ) : items.length > 0 ? (
+          <div className="grid gap-5 lg:grid-cols-3">
+            {items.map((item) => (
+              <article
+                key={item.id}
+                className="group flex h-full flex-col rounded-3xl border border-white/8 bg-slate-950/70 p-6 transition duration-300 hover:-translate-y-1 hover:border-cyan-400/30 hover:bg-white/7"
+              >
+                <div className="mb-4 flex items-start justify-between gap-4">
+                  <div>
+                    <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-cyan-300/90">Rank #{item.rank}</p>
+                    <p className="mt-2 text-xs text-slate-400">{item.by || 'unknown author'}</p>
+                  </div>
+                  <span className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.24em] text-cyan-300">
+                    {item.type || 'story'}
+                  </span>
+                </div>
+
+                <h3 className="text-xl font-semibold leading-tight text-white">{item.title || 'Untitled story'}</h3>
+
+                <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                  <span>{formatDate(item.time)}</span>
+                  <span>•</span>
+                  <span>{item.score ?? 0} points</span>
+                  <span>•</span>
+                  <span>{item.descendants ?? 0} comments</span>
+                </div>
+
+                <div className="mt-auto pt-6">
+                  <a
+                    href={getOutboundUrl(item)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm font-medium text-cyan-300 transition duration-300 hover:text-cyan-200"
+                  >
+                    Open source
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-white/8 bg-slate-950/80 px-5 py-4 text-sm text-slate-300">
+            No live stories were returned yet.
+          </div>
+        )}
+
+        <div className="mt-6 flex items-center justify-between gap-4 rounded-2xl border border-white/8 bg-white/5 px-4 py-3 text-xs text-slate-400">
+          <span>Raw JSON live feed with no AI connection yet.</span>
+          <span className="inline-flex items-center gap-2 text-cyan-300">
+            News-style curation
+            <ArrowUpRight className="h-4 w-4" />
           </span>
-          <h2 className="text-2xl font-bold" style={{ color: 'var(--heading)' }}>
-            Hacker News top stories
-          </h2>
         </div>
       </div>
-
-      {loading ? (
-        <div
-          className="border rounded-xl p-6 flex items-center gap-3"
-          style={{ backgroundColor: 'rgba(31, 40, 51, 0.5)', borderColor: 'var(--surface)' }}
-        >
-          <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--primary)' }} />
-          <span style={{ color: 'var(--text)' }}>Loading live signal...</span>
-        </div>
-      ) : error ? (
-        <div
-          className="border rounded-xl p-6"
-          style={{ backgroundColor: 'rgba(31, 40, 51, 0.5)', borderColor: 'var(--surface)' }}
-        >
-          <p style={{ color: 'var(--text)' }}>{error}</p>
-        </div>
-      ) : (
-        <div className="grid md:grid-cols-2 gap-6">
-          {items.map((item) => (
-            <article
-              key={item.id}
-              className="glow-card border rounded-xl p-6 h-full"
-              style={{ backgroundColor: 'rgba(31, 40, 51, 0.5)', borderColor: 'var(--surface)' }}
-            >
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <span className="text-xs font-medium uppercase tracking-wider mb-2 block" style={{ color: 'var(--secondary)' }}>
-                    Rank #{item.rank}
-                  </span>
-                  <p className="text-xs" style={{ color: 'var(--text)', opacity: 0.7 }}>
-                    {item.by || 'unknown author'}
-                  </p>
-                </div>
-                <span
-                  className="text-xs font-medium px-2 py-1 rounded border"
-                  style={{
-                    backgroundColor: 'rgba(102, 252, 241, 0.1)',
-                    color: 'var(--primary)',
-                    borderColor: 'rgba(102, 252, 241, 0.2)',
-                  }}
-                >
-                  {item.type || 'story'}
-                </span>
-              </div>
-
-              <h3 className="text-xl font-bold mb-3" style={{ color: 'var(--heading)' }}>
-                {item.title || 'Untitled story'}
-              </h3>
-
-              <div className="flex items-center gap-3 text-xs mb-4" style={{ color: 'var(--text)', opacity: 0.7 }}>
-                <span>{formatDate(item.time)}</span>
-                <span>-</span>
-                <span>{item.score ?? 0} points</span>
-                <span>-</span>
-                <span>{item.descendants ?? 0} comments</span>
-              </div>
-
-              <div className="flex items-center justify-between gap-3 pt-2">
-                <span className="text-xs font-medium" style={{ color: 'var(--text)', opacity: 0.7 }}>
-                  Raw JSON live feed
-                </span>
-                <a
-                  href={getOutboundUrl(item)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm font-medium hover:opacity-80 transition-opacity"
-                  style={{ color: 'var(--primary)' }}
-                >
-                  Open source
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
     </section>
   );
 }
