@@ -35,8 +35,9 @@ export function MediaPlaceholder({
           src={imageUrl}
           alt={title || displayCategory}
           onError={() => setHasError(true)}
-          className="h-full w-full object-cover"
+          className="h-full w-full object-cover brightness-[1.04] contrast-[1.02] saturate-[1.05] transition-[transform,filter] duration-500 ease-out group-hover:scale-[1.04] group-hover:brightness-110 group-hover:saturate-110"
         />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-white/5 opacity-70 transition-opacity duration-500 group-hover:opacity-40" />
       </div>
     );
   }

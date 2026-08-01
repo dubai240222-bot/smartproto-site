@@ -6,7 +6,9 @@
  * 1. Primary Choice: Always try to extract authentic original image from sourceUrl page (og:image, twitter:image, lead img).
  * 2. Famous Person / Entity Exception: If original HTML is not available and title mentions a well-known figure/company (e.g. Musk, Trump, Altman, OpenAI, Apple), use a clean authentic photo of that person/company.
  * 3. New Inventions / Devices: NEVER show a photo of a different wrong physical gadget/device.
- * 4. Thematic / Action Conceptual Fallback: Contextually fitting atmospheric conceptual image matching the domain/action (e.g., tactile sensor / robotic arm close-up for robotics, dark code terminal for software, datacenter lights for infrastructure, optical lines for fiber/optics, weather/rain for atmospheric tech).
+ * 4. Thematic / Action Conceptual Fallback: Bright, vivid, editorial atmospheric images matching the domain/action
+ *    (robotics in well-lit labs, colorful shipping/deploy metaphors, immersive projection for optics/displays,
+ *    collaborative engineering for software). Avoid gloomy gray tech stock, empty dark rooms, muddy circuits.
  */
 
 function sanitizeUrl(urlStr: string): string {
@@ -63,7 +65,7 @@ function parseMetaAndLinkTags(html: string): Map<string, string> {
 
 /**
  * Fallback: Finds the first significant <img> tag in the article body HTML.
- * Filters out header/nav/footer, tiny icons, tracking pixels, avatars, and SVGs.
+ * Filters out header/nav/footer, tiny icons, tracking pixels, avatars, thumbnails, and SVGs.
  */
 function findFirstSignificantImg(html: string, baseUrl: string): string | null {
   const mainHtml = html
@@ -85,8 +87,8 @@ function findFirstSignificantImg(html: string, baseUrl: string): string | null {
     // Skip small dimensions if explicit width/height attributes are present
     const widthMatch = attrs.match(/width=["']?(\d+)["']?/i);
     const heightMatch = attrs.match(/height=["']?(\d+)["']?/i);
-    if (widthMatch && parseInt(widthMatch[1], 10) <= 30) continue;
-    if (heightMatch && parseInt(heightMatch[1], 10) <= 30) continue;
+    if (widthMatch && parseInt(widthMatch[1], 10) <= 150) continue;
+    if (heightMatch && parseInt(heightMatch[1], 10) <= 150) continue;
 
     const lowerSrc = src.toLowerCase();
     if (
@@ -98,6 +100,10 @@ function findFirstSignificantImg(html: string, baseUrl: string): string | null {
       lowerSrc.includes('icon') ||
       lowerSrc.includes('logo') ||
       lowerSrc.includes('1x1') ||
+      lowerSrc.includes('thumb') ||
+      lowerSrc.includes('small') ||
+      lowerSrc.includes('100x100') ||
+      lowerSrc.includes('150x150') ||
       lowerSrc.endsWith('.svg')
     ) {
       continue;
@@ -134,43 +140,51 @@ function getThematicFallback(title?: string, category?: string): string | null {
     return 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=1200&q=80';
   }
 
-  // Robotics / Tactile / Cybernetics
+  // Robotics / Tactile / Cybernetics — bright studio robot (never gloomy circuit boards)
   if (query.includes('robot') || query.includes('робот') || query.includes('tactile') || query.includes('рука') || query.includes('сенсор')) {
-    return 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=1200&q=80';
+    return 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=1400&q=85';
   }
 
-  // Optics / Fiber / Quantum
-  if (query.includes('fiber') || query.includes('optic') || query.includes('laser') || query.includes('квант') || query.includes('свет')) {
-    return 'https://images.unsplash.com/photo-1509228468518-180dd4864904?auto=format&fit=crop&w=1200&q=80';
+  // Optics / Fiber / Quantum / Projector / Light
+  if (
+    query.includes('fiber') ||
+    query.includes('optic') ||
+    query.includes('laser') ||
+    query.includes('projector') ||
+    query.includes('проектор') ||
+    query.includes('квант') ||
+    query.includes('свет')
+  ) {
+    return 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&w=1400&q=85';
   }
 
-  // Infrastructure / Deploy / Cloud / Server / Network
+  // Infrastructure / Deploy / Cloud — vivid earth/network, not gray server racks
   if (query.includes('deploy') || query.includes('cloud') || query.includes('server') || query.includes('инфраструктур') || query.includes('докер') || query.includes('docker')) {
-    return 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=1200&q=80';
+    return 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1400&q=85';
   }
 
-  // Cybersecurity / Hacking / Security
-  if (query.includes('security') || query.includes('hack') || query.includes('крипто') || query.includes('безопасность') || query.includes('hn')) {
-    return 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=1200&q=80';
+  // Cybersecurity / Hacking / Signal analysis — bright dashboards, not green matrix gloom
+  if (query.includes('security') || query.includes('hack') || query.includes('крипто') || query.includes('безопасность') || query.includes('hn') || query.includes('сигнал')) {
+    return 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1400&q=85';
   }
 
   // AI / LLM / Machine Learning / DeepSeek / Neural
   if (query.includes('ai') || query.includes('ии') || query.includes('нейро') || query.includes('gpt') || query.includes('llm') || query.includes('модель')) {
-    return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80';
+    return 'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=1400&q=85';
   }
 
-  // Software / Code / Open Source / Dev
+  // Software / Code / Open Source / Dev / Briefs — bright natural-light workspace
   if (query.includes('code') || query.includes('разработ') || query.includes('разбор') || query.includes('формат') || query.includes('open-source')) {
-    return 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80';
+    return 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=1400&q=85';
   }
 
-  // Weather / Rain / Atmospheric
+  // Weather / Rain / Atmospheric — keep thematic but prefer clear daylight sky when raining is not required
   if (query.includes('rain') || query.includes('weather') || query.includes('дождь') || query.includes('погода')) {
-    return 'https://images.unsplash.com/photo-1519692933481-e162a57d6721?auto=format&fit=crop&w=1200&q=80';
+    return 'https://images.unsplash.com/photo-1504608524841-42fe6f032b4b?auto=format&fit=crop&w=1400&q=85';
   }
 
-  // General Innovation / Editorial
-  return 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80';
+  // General Innovation / Editorial — bright collaborative newsroom energy
+  return 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1400&q=85';
 }
 
 /**

@@ -97,11 +97,11 @@ export function ArticleCard({ article, variant = 'default', eyebrow, className }
           </div>
         </div>
         {article.imageUrl && (
-          <div className="shrink-0 w-20 h-16 rounded overflow-hidden border border-[var(--border)] bg-[var(--surface)]">
+          <div className="shrink-0 w-20 h-16 rounded overflow-hidden border border-[var(--border)] bg-[var(--surface)] relative">
             <img
               src={article.imageUrl}
               alt={article.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+              className="w-full h-full object-cover brightness-[1.04] saturate-[1.05] transition-[transform,filter] duration-500 ease-out group-hover:scale-[1.04] group-hover:brightness-110"
             />
           </div>
         )}
@@ -168,11 +168,11 @@ export function VergeNumberedItem({
         </div>
       </div>
       {article.imageUrl && (
-        <div className="shrink-0 w-16 h-16 sm:w-20 sm:h-16 rounded overflow-hidden border border-[var(--border)] bg-[var(--surface)]">
+        <div className="shrink-0 w-16 h-16 sm:w-20 sm:h-16 rounded overflow-hidden border border-[var(--border)] bg-[var(--surface)] relative">
           <img
             src={article.imageUrl}
             alt={article.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+            className="w-full h-full object-cover brightness-[1.04] saturate-[1.05] transition-[transform,filter] duration-500 ease-out group-hover:scale-[1.04] group-hover:brightness-110"
           />
         </div>
       )}
@@ -243,11 +243,11 @@ export function QuickUpdateItem({ article }: { article: Article }) {
         </p>
       </div>
       {article.imageUrl && (
-        <div className="shrink-0 w-24 h-20 sm:w-32 sm:h-24 rounded overflow-hidden border border-[var(--border)] bg-[var(--surface)]">
+        <div className="shrink-0 w-24 h-20 sm:w-32 sm:h-24 rounded overflow-hidden border border-[var(--border)] bg-[var(--surface)] relative">
           <img
             src={article.imageUrl}
             alt={article.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+            className="w-full h-full object-cover brightness-[1.04] saturate-[1.05] transition-[transform,filter] duration-500 ease-out group-hover:scale-[1.04] group-hover:brightness-110"
           />
         </div>
       )}

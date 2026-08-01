@@ -1,8 +1,13 @@
 import path from 'node:path';
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { execSync } from 'node:child_process';
 import dotenv from 'dotenv';
 import chalk from 'chalk';
 import { fetchRssFeed, RssItem } from '../src/lib/collectors/rss';
+import { extractArticleImage } from '../src/lib/collectors/image-extractor';
+import { scoutArticle, ScoutResult } from '../src/lib/ai/scout';
+import { reviewArticle, ReviewResult } from '../src/lib/ai/reviewer';
+import { writeDraft, DraftResult } from '../src/lib/ai/editor';
 
 function loadEnvFiles(): void {
   const root = process.cwd();
@@ -10,10 +15,34 @@ function loadEnvFiles(): void {
   dotenv.config({ path: path.resolve(root, '.env'), quiet: true });
 }
 
+interface JournalEntry {
+  id: string;
+  url: string;
+  title: string;
+  processedAt: string;
+  status: 'published' | 'rejected' | 'error';
+  scoutScore?: number;
+  reason?: string;
+  slug?: string;
+}
+
 interface JournalData {
   processedUrls: string[];
   processedIds: string[];
-  entries: Array<{ id: string; url: string; title: string; processedAt: string; status: string }>;
+  entries: JournalEntry[];
+}
+
+interface Article {
+  id: string;
+  slug: string;
+  title: string;
+  category: string;
+  summary: string;
+  content: string;
+  sourceUrl: string;
+  publishedAt: string;
+  readTime: string;
+  imageUrl?: string;
 }
 
 const SOURCES = [
@@ -22,10 +51,12 @@ const SOURCES = [
   'https://techcrunch.com/feed/',
 ];
 
+const SCOUT_THRESHOLD = 70;
+
 function parseArgs(argv: string[]) {
   let hours = 3;
   let intervalMin = 20;
-  let maxAiRuns = 8;
+  let maxAiRuns = 10;
   let maxPublished = 5;
   let dryRun = false;
   let force = false;
@@ -38,8 +69,8 @@ function parseArgs(argv: string[]) {
     else if (arg === '--hours' && argv[i + 1]) hours = parseFloat(argv[++i]) || 3;
     else if (arg.startsWith('--interval-min=')) intervalMin = parseFloat(arg.split('=')[1]) || 20;
     else if (arg === '--interval-min' && argv[i + 1]) intervalMin = parseFloat(argv[++i]) || 20;
-    else if (arg.startsWith('--max-ai-runs=')) maxAiRuns = parseInt(arg.split('=')[1], 10) || 8;
-    else if (arg === '--max-ai-runs' && argv[i + 1]) maxAiRuns = parseInt(argv[++i], 10) || 8;
+    else if (arg.startsWith('--max-ai-runs=')) maxAiRuns = parseInt(arg.split('=')[1], 10) || 10;
+    else if (arg === '--max-ai-runs' && argv[i + 1]) maxAiRuns = parseInt(argv[++i], 10) || 10;
     else if (arg.startsWith('--max-published=')) maxPublished = parseInt(arg.split('=')[1], 10) || 5;
     else if (arg === '--max-published' && argv[i + 1]) maxPublished = parseInt(argv[++i], 10) || 5;
   }
@@ -56,6 +87,42 @@ function isTestOrDemo(item: { id: string; url: string; title?: string }): boolea
   return false;
 }
 
+function transliterateCyrillic(text: string): string {
+  const map: Record<string, string> = {
+    а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'yo', ж: 'zh', з: 'z', и: 'i', й: 'y',
+    к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f',
+    х: 'kh', ц: 'ts', ч: 'ch', ш: 'sh', щ: 'shch', ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya',
+  };
+  return text.toLowerCase().split('').map((c) => map[c] || c).join('');
+}
+
+function generateSlug(title: string, englishTitle?: string): string {
+  const source = englishTitle || transliterateCyrillic(title);
+  const slug = source
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80)
+    .replace(/-+$/, '');
+  return slug || `article-${Date.now()}`;
+}
+
+function estimateReadTime(text: string): string {
+  const words = text.trim().split(/\s+/).filter(Boolean).length;
+  const minutes = Math.max(1, Math.ceil(words / 150));
+  return `${minutes} мин`;
+}
+
+function generateSummary(text: string): string {
+  const trimmed = text.trim();
+  if (trimmed.length <= 200) return trimmed;
+  const periodIndex = trimmed.indexOf('.', 50);
+  if (periodIndex > 0 && periodIndex <= 200) {
+    return trimmed.slice(0, periodIndex + 1);
+  }
+  return `${trimmed.slice(0, 197)}...`;
+}
+
 async function loadExistingUrlsAndIds(journalPath: string, articlesPath: string) {
   const urls = new Set<string>();
   const ids = new Set<string>();
@@ -69,6 +136,7 @@ async function loadExistingUrlsAndIds(journalPath: string, articlesPath: string)
         if (a.sourceUrl) urls.add(a.sourceUrl);
         if (a.url) urls.add(a.url);
         if (a.id) ids.add(String(a.id));
+        if (a.slug) ids.add(String(a.slug));
       }
     }
   } catch {}
@@ -105,16 +173,19 @@ async function main(): Promise<void> {
   const root = process.cwd();
   const journalPath = path.resolve(root, 'data', 'factory-journal.json');
   const articlesPath = path.resolve(root, 'src', 'data', 'articles.json');
+  const draftsDir = path.resolve(root, 'drafts');
 
   const { urls: existingUrls, ids: existingIds, journal } = await loadExistingUrlsAndIds(journalPath, articlesPath);
 
   console.log(chalk.bold('=== Factory Shift Runner ==='));
+  console.log(`Start Time: ${new Date().toISOString()}`);
   console.log(`Config: hours=${options.hours}, intervalMin=${options.intervalMin}, maxAiRuns=${options.maxAiRuns}, maxPublished=${options.maxPublished}`);
   console.log(`Mode: dryRun=${options.dryRun ? 'YES' : 'NO'}, force=${options.force ? 'YES' : 'NO'}`);
   console.log(`Safety Switch: ${factoryEnabled ? 'ON' : 'OFF'}`);
 
   let aiRuns = 0;
   let publishedCount = 0;
+  let rejectedCount = 0;
   let consecutiveErrors = 0;
   const startTime = Date.now();
   const maxDurationMs = options.hours * 3600 * 1000;
@@ -135,7 +206,7 @@ async function main(): Promise<void> {
     }
   }
 
-  console.log(`Found ${candidates.length} candidate items matching criteria.\n`);
+  console.log(`Found ${candidates.length} new candidate items matching criteria.\n`);
 
   if (options.dryRun) {
     console.log(chalk.cyan.bold('--- Candidate List (Dry-Run) ---'));
@@ -151,6 +222,7 @@ async function main(): Promise<void> {
 
     console.log('\n' + chalk.bold('=== Shift Summary ==='));
     console.log(`Time elapsed: ${((Date.now() - startTime) / 1000).toFixed(2)}s / ${options.hours}h`);
+    console.log(`Candidates evaluated: ${candidates.length}`);
     console.log(`AI calls made: 0 (dry-run mode)`);
     console.log(`Drafts written: 0`);
     console.log(`Articles published: 0`);
@@ -158,6 +230,9 @@ async function main(): Promise<void> {
     console.log(`Stop reason: dry-run complete`);
     return;
   }
+
+  const articlesContent = await readFile(articlesPath, 'utf8').catch(() => '[]');
+  const articles: Article[] = JSON.parse(articlesContent.replace(/^\uFEFF/, ''));
 
   for (const item of candidates) {
     const elapsed = Date.now() - startTime;
@@ -178,25 +253,151 @@ async function main(): Promise<void> {
       break;
     }
 
-    journal.processedUrls.push(item.url);
-    journal.processedIds.push(item.id);
-    journal.entries.push({
-      id: item.id,
-      url: item.url,
-      title: item.title,
-      processedAt: new Date().toISOString(),
-      status: 'processed'
-    });
+    console.log(chalk.cyan(`\n--- Candidate: [${item.sourceName}] ${item.title} ---`));
+    console.log(`URL: ${item.url}`);
+
+    try {
+      // 1. Scout
+      console.log(chalk.gray('Running Scout agent...'));
+      const scout: ScoutResult = await scoutArticle(item.title, item.text);
+      aiRuns++;
+      console.log(`Scout Score: ${scout.score} / 100 (Threshold: ${SCOUT_THRESHOLD})`);
+      console.log(`Scout Reason: ${scout.reason}`);
+
+      journal.processedUrls.push(item.url);
+      journal.processedIds.push(item.id);
+
+      if (scout.score < SCOUT_THRESHOLD) {
+        console.log(chalk.yellow(`Candidate rejected by Scout (score ${scout.score} < ${SCOUT_THRESHOLD}).`));
+        rejectedCount++;
+        journal.entries.push({
+          id: item.id,
+          url: item.url,
+          title: item.title,
+          processedAt: new Date().toISOString(),
+          status: 'rejected',
+          scoutScore: scout.score,
+          reason: scout.reason,
+        });
+        await writeFile(journalPath, JSON.stringify(journal, null, 2) + '\n', 'utf8');
+        consecutiveErrors = 0;
+        continue;
+      }
+
+      // Candidate passed Scout!
+      console.log(chalk.green.bold(`Candidate passed Scout threshold! Running Reviewer & Editor...`));
+
+      // 2. Reviewer
+      console.log(chalk.gray('Running Reviewer agent...'));
+      const review: ReviewResult = await reviewArticle(item);
+      aiRuns++;
+
+      // 3. Editor
+      console.log(chalk.gray('Running Editor agent...'));
+      const draft: DraftResult = await writeDraft(item, review);
+      aiRuns++;
+
+      // 4. Image Extraction
+      console.log(chalk.gray('Extracting original lead image...'));
+      const imageUrl = (await extractArticleImage(item.url, draft.title)) || item.imageUrl;
+
+      // 5. Generate Article Object
+      const slug = generateSlug(draft.title, item.title);
+      const category = draft.tags.slice(0, 2).map((t) => t.toUpperCase()).join(' / ');
+      const summary = generateSummary(draft.text);
+      const readTime = estimateReadTime(draft.text);
+      const publishedAt = new Date().toISOString();
+
+      const newArticle: Article = {
+        id: slug,
+        slug,
+        title: draft.title,
+        category,
+        summary,
+        content: draft.text,
+        sourceUrl: item.url,
+        publishedAt,
+        readTime,
+        ...(imageUrl ? { imageUrl } : {}),
+      };
+
+      // Save Draft Payload
+      await mkdir(draftsDir, { recursive: true });
+      const draftPath = path.join(draftsDir, `${Date.now()}-${slug}.json`);
+      await writeFile(
+        draftPath,
+        JSON.stringify(
+          {
+            generatedAt: publishedAt,
+            source: item.sourceName,
+            article: item,
+            scout,
+            review,
+            draft: { ...draft, imageUrl },
+          },
+          null,
+          2
+        ),
+        'utf8'
+      );
+
+      // Append to articles.json
+      articles.push(newArticle);
+      await writeFile(articlesPath, JSON.stringify(articles, null, 2) + '\n', 'utf8');
+
+      // Update Journal
+      journal.entries.push({
+        id: item.id,
+        url: item.url,
+        title: draft.title,
+        processedAt: publishedAt,
+        status: 'published',
+        scoutScore: scout.score,
+        reason: scout.reason,
+        slug,
+      });
+      await writeFile(journalPath, JSON.stringify(journal, null, 2) + '\n', 'utf8');
+
+      publishedCount++;
+      consecutiveErrors = 0;
+
+      console.log(chalk.green.bold(`Successfully published: "${draft.title}" (slug: ${slug})`));
+
+      // Auto-commit & push to git main
+      try {
+        console.log(chalk.blue('Executing git commit & push...'));
+        execSync('git add src/data/articles.json data/factory-journal.json drafts/', { stdio: 'inherit' });
+        execSync(`git commit -m "feat(newsroom): auto-publish ${draft.title}"`, { stdio: 'inherit' });
+        execSync('git push origin main', { stdio: 'inherit' });
+        console.log(chalk.green('Git commit and push succeeded!'));
+      } catch (gitErr) {
+        console.error(
+          chalk.red(`Git push failed during auto-publish: ${gitErr instanceof Error ? gitErr.message : String(gitErr)}`)
+        );
+      }
+    } catch (err) {
+      consecutiveErrors++;
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(chalk.red(`Error processing candidate ${item.title}: ${msg}`));
+      journal.entries.push({
+        id: item.id,
+        url: item.url,
+        title: item.title,
+        processedAt: new Date().toISOString(),
+        status: 'error',
+        reason: msg,
+      });
+      await writeFile(journalPath, JSON.stringify(journal, null, 2) + '\n', 'utf8');
+    }
   }
 
-  if (!options.dryRun) {
-    await writeFile(journalPath, JSON.stringify(journal, null, 2) + '\n', 'utf8');
-  }
-
-  console.log('\n' + chalk.bold('=== Shift Summary ==='));
+  console.log('\n' + chalk.bold('=== Factory Shift Summary ==='));
+  console.log(`End Time: ${new Date().toISOString()}`);
   console.log(`Time elapsed: ${((Date.now() - startTime) / 1000).toFixed(2)}s / ${options.hours}h`);
+  console.log(`Candidates evaluated: ${candidates.length}`);
   console.log(`AI calls made: ${aiRuns}`);
   console.log(`Articles published: ${publishedCount}`);
+  console.log(`Candidates rejected: ${rejectedCount}`);
   console.log(`Consecutive errors: ${consecutiveErrors}`);
 }
 
