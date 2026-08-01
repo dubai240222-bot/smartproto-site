@@ -122,96 +122,99 @@ export default async function HomePage({
     ? filterArticlesByCategory(activeCategory, sortedArticles)
     : [];
 
+  const thematicNavigator = (
+    <section className="border-b border-[var(--border)] pb-4 space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-mono font-bold uppercase tracking-wider text-[var(--muted)]">
+          Тематический навигатор
+        </span>
+        {activeCategory && (
+          <Link
+            href="/"
+            className="text-xs text-[var(--accent)] hover:underline font-medium"
+          >
+            Сбросить фильтр
+          </Link>
+        )}
+      </div>
+      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-1">
+        <Link
+          href="/"
+          className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+            !activeCategory
+              ? 'bg-[var(--text)] text-[var(--bg)] shadow-sm'
+              : 'bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] hover:border-[var(--accent)]'
+          }`}
+        >
+          Все материалы
+        </Link>
+        {navigationTopics.map((topic) => {
+          const isActive =
+            activeCategory?.toLowerCase() === topic.toLowerCase();
+          return (
+            <Link
+              key={topic}
+              href={`/?category=${encodeURIComponent(topic)}`}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                isActive
+                  ? 'bg-[var(--accent)] text-white shadow-sm'
+                  : 'bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--accent)]'
+              }`}
+            >
+              {topic}
+            </Link>
+          );
+        })}
+      </div>
+    </section>
+  );
+
   return (
     <main className="min-h-screen bg-[var(--bg)] text-[var(--text)] transition-colors py-6 sm:py-10">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-10 sm:space-y-14">
-        
-        {/* SEMANTIC TAG / CATEGORY NAVIGATION BAR */}
-        <section className="border-b border-[var(--border)] pb-4 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-[var(--muted)]">
-              Тематический навигатор
-            </span>
-            {activeCategory && (
-              <Link
-                href="/"
-                className="text-xs text-[var(--accent)] hover:underline font-medium"
-              >
-                Сбросить фильтр
-              </Link>
-            )}
-          </div>
-          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-1">
-            <Link
-              href="/"
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-                !activeCategory
-                  ? 'bg-[var(--text)] text-[var(--bg)] shadow-sm'
-                  : 'bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] hover:border-[var(--accent)]'
-              }`}
-            >
-              Все материалы
-            </Link>
-            {navigationTopics.map((topic) => {
-              const isActive =
-                activeCategory?.toLowerCase() === topic.toLowerCase();
-              return (
-                <Link
-                  key={topic}
-                  href={`/?category=${encodeURIComponent(topic)}`}
-                  className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-                    isActive
-                      ? 'bg-[var(--accent)] text-white shadow-sm'
-                      : 'bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--accent)]'
-                  }`}
-                >
-                  {topic}
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-
         {/* ACTIVE CATEGORY FILTER VIEW */}
         {activeCategory ? (
-          <section className="space-y-6">
-            <div className="p-4 rounded-lg border border-[var(--border)] bg-[var(--surface)] flex items-center justify-between">
-              <div>
-                <h1 className="font-serif text-xl font-bold text-[var(--text)]">
-                  Рубрика: <span className="text-[var(--accent)]">{activeCategory}</span>
-                </h1>
-                <p className="text-xs text-[var(--muted)] mt-0.5">
-                  Найдено материалов: {filteredArticles.length}
-                </p>
-              </div>
-              <Link
-                href="/"
-                className="text-xs font-semibold px-3 py-1.5 rounded border border-[var(--border)] bg-[var(--bg)] hover:bg-[var(--surface)] transition-colors"
-              >
-                Показать всю ленту
-              </Link>
-            </div>
-
-            {filteredArticles.length > 0 ? (
-              <div className="space-y-4">
-                {filteredArticles.map((article) => (
-                  <QuickUpdateItem key={article.slug} article={article} />
-                ))}
-              </div>
-            ) : (
-              <div className="p-8 text-center border border-[var(--border)] rounded-lg bg-[var(--surface)]">
-                <p className="text-sm text-[var(--muted)]">
-                  В выбранной рубрике пока нет материалов.
-                </p>
+          <>
+            {thematicNavigator}
+            <section className="space-y-6">
+              <div className="p-4 rounded-lg border border-[var(--border)] bg-[var(--surface)] flex items-center justify-between">
+                <div>
+                  <h1 className="font-serif text-xl font-bold text-[var(--text)]">
+                    Рубрика: <span className="text-[var(--accent)]">{activeCategory}</span>
+                  </h1>
+                  <p className="text-xs text-[var(--muted)] mt-0.5">
+                    Найдено материалов: {filteredArticles.length}
+                  </p>
+                </div>
                 <Link
                   href="/"
-                  className="mt-3 inline-block text-xs font-semibold text-[var(--accent)] hover:underline"
+                  className="text-xs font-semibold px-3 py-1.5 rounded border border-[var(--border)] bg-[var(--bg)] hover:bg-[var(--surface)] transition-colors"
                 >
-                  Вернуться на главную
+                  Показать всю ленту
                 </Link>
               </div>
-            )}
-          </section>
+
+              {filteredArticles.length > 0 ? (
+                <div className="space-y-4">
+                  {filteredArticles.map((article) => (
+                    <QuickUpdateItem key={article.slug} article={article} />
+                  ))}
+                </div>
+              ) : (
+                <div className="p-8 text-center border border-[var(--border)] rounded-lg bg-[var(--surface)]">
+                  <p className="text-sm text-[var(--muted)]">
+                    В выбранной рубрике пока нет материалов.
+                  </p>
+                  <Link
+                    href="/"
+                    className="mt-3 inline-block text-xs font-semibold text-[var(--accent)] hover:underline"
+                  >
+                    Вернуться на главную
+                  </Link>
+                </div>
+              )}
+            </section>
+          </>
         ) : (
           /* DIVERSE EDITORIAL HOMEPAGE (No uniform card wall!) */
           <>
@@ -239,6 +242,9 @@ export default async function HomePage({
                 ))}
               </div>
             </section>
+
+            {/* Thematic navigator — directly above «Выбор редакции» */}
+            {thematicNavigator}
 
             {/* 1. HERO STORY + "ВЫБОР РЕДАКЦИИ" (The Verge Style Split Grid) */}
             <section className="grid gap-8 lg:grid-cols-12 lg:items-start pb-10 border-b border-[var(--border)]">
