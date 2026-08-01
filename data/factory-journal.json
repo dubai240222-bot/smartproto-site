@@ -1,5 +1,127 @@
 {
-  "processedUrls": [],
-  "processedIds": [],
-  "entries": []
+  "processedUrls": [
+    "https://hackaday.com/2026/08/01/open-source-stream-deck-targets-flexibility/",
+    "https://hackaday.com/2026/08/01/browser-based-3d-editor-covers-the-basics-while-staying-local/",
+    "https://hackaday.com/2026/08/01/commercialization-and-innovation/",
+    "https://hackaday.com/2026/07/31/casual-repair-and-maintenance-on-an-amiga-1000/",
+    "https://hackaday.com/2026/07/31/turning-glass-into-a-touch-sensitive-button/",
+    "https://arstechnica.com/space/2026/08/heres-how-engineers-plan-to-save-the-satellite-sent-to-save-nasas-swift-mission/",
+    "https://arstechnica.com/culture/2026/08/review-yes-were-still-arguing-about-nolans-the-odyssey/",
+    "https://arstechnica.com/ai/2026/08/reddit-ceo-on-ai-overviews-were-still-looking-for-that-win-win/",
+    "https://arstechnica.com/tech-policy/2026/08/after-noise-complaints-judge-orders-waymo-to-stop-overnight-charging-in-santa-monica/",
+    "https://arstechnica.com/security/2026/08/defcons-new-badge-is-a-security-key-you-can-see-inside/"
+  ],
+  "processedIds": [
+    "https://hackaday.com/?p=1131223",
+    "https://hackaday.com/?p=1131505",
+    "https://hackaday.com/?p=1131541",
+    "https://hackaday.com/?p=1131218",
+    "https://hackaday.com/?p=1131336",
+    "https://arstechnica.com/space/2026/08/heres-how-engineers-plan-to-save-the-satellite-sent-to-save-nasas-swift-mission/",
+    "https://arstechnica.com/culture/2026/08/review-yes-were-still-arguing-about-nolans-the-odyssey/",
+    "https://arstechnica.com/ai/2026/08/reddit-ceo-on-ai-overviews-were-still-looking-for-that-win-win/",
+    "https://arstechnica.com/tech-policy/2026/08/after-noise-complaints-judge-orders-waymo-to-stop-overnight-charging-in-santa-monica/",
+    "https://arstechnica.com/security/2026/08/defcons-new-badge-is-a-security-key-you-can-see-inside/"
+  ],
+  "entries": [
+    {
+      "id": "https://hackaday.com/?p=1131223",
+      "url": "https://hackaday.com/2026/08/01/open-source-stream-deck-targets-flexibility/",
+      "title": "Open Source Stream Deck Targets Flexibility",
+      "processedAt": "2026-08-01T22:51:03.341Z",
+      "status": "rejected",
+      "scoutScore": 45,
+      "reason": "Проект Stream32 на ESP32 с открытым кодом, гибкость в выборе дисплея, но технология не глубокая, типичная DIY реализация."
+    },
+    {
+      "id": "https://hackaday.com/?p=1131505",
+      "url": "https://hackaday.com/2026/08/01/browser-based-3d-editor-covers-the-basics-while-staying-local/",
+      "title": "Browser-based 3D Editor Covers The Basics While Staying Local",
+      "processedAt": "2026-08-01T22:51:39.297Z",
+      "status": "rejected",
+      "scoutScore": 40,
+      "reason": "基础3D编辑器，技术栈不深（浏览器端CAD），未提及开源，工程价值限于简单建模需求，无突破性创新。"
+    },
+    {
+      "id": "https://hackaday.com/?p=1131541",
+      "url": "https://hackaday.com/2026/08/01/commercialization-and-innovation/",
+      "title": "Commercialization and Innovation",
+      "processedAt": "2026-08-01T22:51:45.426Z",
+      "status": "rejected",
+      "scoutScore": 65,
+      "reason": "Обсуждаются инженерные инновации в алгоритмах смешивания цветов (FullSpectrum, ImageMap) для многоматериальных 3D-принтеров, что имеет прикладную ценность. Однако отсутствует глубокая техническая детализация и явный акцент на open-source, статья носит обзорный характер."
+    },
+    {
+      "id": "https://hackaday.com/?p=1131231",
+      "url": "https://hackaday.com/2026/08/01/a-compact-game-controller-for-your-phone/",
+      "title": "A Compact Game Controller For Your Phone",
+      "processedAt": "2026-08-01T22:51:53.205Z",
+      "status": "error",
+      "reason": "Model response was not valid JSON: {\"interesting\": true, \"score\": 50, \"reason\": \"Проект демонстрирует добротную инженерную реализацию компактного геймпада на RP2040 с 3D-печатным корпусом, ориентированным на вертикальное использование с телефоном. Однако глубина технологии средняя (стандартный HID, без сложных схем), open-source не указан явно, а инженерная цен"
+    },
+    {
+      "id": "https://hackaday.com/?p=1131218",
+      "url": "https://hackaday.com/2026/07/31/casual-repair-and-maintenance-on-an-amiga-1000/",
+      "title": "Casual Repair and Maintenance on an Amiga 1000",
+      "processedAt": "2026-08-01T22:52:00.175Z",
+      "status": "rejected",
+      "scoutScore": 10,
+      "reason": "Новость описывает рутинное обслуживание ретро-компьютера (замена конденсаторов, чистка, замена вентилятора) без глубоких технических инноваций, open-source решений или значимой инженерной ценности. Это типичная хобби-активность, не представляющая интереса для профессионального разведчика."
+    },
+    {
+      "id": "https://hackaday.com/?p=1131336",
+      "url": "https://hackaday.com/2026/07/31/turning-glass-into-a-touch-sensitive-button/",
+      "title": "Turning Glass Into a Touch-Sensitive Button",
+      "processedAt": "2026-08-01T22:52:08.403Z",
+      "status": "rejected",
+      "scoutScore": 35,
+      "reason": "Новость описывает простую DIY-демонстрацию использования ITO-стекла для создания резистивной кнопки, что не является глубокой технологией или значимым инженерным достижением. Отсутствует open-source составляющая, а инженерная ценность ограничена базовым хобби-проектом."
+    },
+    {
+      "id": "https://arstechnica.com/space/2026/08/heres-how-engineers-plan-to-save-the-satellite-sent-to-save-nasas-swift-mission/",
+      "url": "https://arstechnica.com/space/2026/08/heres-how-engineers-plan-to-save-the-satellite-sent-to-save-nasas-swift-mission/",
+      "title": "Here's how engineers plan to save the satellite sent to save NASA's Swift mission",
+      "processedAt": "2026-08-01T22:52:17.195Z",
+      "status": "rejected",
+      "scoutScore": 25,
+      "reason": "Новость описывает аварийную ситуацию с коммерческим спутником-сервисером, но не раскрывает технических деталей или инженерных решений по спасению. Отсутствует глубина технологии, нет упоминаний open-source, инженерная ценность низкая — это скорее репортаж о проблеме, а не анализ."
+    },
+    {
+      "id": "https://arstechnica.com/culture/2026/08/review-yes-were-still-arguing-about-nolans-the-odyssey/",
+      "url": "https://arstechnica.com/culture/2026/08/review-yes-were-still-arguing-about-nolans-the-odyssey/",
+      "title": "Review: Yes, we're still arguing about Nolan's The Odyssey",
+      "processedAt": "2026-08-01T22:52:22.804Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Новость о кинофильме, не имеет отношения к технологиям, open-source или инженерной ценности."
+    },
+    {
+      "id": "https://arstechnica.com/ai/2026/08/reddit-ceo-on-ai-overviews-were-still-looking-for-that-win-win/",
+      "url": "https://arstechnica.com/ai/2026/08/reddit-ceo-on-ai-overviews-were-still-looking-for-that-win-win/",
+      "title": "As Reddit stock falls, CEO questions value of Google's AI Overviews",
+      "processedAt": "2026-08-01T22:52:36.729Z",
+      "status": "rejected",
+      "scoutScore": 10,
+      "reason": "Новость не содержит технической глубины, инженерной ценности или open-source аспектов; это бизнес-комментарий CEO Reddit о падении акций и критике AI Overviews, что не относится к технологическим инновациям."
+    },
+    {
+      "id": "https://arstechnica.com/tech-policy/2026/08/after-noise-complaints-judge-orders-waymo-to-stop-overnight-charging-in-santa-monica/",
+      "url": "https://arstechnica.com/tech-policy/2026/08/after-noise-complaints-judge-orders-waymo-to-stop-overnight-charging-in-santa-monica/",
+      "title": "After noise complaints, judge orders Waymo to stop overnight charging in Santa Monica",
+      "processedAt": "2026-08-01T22:52:39.043Z",
+      "status": "rejected",
+      "scoutScore": 15,
+      "reason": "Новость касается юридического спора и регулирования, а не технологической глубины, open-source или инженерной ценности. Отсутствуют технические детали или инновации."
+    },
+    {
+      "id": "https://arstechnica.com/security/2026/08/defcons-new-badge-is-a-security-key-you-can-see-inside/",
+      "url": "https://arstechnica.com/security/2026/08/defcons-new-badge-is-a-security-key-you-can-see-inside/",
+      "title": "Бейджи Defcon 2026: аппаратные ключи безопасности с открытым исходным кодом",
+      "processedAt": "2026-08-01T22:52:46.413Z",
+      "status": "published",
+      "scoutScore": 92,
+      "reason": "涉及定制开源安全芯片设计，由知名硬件黑客bunnie Huang主导，深度结合硬件安全、透明性和可信计算，工程价值高，开源属性明确。",
+      "slug": "defcon-s-new-badge-is-a-security-key-you-can-see-inside"
+    }
+  ]
 }
