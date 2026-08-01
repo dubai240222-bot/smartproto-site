@@ -1,21 +1,24 @@
 [
   {
-    "sourceUrl": "https://newatlas.com/music/guitar-smart-rgb-lights-litejam-neo/",
-    "slug": "litejam-neo-rgb-smart-guitar",
-    "id": "litejam-neo-rgb-smart-guitar",
-    "readTime": "1 мин",
-    "imageUrl": "https://assets.newatlas.com/dims4/default/c7746e3/2147483647/strip/true/crop/1200x800+0+0/resize/1200x800!/format/webp/quality/90/?url=https%3A%2F%2Fnewatlas-brightspot.s3.ap-southeast-2.amazonaws.com%2F87%2Fcb%2Fcc5588114a00afc488e87df24dc5%2Fthe-litejam-neo-packs-a-ton-of-features-to-learn-and-play-guitar-thanks-to-an-rgb-lighting-system-and-a-versatile-companion-app.jpg",
-    "category": "ГАДЖЕТЫ / АУДИО",
+    "id": "angela-nissel-faces-down-grief-with-a-laugh",
+    "slug": "angela-nissel-faces-down-grief-with-a-laugh",
+    "title": "Анджела Ниссл: мемуары о горе с юмором",
+    "category": "НОВИНКА / ПОЛЕЗНО",
     "tags": [
-      "#гаджет",
-      "#аудио",
-      "#гитара",
-      "#новинка"
+      "#новинка",
+      "#полезно",
+      "#книги",
+      "#мемуары",
+      "#психология",
+      "#горе",
+      "#юмор"
     ],
-    "publishedAt": "2026-08-01T23:41:34.499Z",
-    "summary": "Умная карбоновая гитара с подсветкой ладов и приложением — визуальный тренажёр для новичков на Kickstarter.",
-    "content": "LiteJam Neo — карбоновая гитара со встроенными RGB-светодиодами на грифе: подсветка показывает, куда ставить пальцы, а приложение ведёт обучение.\n\nФормат ориентирован на быстрый старт без нотной грамоты «с нуля». Источник: New Atlas.",
-    "title": "LiteJam Neo: карбоновая гитара с RGB, которая учит играть"
+    "summary": "Анджела Ниссл представила новую книгу «Good Grief, Pass the Bread, Mom Is Dead».",
+    "content": "Анджела Ниссл представила новую книгу «Good Grief, Pass the Bread, Mom Is Dead». Это мемуары о заботе о больном родителе, написанные с черным юмором. Ниссл известна своим откровенным стилем, который она ранее демонстрировала в книге «The Broke Diaries» и работе над сериалами «Scrubs» и «The Boondocks». Книга предлагает необычный взгляд на переживание утраты. Источник: The Verge.",
+    "sourceUrl": "https://www.theverge.com/report/974226/angela-nissel-interview-good-grief-pass-the-bread-mom-is-dead",
+    "publishedAt": "2026-08-01T23:42:32.089Z",
+    "readTime": "1 мин",
+    "imageUrl": "https://platform.theverge.com/wp-content/uploads/sites/2/2026/08/Angela-Nissel_Author-Headshot.jpg?quality=90&strip=all&crop=0,0,100,100"
   },
   {
     "id": "a-chess-set-so-well-designed-it-doubles-as-desk-art",
