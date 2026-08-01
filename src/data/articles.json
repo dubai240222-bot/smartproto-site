@@ -1,53 +1,50 @@
 [
   {
-    "id": "litejam-neo-rgb-smart-guitar",
-    "slug": "litejam-neo-rgb-smart-guitar",
-    "title": "LiteJam Neo: карбоновая гитара с RGB, которая учит играть",
-    "category": "ГАДЖЕТЫ / АУДИО",
-    "summary": "Умная карбоновая гитара с подсветкой ладов и приложением — визуальный тренажёр для новичков на Kickstarter.",
-    "content": "LiteJam Neo — карбоновая гитара со встроенными RGB-светодиодами на грифе: подсветка показывает, куда ставить пальцы, а приложение ведёт обучение.\n\nФормат ориентирован на быстрый старт без нотной грамоты «с нуля». Источник: New Atlas.",
-    "sourceUrl": "https://newatlas.com/music/guitar-smart-rgb-lights-litejam-neo/",
-    "publishedAt": "2026-08-01T23:41:30.000Z",
+    "id": "trump-blames-tim-walz-for-water-hacks-even-though-it-s-probably-iran",
+    "slug": "trump-blames-tim-walz-for-water-hacks-even-though-it-s-probably-iran",
+    "title": "Трамп обвиняет губернатора Миннесоты в кибератаках на водоснабжение, несмотря на подозрения в адрес Ирана",
+    "category": "НОВИНКА / ПОЛЕЗНО",
+    "tags": [
+      "#новинка",
+      "#полезно",
+      "#кибербезопасность",
+      "#политика",
+      "#США",
+      "#Миннесота",
+      "#Иран"
+    ],
+    "summary": "ФБР, EPA и CISA не стали официально обвинять Иран в кибератаках на системы водоснабжения Миннесоты, однако эксперты склоняются к тому, что именно Иран стоит за этими атаками.",
+    "content": "ФБР, EPA и CISA не стали официально обвинять Иран в кибератаках на системы водоснабжения Миннесоты, однако эксперты склоняются к тому, что именно Иран стоит за этими атаками. Президент Дональд Трамп, однако, выдвинул свою версию, возложив вину на губернатора Тима Уолза и заявив, что «не думает, что это была иранская кибератака».\n\nКомментарии Трампа прозвучали вскоре после предупреждения ФБР о распространении кибератак на американскую инфраструктуру в другие штаты. В Миннесоте уже пострадали как минимум 30 систем общественного водоснабжения.\n\n- Подозрения в адрес Ирана как вероятного виновника.\n- Президент США выдвигает альтернативную версию.\n- Кибератаки распространяются на другие штаты.\n- Целью стали системы водоснабжения.\n\nИсточник: The Verge.",
+    "sourceUrl": "https://www.theverge.com/policy/974197/trump-tim-walz-minnesota-water-hacks-iran",
+    "publishedAt": "2026-08-01T23:48:56.390Z",
     "readTime": "1 мин",
-    "imageUrl": "https://assets.newatlas.com/dims4/default/c7746e3/2147483647/strip/true/crop/1200x800+0+0/resize/1200x800!/format/webp/quality/90/?url=https%3A%2F%2Fnewatlas-brightspot.s3.ap-southeast-2.amazonaws.com%2F87%2Fcb%2Fcc5588114a00afc488e87df24dc5%2Fthe-litejam-neo-packs-a-ton-of-features-to-learn-and-play-guitar-thanks-to-an-rgb-lighting-system-and-a-versatile-companion-app.jpg"
-  },
-  {
-    "id": "ayaneo-konkr-pocket-advance-gba",
-    "slug": "ayaneo-konkr-pocket-advance-gba",
-    "title": "Ayaneo Konkr Pocket Advance: ремейк Game Boy Advance в двух цветах",
-    "category": "ГАДЖЕТЫ / ИГРЫ",
-    "summary": "Ayaneo показала Konkr Pocket Advance — горизонтальный handheld в стиле GBA, выпуск в navy и orange.",
-    "content": "Ayaneo представила Konkr Pocket Advance — горизонтальную портативную консоль в духе Game Boy Advance. Устройство выйдет в тёмно-синей и оранжевой расцветках.\n\nЭто прямой продукт для ретро- и portable-гейминга, а не абстрактная tech-новость. Источник: Engadget.",
-    "sourceUrl": "https://www.engadget.com/2228464/ayaneo-game-boy-advance-remake-konkr-pocket-advance/",
-    "publishedAt": "2026-08-01T23:43:39.594Z",
-    "readTime": "1 мин",
-    "imageUrl": "https://www.engadget.com/img/gallery/ayaneo-reveals-its-game-boy-advance-remake-called-the-konkr-pocket-advance/l-intro-1785600976.jpg"
+    "imageUrl": "https://platform.theverge.com/wp-content/uploads/sites/2/2026/01/gettyimages-2254307754.jpg?quality=90&strip=all&crop=0%2C10.732984293194%2C100%2C78.534031413613&w=1200"
   },
   {
     "id": "spider-man-brand-new-day-leak-racks-up-millions-of-views",
     "slug": "spider-man-brand-new-day-leak-racks-up-millions-of-views",
-    "title": "Утечка «Человека-паука» набрала миллионы просмотров и побила рекорды",
+    "title": "Утечка «Человека-паука» набрала миллионы просмотров до удаления",
     "category": "ЧЕЛОВЕКПАУК / УТЕЧКА",
     "tags": [
       "#ЧеловекПаук",
       "#утечка",
+      "#рекорды",
       "#кино",
       "#новинка",
       "#полезно",
-      "#рекорд",
       "#TheVerge"
     ],
-    "summary": "Нелегальная копия фильма «Человек-паук: Нет пути домой» появилась в сети X и за семь часов достигла 5,9 млн аккаунтов.",
-    "content": "Нелегальная копия фильма «Человек-паук: Нет пути домой» появилась в сети X и за семь часов достигла 5,9 млн аккаунтов. Несмотря на быструю блокировку, утечка вызвала огромный интерес. Фильм уже установил рекорд по кассовым сборам за предварительные показы, собрав $72 млн, превзойдя предыдущий рекорд «Мстителей: Финал». Источник: The Verge.",
+    "summary": "Нелегальная копия фильма «Человек-паук: Нет пути домой» появилась в сети X и продержалась более семи часов, собрав 5,9 млн просмотров и 143 тыс.",
+    "content": "Нелегальная копия фильма «Человек-паук: Нет пути домой» появилась в сети X и продержалась более семи часов, собрав 5,9 млн просмотров и 143 тыс. лайков. Несмотря на утечку, фильм продолжает бить рекорды кассовых сборов, заработав 72 млн долларов на предварительных показах, превзойдя предыдущий рекорд «Мстителей: Финал». Источник: The Verge.",
     "sourceUrl": "https://www.theverge.com/entertainment/974199/spider-man-brand-new-day-leak-box-office-records",
-    "publishedAt": "2026-08-01T23:48:32.239Z",
+    "publishedAt": "2026-08-01T23:47:56.009Z",
     "readTime": "1 мин",
     "imageUrl": "https://platform.theverge.com/wp-content/uploads/sites/2/2026/03/Screenshot-2026-03-18-at-9.08.24%E2%80%AFAM.png?quality=90&strip=all&crop=0,0,79.216870117187,100"
   },
   {
     "id": "1-113-hp-galaxy-cruiser-hybrid-suv-redefines-off-road-power",
     "slug": "1-113-hp-galaxy-cruiser-hybrid-suv-redefines-off-road-power",
-    "title": "Geely Galaxy Cruiser 700: Гибридный внедорожник мощностью 1113 л.с.",
+    "title": "Geely Galaxy Cruiser: Гибридный внедорожник мощностью 1113 л.с. для бездорожья",
     "category": "НОВИНКА / ПОЛЕЗНО",
     "tags": [
       "#новинка",
@@ -56,15 +53,14 @@
       "#гибрид",
       "#PHEV",
       "#SUV",
-      "#внедорожник",
-      "#авто"
+      "#внедорожник"
     ],
-    "summary": "Внедорожники переживают кризис идентичности: от медленных и проходимых машин они превратились в скоростные монстры, способные конкурировать с суперкарами.",
-    "content": "Внедорожники переживают кризис идентичности: от медленных и проходимых машин они превратились в скоростные монстры, способные конкурировать с суперкарами. Geely Galaxy Cruiser 700 призван переосмыслить понятие мощности в классе внедорожников, предлагая впечатляющие 1113 л.с. Этот гибридный SUV сочетает в себе брутальный дизайн и передовые технологии, обеспечивая непревзойденную проходимость и динамику.  \n- Мощность, превосходящая суперкары.\n- Способность преодолевать сложные рельефы.\n- Инновационная гибридная система.\n- Роскошный и функциональный интерьер.\n- Современные системы помощи водителю.\n\nИсточник: New Atlas.",
+    "summary": "Китайский автопроизводитель Geely представил новый гибридный внедорожник Galaxy Cruiser.",
+    "content": "Китайский автопроизводитель Geely представил новый гибридный внедорожник Galaxy Cruiser. Автомобиль оснащен мощной силовой установкой, достигающей 1113 л.с., что позволяет ему сочетать внедорожные качества с высокой динамикой. Это делает его интересным выбором для тех, кто ищет универсальный автомобиль для любых условий.\nИсточник: New Atlas.",
     "sourceUrl": "https://newatlas.com/automotive/geely-galaxy-cruiser-700/",
-    "publishedAt": "2026-08-01T23:47:32.571Z",
+    "publishedAt": "2026-08-01T23:46:59.057Z",
     "readTime": "1 мин",
-    "imageUrl": "https://assets.newatlas.com/dims4/default/8ddcb91/2147483647/strip/true/crop/1920x1008+0+193/resize/1200x630!/quality/90/?url=https%3A%2F%2Fnewatlas-brightspot.s3.ap-southeast-2.amazonaws.com%2F3d%2F8a%2F3e62d76d4b83816fe4c9cbb918e5%2Fgeely-galaxy-zhanjian-700-2027-hd-fa4bb43c1c6010164837d4fec6cdb30b2b5e081ce.jpg&na.image_optimisation=0"
+    "imageUrl": "https://assets.newatlas.com/dims4/default/b71f173/2147483647/strip/true/crop/1920x1393+0+0/resize/1323x960!/format/webp/quality/90/?url=https%3A%2F%2Fnewatlas-brightspot.s3.ap-southeast-2.amazonaws.com%2F3d%2F8a%2F3e62d76d4b83816fe4c9cbb918e5%2Fgeely-galaxy-zhanjian-700-2027-hd-fa4bb43c1c6010164837d4fec6cdb30b2b5e081ce.jpg"
   },
   {
     "id": "artefilo-makes-home-objects-from-elephant-grass-and-hospital-cabinets",
