@@ -22,11 +22,11 @@
     "https://techcrunch.com/2026/08/01/sam-altman-is-still-making-the-case-for-parenting-via-chatgpt/",
     "https://hackaday.com/2026/08/01/stewart-platform-walker-gains-feeling-in-legs-from-resistors/",
     "https://arstechnica.com/tech-policy/2026/07/reddit-keeps-weird-dmca-lawsuit-against-web-scraper-alive-despite-googles-loss/",
-    "https://arstechnica.com/security/2026/07/likely-illegally-claude-gained-access-to-3-networks-will-anthropic-be-held-to-account/",
-    "https://arstechnica.com/ai/2026/07/google-earth-releases-swiftly-retracts-ai-feature-to-make-fake-satellite-images/",
-    "https://arstechnica.com/culture/2026/07/ai-startup-admits-tattoo-for-interview-stunt-was-reckless/",
-    "https://arstechnica.com/tech-policy/2026/07/high-school-defends-staying-silent-while-boys-made-ai-nudes-of-59-classmates/",
-    "https://arstechnica.com/science/2026/07/see-the-heat-an-infrared-imaging-system-that-outputs-in-color/"
+    "https://techcrunch.com/2026/08/01/this-9-key-physically-locks-your-most-addictive-apps/",
+    "https://techcrunch.com/2026/08/01/ubers-autonomous-vehicle-deal-tracker/",
+    "https://techcrunch.com/2026/08/01/apps-that-help-you-break-free-from-doomscrolling-and-get-active/",
+    "https://techcrunch.com/2026/08/01/whats-the-best-handheld-mini-fan/",
+    "https://www.yankodesign.com/2026/08/01/this-iron-frying-plate-sears-food-on-bare-steel-goes-straight-from-the-stove-to-your-table/?utm_source=rss&utm_medium=rss&utm_campaign=this-iron-frying-plate-sears-food-on-bare-steel-goes-straight-from-the-stove-to-your-table"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -51,11 +51,11 @@
     "https://techcrunch.com/?p=3149010",
     "https://hackaday.com/?p=1131285",
     "https://arstechnica.com/tech-policy/2026/07/reddit-keeps-weird-dmca-lawsuit-against-web-scraper-alive-despite-googles-loss/",
-    "https://arstechnica.com/security/2026/07/likely-illegally-claude-gained-access-to-3-networks-will-anthropic-be-held-to-account/",
-    "https://arstechnica.com/ai/2026/07/google-earth-releases-swiftly-retracts-ai-feature-to-make-fake-satellite-images/",
-    "https://arstechnica.com/culture/2026/07/ai-startup-admits-tattoo-for-interview-stunt-was-reckless/",
-    "https://arstechnica.com/tech-policy/2026/07/high-school-defends-staying-silent-while-boys-made-ai-nudes-of-59-classmates/",
-    "https://arstechnica.com/science/2026/07/see-the-heat-an-infrared-imaging-system-that-outputs-in-color/"
+    "https://techcrunch.com/?p=3146148",
+    "https://techcrunch.com/?p=3143162",
+    "https://techcrunch.com/?p=3145781",
+    "https://techcrunch.com/?p=3148853",
+    "https://www.yankodesign.com/?p=639012"
   ],
   "entries": [
     {
@@ -268,55 +268,54 @@
       "id": "https://arstechnica.com/tech-policy/2026/07/reddit-keeps-weird-dmca-lawsuit-against-web-scraper-alive-despite-googles-loss/",
       "url": "https://arstechnica.com/tech-policy/2026/07/reddit-keeps-weird-dmca-lawsuit-against-web-scraper-alive-despite-googles-loss/",
       "title": "Reddit keeps its strange DMCA fight over Google search results alive",
-      "processedAt": "2026-08-01T23:10:52.318Z",
-      "status": "rejected",
-      "scoutScore": 20,
-      "reason": "Legal dispute over DMCA and scraping, lacks technical depth or open-source relevance."
-    },
-    {
-      "id": "https://arstechnica.com/security/2026/07/likely-illegally-claude-gained-access-to-3-networks-will-anthropic-be-held-to-account/",
-      "url": "https://arstechnica.com/security/2026/07/likely-illegally-claude-gained-access-to-3-networks-will-anthropic-be-held-to-account/",
-      "title": "Claude published malicious code to the Internet and attacked 3 real companies",
-      "processedAt": "2026-08-01T23:11:04.692Z",
-      "status": "rejected",
-      "scoutScore": 45,
-      "reason": "Новость демонстрирует продвинутые возможности автономных AI-агентов в кибератаках, что имеет инженерную ценность для безопасности, но не содержит глубоких технологических деталей или open-source вклада, а также частично кликбейтна."
-    },
-    {
-      "id": "https://arstechnica.com/ai/2026/07/google-earth-releases-swiftly-retracts-ai-feature-to-make-fake-satellite-images/",
-      "url": "https://arstechnica.com/ai/2026/07/google-earth-releases-swiftly-retracts-ai-feature-to-make-fake-satellite-images/",
-      "title": "Google Earth risked ruin with retracted AI tool for making fake satellite pics",
-      "processedAt": "2026-08-01T23:11:09.885Z",
+      "processedAt": "2026-08-01T23:15:04.531Z",
       "status": "error",
       "reason": "Scout model (deepseek/deepseek-v4-flash:latest) returned an empty response. finish_reason: length, reasoning present: false"
     },
     {
-      "id": "https://arstechnica.com/culture/2026/07/ai-startup-admits-tattoo-for-interview-stunt-was-reckless/",
-      "url": "https://arstechnica.com/culture/2026/07/ai-startup-admits-tattoo-for-interview-stunt-was-reckless/",
-      "title": "Would you get tattooed just to interview at a 7-days-a-week AI startup?",
-      "processedAt": "2026-08-01T23:11:17.547Z",
-      "status": "rejected",
-      "scoutScore": 5,
-      "reason": "Новость описывает маркетинговый трюк стартапа (татуировки и игра для найма), не содержащая никаких технических деталей, глубины технологии, инженерной ценности или упоминаний open-source. Это чистый кликбейт, не представляющий интереса для технического разведчика."
-    },
-    {
-      "id": "https://arstechnica.com/tech-policy/2026/07/high-school-defends-staying-silent-while-boys-made-ai-nudes-of-59-classmates/",
-      "url": "https://arstechnica.com/tech-policy/2026/07/high-school-defends-staying-silent-while-boys-made-ai-nudes-of-59-classmates/",
-      "title": "High school defends staying silent while boys made AI nudes of 59 classmates",
-      "processedAt": "2026-08-01T23:11:22.355Z",
+      "id": "https://techcrunch.com/?p=3146148",
+      "url": "https://techcrunch.com/2026/08/01/this-9-key-physically-locks-your-most-addictive-apps/",
+      "title": "This $9 key physically locks your most addictive apps",
+      "processedAt": "2026-08-01T23:20:14.030Z",
       "status": "rejected",
       "scoutScore": 15,
-      "reason": "Новость не содержит технических деталей о создании AI-изображений, не освещает open-source или инженерные аспекты. Это социально-правовая история, а не технологическая глубина."
+      "reason": "Простое NFC-устройство, не глубокая технология, не open-source, низкая инженерная ценность."
     },
     {
-      "id": "https://arstechnica.com/science/2026/07/see-the-heat-an-infrared-imaging-system-that-outputs-in-color/",
-      "url": "https://arstechnica.com/science/2026/07/see-the-heat-an-infrared-imaging-system-that-outputs-in-color/",
-      "title": "Разработана система инфракрасной визуализации, отображающая тепловое излучение в цвете",
-      "processedAt": "2026-08-01T23:11:30.026Z",
+      "id": "https://techcrunch.com/?p=3143162",
+      "url": "https://techcrunch.com/2026/08/01/ubers-autonomous-vehicle-deal-tracker/",
+      "title": "Uber is building an autonomous vehicle empire, and here’s every company it’s using to do it",
+      "processedAt": "2026-08-01T23:25:20.907Z",
+      "status": "rejected",
+      "scoutScore": 25,
+      "reason": "News focuses on Uber's business partnerships and investments, not on deep technology, open-source contributions, or engineering innovation. It's strategic corporate news rather than technical depth."
+    },
+    {
+      "id": "https://techcrunch.com/?p=3145781",
+      "url": "https://techcrunch.com/2026/08/01/apps-that-help-you-break-free-from-doomscrolling-and-get-active/",
+      "title": "Apps that help you break free from doomscrolling and get active",
+      "processedAt": "2026-08-01T23:30:27.822Z",
+      "status": "rejected",
+      "scoutScore": 15,
+      "reason": "Общая подборка приложений без технической глубины, open-source или инженерной ценности."
+    },
+    {
+      "id": "https://techcrunch.com/?p=3148853",
+      "url": "https://techcrunch.com/2026/08/01/whats-the-best-handheld-mini-fan/",
+      "title": "What’s the best handheld mini fan?",
+      "processedAt": "2026-08-01T23:35:34.787Z",
+      "status": "rejected",
+      "scoutScore": 5,
+      "reason": "Новость представляет собой поверхностный обзор бытовых мини-вентиляторов, не содержит технических деталей, инженерных решений или open-source компонентов, что не соответствует критериям оценки."
+    },
+    {
+      "id": "https://www.yankodesign.com/?p=639012",
+      "url": "https://www.yankodesign.com/2026/08/01/this-iron-frying-plate-sears-food-on-bare-steel-goes-straight-from-the-stove-to-your-table/?utm_source=rss&utm_medium=rss&utm_campaign=this-iron-frying-plate-sears-food-on-bare-steel-goes-straight-from-the-stove-to-your-table",
+      "title": "Сковорода-тарелка: готовьте и подавайте на одной стальной поверхности",
+      "processedAt": "2026-08-01T23:39:36.026Z",
       "status": "published",
-      "scoutScore": 85,
-      "reason": "Глубокая технология на стыке коллоидных квантовых точек и OLED, инженерная реализация многослойного устройства с практическим применением в ночном видении, но не open-source.",
-      "slug": "researchers-devise-a-full-color-night-vision-goggle"
+      "slug": "this-iron-frying-plate-sears-food-on-bare-steel-goes-straight-from-the-stove-to",
+      "kind": "news"
     }
   ]
 }
