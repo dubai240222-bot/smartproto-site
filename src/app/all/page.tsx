@@ -1,15 +1,20 @@
 ﻿import Link from 'next/link';
-import { ArrowRight, Layers3, Newspaper, Sparkles } from 'lucide-react';
+import { ArrowRight, Newspaper, Sparkles } from 'lucide-react';
 import articles from '@/data/articles';
 import { ArticleCard } from '@/components/article-card';
 import { LiveFeedSection } from '@/components/live-feed-section';
 import { MediaPlaceholder } from '@/components/media-placeholder';
-import { getArticleStats, getCategoryHighlights } from '@/lib/article-utils';
+import {
+  getArticleStats,
+  getCategoryHighlights,
+  sortArticlesByPublishedDate,
+} from '@/lib/article-utils';
 
 export default function AllArticlesPage() {
-  const stats = getArticleStats(articles);
-  const featuredArticle = stats.latestArticle ?? articles[0];
-  const categoryHighlights = getCategoryHighlights(articles);
+  const sortedArticles = sortArticlesByPublishedDate(articles);
+  const stats = getArticleStats(sortedArticles);
+  const featuredArticle = stats.latestArticle ?? sortedArticles[0];
+  const categoryHighlights = getCategoryHighlights(sortedArticles);
 
   return (
     <main className="relative min-h-screen overflow-hidden">
@@ -26,7 +31,7 @@ export default function AllArticlesPage() {
             </div>
             <div>
               <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-slate-400">SmartProto</p>
-              <p className="mt-1 text-lg font-semibold text-white">Archive view</p>
+              <p className="mt-1 text-lg font-semibold text-white">Новости</p>
             </div>
           </Link>
 
@@ -50,14 +55,13 @@ export default function AllArticlesPage() {
           <div className="rounded-[2rem] border border-white/8 bg-slate-950/60 p-6 md:p-8">
             <span className="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.28em] text-cyan-300">
               <Sparkles className="h-3.5 w-3.5" />
-              Archive
+              Новости
             </span>
             <h1 className="mt-5 max-w-3xl text-4xl font-semibold tracking-tight text-white md:text-5xl">
-              A cleaner archive page for every published story.
+              Все новости SmartProto
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300 md:text-lg">
-              This page now works like a newsroom index: featured story, live signal, category context, and a grid of
-              all published materials with a more polished visual rhythm.
+              Архив опубликованных материалов: гаджеты, ИИ, роботы и наука — свежие истории сверху.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
@@ -65,29 +69,29 @@ export default function AllArticlesPage() {
                 href={featuredArticle ? `/articles/${featuredArticle.slug}` : '/'}
                 className="inline-flex items-center gap-2 rounded-full bg-cyan-300 px-5 py-3 font-medium text-slate-950 transition hover:bg-cyan-200"
               >
-                Open featured story
+                Читать свежую новость
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
-                href="/"
+                href="/#news"
                 className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-3 font-medium text-white transition hover:border-cyan-400/30 hover:bg-white/8"
               >
-                Return to home
+                На главную ленту
               </Link>
             </div>
 
             <div className="mt-8 grid gap-3 sm:grid-cols-3">
               <div className="rounded-2xl border border-white/8 bg-white/5 p-4">
-                <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-slate-400">Stories</p>
+                <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-slate-400">Новости</p>
                 <p className="mt-2 text-2xl font-semibold text-white">{stats.totalArticles}</p>
               </div>
               <div className="rounded-2xl border border-white/8 bg-white/5 p-4">
-                <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-slate-400">Themes</p>
+                <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-slate-400">Темы</p>
                 <p className="mt-2 text-2xl font-semibold text-white">{stats.totalCategories}</p>
               </div>
               <div className="rounded-2xl border border-white/8 bg-white/5 p-4">
-                <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-slate-400">Reading time</p>
-                <p className="mt-2 text-2xl font-semibold text-white">{stats.totalReadMinutes}m</p>
+                <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-slate-400">Чтение</p>
+                <p className="mt-2 text-2xl font-semibold text-white">{stats.totalReadMinutes}м</p>
               </div>
             </div>
           </div>
@@ -95,9 +99,9 @@ export default function AllArticlesPage() {
           <div className="grid gap-4">
             <MediaPlaceholder
               kind="image"
-              title="Archive hero image slot"
-              description="A future editorial photo or render can sit here without changing the composition."
-              label="Media placeholder"
+              title="Archive hero"
+              description="Editorial photo or render for the archive spotlight."
+              label="Media"
             />
             <div className="rounded-[2rem] border border-white/8 bg-slate-950/60 p-5">
               <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-cyan-300">Featured story</p>
@@ -184,19 +188,19 @@ export default function AllArticlesPage() {
         <section className="pb-14">
           <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-cyan-300">Published stories</p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white">Browse the full archive</h2>
+              <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-cyan-300">Опубликовано</p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white">Все новости</h2>
             </div>
-            <span className="text-sm text-slate-400">{articles.length} items</span>
+            <span className="text-sm text-slate-400">{sortedArticles.length} материалов</span>
           </div>
 
-          {articles.length === 0 ? (
+          {sortedArticles.length === 0 ? (
             <div className="rounded-[2rem] border border-dashed border-white/10 bg-white/5 p-8 text-slate-300">
-              Moderate drafts to populate this page.
+              Пока нет опубликованных новостей.
             </div>
           ) : (
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {articles.map((article) => (
+              {sortedArticles.map((article) => (
                 <ArticleCard key={article.slug} article={article} />
               ))}
             </div>

@@ -215,6 +215,31 @@ export default async function HomePage({
         ) : (
           /* DIVERSE EDITORIAL HOMEPAGE (No uniform card wall!) */
           <>
+            {/* 0. NEWS FEED — near the top so «Новости» is never buried */}
+            <section id="news" className="scroll-mt-24 space-y-4 pb-8 border-b border-[var(--border)]">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="font-serif text-xl sm:text-2xl font-bold text-[var(--text)]">
+                    Последние новости
+                  </h2>
+                  <p className="mt-1 text-xs text-[var(--muted)]">
+                    Свежие материалы о гаджетах и технологиях
+                  </p>
+                </div>
+                <Link
+                  href="/all"
+                  className="shrink-0 text-xs font-semibold text-[var(--accent)] hover:underline"
+                >
+                  Все новости →
+                </Link>
+              </div>
+              <div className="space-y-1 divide-y divide-[var(--border)]">
+                {sortedArticles.slice(0, 6).map((article) => (
+                  <QuickUpdateItem key={`news-${article.slug}`} article={article} />
+                ))}
+              </div>
+            </section>
+
             {/* 1. HERO STORY + "ВЫБОР РЕДАКЦИИ" (The Verge Style Split Grid) */}
             <section className="grid gap-8 lg:grid-cols-12 lg:items-start pb-10 border-b border-[var(--border)]">
               {/* LEFT (8 Cols): Hero Main Story */}
@@ -297,13 +322,15 @@ export default async function HomePage({
               </section>
             )}
 
-            {/* 4. "ПОСЛЕДНИЕ ОБНОВЛЕНИЯ" (Chronological Quick Updates Feed) */}
+            {/* 4. Full chronological archive teaser */}
             <section className="space-y-6">
               <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
                 <h2 className="font-serif text-xl sm:text-2xl font-bold text-[var(--text)]">
-                  Последние обновления
+                  Вся лента
                 </h2>
-                <span className="text-xs font-mono text-[var(--muted)]">Хроника событий</span>
+                <Link href="/all" className="text-xs font-semibold text-[var(--accent)] hover:underline">
+                  Открыть архив новостей →
+                </Link>
               </div>
 
               <div className="space-y-1 divide-y divide-[var(--border)]">
