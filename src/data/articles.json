@@ -1,44 +1,8 @@
 [
   {
-    "id": "ayaneo-konkr-pocket-advance-gba",
-    "slug": "ayaneo-konkr-pocket-advance-gba",
-    "title": "Ayaneo Konkr Pocket Advance: ремейк Game Boy Advance в двух цветах",
-    "category": "ГАДЖЕТЫ / ИГРЫ",
-    "summary": "Ayaneo показала Konkr Pocket Advance — горизонтальный handheld в стиле GBA, выпуск в navy и orange.",
-    "content": "Ayaneo представила Konkr Pocket Advance — горизонтальную портативную консоль в духе Game Boy Advance. Устройство выйдет в тёмно-синей и оранжевой расцветках.\n\nЭто прямой продукт для ретро- и portable-гейминга, а не абстрактная tech-новость. Источник: Engadget.",
-    "sourceUrl": "https://www.engadget.com/2228464/ayaneo-game-boy-advance-remake-konkr-pocket-advance/",
-    "publishedAt": "2026-08-01T23:43:39.594Z",
-    "readTime": "1 мин",
-    "imageUrl": "https://www.engadget.com/img/gallery/ayaneo-reveals-its-game-boy-advance-remake-called-the-konkr-pocket-advance/l-intro-1785600976.jpg"
-  },
-  {
-    "id": "litejam-neo-rgb-smart-guitar",
-    "slug": "litejam-neo-rgb-smart-guitar",
-    "title": "LiteJam Neo: карбоновая гитара с RGB, которая учит играть",
-    "category": "ГАДЖЕТЫ / АУДИО",
-    "summary": "Умная карбоновая гитара с подсветкой ладов и приложением — визуальный тренажёр для новичков на Kickstarter.",
-    "content": "LiteJam Neo — карбоновая гитара со встроенными RGB-светодиодами на грифе: подсветка показывает, куда ставить пальцы, а приложение ведёт обучение.\n\nФормат ориентирован на быстрый старт без нотной грамоты «с нуля». Источник: New Atlas.",
-    "sourceUrl": "https://newatlas.com/music/guitar-smart-rgb-lights-litejam-neo/",
-    "publishedAt": "2026-08-01T23:41:30.000Z",
-    "readTime": "1 мин",
-    "imageUrl": "https://assets.newatlas.com/dims4/default/c7746e3/2147483647/strip/true/crop/1200x800+0+0/resize/1200x800!/format/webp/quality/90/?url=https%3A%2F%2Fnewatlas-brightspot.s3.ap-southeast-2.amazonaws.com%2F87%2Fcb%2Fcc5588114a00afc488e87df24dc5%2Fthe-litejam-neo-packs-a-ton-of-features-to-learn-and-play-guitar-thanks-to-an-rgb-lighting-system-and-a-versatile-companion-app.jpg"
-  },
-  {
-    "id": "philips-ai-electric-toothbrush-mouth-map",
-    "slug": "philips-ai-electric-toothbrush-mouth-map",
-    "title": "Philips AI-зубная щётка: карта рта для более точной чистки",
-    "category": "ГАДЖЕТЫ / ЗДОРОВЬЕ",
-    "summary": "Philips добавляет ИИ в электрическую щётку: устройство строит карту рта и подсказывает, где чистить лучше.",
-    "content": "Philips представила умную электрическую зубную щётку с ИИ-картой рта. Система отслеживает зоны чистки и помогает закрыть «пропущенные» участки — это ответ бренда на тренд «умной» гигиены полости рта.\n\nNew Atlas отмечает, что крупные oral-health бренды активно добавляют сенсоры и ИИ, параллельно поднимая цену устройств. Источник: New Atlas.",
-    "sourceUrl": "https://newatlas.com/around-the-home/philips-smart-toothbrush-ai-mouth-map/",
-    "publishedAt": "2026-08-01T23:39:28.524Z",
-    "readTime": "1 мин",
-    "imageUrl": "https://assets.newatlas.com/dims4/default/974cc5c/2147483647/strip/true/crop/1200x800+0+0/resize/1200x800!/format/webp/quality/90/?url=https%3A%2F%2Fnewatlas-brightspot.s3.ap-southeast-2.amazonaws.com%2F57%2Fa3%2Fffae2a07430f80231731f298c70f%2Fphilips-upcoming-diamondclean-9900-prestige-uses-ai-to-detect-brushing-activity.jpg"
-  },
-  {
     "id": "1-113-hp-galaxy-cruiser-hybrid-suv-redefines-off-road-power",
     "slug": "1-113-hp-galaxy-cruiser-hybrid-suv-redefines-off-road-power",
-    "title": "Geely Galaxy Cruiser: Гибридный внедорожник мощностью 1113 л.с. для бездорожья",
+    "title": "Geely Galaxy Cruiser 700: Гибридный внедорожник мощностью 1113 л.с.",
     "category": "НОВИНКА / ПОЛЕЗНО",
     "tags": [
       "#новинка",
@@ -47,14 +11,15 @@
       "#гибрид",
       "#PHEV",
       "#SUV",
-      "#внедорожник"
+      "#внедорожник",
+      "#авто"
     ],
-    "summary": "Китайский автопроизводитель Geely представил новый гибридный внедорожник Galaxy Cruiser.",
-    "content": "Китайский автопроизводитель Geely представил новый гибридный внедорожник Galaxy Cruiser. Автомобиль оснащен мощной силовой установкой, достигающей 1113 л.с., что позволяет ему сочетать внедорожные качества с высокой динамикой. Это делает его интересным выбором для тех, кто ищет универсальный автомобиль для любых условий.\nИсточник: New Atlas.",
+    "summary": "Внедорожники переживают кризис идентичности: от медленных и проходимых машин они превратились в скоростные монстры, способные конкурировать с суперкарами.",
+    "content": "Внедорожники переживают кризис идентичности: от медленных и проходимых машин они превратились в скоростные монстры, способные конкурировать с суперкарами. Geely Galaxy Cruiser 700 призван переосмыслить понятие мощности в классе внедорожников, предлагая впечатляющие 1113 л.с. Этот гибридный SUV сочетает в себе брутальный дизайн и передовые технологии, обеспечивая непревзойденную проходимость и динамику.  \n- Мощность, превосходящая суперкары.\n- Способность преодолевать сложные рельефы.\n- Инновационная гибридная система.\n- Роскошный и функциональный интерьер.\n- Современные системы помощи водителю.\n\nИсточник: New Atlas.",
     "sourceUrl": "https://newatlas.com/automotive/geely-galaxy-cruiser-700/",
-    "publishedAt": "2026-08-01T23:46:59.057Z",
+    "publishedAt": "2026-08-01T23:47:32.571Z",
     "readTime": "1 мин",
-    "imageUrl": "https://assets.newatlas.com/dims4/default/b71f173/2147483647/strip/true/crop/1920x1393+0+0/resize/1323x960!/format/webp/quality/90/?url=https%3A%2F%2Fnewatlas-brightspot.s3.ap-southeast-2.amazonaws.com%2F3d%2F8a%2F3e62d76d4b83816fe4c9cbb918e5%2Fgeely-galaxy-zhanjian-700-2027-hd-fa4bb43c1c6010164837d4fec6cdb30b2b5e081ce.jpg"
+    "imageUrl": "https://assets.newatlas.com/dims4/default/8ddcb91/2147483647/strip/true/crop/1920x1008+0+193/resize/1200x630!/quality/90/?url=https%3A%2F%2Fnewatlas-brightspot.s3.ap-southeast-2.amazonaws.com%2F3d%2F8a%2F3e62d76d4b83816fe4c9cbb918e5%2Fgeely-galaxy-zhanjian-700-2027-hd-fa4bb43c1c6010164837d4fec6cdb30b2b5e081ce.jpg&na.image_optimisation=0"
   },
   {
     "id": "artefilo-makes-home-objects-from-elephant-grass-and-hospital-cabinets",
@@ -223,6 +188,25 @@
     "publishedAt": "2026-08-01T23:39:36.026Z",
     "readTime": "1 мин",
     "imageUrl": "https://www.yankodesign.com/images/design_news/2026/07/iron-frying-plate/iron_frying_plate_yanko_design_01.jpg"
+  },
+  {
+    "sourceUrl": "https://newatlas.com/around-the-home/philips-smart-toothbrush-ai-mouth-map/",
+    "slug": "philips-ai-electric-toothbrush-mouth-map",
+    "id": "philips-ai-electric-toothbrush-mouth-map",
+    "readTime": "1 мин",
+    "imageUrl": "https://assets.newatlas.com/dims4/default/974cc5c/2147483647/strip/true/crop/1200x800+0+0/resize/1200x800!/format/webp/quality/90/?url=https%3A%2F%2Fnewatlas-brightspot.s3.ap-southeast-2.amazonaws.com%2F57%2Fa3%2Fffae2a07430f80231731f298c70f%2Fphilips-upcoming-diamondclean-9900-prestige-uses-ai-to-detect-brushing-activity.jpg",
+    "category": "ГАДЖЕТЫ / ЗДОРОВЬЕ",
+    "tags": [
+      "#гаджет",
+      "#здоровье",
+      "#бренд-Philips",
+      "#ИИ",
+      "#новинка"
+    ],
+    "publishedAt": "2026-08-01T23:39:28.524Z",
+    "summary": "Philips добавляет ИИ в электрическую щётку: устройство строит карту рта и подсказывает, где чистить лучше.",
+    "content": "Philips представила умную электрическую зубную щётку с ИИ-картой рта. Система отслеживает зоны чистки и помогает закрыть «пропущенные» участки — это ответ бренда на тренд «умной» гигиены полости рта.\n\nNew Atlas отмечает, что крупные oral-health бренды активно добавляют сенсоры и ИИ, параллельно поднимая цену устройств. Источник: New Atlas.",
+    "title": "Philips AI-зубная щётка: карта рта для более точной чистки"
   },
   {
     "id": "samsung-freestyle-plus-canister-projector",
