@@ -12,6 +12,7 @@ import chalk from 'chalk';
 import { fetchRssFeed, RssItem } from '../src/lib/collectors/rss';
 import { extractArticleImage } from '../src/lib/collectors/image-extractor';
 import { getOpenRouterClient, clampText, parseJsonObject } from '../src/lib/ai/shared';
+import { looksBuyableGadget } from '../src/lib/ai/hard-reject';
 
 function loadEnvFiles(): void {
   const root = process.cwd();
@@ -101,89 +102,21 @@ function isTestOrDemo(item: { id: string; url: string }): boolean {
 
 function looksGadgetRelevant(item: RssItem): boolean {
   const hay = `${item.title} ${item.text} ${item.url}`.toLowerCase();
-  const bad = [
-    'opinion:',
-    'how to watch',
-    'stock market',
-    'earnings',
-    'layoffs',
-    'lawsuit',
-    'politics',
-    'election',
-    // Hard editorial reject: culture / nature / celebs / writers — no product.
-    'wildlife',
-    'elephant',
-    'natural history',
-    'museum',
-    'architecture',
-    'skyscraper',
-    'mossy',
-    'billboard hot 100',
-    'singer',
-    'rapper',
-    'memoir',
-    'author',
-    'writer',
-    'grief',
-    'spider-man',
-    'spiderman',
-    'box office',
-    'celebrity',
-    'celebrities',
-    'governor',
-    'trump ',
-    'film leak',
-    'movie leak',
-    '/entertainment/',
-    '/policy/',
-    '/architecture/',
-    'shopping guide',
-    'back-to-school',
-  ];
-  if (bad.some((b) => hay.includes(b))) return false;
-  const good = [
-    'gadget',
-    'device',
-    'wearable',
-    'projector',
-    'keyboard',
-    'headphone',
-    'earbuds',
-    'toothbrush',
-    'power bank',
-    'tablet',
-    'phone',
-    'camera',
-    'smart home',
-    'smart glass',
-    'translator',
-    'kickstarter',
-    'indiegogo',
-    'dock',
-    'ssd',
-    'charger',
-    'pillow',
-    'roaster',
-    'skillet',
-    'frying',
-    'mp3',
-    'night vision',
-    'security key',
-    'e-ink',
-    'eink',
-    'ai ',
-  ];
-  // Prefer clear product signals; still allow design/gadget feeds without keyword hit.
-  if (good.some((g) => hay.includes(g))) return true;
-  const source = (item.sourceName || '').toLowerCase();
-  if (source.includes('yanko') || source.includes('new atlas') || source.includes('hackaday')) {
-    // Secondary reject for pure culture/architecture titles on mixed feeds.
-    if (/\b(tower|museum|building|architecture|wildlife|nature|author|memoir|singer|album|film|movie)\b/.test(hay)) {
-      return false;
-    }
-    return true;
+  // URL-path rejects for mixed feeds (policy/entertainment/architecture).
+  if (
+    hay.includes('/entertainment/') ||
+    hay.includes('/policy/') ||
+    hay.includes('/architecture/') ||
+    hay.includes('shopping guide') ||
+    hay.includes('back-to-school') ||
+    hay.includes('stock market') ||
+    hay.includes('earnings') ||
+    hay.includes('layoffs') ||
+    hay.includes('lawsuit')
+  ) {
+    return false;
   }
-  return false;
+  return looksBuyableGadget(item.title, `${item.text} ${item.url}`, item.sourceName || '');
 }
 
 function transliterateCyrillic(text: string): string {
@@ -277,15 +210,16 @@ async function fastRewrite(item: RssItem, kind: 'news' | 'article'): Promise<Dra
           'Ты восторженный блогер / TikTok-ревьюер SmartProto ТОЛЬКО про умные полезные гаджеты.',
           'Русский. Голос: «дожили до времени…», «вчера казалось фантастикой — сегодня можно купить».',
           'Хвали РЕАЛЬНЫЕ фичи эмоционально, без выдуманных спеков. JSON без markdown.',
-          'Жёсткий reject (title="REJECT", text="off-topic", tags=["#reject"]): природа/wildlife, музеи/архитектура,',
-          'celebrities/певцы, writers/книги, кино/музыка/политика/культура без покупаемого продукта.',
+          'HARD FILTER: только товар, который обычный человек может КУПИТЬ или ПРЕДЗАКАЗАТЬ.',
+          'Жёсткий reject (title="REJECT", text="off-topic", tags=["#reject"]): Trump/политика, celebrities/певцы,',
+          'writers/книги, природа/wildlife/слоны, музеи/архитектура, кино/музыка/культура, прототипы без buy/preorder.',
         ].join(' '),
       },
       {
         role: 'user',
         content: [
-          `Сделай ${kind === 'news' ? 'короткую новость' : 'статью-карточку'} ТОЛЬКО если есть конкретный покупаемый гаджет/товар.`,
-          'Если тема off-topic (писатели, певцы, природа, музеи, кино, политика без продукта) — верни REJECT JSON.',
+          `Сделай ${kind === 'news' ? 'короткую новость' : 'статью-карточку'} ТОЛЬКО если есть конкретный покупаемый/предзаказываемый гаджет/товар.`,
+          'Если Trump/политика, celebrities, певцы, природа, музеи, кино или нет товара для покупки — верни REJECT JSON.',
           'Верни СТРОГО JSON: {"title": string, "text": string, "tags": string[]}',
           'title: до 90 символов, на русском, вау + польза товара.',
           `text: ${wordTarget} Голос блогера, не сухой перевод.`,
