@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { ArrowRight, Clock, Calendar, Sparkles } from 'lucide-react';
 import type { Article } from '@/data/articles';
 import { formatPublishedAt } from '@/lib/article-utils';
-import { MediaPlaceholder } from '@/components/media-placeholder';
+import { MediaPlaceholder, MediaThumb } from '@/components/media-placeholder';
 
 export function CategoryTags({
   category,
@@ -97,13 +97,7 @@ export function ArticleCard({ article, variant = 'default', eyebrow, className }
           </div>
         </div>
         {article.imageUrl && (
-          <div className="shrink-0 w-20 h-16 rounded overflow-hidden border border-[var(--border)] bg-[var(--surface)] relative">
-            <img
-              src={article.imageUrl}
-              alt={article.title}
-              className="w-full h-full object-cover brightness-[1.04] saturate-[1.05] transition-[transform,filter] duration-500 ease-out group-hover:scale-[1.04] group-hover:brightness-110"
-            />
-          </div>
+          <MediaThumb imageUrl={article.imageUrl} title={article.title} className="w-20 h-16" />
         )}
       </article>
     );
@@ -168,13 +162,11 @@ export function VergeNumberedItem({
         </div>
       </div>
       {article.imageUrl && (
-        <div className="shrink-0 w-16 h-16 sm:w-20 sm:h-16 rounded overflow-hidden border border-[var(--border)] bg-[var(--surface)] relative">
-          <img
-            src={article.imageUrl}
-            alt={article.title}
-            className="w-full h-full object-cover brightness-[1.04] saturate-[1.05] transition-[transform,filter] duration-500 ease-out group-hover:scale-[1.04] group-hover:brightness-110"
-          />
-        </div>
+        <MediaThumb
+          imageUrl={article.imageUrl}
+          title={article.title}
+          className="w-16 h-16 sm:w-20 sm:h-16"
+        />
       )}
     </article>
   );
@@ -243,13 +235,11 @@ export function QuickUpdateItem({ article }: { article: Article }) {
         </p>
       </div>
       {article.imageUrl && (
-        <div className="shrink-0 w-24 h-20 sm:w-32 sm:h-24 rounded overflow-hidden border border-[var(--border)] bg-[var(--surface)] relative">
-          <img
-            src={article.imageUrl}
-            alt={article.title}
-            className="w-full h-full object-cover brightness-[1.04] saturate-[1.05] transition-[transform,filter] duration-500 ease-out group-hover:scale-[1.04] group-hover:brightness-110"
-          />
-        </div>
+        <MediaThumb
+          imageUrl={article.imageUrl}
+          title={article.title}
+          className="w-24 h-20 sm:w-32 sm:h-24"
+        />
       )}
     </article>
   );

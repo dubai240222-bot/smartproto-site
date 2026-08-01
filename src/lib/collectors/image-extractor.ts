@@ -134,18 +134,18 @@ function getThematicFallback(title?: string, category?: string): string | null {
     return 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=1200&q=80';
   }
   if (query.includes('openai') || query.includes('altman') || query.includes('альтман')) {
-    return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80';
+    return 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=1200&q=80';
   }
   if (query.includes('apple') || query.includes('mac') || query.includes('iphone')) {
-    return 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=1200&q=80';
+    return 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=1200&q=80';
   }
 
   // Robotics / Tactile / Cybernetics — bright studio robot (never gloomy circuit boards)
   if (query.includes('robot') || query.includes('робот') || query.includes('tactile') || query.includes('рука') || query.includes('сенсор')) {
-    return 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=1400&q=85';
+    return 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=1200&q=80';
   }
 
-  // Optics / Fiber / Quantum / Projector / Light
+  // Optics / Fiber / Quantum / Projector / Light — immersive colorful projection, not dark cinema
   if (
     query.includes('fiber') ||
     query.includes('optic') ||
@@ -155,36 +155,70 @@ function getThematicFallback(title?: string, category?: string): string | null {
     query.includes('квант') ||
     query.includes('свет')
   ) {
-    return 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&w=1400&q=85';
+    return 'https://images.unsplash.com/photo-1561557944-6e7860d1a7eb?auto=format&fit=crop&w=1200&q=80';
   }
 
-  // Infrastructure / Deploy / Cloud — vivid earth/network, not gray server racks
+  // Infrastructure / Deploy / Cloud — vivid shipping/containers metaphor, not gray racks
   if (query.includes('deploy') || query.includes('cloud') || query.includes('server') || query.includes('инфраструктур') || query.includes('докер') || query.includes('docker')) {
-    return 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1400&q=85';
+    return 'https://images.unsplash.com/photo-1605745341112-85968b19335b?auto=format&fit=crop&w=1200&q=80';
   }
 
-  // Cybersecurity / Hacking / Signal analysis — bright dashboards, not green matrix gloom
-  if (query.includes('security') || query.includes('hack') || query.includes('крипто') || query.includes('безопасность') || query.includes('hn') || query.includes('сигнал')) {
-    return 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1400&q=85';
+  // Gadgets / Hardware / Prototyping — bright bench with colorful jumper wires
+  if (
+    query.includes('gadget') ||
+    query.includes('гаджет') ||
+    query.includes('hardware') ||
+    query.includes('прототип') ||
+    query.includes('badge') ||
+    query.includes('бейдж') ||
+    query.includes('pcb') ||
+    query.includes('электрон')
+  ) {
+    return 'https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?auto=format&fit=crop&w=1200&q=80';
   }
 
-  // AI / LLM / Machine Learning / DeepSeek / Neural
+  // Cybersecurity / Hacking / Signal analysis — bright collaborative engineering, not green matrix gloom
+  if (
+    query.includes('security') ||
+    query.includes('hack') ||
+    query.includes('крипто') ||
+    query.includes('безопасность') ||
+    query.includes('defcon') ||
+    query.includes('hn') ||
+    query.includes('сигнал')
+  ) {
+    return 'https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=1200&q=80';
+  }
+
+  // AI / LLM / Machine Learning — friendly bright robotics, not abstract blue blobs
   if (query.includes('ai') || query.includes('ии') || query.includes('нейро') || query.includes('gpt') || query.includes('llm') || query.includes('модель')) {
-    return 'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=1400&q=85';
+    return 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=1200&q=80';
   }
 
-  // Software / Code / Open Source / Dev / Briefs — bright natural-light workspace
-  if (query.includes('code') || query.includes('разработ') || query.includes('разбор') || query.includes('формат') || query.includes('open-source')) {
-    return 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=1400&q=85';
+  // Software / Code / Open Source / Dev / Briefs — colorful editorial books
+  if (
+    query.includes('code') ||
+    query.includes('разработ') ||
+    query.includes('разбор') ||
+    query.includes('формат') ||
+    query.includes('open-source') ||
+    query.includes('open source')
+  ) {
+    return 'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=1200&q=80';
   }
 
-  // Weather / Rain / Atmospheric — keep thematic but prefer clear daylight sky when raining is not required
+  // Analytics / Dashboard — sticky-note planning energy (avoid sterile laptop-dashboard clichés)
+  if (query.includes('analy') || query.includes('аналит') || query.includes('dashboard') || query.includes('chart')) {
+    return 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1200&q=80';
+  }
+
+  // Weather / Atmospheric — bright solar daylight
   if (query.includes('rain') || query.includes('weather') || query.includes('дождь') || query.includes('погода')) {
-    return 'https://images.unsplash.com/photo-1504608524841-42fe6f032b4b?auto=format&fit=crop&w=1400&q=85';
+    return 'https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&w=1200&q=80';
   }
 
-  // General Innovation / Editorial — bright collaborative newsroom energy
-  return 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1400&q=85';
+  // General Innovation / Editorial — bright sticky-note planning session
+  return 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1200&q=80';
 }
 
 /**

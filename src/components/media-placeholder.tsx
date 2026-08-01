@@ -13,6 +13,44 @@ interface MediaPlaceholderProps {
   className?: string;
 }
 
+const IMAGE_CLASS =
+  'h-full w-full object-cover brightness-[1.04] contrast-[1.02] saturate-[1.06] transition-[transform,filter] duration-500 ease-out group-hover:scale-[1.04] group-hover:brightness-110 group-hover:saturate-110';
+
+/** Compact thumbnail with the same hover treatment and broken-image fallback. */
+export function MediaThumb({
+  imageUrl,
+  title,
+  className = '',
+}: {
+  imageUrl?: string;
+  title?: string;
+  className?: string;
+}) {
+  const [hasError, setHasError] = useState(false);
+
+  if (!imageUrl || hasError) {
+    return (
+      <div
+        className={`shrink-0 overflow-hidden rounded border border-[var(--border)] bg-[var(--surface)] ${className}`}
+        aria-hidden
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`relative shrink-0 overflow-hidden rounded border border-[var(--border)] bg-[var(--surface)] ${className}`}
+    >
+      <img
+        src={imageUrl}
+        alt={title || ''}
+        onError={() => setHasError(true)}
+        className={IMAGE_CLASS}
+      />
+    </div>
+  );
+}
+
 export function MediaPlaceholder({
   imageUrl,
   kind,
@@ -35,7 +73,7 @@ export function MediaPlaceholder({
           src={imageUrl}
           alt={title || displayCategory}
           onError={() => setHasError(true)}
-          className="h-full w-full object-cover brightness-[1.04] contrast-[1.02] saturate-[1.05] transition-[transform,filter] duration-500 ease-out group-hover:scale-[1.04] group-hover:brightness-110 group-hover:saturate-110"
+          className={IMAGE_CLASS}
         />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-white/5 opacity-70 transition-opacity duration-500 group-hover:opacity-40" />
       </div>
