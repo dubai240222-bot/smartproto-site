@@ -13,8 +13,14 @@ export interface ScoutResult extends Partial<NoveltyAssessment> {
   productType?: string;
 }
 
-/** Consumer-gadgets gate: A+B+C+D+E must reach this to pass. */
-export const SCOUT_SCORE_THRESHOLD = 75;
+/** Consumer-gadgets gate: A+B+C+D+E must reach this to pass.
+ * TEST: Actions sets SCOUT_SCORE_THRESHOLD=65 so the pipeline is not empty.
+ * Prod default remains 75 when env unset. */
+export const SCOUT_SCORE_THRESHOLD = (() => {
+  const raw = process.env.SCOUT_SCORE_THRESHOLD?.trim();
+  const n = raw ? Number(raw) : 75;
+  return Number.isFinite(n) && n > 0 ? n : 75;
+})();
 
 const SCOUT_MODEL = process.env.OPENROUTER_SCOUT_MODEL ?? 'deepseek/deepseek-v4-flash:latest';
 

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { ArrowRight, Clock, Calendar, Sparkles } from 'lucide-react';
 import type { Article } from '@/data/articles';
-import { formatPublishedAt } from '@/lib/article-utils';
+import { formatPublishedAt, isChinaArticle } from '@/lib/article-utils';
 import { MediaPlaceholder, MediaThumb } from '@/components/media-placeholder';
 
 export function CategoryTags({
@@ -27,6 +27,19 @@ export function CategoryTags({
         </span>
       ))}
     </div>
+  );
+}
+
+/** Small China · Qwen chip — only when article is from that channel. */
+export function ChinaSourceBadge({ article }: { article: Article }) {
+  if (!isChinaArticle(article)) return null;
+  return (
+    <Link
+      href={`/?category=${encodeURIComponent('Китай')}`}
+      className="inline-flex items-center rounded border border-[var(--accent)]/40 bg-[var(--accent)]/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--accent)] hover:underline"
+    >
+      Китай · Qwen
+    </Link>
   );
 }
 
@@ -68,7 +81,7 @@ export function ArticleCard({ article, variant = 'default', eyebrow, className }
           </p>
         </div>
         <div className="mt-6 flex items-center justify-between border-t border-[var(--border)] pt-4 text-xs text-[var(--muted)]">
-          <span>{formatPublishedAt(article.publishedAt)}</span>
+          <span>{cardByline(article)}</span>
           <span className="flex items-center gap-1 text-[var(--accent)] font-medium">
             {article.readTime}
             <ArrowRight className="h-3.5 w-3.5" />
@@ -91,7 +104,7 @@ export function ArticleCard({ article, variant = 'default', eyebrow, className }
             <Link href={`/articles/${article.slug}`}>{article.title}</Link>
           </h3>
           <div className="text-[11px] text-[var(--muted)] pt-1 flex items-center gap-2">
-            <span>{formatPublishedAt(article.publishedAt)}</span>
+            <span>{cardByline(article)}</span>
             <span>•</span>
             <span>{article.readTime}</span>
           </div>
@@ -126,7 +139,7 @@ export function ArticleCard({ article, variant = 'default', eyebrow, className }
         </p>
       </div>
       <div className="mt-4 flex items-center justify-between border-t border-[var(--border)] pt-3 text-[11px] text-[var(--muted)]">
-        <span>{formatPublishedAt(article.publishedAt)}</span>
+        <span>{cardByline(article)}</span>
         <span>{article.readTime}</span>
       </div>
     </article>
@@ -156,7 +169,7 @@ export function VergeNumberedItem({
           <Link href={`/articles/${article.slug}`}>{article.title}</Link>
         </h3>
         <div className="flex items-center gap-2 text-[10px] sm:text-[11px] text-[var(--muted)] pt-0.5">
-          <span>{formatPublishedAt(article.publishedAt)}</span>
+          <span>{cardByline(article)}</span>
           <span>•</span>
           <span>{article.readTime}</span>
         </div>
@@ -200,7 +213,7 @@ export function ArsTechnicaCard({ article }: { article: Article }) {
       <div className="px-5 pb-4 pt-2 border-t border-[var(--border)] flex items-center justify-between text-[11px] text-[var(--muted)]">
         <span className="flex items-center gap-1">
           <Calendar className="h-3 w-3 text-[var(--accent)]" />
-          {formatPublishedAt(article.publishedAt)}
+          {cardByline(article)}
         </span>
         <span className="flex items-center gap-1">
           <Clock className="h-3 w-3 text-[var(--accent)]" />
@@ -220,9 +233,10 @@ export function QuickUpdateItem({ article }: { article: Article }) {
       <div className="flex-1 space-y-1.5 min-w-0">
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="text-[11px] font-mono font-semibold text-[var(--muted)]">
-            {formatPublishedAt(article.publishedAt)}
+            {cardByline(article)}
           </span>
           <span className="text-[var(--muted)] opacity-40">•</span>
+          <ChinaSourceBadge article={article} />
           <CategoryTags category={article.category} />
         </div>
 
@@ -289,7 +303,7 @@ export function StratecheryDeepDive({ article }: { article: Article }) {
 
       <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[var(--border)] pt-4 text-xs">
         <div className="flex items-center gap-3 text-[var(--muted)]">
-          <span>Опубликовано: {formatPublishedAt(article.publishedAt)}</span>
+          <span>{cardByline(article)}</span>
           <span>•</span>
           <span>Время чтения: {article.readTime}</span>
         </div>

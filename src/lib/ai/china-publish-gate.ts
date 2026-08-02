@@ -1,0 +1,53 @@
+/**
+ * Shared editorial gate for China → Qwen dossiers before Editor publish.
+ * Used by publish-china-qwen and newsroom tick (max 1 China pub per tick).
+ */
+
+export type ChinaDossierGateInput = {
+  productName: string;
+  whatItDoes: string;
+  consumerUse: string;
+  whyItIsNew: string;
+  recommended: boolean;
+  warningFlags: string[];
+  unknownFacts: string[];
+  prototypeOrSale: string;
+  translatedTitle: string;
+  originalTitle: string;
+};
+
+export function dossierPublishable(
+  d: ChinaDossierGateInput,
+  sourceBody: string,
+): { ok: boolean; reason: string } {
+  if (d.unknownFacts.includes('rejected before model')) {
+    return { ok: false, reason: 'hard-rejected before Qwen' };
+  }
+  const flags = d.warningFlags.join(' ').toLowerCase();
+  if (/hiring|personnel|trade.?show|not a product|essay|corporate|sales stats|not.?gadget/.test(flags)) {
+    return { ok: false, reason: `warningFlags: ${d.warningFlags.join('; ')}` };
+  }
+  const proto = d.prototypeOrSale.toLowerCase();
+  if (/essay|opinion|hiring|conference.?only/.test(proto)) {
+    return { ok: false, reason: `prototypeOrSale=${d.prototypeOrSale}` };
+  }
+  const name = d.productName.trim() || d.originalTitle.trim();
+  const blob = `${d.originalTitle} ${d.translatedTitle} ${name} ${d.whatItDoes}`.toLowerCase();
+  if (/入职|裁员|总经理|票房|交付.*万/.test(blob)) {
+    return { ok: false, reason: 'non-gadget topic residue' };
+  }
+  if (/chinajoy|游戏展/.test(blob) && !/(手机|手表|耳机|手柄|平板|phone|watch)/i.test(blob + name)) {
+    return { ok: false, reason: 'trade-show fluff without device' };
+  }
+  if (d.recommended) return { ok: true, reason: 'qwen recommended' };
+  const facts = [d.whatItDoes, d.consumerUse, d.whyItIsNew, sourceBody].join('\n').trim();
+  if (name.length >= 4 && facts.length >= 80) {
+    return { ok: true, reason: 'editorial gadget bar (source-backed)' };
+  }
+  return { ok: false, reason: 'weak dossier / thin source' };
+}
+
+/** Category + tags that make China/Qwen pubs noticeable on the homepage. */
+export const CHINA_CATEGORY = 'КИТАЙ / ГАДЖЕТ';
+export const CHINA_TAG = 'Китай';
+export const CHINA_SOURCE_TAG = 'Qwen';

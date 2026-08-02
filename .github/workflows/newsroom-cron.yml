@@ -1,20 +1,25 @@
-# SP-A-031-R1 — Interim autonomy: GitHub Actions cron → one newsroom tick → git push → Vercel.
-# Stage B (Vercel Cron → /api/newsroom/tick → Worker → Postgres) remains PLANNED; this is the
-# fastest autonomy path while articles still live in src/data/articles.json.
+# SP-A-031-R2 — Interim autonomy: GitHub Actions cron → one newsroom tick → git push → Vercel.
+# Stage B (Vercel Cron → /api/newsroom/tick → Worker → Postgres) remains PLANNED.
+#
+# TEST MODE cadence: every 3 minutes (prod can later return to */5 or */10).
+# GitHub may delay free-tier schedules; expect ~3–5m in practice.
 #
 # Required GitHub Secrets (Settings → Secrets and variables → Actions):
-#   OPENROUTER_API_KEY          — OpenRouter API key for Scout/Reviewer/Editor
-#   SMARTPROTO_FACTORY_ENABLED  — set to "true" to enable AI publishes; anything else = OFF
+#   OPENROUTER_API_KEY          — OpenRouter API key for Scout/Reviewer/Editor/Qwen
+#   SMARTPROTO_FACTORY_ENABLED  — must be exactly: true  (no quotes; NOT "false")
 #
-# Turn OFF autonomy: set SMARTPROTO_FACTORY_ENABLED to "false" (or delete the secret).
-# Auth for push: default GITHUB_TOKEN with contents: write (no extra PAT needed).
+# Optional repository Variable (easier toggle than a secret):
+#   SMARTPROTO_FACTORY_ENABLED=true
+#
+# Turn OFF: set secret/variable to "false".
+# Auth for push: GITHUB_TOKEN with contents: write (no extra PAT).
 
 name: Newsroom Cron Tick
 
 on:
   schedule:
-    # Every 10 minutes (GitHub may delay free-tier schedules slightly).
-    - cron: '*/10 * * * *'
+    # TEST: every 3 minutes. Change to */5 or */10 for quieter production.
+    - cron: '*/3 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -37,7 +42,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: npm
 
       - name: Install dependencies
@@ -46,20 +51,35 @@ jobs:
       - name: Factory gate
         id: gate
         env:
-          SMARTPROTO_FACTORY_ENABLED: ${{ secrets.SMARTPROTO_FACTORY_ENABLED }}
+          FACTORY_SECRET: ${{ secrets.SMARTPROTO_FACTORY_ENABLED }}
+          FACTORY_VAR: ${{ vars.SMARTPROTO_FACTORY_ENABLED }}
         run: |
-          if [ "$SMARTPROTO_FACTORY_ENABLED" != "true" ]; then
-            echo "Factory OFF (SMARTPROTO_FACTORY_ENABLED is not true). Skipping AI tick."
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          echo "enabled=true" >> "$GITHUB_OUTPUT"
+          # Prefer visible repo Variable; fall back to Secret.
+          # Normalize: strip whitespace/quotes/CRLF; accept true|1|yes|on.
+          raw="${FACTORY_VAR:-}"
+          if [ -z "$raw" ]; then raw="${FACTORY_SECRET:-}"; fi
+          norm=$(printf '%s' "$raw" | tr -d '\r\n"'\''[:space:]' | tr '[:upper:]' '[:lower:]')
+          echo "Factory normalized='$norm' (raw length ${#raw})"
+          case "$norm" in
+            true|1|yes|on)
+              echo "enabled=true" >> "$GITHUB_OUTPUT"
+              echo "Factory ON"
+              ;;
+            *)
+              echo "Factory OFF. Set Actions secret OR variable SMARTPROTO_FACTORY_ENABLED to exactly: true"
+              echo "enabled=false" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
 
       - name: Run one newsroom tick
         if: steps.gate.outputs.enabled == 'true'
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           SMARTPROTO_FACTORY_ENABLED: 'true'
+          CHINA_DEPARTMENT_ENABLED: 'true'
+          CHINA_ALLOW_RECOMMEND: 'true'
+          # TEST: slightly lower Wow Score bar so the pipeline is not empty
+          SCOUT_SCORE_THRESHOLD: '65'
         run: npm run newsroom:tick
 
       - name: Commit and push if changed
@@ -67,6 +87,7 @@ jobs:
         run: |
           git config user.name "smartproto-newsroom-bot"
           git config user.email "newsroom-bot@users.noreply.github.com"
+          git pull --rebase origin main || true
           git add src/data/articles.json data/factory-journal.json drafts/ || true
           if git diff --staged --quiet; then
             echo "No articles.json / journal / drafts changes — nothing to publish."
