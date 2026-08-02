@@ -56,7 +56,9 @@
     "https://www.kickstarter.com/blog/kickstarter-never-tolerates-abusive-behavior-this-new-feature-0",
     "https://www.kickstarter.com/blog/ready-to-make-magic-announcing-witchstarter-2022-our-first-op-0",
     "https://www.kickstarter.com/blog/reporting-back-from-the-first-meeting-of-the-kickstarter-comm",
-    "https://newatlas.com/motorcycles/triumph-speed-twin-1200-tfc/"
+    "https://newatlas.com/motorcycles/triumph-speed-twin-1200-tfc/",
+    "https://newatlas.com/motorcycles/charged-ndara/",
+    "https://newatlas.com/drones/quantum-systems-electric-drone-speed-record/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -115,7 +117,9 @@
     "tag:www.kickstarter.com,2009-05-04:BlogPost/2826",
     "tag:www.kickstarter.com,2009-05-04:BlogPost/2821",
     "tag:www.kickstarter.com,2009-05-04:BlogPost/2812",
-    "https://newatlas.com/motorcycles/triumph-speed-twin-1200-tfc/"
+    "https://newatlas.com/motorcycles/triumph-speed-twin-1200-tfc/",
+    "https://newatlas.com/motorcycles/charged-ndara/",
+    "https://newatlas.com/drones/quantum-systems-electric-drone-speed-record/"
   ],
   "entries": [
     {
@@ -645,6 +649,24 @@
       "processedAt": "2026-08-02T00:13:07.255Z",
       "status": "published",
       "slug": "triumph-s-carbon-clad-speed-twin-1200-tfc-is-a-factory-custom-delight",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/motorcycles/charged-ndara/",
+      "url": "https://newatlas.com/motorcycles/charged-ndara/",
+      "title": "Электробайк Ndara: стильный и доступный нейкед для города",
+      "processedAt": "2026-08-02T00:13:57.297Z",
+      "status": "published",
+      "slug": "the-4-250-ndara-might-just-be-the-coolest-electric-naked-to-date",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/drones/quantum-systems-electric-drone-speed-record/",
+      "url": "https://newatlas.com/drones/quantum-systems-electric-drone-speed-record/",
+      "title": "Apex Recordhunter: самый быстрый электрический дрон для скоростных задач",
+      "processedAt": "2026-08-02T00:14:41.165Z",
+      "status": "published",
+      "slug": "apex-recordhunter-becomes-the-world-s-fastest-electric-drone",
       "kind": "news"
     }
   ]
