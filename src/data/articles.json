@@ -1,5 +1,28 @@
 [
   {
+    "id": "anycubic-photon-p1-max-3d-printer",
+    "slug": "anycubic-photon-p1-max-3d-printer",
+    "title": "3D-принтер Anycubic Photon P1 Max для крупной печати",
+    "category": "Гаджеты",
+    "tags": [
+      "3D-печать",
+      "Anycubic",
+      "Фотополимерная печать",
+      "DIY",
+      "Хобби",
+      "новость"
+    ],
+    "summary": "Компания Anycubic представила фотополимерный 3D-принтер Photon P1 Max.",
+    "content": "Компания Anycubic представила фотополимерный 3D-принтер Photon P1 Max. Устройство предназначено для создания крупноформатных моделей с высокой детализацией благодаря объему печати 18,3 литра и разрешению экрана 12K. Встроенная подогреваемая ванночка поддерживает оптимальную температуру смолы, а технология Wave Release снижает усилие при отделении слоя, что повышает надежность при длительной печати. Система автовыравнивания и прецизионные направляющие обеспечивают стабильное качество. Принтер доступен для предзаказа.",
+    "sourceUrl": "https://thegadgetflow.com/product/anycubic-photon-p1-max-resin-printer/",
+    "publishedAt": "2026-08-02T17:36:39.726Z",
+    "readTime": "1 мин",
+    "imageUrl": "https://thegadgetflow.com/wp-content/uploads/2026/07/Anycubic-Photon-P1-Max-3D-Printer-01-1200x900.jpg",
+    "author": "Элеонора Хейл",
+    "authorDesk": "London desk",
+    "agentId": "newsroom-scout"
+  },
+  {
     "id": "attack-shark-rs6-ultra-wireless-gaming-mouse",
     "slug": "attack-shark-rs6-ultra-wireless-gaming-mouse",
     "title": "Игровая мышь ATTACK SHARK RS6 ULTRA с датчиком 52 000 DPI",

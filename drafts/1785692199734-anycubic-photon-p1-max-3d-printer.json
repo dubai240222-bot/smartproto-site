@@ -1,0 +1,58 @@
+{
+  "generatedAt": "2026-08-02T17:36:39.726Z",
+  "channel": "rss",
+  "cycle": "news",
+  "format": "news",
+  "source": "Gadget Flow",
+  "article": {
+    "id": "https://thegadgetflow.com/product/anycubic-photon-p1-max-resin-printer/",
+    "title": "Anycubic Photon P1 Max 3D Printer",
+    "url": "https://thegadgetflow.com/product/anycubic-photon-p1-max-resin-printer/",
+    "text": "Scale up your resin prints with the Anycubic Photon P1 Max, a large-format printer with an 18.3-liter build volume. Its 12K screen keeps every detail sharp, even at full size.\n\n18.3-Liter Build Volume: The chamber measures 285.5 x 214 x 300mm, and a heated vat holds high-viscosity resin at 95°F for prints up to 300mm tall.\n\n14-Inch 12K Screen: A 12K monochrome LCD with 24.8-micron pixels renders smooth curves and fine text without the jagged edges common on lower-resolution printers.\n\nWave Release Technology: A textured film cuts release force by 60% compared to standard smooth films, so layers separate faster and fail less often during long prints.\n\nAuto-Leveling and Precision Rails: Ball screws and dual linear rails hold ±0.01mm positioning accuracy, while auto-leveling checks the plate before each print starts.\n\nThe Photon P1 Max turns large, detailed resin prints into a repeatable process.\n\nThe post Anycubic Photon P1 Max 3D Printer appeared first on Gadget Flow.",
+    "publishedAt": "2026-07-30T20:00:52.000Z",
+    "sourceName": "Gadget Flow",
+    "imageUrl": "https://thegadgetflow.com/wp-content/uploads/2026/07/Anycubic-Photon-P1-Max-3D-Printer-01-1200x900.jpg"
+  },
+  "scout": {
+    "interesting": true,
+    "score": 80,
+    "reason": "Крупноформатный фотополимерный 3D-принтер с улучшенными характеристиками для детализированной печати.",
+    "productType": "3D Printer",
+    "isActuallyNew": true,
+    "noveltyEvidence": [
+      "18.3-Liter Build Volume",
+      "14-Inch 12K Screen",
+      "Wave Release Technology"
+    ],
+    "existingAlternatives": "Существуют другие крупноформатные фотополимерные 3D-принтеры, но Photon P1 Max выделяется большим объемом печати и высоким разрешением экрана.",
+    "functionalDifference": "Увеличенный объем печати (18.3 л), высокое разрешение 12K экрана (24.8 мкм пиксели), технология Wave Release для снижения силы отделения слоев на 60%, подогреваемая ванна для смолы.",
+    "marketSaturation": "medium",
+    "rejectCode": null
+  },
+  "review": {
+    "technicalVerdict": "Anycubic Photon P1 Max — это новая крупноформатная фотополимерная 3D-печать с впечатляющим объемом сборки 18,3 литра и разрешением экрана 12K. Устройство оснащено подогреваемой ванночкой для смолы, технологией Wave Release для снижения силы отрыва и точными направляющими с автовыравниванием, что делает его подходящим для создания детализированных и крупных моделей. Продукт доступен для предзаказа.",
+    "keyAspects": [
+      "Крупноформатная печать с объемом 18,3 л и разрешением 12K.",
+      "Подогреваемая ванночка для смолы и технология Wave Release для повышения надежности печати.",
+      "Автоматическое выравнивание и высокоточные направляющие для стабильного качества."
+    ]
+  },
+  "draft": {
+    "title": "3D-принтер Anycubic Photon P1 Max для крупной печати",
+    "text": "Компания Anycubic представила фотополимерный 3D-принтер Photon P1 Max. Устройство предназначено для создания крупноформатных моделей с высокой детализацией благодаря объему печати 18,3 литра и разрешению экрана 12K. Встроенная подогреваемая ванночка поддерживает оптимальную температуру смолы, а технология Wave Release снижает усилие при отделении слоя, что повышает надежность при длительной печати. Система автовыравнивания и прецизионные направляющие обеспечивают стабильное качество. Принтер доступен для предзаказа.",
+    "tags": [
+      "3D-печать",
+      "Anycubic",
+      "Фотополимерная печать",
+      "DIY",
+      "Хобби"
+    ],
+    "toneCheck": {
+      "clickbait": false,
+      "hype": false,
+      "unsupportedClaims": false,
+      "limitationsIncluded": true
+    },
+    "imageUrl": "https://thegadgetflow.com/wp-content/uploads/2026/07/Anycubic-Photon-P1-Max-3D-Printer-01-1200x900.jpg"
+  }
+}

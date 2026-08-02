@@ -12,7 +12,8 @@
     "https://thegadgetflow.com/product/hoverair-versa-flying-camera/",
     "https://thegadgetflow.com/blog/apple-homepad-rumors/",
     "https://thegadgetflow.com/product/gopro-mission-1-cinema-camera/",
-    "https://thegadgetflow.com/product/attack-shark-rs6-ultra-gaming-mouse/"
+    "https://thegadgetflow.com/product/attack-shark-rs6-ultra-gaming-mouse/",
+    "https://thegadgetflow.com/product/anycubic-photon-p1-max-resin-printer/"
   ],
   "processedIds": [
     "https://thegadgetflow.com/product/khadas-tea-pro-headphone-amp/",
@@ -27,7 +28,8 @@
     "https://thegadgetflow.com/product/hoverair-versa-flying-camera/",
     "https://thegadgetflow.com/blog/apple-homepad-rumors/",
     "https://thegadgetflow.com/product/gopro-mission-1-cinema-camera/",
-    "https://thegadgetflow.com/product/attack-shark-rs6-ultra-gaming-mouse/"
+    "https://thegadgetflow.com/product/attack-shark-rs6-ultra-gaming-mouse/",
+    "https://thegadgetflow.com/product/anycubic-photon-p1-max-resin-printer/"
   ],
   "entries": [
     {
@@ -199,6 +201,38 @@
       "scoutScore": 85,
       "reason": "Беспроводная игровая мышь с передовыми технологиями для киберспорта, предлагающая уникальную систему двойной зарядки и высокую производительность.",
       "slug": "attack-shark-rs6-ultra-wireless-gaming-mouse",
+      "channel": "rss",
+      "cycle": "news"
+    },
+    {
+      "id": "https://thegadgetflow.com/blog/robot-vacuum-ban/",
+      "url": "https://thegadgetflow.com/blog/robot-vacuum-ban/",
+      "title": "I didn’t expect the US robot ban to target my robot vacuum",
+      "processedAt": "2026-08-02T17:36:34.572Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Новость о потенциальном запрете на импорт новых моделей роботов-пылесосов, а не о конкретном новом продукте.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://thegadgetflow.com/product/yamaha-dxr12-mk3-powered-loudspeaker/",
+      "url": "https://thegadgetflow.com/product/yamaha-dxr12-mk3-powered-loudspeaker/",
+      "title": "Yamaha DXR12 mk3 Powered Loudspeaker",
+      "processedAt": "2026-08-02T17:36:35.497Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Это профессиональное звуковое оборудование, а не потребительский гаджет для обычного человека.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://thegadgetflow.com/product/anycubic-photon-p1-max-resin-printer/",
+      "url": "https://thegadgetflow.com/product/anycubic-photon-p1-max-resin-printer/",
+      "title": "3D-принтер Anycubic Photon P1 Max для крупной печати",
+      "processedAt": "2026-08-02T17:36:39.726Z",
+      "status": "published",
+      "scoutScore": 80,
+      "reason": "Крупноформатный фотополимерный 3D-принтер с улучшенными характеристиками для детализированной печати.",
+      "slug": "anycubic-photon-p1-max-3d-printer",
       "channel": "rss",
       "cycle": "news"
     }
