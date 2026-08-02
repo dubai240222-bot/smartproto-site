@@ -87,7 +87,8 @@
     "https://newatlas.com/electronics/meta-nfc-focused-microwaves-circuits/",
     "https://newatlas.com/wearables/mobvoi-ticnote-pods/",
     "https://newatlas.com/wearables/citizen-photon-celebrates-half-century-solar-watch-power/",
-    "https://newatlas.com/electronics/oversized-screen-phone-mirror/"
+    "https://newatlas.com/electronics/oversized-screen-phone-mirror/",
+    "https://newatlas.com/wearables/ganance-heir-watch-smartwatch-step-tracking/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -177,7 +178,8 @@
     "https://newatlas.com/electronics/meta-nfc-focused-microwaves-circuits/",
     "https://newatlas.com/wearables/mobvoi-ticnote-pods/",
     "https://newatlas.com/wearables/citizen-photon-celebrates-half-century-solar-watch-power/",
-    "https://newatlas.com/electronics/oversized-screen-phone-mirror/"
+    "https://newatlas.com/electronics/oversized-screen-phone-mirror/",
+    "https://newatlas.com/wearables/ganance-heir-watch-smartwatch-step-tracking/"
   ],
   "entries": [
     {
@@ -986,6 +988,15 @@
       "status": "published",
       "slug": "15-6-inch-screen-instantly-mirrors-any-phone-without-cables-apps-or-wi-fi",
       "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/wearables/ganance-heir-watch-smartwatch-step-tracking/",
+      "url": "https://newatlas.com/wearables/ganance-heir-watch-smartwatch-step-tracking/",
+      "title": "Аксессуар для часов: превратите ваши любимые часы в смарт-устройство",
+      "processedAt": "2026-08-02T06:03:27.222Z",
+      "status": "published",
+      "slug": "coin-sized-accessory-turns-your-favorite-watch-into-a-smartwatch",
+      "kind": "article"
     }
   ]
 }
