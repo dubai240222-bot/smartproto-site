@@ -1,5 +1,26 @@
 [
   {
+    "id": "ai-neckband-lets-you-talk-without-saying-a-word",
+    "slug": "ai-neckband-lets-you-talk-without-saying-a-word",
+    "title": "Устройство для \"беззвучной\" речи: Понимает ваши мысли и озвучивает их",
+    "category": "НОВИНКА / ПОЛЕЗНО",
+    "tags": [
+      "#новинка",
+      "#полезно",
+      "#гаджет",
+      "#AI",
+      "#технологии",
+      "#POSTECH",
+      "#носимыеустройства"
+    ],
+    "summary": "Новый AI-ошейник от POSTECH позволяет общаться, не произнося ни звука.",
+    "content": "Новый AI-ошейник от POSTECH позволяет общаться, не произнося ни звука. Устройство считывает микродвижения мышц шеи, когда вы беззвучно произносите слова, и преобразует их в речь вашим голосом. Это может быть полезно в шумных местах или для людей с нарушениями речи.\nИсточник: New Atlas Wearables.",
+    "sourceUrl": "https://newatlas.com/wearables/postech-ai-neckband-words-speech/",
+    "publishedAt": "2026-08-02T05:57:24.977Z",
+    "readTime": "1 мин",
+    "imageUrl": "https://assets.newatlas.com/dims4/default/16d10f9/2147483647/strip/true/crop/1536x1024+0+0/resize/1440x960!/format/webp/quality/90/?url=https%3A%2F%2Fnewatlas-brightspot.s3.ap-southeast-2.amazonaws.com%2Fdc%2Fc5%2F2801fa0d40b78c467a61b2f0fbc9%2Fvoices-main-1.jpeg"
+  },
+  {
     "id": "this-mind-reading-beanie-could-make-keyboards-obsolete",
     "slug": "this-mind-reading-beanie-could-make-keyboards-obsolete",
     "title": "Шапка с EEG-сенсорами для управления устройствами силой мысли",

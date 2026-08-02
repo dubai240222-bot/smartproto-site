@@ -80,7 +80,8 @@
     "https://newatlas.com/wearables/the90-gem-pendant-uv-tracking-exposure/",
     "https://newatlas.com/wearables/sony-reon-pocket-pro-plus-wearable-air-conditioner-upgrade/",
     "https://newatlas.com/wearables/google-screenless-health-tracker-fitbit-air/",
-    "https://newatlas.com/wearables/sabi-mind-reading-beanie-typing-eeg/"
+    "https://newatlas.com/wearables/sabi-mind-reading-beanie-typing-eeg/",
+    "https://newatlas.com/wearables/postech-ai-neckband-words-speech/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -163,7 +164,8 @@
     "https://newatlas.com/wearables/the90-gem-pendant-uv-tracking-exposure/",
     "https://newatlas.com/wearables/sony-reon-pocket-pro-plus-wearable-air-conditioner-upgrade/",
     "https://newatlas.com/wearables/google-screenless-health-tracker-fitbit-air/",
-    "https://newatlas.com/wearables/sabi-mind-reading-beanie-typing-eeg/"
+    "https://newatlas.com/wearables/sabi-mind-reading-beanie-typing-eeg/",
+    "https://newatlas.com/wearables/postech-ai-neckband-words-speech/"
   ],
   "entries": [
     {
@@ -908,6 +910,15 @@
       "processedAt": "2026-08-02T05:56:25.001Z",
       "status": "published",
       "slug": "this-mind-reading-beanie-could-make-keyboards-obsolete",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/wearables/postech-ai-neckband-words-speech/",
+      "url": "https://newatlas.com/wearables/postech-ai-neckband-words-speech/",
+      "title": "Устройство для \"беззвучной\" речи: Понимает ваши мысли и озвучивает их",
+      "processedAt": "2026-08-02T05:57:24.977Z",
+      "status": "published",
+      "slug": "ai-neckband-lets-you-talk-without-saying-a-word",
       "kind": "news"
     }
   ]
