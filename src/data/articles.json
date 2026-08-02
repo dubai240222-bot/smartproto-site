@@ -1,5 +1,28 @@
 [
   {
+    "id": "bike-trainers-as-video-game-controllers",
+    "slug": "bike-trainers-as-video-game-controllers",
+    "title": "Велотренажер как контроллер для видеоигр: новый способ играть и тренироваться",
+    "category": "НОВИНКА / ПОЛЕЗНО",
+    "tags": [
+      "#новинка",
+      "#полезно",
+      "#гаджет",
+      "#гейминг",
+      "#спорт",
+      "#DIY"
+    ],
+    "summary": "Проект Deck de France превращает обычный велотренажер в игровой контроллер.",
+    "content": "Проект Deck de France превращает обычный велотренажер в игровой контроллер. Данные с тренажера передаются на игровую консоль, позволяя управлять персонажем в играх, таких как Rocket League или симуляторах велоспорта. Это отличный способ добавить разнообразия в тренировки и сделать их более увлекательными.\n\nИсточник: Hackaday.",
+    "sourceUrl": "https://hackaday.com/2026/08/01/bike-trainers-as-video-game-controllers/",
+    "publishedAt": "2026-08-02T08:49:08.252Z",
+    "readTime": "1 мин",
+    "imageUrl": "https://hackaday.com/wp-content/uploads/2026/07/bike-controller-main.jpg",
+    "author": "Том Рид",
+    "authorDesk": "US wire",
+    "agentId": "factory-shift"
+  },
+  {
     "id": "nuwa-pen-converts-text-written-on-regular-paper-into-digital-format",
     "slug": "nuwa-pen-converts-text-written-on-regular-paper-into-digital-format",
     "title": "Nuwa Pen: Обычная ручка, которая делает ваши записи цифровыми",

@@ -147,7 +147,8 @@
     "https://newatlas.com/electronics/fineday-3-0-bluetooth-mechanical-keyboard/",
     "https://www.ithome.com/0/984/751.htm",
     "https://www.androidauthority.com/samsung-one-ui-9-permalock-3693475/",
-    "https://newatlas.com/electronics/nuwa-pen-handwritten-text-digital/"
+    "https://newatlas.com/electronics/nuwa-pen-handwritten-text-digital/",
+    "https://hackaday.com/2026/08/01/bike-trainers-as-video-game-controllers/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -297,7 +298,8 @@
     "https://newatlas.com/electronics/fineday-3-0-bluetooth-mechanical-keyboard/",
     "china-g27q3",
     "https://www.androidauthority.com/samsung-one-ui-9-permalock-3693475/",
-    "https://newatlas.com/electronics/nuwa-pen-handwritten-text-digital/"
+    "https://newatlas.com/electronics/nuwa-pen-handwritten-text-digital/",
+    "https://hackaday.com/?p=1129686"
   ],
   "entries": [
     {
@@ -1674,6 +1676,15 @@
       "processedAt": "2026-08-02T08:48:20.575Z",
       "status": "published",
       "slug": "nuwa-pen-converts-text-written-on-regular-paper-into-digital-format",
+      "kind": "news"
+    },
+    {
+      "id": "https://hackaday.com/?p=1129686",
+      "url": "https://hackaday.com/2026/08/01/bike-trainers-as-video-game-controllers/",
+      "title": "Велотренажер как контроллер для видеоигр: новый способ играть и тренироваться",
+      "processedAt": "2026-08-02T08:49:08.252Z",
+      "status": "published",
+      "slug": "bike-trainers-as-video-game-controllers",
       "kind": "news"
     }
   ]
