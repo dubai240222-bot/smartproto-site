@@ -1,5 +1,66 @@
 [
   {
+    "id": "street-legal-electric-scooter-hits-75-mph-for-under-5-000",
+    "slug": "street-legal-electric-scooter-hits-75-mph-for-under-5-000",
+    "title": "Электросамокат HMP Flash: скорость 120 км/ч по доступной цене",
+    "category": "НОВИНКА / ПОЛЕЗНО",
+    "tags": [
+      "#новинка",
+      "#полезно",
+      "#гаджет",
+      "#электросамокат",
+      "#транспорт",
+      "#HMPFlash"
+    ],
+    "summary": "HMP Flash — это уличный электросамокат, способный развивать скорость до 120 км/ч.",
+    "content": "HMP Flash — это уличный электросамокат, способный развивать скорость до 120 км/ч. Он предлагает высокую производительность для городских поездок и не только, при этом оставаясь доступным по цене. Отличный выбор для тех, кто ценит скорость и мобильность без компромиссов. Источник: New Atlas.",
+    "sourceUrl": "https://newatlas.com/motorcycles/hmp-flash/",
+    "publishedAt": "2026-08-02T05:48:24.810Z",
+    "readTime": "1 мин",
+    "imageUrl": "https://assets.newatlas.com/dims4/default/ad706e1/2147483647/strip/true/crop/1536x1024+0+0/resize/1440x960!/format/webp/quality/90/?url=https%3A%2F%2Fnewatlas-brightspot.s3.ap-southeast-2.amazonaws.com%2Fe5%2F4f%2F780d05654fd2a7df93e216fc1960%2Fflash-delivery-trunk-v1.jpg"
+  },
+  {
+    "id": "amazon-s-building-a-5-000-satellite-phone-network-to-rival-starlink",
+    "slug": "amazon-s-building-a-5-000-satellite-phone-network-to-rival-starlink",
+    "title": "Amazon готовит спутниковую связь для телефонов",
+    "category": "НОВИНКА / ПОЛЕЗНО",
+    "tags": [
+      "#новинка",
+      "#полезно",
+      "#гаджет",
+      "#спутниковаясвязь",
+      "#Amazon",
+      "#телеком"
+    ],
+    "summary": "Amazon планирует запустить сеть из 5000 спутников для обеспечения прямой связи с мобильными телефонами.",
+    "content": "Amazon планирует запустить сеть из 5000 спутников для обеспечения прямой связи с мобильными телефонами. Этот проект призван составить конкуренцию существующим сервисам спутникового интернета, предлагая пользователям возможность оставаться на связи даже в удаленных регионах. Ожидается, что услуга станет доступна в ближайшие несколько лет.\nИсточник: New Atlas.",
+    "sourceUrl": "https://newatlas.com/telecommunications/amazon-leo-d2d-satellite-phone-network/",
+    "publishedAt": "2026-08-02T05:47:23.925Z",
+    "readTime": "1 мин",
+    "imageUrl": "https://assets.newatlas.com/dims4/default/2798969/2147483647/strip/true/crop/1200x800+0+0/resize/1200x800!/format/webp/quality/90/?url=https%3A%2F%2Fnewatlas-brightspot.s3.ap-southeast-2.amazonaws.com%2F44%2F33%2F1adfa8d74d6cab06f190c70ee26d%2Famazon-aims-to-have-its-direct-to-cell-satellite-service-operational-by-early-2028.jpg"
+  },
+  {
+    "id": "garmin-ditches-screens-and-subscriptions-for-its-new-fitness-tracker",
+    "slug": "garmin-ditches-screens-and-subscriptions-for-its-new-fitness-tracker",
+    "title": "Garmin Cirqa: фитнес-трекер без экрана и подписки",
+    "category": "НОВИНКА / ПОЛЕЗНО",
+    "tags": [
+      "#новинка",
+      "#полезно",
+      "#гаджет",
+      "#фитнес",
+      "#трекер",
+      "#Garmin",
+      "#здоровье"
+    ],
+    "summary": "Garmin представил новый фитнес-трекер Cirqa, отказавшись от экрана и необходимости ежемесячной подписки.",
+    "content": "Garmin представил новый фитнес-трекер Cirqa, отказавшись от экрана и необходимости ежемесячной подписки. Устройство ориентировано как на начинающих, так и на опытных спортсменов, предлагая простой и доступный способ отслеживания физической активности. Это решение упрощает использование и делает продвинутые функции доступными без дополнительных затрат.\n\nИсточник: New Atlas.",
+    "sourceUrl": "https://newatlas.com/wearables/garmin-screenless-cirqa-fitness-tracker/",
+    "publishedAt": "2026-08-02T05:46:21.073Z",
+    "readTime": "1 мин",
+    "imageUrl": "https://assets.newatlas.com/dims4/default/31a12da/2147483647/strip/true/crop/1200x800+0+0/resize/1200x800!/format/webp/quality/90/?url=https%3A%2F%2Fnewatlas-brightspot.s3.ap-southeast-2.amazonaws.com%2F33%2F0f%2F6be5a3f744998a79448091bb2cf0%2Fthe-new-cirqa-tracker-goes-screenless-for-distraction-free-fitness-tracking.jpg"
+  },
+  {
     "id": "new-german-multitool-is-part-leatherman-part-swiss-army-knife",
     "slug": "new-german-multitool-is-part-leatherman-part-swiss-army-knife",
     "title": "Böker MK II NXT: компактный мультитул для активного отдыха",

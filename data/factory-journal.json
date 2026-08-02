@@ -68,7 +68,11 @@
     "https://newatlas.com/consumer-tech/autonomous-intern-review/",
     "https://newatlas.com/medical-devices/smart-dressing-made-from-plants-delivers-antibiotics-before-infections-take-hold/",
     "https://newatlas.com/robotics/1rollo-monowheel-security-robot/",
-    "https://newatlas.com/knives-multitools/boker-mk-ii-nxt-multitool/"
+    "https://newatlas.com/knives-multitools/boker-mk-ii-nxt-multitool/",
+    "https://newatlas.com/wearables/garmin-screenless-cirqa-fitness-tracker/",
+    "https://newatlas.com/wearables/garmin-screenless-cirqa-fitness-tracker/",
+    "https://newatlas.com/telecommunications/amazon-leo-d2d-satellite-phone-network/",
+    "https://newatlas.com/motorcycles/hmp-flash/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -139,7 +143,11 @@
     "https://newatlas.com/consumer-tech/autonomous-intern-review/",
     "https://newatlas.com/medical-devices/smart-dressing-made-from-plants-delivers-antibiotics-before-infections-take-hold/",
     "https://newatlas.com/robotics/1rollo-monowheel-security-robot/",
-    "https://newatlas.com/knives-multitools/boker-mk-ii-nxt-multitool/"
+    "https://newatlas.com/knives-multitools/boker-mk-ii-nxt-multitool/",
+    "https://newatlas.com/wearables/garmin-screenless-cirqa-fitness-tracker/",
+    "https://newatlas.com/wearables/garmin-screenless-cirqa-fitness-tracker/",
+    "https://newatlas.com/telecommunications/amazon-leo-d2d-satellite-phone-network/",
+    "https://newatlas.com/motorcycles/hmp-flash/"
   ],
   "entries": [
     {
@@ -777,6 +785,41 @@
       "processedAt": "2026-08-02T05:45:21.430Z",
       "status": "published",
       "slug": "new-german-multitool-is-part-leatherman-part-swiss-army-knife",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/wearables/garmin-screenless-cirqa-fitness-tracker/",
+      "url": "https://newatlas.com/wearables/garmin-screenless-cirqa-fitness-tracker/",
+      "title": "Garmin Cirqa: фитнес-трекер без экрана и подписки",
+      "processedAt": "2026-08-02T05:46:21.073Z",
+      "status": "published",
+      "slug": "garmin-ditches-screens-and-subscriptions-for-its-new-fitness-tracker",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/wearables/garmin-screenless-cirqa-fitness-tracker/",
+      "url": "https://newatlas.com/wearables/garmin-screenless-cirqa-fitness-tracker/",
+      "title": "Garmin ditches screens and subscriptions for its new fitness tracker",
+      "processedAt": "2026-08-02T05:47:23.013Z",
+      "status": "rejected",
+      "reason": "slug collision"
+    },
+    {
+      "id": "https://newatlas.com/telecommunications/amazon-leo-d2d-satellite-phone-network/",
+      "url": "https://newatlas.com/telecommunications/amazon-leo-d2d-satellite-phone-network/",
+      "title": "Amazon готовит спутниковую связь для телефонов",
+      "processedAt": "2026-08-02T05:47:23.925Z",
+      "status": "published",
+      "slug": "amazon-s-building-a-5-000-satellite-phone-network-to-rival-starlink",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/motorcycles/hmp-flash/",
+      "url": "https://newatlas.com/motorcycles/hmp-flash/",
+      "title": "Электросамокат HMP Flash: скорость 120 км/ч по доступной цене",
+      "processedAt": "2026-08-02T05:48:24.810Z",
+      "status": "published",
+      "slug": "street-legal-electric-scooter-hits-75-mph-for-under-5-000",
       "kind": "news"
     }
   ]
