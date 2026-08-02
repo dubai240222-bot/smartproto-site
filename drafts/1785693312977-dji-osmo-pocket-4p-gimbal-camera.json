@@ -1,0 +1,58 @@
+{
+  "generatedAt": "2026-08-02T17:55:12.971Z",
+  "channel": "rss",
+  "cycle": "article",
+  "format": "article",
+  "source": "Gadget Flow",
+  "article": {
+    "id": "https://thegadgetflow.com/product/dji-osmo-pocket-4p-gimbal-camera/",
+    "title": "DJI Osmo Pocket 4P Gimbal Camera",
+    "url": "https://thegadgetflow.com/product/dji-osmo-pocket-4p-gimbal-camera/",
+    "text": "DJI Osmo Pocket 4P puts two cameras on one compact gimbal: a wide lens for scenery and a 60mm lens for portraits, so cinematic 4K footage stays within reach.\n\nTwo Lenses, One Camera: A 20mm wide lens captures scenery, while a 60mm lens with an f/1.8 aperture frames natural, dimensional portraits, all without swapping gear.\n\n17-Stop Dynamic Range: The 1-inch sensor and D-Log 2 color profile keep highlights and shadows balanced, so footage looks even in harsh sun or low light.\n\nActiveTrack 8.0: The camera tracks people, pets, or vehicles at any zoom level and keeps up to eight subjects centered, so you can film hands-free.\n\n4K/240fps Slow Motion: Fast moments turn into smooth, detailed slow-motion clips that are ready to use without extra editing.\n\nCompact and Steady: A 3-axis gimbal keeps the 230g body stable in hand, and 103GB of built-in storage lets you start filming without a memory card.\n\nOsmo Pocket 4P fits in a pocket and delivers professional-grade footage, a solid pick for creators on the move.\n\nThe post DJI Osmo Pocket 4P Gimbal Camera appeared first on Gadget Flow.",
+    "publishedAt": "2026-07-30T16:30:12.000Z",
+    "sourceName": "Gadget Flow",
+    "imageUrl": "https://thegadgetflow.com/wp-content/uploads/2026/07/DJI-Osmo-Pocket-4P-Gimbal-Camera-01-1200x900.jpg"
+  },
+  "scout": {
+    "interesting": true,
+    "score": 85,
+    "reason": "Компактная камера с двумя объективами и продвинутыми функциями стабилизации и съемки для создателей контента.",
+    "productType": "camera",
+    "isActuallyNew": true,
+    "noveltyEvidence": [
+      "Two Lenses, One Camera: A 20mm wide lens captures scenery, while a 60mm lens with an f/1.8 aperture frames natural, dimensional portraits, all without swapping gear.",
+      "ActiveTrack 8.0: The camera tracks people, pets, or vehicles at any zoom level and keeps up to eight subjects centered, so you can film hands-free.",
+      "4K/240fps Slow Motion: Fast moments turn into smooth, detailed slow-motion clips that are ready to use without extra editing."
+    ],
+    "existingAlternatives": "DJI Osmo Pocket 3, GoPro, Insta360",
+    "functionalDifference": "Наличие двух сменных объективов (широкоугольный и портретный) на одном стабилизаторе без необходимости их физической смены, улучшенная система слежения ActiveTrack 8.0 и возможность съемки 4K при 240fps.",
+    "marketSaturation": "medium",
+    "rejectCode": null
+  },
+  "review": {
+    "technicalVerdict": "DJI Osmo Pocket 4P — это новая компактная камера-стабилизатор с двумя объективами, предназначенная для создателей контента. Устройство оснащено 1-дюймовым сенсором, поддерживает запись 4K видео с частотой до 240 кадров в секунду и имеет встроенную память на 103 ГБ. Интеллектуальная система слежения ActiveTrack 8.0 позволяет фокусироваться на до восьми объектах одновременно. Камера предлагает профессиональное качество съемки в портативном форм-факторе, что делает ее удобным инструментом для съемки в движении.",
+    "keyAspects": [
+      "Два объектива (20 мм и 60 мм) для универсальной съемки без смены оптики.",
+      "1-дюймовый сенсор с 17-ступенчатым динамическим диапазоном и D-Log 2 для профессиональной цветокоррекции.",
+      "ActiveTrack 8.0 с возможностью одновременного отслеживания до восьми объектов и запись 4K/240fps для замедленной съемки."
+    ]
+  },
+  "draft": {
+    "title": "DJI Osmo Pocket 4P: камера-стабилизатор с двумя объективами",
+    "text": "DJI представила Osmo Pocket 4P – компактную камеру-стабилизатор, оснащенную двумя объективами. Основная задача устройства – упростить создание качественного видеоконтента для блогеров и путешественников.\n\nКамера позволяет снимать как широкие пейзажи с помощью 20-мм объектива, так и портреты с естественной глубиной резкости благодаря 60-мм объективу с диафрагмой f/1.8. Это избавляет от необходимости менять оптику во время съемки. Встроенный 1-дюймовый сенсор с 17-ступенчатым динамическим диапазоном и поддержкой цветового профиля D-Log 2 обеспечивает детализированное изображение даже в сложных условиях освещения.\n\nФункция ActiveTrack 8.0 позволяет камере автоматически следить за выбранными объектами, удерживая их в центре кадра. Поддерживается запись видео в разрешении 4K с частотой до 240 кадров в секунду, что открывает возможности для создания плавных замедленных сцен. Устройство имеет 3-осевую стабилизацию и 103 ГБ встроенной памяти, что позволяет начать съемку без карты памяти.\n\nЦена и дата начала продаж Osmo Pocket 4P пока не объявлены. Независимых тестов и обзоров устройства также еще нет.",
+    "tags": [
+      "камера",
+      "стабилизатор",
+      "DJI",
+      "видеосъемка",
+      "блогинг"
+    ],
+    "toneCheck": {
+      "clickbait": false,
+      "hype": false,
+      "unsupportedClaims": false,
+      "limitationsIncluded": true
+    },
+    "imageUrl": "https://thegadgetflow.com/wp-content/uploads/2026/07/DJI-Osmo-Pocket-4P-Gimbal-Camera-01-1200x900.jpg"
+  }
+}

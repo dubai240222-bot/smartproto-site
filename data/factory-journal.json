@@ -13,7 +13,8 @@
     "https://thegadgetflow.com/blog/apple-homepad-rumors/",
     "https://thegadgetflow.com/product/gopro-mission-1-cinema-camera/",
     "https://thegadgetflow.com/product/attack-shark-rs6-ultra-gaming-mouse/",
-    "https://thegadgetflow.com/product/anycubic-photon-p1-max-resin-printer/"
+    "https://thegadgetflow.com/product/anycubic-photon-p1-max-resin-printer/",
+    "https://thegadgetflow.com/product/dji-osmo-pocket-4p-gimbal-camera/"
   ],
   "processedIds": [
     "https://thegadgetflow.com/product/khadas-tea-pro-headphone-amp/",
@@ -29,7 +30,8 @@
     "https://thegadgetflow.com/blog/apple-homepad-rumors/",
     "https://thegadgetflow.com/product/gopro-mission-1-cinema-camera/",
     "https://thegadgetflow.com/product/attack-shark-rs6-ultra-gaming-mouse/",
-    "https://thegadgetflow.com/product/anycubic-photon-p1-max-resin-printer/"
+    "https://thegadgetflow.com/product/anycubic-photon-p1-max-resin-printer/",
+    "https://thegadgetflow.com/product/dji-osmo-pocket-4p-gimbal-camera/"
   ],
   "entries": [
     {
@@ -235,6 +237,38 @@
       "slug": "anycubic-photon-p1-max-3d-printer",
       "channel": "rss",
       "cycle": "news"
+    },
+    {
+      "id": "https://thegadgetflow.com/blog/robot-vacuum-ban/",
+      "url": "https://thegadgetflow.com/blog/robot-vacuum-ban/",
+      "title": "I didn’t expect the US robot ban to target my robot vacuum",
+      "processedAt": "2026-08-02T17:55:04.803Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Новость о потенциальном запрете на импорт роботов-пылесосов, а не о конкретном новом продукте.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://thegadgetflow.com/product/yamaha-dxr12-mk3-powered-loudspeaker/",
+      "url": "https://thegadgetflow.com/product/yamaha-dxr12-mk3-powered-loudspeaker/",
+      "title": "Yamaha DXR12 mk3 Powered Loudspeaker",
+      "processedAt": "2026-08-02T17:55:07.320Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Это профессиональное звуковое оборудование, а не потребительский гаджет для обычного человека.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://thegadgetflow.com/product/dji-osmo-pocket-4p-gimbal-camera/",
+      "url": "https://thegadgetflow.com/product/dji-osmo-pocket-4p-gimbal-camera/",
+      "title": "DJI Osmo Pocket 4P: камера-стабилизатор с двумя объективами",
+      "processedAt": "2026-08-02T17:55:12.971Z",
+      "status": "published",
+      "scoutScore": 85,
+      "reason": "Компактная камера с двумя объективами и продвинутыми функциями стабилизации и съемки для создателей контента.",
+      "slug": "dji-osmo-pocket-4p-gimbal-camera",
+      "channel": "rss",
+      "cycle": "article"
     }
   ]
 }
