@@ -40,18 +40,14 @@ export function Header() {
     <header className="border-b border-[var(--border)] bg-[var(--surface)] text-[var(--text)] transition-colors">
       <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          {/* Logo & Tagline */}
-          <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-4">
-            <Link href="/" className="group flex items-center gap-2">
-              <span className="font-serif text-2xl font-bold tracking-tight text-[var(--text)] sm:text-3xl hover:opacity-90">
-                SMARTPROTO
-              </span>
-            </Link>
-            <span className="hidden text-[var(--border)] sm:inline">|</span>
-            <p className="text-xs font-normal text-[var(--muted)]">
-              Технологии раньше, чем они станут мейнстримом
-            </p>
-          </div>
+          {/* Brand mark */}
+          <Link href="/" className="inline-flex shrink-0 items-center hover:opacity-90">
+            <img
+              src="/brand/smartproto-logo.png"
+              alt="SmartProto"
+              className="h-9 w-auto sm:h-10"
+            />
+          </Link>
 
           {/* Right Controls: Search, RU, Theme Toggle */}
           <div className="flex items-center gap-3 self-end md:self-auto">
