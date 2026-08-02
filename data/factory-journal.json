@@ -113,7 +113,8 @@
     "https://newatlas.com/wearables/review-movengine-aircore-owh-headphones/",
     "https://newatlas.com/electronics/worlds-smallest-led-pixels-127000-ppi-display/",
     "https://newatlas.com/wearables/ring-mouse-android-windows-ios-macos/",
-    "https://newatlas.com/electronics/xring-d13-mouse-trackpad-laser-remote/"
+    "https://newatlas.com/electronics/xring-d13-mouse-trackpad-laser-remote/",
+    "https://newatlas.com/electronics/ultrasonic-wireless-cutter/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -229,7 +230,8 @@
     "https://newatlas.com/wearables/review-movengine-aircore-owh-headphones/",
     "https://newatlas.com/electronics/worlds-smallest-led-pixels-127000-ppi-display/",
     "https://newatlas.com/wearables/ring-mouse-android-windows-ios-macos/",
-    "https://newatlas.com/electronics/xring-d13-mouse-trackpad-laser-remote/"
+    "https://newatlas.com/electronics/xring-d13-mouse-trackpad-laser-remote/",
+    "https://newatlas.com/electronics/ultrasonic-wireless-cutter/"
   ],
   "entries": [
     {
@@ -1272,6 +1274,15 @@
       "status": "published",
       "slug": "super-functional-remote-packs-a-wireless-mouse-trackpad-and-laser-beam",
       "kind": "article"
+    },
+    {
+      "id": "https://newatlas.com/electronics/ultrasonic-wireless-cutter/",
+      "url": "https://newatlas.com/electronics/ultrasonic-wireless-cutter/",
+      "title": "Беспроводной ультразвуковой резак: точные разрезы без усилий",
+      "processedAt": "2026-08-02T06:37:14.912Z",
+      "status": "published",
+      "slug": "wireless-ultrasonic-knife-glides-through-most-things-like-butter",
+      "kind": "news"
     }
   ]
 }
