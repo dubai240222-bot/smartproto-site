@@ -41,20 +41,29 @@ export function Header() {
     <header className="border-b border-[var(--border)] bg-[var(--surface)] text-[var(--text)] transition-colors">
       <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          {/* Brand: full horizontal logo (icon + SMARTPROTO + slogan) */}
+          {/* Brand: SP mark + HTML wordmark (scales; not a tiny raster lockup) */}
           <Link
             href="/"
-            className="group inline-flex shrink-0 items-center self-start hover:opacity-90"
+            className="group inline-flex min-w-0 max-w-full shrink-0 items-center gap-2.5 self-start sm:gap-3"
             aria-label="SmartProto — на главную"
           >
             <Image
-              src="/brand/smartproto-logo.png"
-              alt="SmartProto — Технологии раньше, чем они станут мейнстримом"
-              width={1024}
-              height={341}
+              src="/brand/smartproto-mark.png"
+              alt=""
+              width={512}
+              height={512}
               priority
-              className="h-10 w-auto max-w-[min(100%,280px)] object-contain object-left sm:h-12 sm:max-w-[340px]"
+              className="h-9 w-9 shrink-0 object-contain sm:h-11 sm:w-11 md:h-12 md:w-12"
             />
+            <span className="flex min-w-0 flex-col leading-none">
+              <span className="text-[1.25rem] font-extrabold tracking-tight sm:text-[1.5rem] md:text-[1.625rem]">
+                <span className="text-[var(--text)]">SMART</span>
+                <span className="text-[var(--accent)]">PROTO</span>
+              </span>
+              <span className="mt-1 hidden text-[11px] font-medium leading-snug tracking-normal text-[var(--muted)] sm:block sm:text-xs">
+                Технологии раньше, чем они станут мейнстримом
+              </span>
+            </span>
           </Link>
 
           {/* Right Controls: Search, RU, Theme Toggle */}
