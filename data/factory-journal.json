@@ -98,7 +98,8 @@
     "https://newatlas.com/wearables/gesture-based-wearable-control/",
     "https://newatlas.com/wearables/ai-rings-pebble-index-wizpr-sandbar-stream/",
     "https://newatlas.com/wearables/perisphere-smart-headphones-immersive-display-cameras-3d/",
-    "https://newatlas.com/wearables/dotlumen-ai-glasses-blind-independence/"
+    "https://newatlas.com/wearables/dotlumen-ai-glasses-blind-independence/",
+    "https://newatlas.com/electronics/kode-dot-dev-board-electronics-hacker-tool/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -199,7 +200,8 @@
     "https://newatlas.com/wearables/gesture-based-wearable-control/",
     "https://newatlas.com/wearables/ai-rings-pebble-index-wizpr-sandbar-stream/",
     "https://newatlas.com/wearables/perisphere-smart-headphones-immersive-display-cameras-3d/",
-    "https://newatlas.com/wearables/dotlumen-ai-glasses-blind-independence/"
+    "https://newatlas.com/wearables/dotlumen-ai-glasses-blind-independence/",
+    "https://newatlas.com/electronics/kode-dot-dev-board-electronics-hacker-tool/"
   ],
   "entries": [
     {
@@ -1106,6 +1108,15 @@
       "processedAt": "2026-08-02T06:13:24.721Z",
       "status": "published",
       "slug": "ai-powered-glasses-help-the-blind-go-places-safely",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/electronics/kode-dot-dev-board-electronics-hacker-tool/",
+      "url": "https://newatlas.com/electronics/kode-dot-dev-board-electronics-hacker-tool/",
+      "title": "Kode Dot: Компактная плата для разработчиков с множеством функций",
+      "processedAt": "2026-08-02T06:22:26.677Z",
+      "status": "published",
+      "slug": "this-tiny-dev-board-is-packed-with-features-for-ambitious-makers",
       "kind": "news"
     }
   ]
