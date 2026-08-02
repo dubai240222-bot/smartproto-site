@@ -19,11 +19,15 @@ const SOURCES: [string, string][] = [
   ['New Atlas', 'https://newatlas.com/index.rss'],
   ['Hackaday', 'https://hackaday.com/blog/feed/'],
   ['TechCrunch', 'https://techcrunch.com/feed/'],
+  ['The Verge', 'https://www.theverge.com/rss/index.xml'],
+  ['Engadget', 'https://www.engadget.com/rss.xml'],
+  ['9to5Google', 'https://9to5google.com/feed/'],
+  ['Android Authority', 'https://www.androidauthority.com/feed'],
 ];
 
 const INTERVAL_MS = 55_000;
-const MAX_MINUTES = 20;
-const TARGET_NEW = 8;
+const MAX_MINUTES = Number(process.env.GADGETS_MAX_MINUTES || 25);
+const TARGET_NEW = Number(process.env.GADGETS_TARGET_NEW || 12);
 const MODEL = process.env.OPENROUTER_EDITOR_MODEL ?? 'google/gemini-2.5-flash-lite';
 
 interface Article {
@@ -69,9 +73,10 @@ async function rewriteBlogger(item: RssItem): Promise<{ title: string; text: str
       {
         role: 'system',
         content: [
-          'Ты восторженный блогер / TikTok-ревьюер SmartProto ТОЛЬКО про умные полезные гаджеты.',
-          'Живой блогерский голос, уникальный хук под КОНКРЕТНЫЙ продукт.',
-          'ЗАПРЕЩЕНО: «дожили», «дожили до времени», «вчера казалось фантастикой» и клоны.',
+          'Ты редактор SmartProto — спокойные взрослые product-карточки ТОЛЬКО про умные полезные гаджеты.',
+          'Тон: ясный, компетентный, без патоса и без игривости. Интерес купить — через пользу, не хайп.',
+          'ЗАПРЕЩЕНО: клише «будущее уже здесь» / «вчера это казалось невозможным»;',
+          'без «вау», guys/ребята, эмодзи, патоса и TikTok-сленга.',
           'Хвали РЕАЛЬНЫЕ фичи, без выдуманных спеков. JSON без markdown.',
           'Reject: title=REJECT, text=off-topic, tags=["#reject"] для культуры/природы/писателей/политики без товара.',
         ].join(' '),
@@ -80,7 +85,7 @@ async function rewriteBlogger(item: RssItem): Promise<{ title: string; text: str
         role: 'user',
         content: [
           'Сделай русскую карточку гаджета. JSON: {"title":string,"text":string,"tags":string[]}',
-          'title до 90 символов. text 120–180 слов, голос блогера.',
+          'title до 90 символов, ясный через пользу. text 150–200 слов, спокойное product-объяснение.',
           'tags 5–8 с #новинка #полезно #гаджет.',
           'В конце text: Источник: <имя>.',
           '',

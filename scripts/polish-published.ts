@@ -16,9 +16,9 @@ const articlesPath = path.resolve(__dirname, '..', 'src', 'data', 'articles.json
 
 const POLISH_MODEL = process.env.OPENROUTER_EDITOR_MODEL ?? 'google/gemini-2.5-flash-lite';
 
-/** Phrases that signal stock openers / endings to rewrite. */
+/** Phrases that signal stock openers / endings / hype to rewrite. */
 const STALE_PHRASE_RE =
-  /дожили|вчера казалось фантастикой|дожили до времени|вчера фантастика|представлена инновационн|представляем\s+\w|ребята,\s*вы просто не поверите|вы только посмотрите на это чудо/i;
+  /дожил(?:и|а|о)?(?:\s+до\s+времени)?|вчера казалось фантастикой|вчера фантастика|представлена инновационн|представляем\s+\w|ребята[,!]?\s|guys|look at this|просто\s+вау|\bвау\b|wow[!]?|вы\s+не\s+поверите|это\s+чудо|скинь\s+другу/i;
 
 const EMOJI_RE =
   /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu;
@@ -48,7 +48,7 @@ function parseArgs(argv: string[]) {
   let limit = 6;
   let force = false;
   let dryRun = false;
-  /** Default: recent cards (stale phrases first if any). Do not require «дожили». Use --cliche-only to filter. */
+  /** Default: recent cards (stale phrases first if any). Use --cliche-only to filter banned stock openers. */
   let clicheOnly = false;
   const slugs = new Set<string>();
 
@@ -71,7 +71,7 @@ function parseArgs(argv: string[]) {
     }
   }
 
-  return { limit: Math.min(Math.max(limit, 1), 8), force, dryRun, clicheOnly, slugs };
+  return { limit: Math.min(Math.max(limit, 1), 20), force, dryRun, clicheOnly, slugs };
 }
 
 function stripEmoji(text: string): string {
@@ -135,12 +135,11 @@ async function polishArticle(article: Article, avoidOpeners: string[]): Promise<
         content: [
           'Ты editor-in-chief SmartProto — polish agent вне Scout/Reviewer/Editor publish-flow.',
           'Перепиши опубликованную карточку: меньше мелодрамы, больше желания узнать и купить ASAP.',
-          'Стиль: уверенный product-блогер, спокойная уверенность, строго 150–200 слов.',
+          'Стиль: уверенный product-блогер, спокойная уверенность; строго 150–200 слов.',
           'СОХРАНЯЙ факты: цены, спеки, бренды, статусы buy/preorder — только из исходного текста.',
           'НЕ выдумывай характеристики, даты, цены, бренды.',
-          'ЗАПРЕЩЕНО: клише «будущее уже здесь» / «вчера это была фантастика»;',
-          '«ребята, вы просто не поверите», «вы только посмотрите на это чудо», «представлена инновационная».',
-          'Без эмодзи. Без канцелярита пресс-релиза. Без истеричного «вау».',
+          'ЗАПРЕЩЕНО: клише «будущее уже здесь» / «вчера это была фантастика»; «представлена инновационная».',
+          'Без эмодзи. Без канцелярита. Без истеричного «вау» и guys/ребята.',
           'Хук уникальный: польза / сценарий / сравнение / факт / лёгкий скепсис.',
           'Структура: продукт → зачем полезен → почему сейчас → где купить если известно.',
           'Title можно слегка улучшить; tags можно подчистить — без выдуманных брендов/людей.',
@@ -153,13 +152,13 @@ async function polishArticle(article: Article, avoidOpeners: string[]): Promise<
           'Перепиши карточку как editor-in-chief. Верни СТРОГО JSON:',
           '{"title": string, "content": string, "summary": string, "tags": string[]}',
           '',
-          'content: 150–200 слов, русский, уверенный product-блогер, уникальный opener под ЭТОТ товар.',
-          'Смягчи хайп, сохрани buy intent. НЕ копируй зачины соседних статей. Избегай этих openers:',
+          'content: 150–200 слов, русский, спокойное ясное product-объяснение, уникальный opener под ЭТОТ товар.',
+          'Убери патос/хайп; сохрани интерес через пользу. НЕ копируй зачины соседних статей. Избегай этих openers:',
           ...(avoidOpeners.length
             ? avoidOpeners.map((o, i) => `${i + 1}) ${clampText(o, 120)}`)
             : ['(нет списка)']),
-          'summary: 1–2 предложения из нового текста (до ~200 символов), без штампов и мелодрамы.',
-          'title: можно оставить или слегка улучшить (до 90 символов), без эмодзи.',
+          'summary: 1–2 предложения из нового текста (до ~200 символов), без штампов, патоса и сленга.',
+          'title: можно оставить или слегка улучшить (до 90 символов), без эмодзи и хайпа.',
           'tags: 4–8 штук; можно слегка улучшить существующие, не выдумывай бренд/людей.',
           '',
           'Исходная карточка:',

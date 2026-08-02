@@ -5,7 +5,8 @@
  * - Skip Scout gate. Real RSS only. Git push each publish.
  */
 import path from 'node:path';
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, unlink } from 'node:fs/promises';
+import { existsSync, readFileSync, writeFileSync, unlinkSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import dotenv from 'dotenv';
 import chalk from 'chalk';
@@ -13,6 +14,29 @@ import { fetchRssFeed, RssItem } from '../src/lib/collectors/rss';
 import { extractArticleImage } from '../src/lib/collectors/image-extractor';
 import { getOpenRouterClient, clampText, parseJsonObject } from '../src/lib/ai/shared';
 import { looksBuyableGadget } from '../src/lib/ai/hard-reject';
+
+function acquireBurstLock(lockPath: string): boolean {
+  try {
+    if (existsSync(lockPath)) {
+      const raw = readFileSync(lockPath, 'utf8').trim();
+      const oldPid = Number(raw);
+      if (Number.isFinite(oldPid) && oldPid > 0) {
+        try {
+          process.kill(oldPid, 0);
+          console.error(chalk.red(`Burst lock held by live PID ${oldPid}. Exiting.`));
+          return false;
+        } catch {
+          // stale lock
+        }
+      }
+    }
+    writeFileSync(lockPath, String(process.pid), 'utf8');
+    return true;
+  } catch (err) {
+    console.error(chalk.red(`Failed to acquire burst lock: ${err instanceof Error ? err.message : String(err)}`));
+    return false;
+  }
+}
 
 function loadEnvFiles(): void {
   const root = process.cwd();
@@ -58,13 +82,18 @@ interface DraftResult {
 }
 
 const SOURCES: [string, string][] = [
-  ['New Atlas', 'https://newatlas.com/index.rss'],
   ['Yanko Design', 'https://www.yankodesign.com/feed/'],
-  ['The Verge', 'https://www.theverge.com/rss/index.xml'],
+  ['New Atlas', 'https://newatlas.com/index.rss'],
+  ['New Atlas Electronics', 'https://newatlas.com/electronics/index.rss'],
+  ['New Atlas Wearables', 'https://newatlas.com/wearables/index.rss'],
+  ['Gadget Flow', 'https://thegadgetflow.com/feed/'],
+  ['Engadget', 'https://www.engadget.com/rss.xml'],
+  ['The Verge Gadgets', 'https://www.theverge.com/rss/gadgets/index.xml'],
   ['TechCrunch', 'https://techcrunch.com/feed/'],
   ['Ars Technica', 'https://feeds.arstechnica.com/arstechnica/index'],
   ['Hackaday', 'https://hackaday.com/blog/feed/'],
-  ['Kickstarter', 'https://www.kickstarter.com/blog.atom'],
+  ['Adafruit', 'https://www.adafruit.com/blog/feed/'],
+  ['Raspberry Pi', 'https://www.raspberrypi.com/news/feed/'],
 ];
 
 const BURST_HOURS = Number(process.env.BURST_HOURS || '1');
@@ -207,10 +236,10 @@ async function fastRewrite(item: RssItem, kind: 'news' | 'article'): Promise<Dra
       {
         role: 'system',
         content: [
-          'Ты восторженный блогер / TikTok-ревьюер SmartProto ТОЛЬКО про умные полезные гаджеты.',
-          'Русский. Живой блогерский голос, уникальный хук под КОНКРЕТНЫЙ продукт.',
-          'ЗАПРЕЩЕНО: «дожили», «дожили до времени», «вчера казалось фантастикой» и клоны.',
-          'Хвали РЕАЛЬНЫЕ фичи эмоционально, без выдуманных спеков. JSON без markdown.',
+          'Ты уверенный product-блогер SmartProto ТОЛЬКО про умные полезные гаджеты.',
+          'Русский. Спокойная уверенность, buy/learn-more; без мелодрамы и эмодзи.',
+          'Уникальный хук под КОНКРЕТНЫЙ продукт. ЗАПРЕЩЕНО: клише «будущее уже здесь» / «вчера это казалось невозможным».',
+          'Хвали РЕАЛЬНЫЕ фичи через пользу, без выдуманных спеков. JSON без markdown.',
           'HARD FILTER: только товар, который обычный человек может КУПИТЬ или ПРЕДЗАКАЗАТЬ.',
           'Жёсткий reject (title="REJECT", text="off-topic", tags=["#reject"]): Trump/политика, celebrities/певцы,',
           'writers/книги, природа/wildlife/слоны, музеи/архитектура, кино/музыка/культура, прототипы без buy/preorder.',
@@ -271,7 +300,7 @@ async function collectCandidates(existingUrls: Set<string>, existingIds: Set<str
   const candidates: RssItem[] = [];
   for (const [name, url] of SOURCES) {
     try {
-      const items = await fetchRssFeed(url, { limit: 15, sourceName: name });
+      const items = await fetchRssFeed(url, { limit: 40, sourceName: name });
       for (const item of items) {
         if (!item.url || !item.title) continue;
         if (existingUrls.has(item.url) || existingIds.has(item.id)) continue;
@@ -311,6 +340,27 @@ async function main(): Promise<void> {
   process.env.SMARTPROTO_FACTORY_ENABLED = 'true';
 
   const root = process.cwd();
+  const lockPath = path.resolve(root, 'data', 'burst.lock');
+  if (!acquireBurstLock(lockPath)) {
+    process.exitCode = 0;
+    return;
+  }
+  const releaseLock = () => {
+    try {
+      const cur = existsSync(lockPath) ? readFileSync(lockPath, 'utf8').trim() : '';
+      if (cur === String(process.pid)) unlinkSync(lockPath);
+    } catch {}
+  };
+  process.on('exit', releaseLock);
+  process.on('SIGINT', () => {
+    releaseLock();
+    process.exit(0);
+  });
+  process.on('SIGTERM', () => {
+    releaseLock();
+    process.exit(0);
+  });
+
   const journalPath = path.resolve(root, 'data', 'factory-journal.json');
   const articlesPath = path.resolve(root, 'src', 'data', 'articles.json');
   const draftsDir = path.resolve(root, 'drafts');
@@ -579,6 +629,7 @@ async function main(): Promise<void> {
     ) + '\n',
     'utf8',
   );
+  releaseLock();
 }
 
 main().catch((err) => {
