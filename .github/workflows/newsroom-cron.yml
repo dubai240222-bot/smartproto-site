@@ -122,9 +122,13 @@ jobs:
         run: |
           git config user.name "smartproto-newsroom-bot"
           git config user.email "newsroom-bot@users.noreply.github.com"
-          git pull --rebase origin main || true
-          # Persist topic-rotation cursor so desks round-robin across ticks.
-          git add src/data/articles.json data/factory-journal.json data/topic-rotation.json drafts/ || true
+          # Stage tick outputs before rebase. topic-rotation.json is optional —
+          # including a missing pathspec in one `git add` aborts the whole add.
+          git add -- src/data/articles.json data/factory-journal.json drafts/ || true
+          if [ -f data/topic-rotation.json ]; then git add -- data/topic-rotation.json || true; fi
+          git pull --rebase --autostash origin main || true
+          git add -- src/data/articles.json data/factory-journal.json drafts/ || true
+          if [ -f data/topic-rotation.json ]; then git add -- data/topic-rotation.json || true; fi
           if git diff --staged --quiet; then
             echo "No articles.json / journal / rotation / drafts changes — nothing to publish."
             echo ""
