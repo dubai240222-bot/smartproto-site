@@ -10,6 +10,7 @@ import { fetchRssFeed, RssItem } from '../src/lib/collectors/rss';
 import { extractArticleImage } from '../src/lib/collectors/image-extractor';
 import { getOpenRouterClient, clampText, parseJsonObject } from '../src/lib/ai/shared';
 import { hardRejectTopic, looksBuyableGadget } from '../src/lib/ai/hard-reject';
+import { filterRemovedArticles, isRemovedSlug } from '../src/lib/removed-slugs';
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local'), override: true, quiet: true });
 dotenv.config({ path: path.resolve(process.cwd(), '.env'), quiet: true });
@@ -25,9 +26,9 @@ const SOURCES: [string, string][] = [
   ['Android Authority', 'https://www.androidauthority.com/feed'],
 ];
 
-const INTERVAL_MS = 55_000;
-const MAX_MINUTES = Number(process.env.GADGETS_MAX_MINUTES || 25);
-const TARGET_NEW = Number(process.env.GADGETS_TARGET_NEW || 12);
+const INTERVAL_MS = Number(process.env.GADGETS_INTERVAL_MS || 60_000);
+const MAX_MINUTES = Number(process.env.GADGETS_MAX_MINUTES || 20);
+const TARGET_NEW = Number(process.env.GADGETS_TARGET_NEW || 6);
 const MODEL = process.env.OPENROUTER_EDITOR_MODEL ?? 'google/gemini-2.5-flash-lite';
 
 /** Banned hype/cliché phrases in published RU drafts. */
@@ -186,6 +187,12 @@ async function main() {
       } catch {}
 
       const slug = slugify(item.title);
+      if (isRemovedSlug(slug)) {
+        console.log(chalk.yellow(`Skipped denylisted slug: ${slug}`));
+        seen.add(item.url);
+        seen.add(item.id);
+        continue;
+      }
       const publishedAt = new Date().toISOString();
       const article: Article = {
         id: slug,
@@ -210,8 +217,10 @@ async function main() {
       } catch {
         /* keep in-memory fallback */
       }
-      const deduped = latest.filter(
-        (a) => a.id !== article.id && a.slug !== article.slug && a.sourceUrl !== article.sourceUrl,
+      const deduped = filterRemovedArticles(
+        latest.filter(
+          (a) => a.id !== article.id && a.slug !== article.slug && a.sourceUrl !== article.sourceUrl,
+        ),
       );
       deduped.unshift(article);
       articles = deduped;
@@ -233,7 +242,7 @@ async function main() {
           stdio: 'inherit',
         });
         execSync('git push origin main', { stdio: 'inherit' });
-        execSync('npx vercel --prod --yes', { stdio: 'inherit' });
+        // Rely on Vercel git auto-deploy — CLI --prod eats the whole 55s cadence.
         console.log(chalk.green(`LIVE https://www.smartproto.net/articles/${slug}`));
       } catch (gitErr) {
         console.error(chalk.red(`git/deploy: ${gitErr instanceof Error ? gitErr.message : String(gitErr)}`));
