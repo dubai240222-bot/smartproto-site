@@ -83,7 +83,9 @@
     "https://newatlas.com/wearables/sabi-mind-reading-beanie-typing-eeg/",
     "https://newatlas.com/wearables/postech-ai-neckband-words-speech/",
     "https://newatlas.com/wearables/vuebuds-ai-earbuds-described-audio/",
-    "https://newatlas.com/wearables/review-renpho-headspace-eyeris-zen-massager/"
+    "https://newatlas.com/wearables/review-renpho-headspace-eyeris-zen-massager/",
+    "https://newatlas.com/electronics/meta-nfc-focused-microwaves-circuits/",
+    "https://newatlas.com/wearables/mobvoi-ticnote-pods/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -169,7 +171,9 @@
     "https://newatlas.com/wearables/sabi-mind-reading-beanie-typing-eeg/",
     "https://newatlas.com/wearables/postech-ai-neckband-words-speech/",
     "https://newatlas.com/wearables/vuebuds-ai-earbuds-described-audio/",
-    "https://newatlas.com/wearables/review-renpho-headspace-eyeris-zen-massager/"
+    "https://newatlas.com/wearables/review-renpho-headspace-eyeris-zen-massager/",
+    "https://newatlas.com/electronics/meta-nfc-focused-microwaves-circuits/",
+    "https://newatlas.com/wearables/mobvoi-ticnote-pods/"
   ],
   "entries": [
     {
@@ -942,6 +946,24 @@
       "status": "published",
       "slug": "renpho-eyeris-zen-massager-review-it-s-surprisingly-good",
       "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/electronics/meta-nfc-focused-microwaves-circuits/",
+      "url": "https://newatlas.com/electronics/meta-nfc-focused-microwaves-circuits/",
+      "title": "Focused microwaves allow 3D printers to fuse circuits onto almost anything",
+      "processedAt": "2026-08-02T06:00:23.637Z",
+      "status": "rejected",
+      "reason": "editor hard-reject: non-gadget/culture",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/wearables/mobvoi-ticnote-pods/",
+      "url": "https://newatlas.com/wearables/mobvoi-ticnote-pods/",
+      "title": "Наушники с 4G и ИИ для автоматического создания заметок",
+      "processedAt": "2026-08-02T06:00:26.767Z",
+      "status": "published",
+      "slug": "4g-connected-earbuds-use-ai-to-generate-meeting-notes",
+      "kind": "article"
     }
   ]
 }
