@@ -127,7 +127,8 @@
     "https://newatlas.com/wearables/casio-g-shock-nano-watch-ring/",
     "https://newatlas.com/wearables/transparent-uv-detector/",
     "https://newatlas.com/wearables/meta-ray-ban-smart-glasses-ar-display-wristband/",
-    "https://newatlas.com/wearables/hydration-sensor-wearable/"
+    "https://newatlas.com/wearables/hydration-sensor-wearable/",
+    "https://newatlas.com/wearables/anker-soundcore-p41i-earphones-charging-case-phone/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -257,7 +258,8 @@
     "https://newatlas.com/wearables/casio-g-shock-nano-watch-ring/",
     "https://newatlas.com/wearables/transparent-uv-detector/",
     "https://newatlas.com/wearables/meta-ray-ban-smart-glasses-ar-display-wristband/",
-    "https://newatlas.com/wearables/hydration-sensor-wearable/"
+    "https://newatlas.com/wearables/hydration-sensor-wearable/",
+    "https://newatlas.com/wearables/anker-soundcore-p41i-earphones-charging-case-phone/"
   ],
   "entries": [
     {
@@ -1425,6 +1427,15 @@
       "processedAt": "2026-08-02T06:52:25.188Z",
       "status": "published",
       "slug": "hydration-sensor-alerts-wearer-to-urgent-water-need",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/wearables/anker-soundcore-p41i-earphones-charging-case-phone/",
+      "url": "https://newatlas.com/wearables/anker-soundcore-p41i-earphones-charging-case-phone/",
+      "title": "Anker Soundcore P40i: Беспроводные наушники с зарядкой для смартфона",
+      "processedAt": "2026-08-02T06:53:24.939Z",
+      "status": "published",
+      "slug": "affordable-wireless-anc-earbuds-come-with-smartphone-charging-case",
       "kind": "news"
     }
   ]
