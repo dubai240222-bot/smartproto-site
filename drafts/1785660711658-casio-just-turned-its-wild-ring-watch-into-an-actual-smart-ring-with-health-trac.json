@@ -1,0 +1,56 @@
+{
+  "generatedAt": "2026-08-02T08:51:51.651Z",
+  "channel": "rss",
+  "source": "Android Authority",
+  "article": {
+    "id": "https://www.androidauthority.com/casio-crw-h001-smart-ring-watch-tracker-launch-3693332/",
+    "title": "Casio just turned its wild Ring Watch into an actual smart ring with health tracking",
+    "url": "https://www.androidauthority.com/casio-crw-h001-smart-ring-watch-tracker-launch-3693332/",
+    "text": "TL;DR\n\nCasio has just launched its first smart Ring Watch, known as the CRW-H001, featuring a small LCD panel and health/fitness tracking.\n\nThe wearable can track a wide range of workouts and monitor heart rate, body temperature, and blood oxygen levels, among other features.\n\nCasio is currently selling the CRW-H001 Ring Watch only in China, with no word yet on a global launch.\n\nCasio introduced the bizarre-looking Ring Watch in late 2024, mirroring the design of a classic Casio wristwatch, but designed to be worn on your finger. The manufacturer is now taking this concept one step further with its new offering, featuring a similar retro timepiece design, but with all the attributes you’d expect from a modern-day smart ring.\n\nThe Japanese watchmaker has released the CRW-H001, which doesn’t look too dissimilar to the old Ring Watch. It even features a similar LCD panel that can show the time and set a stopwatch or alarms for you. However, as the Chinese product page reveals, this smart ring can do a lot more, including monitoring the wearer’s heart rate, blood oxygen level, and body temperature (via Gizmodo).",
+    "publishedAt": "2026-07-31T16:07:35.000Z",
+    "sourceName": "Android Authority",
+    "imageUrl": "https://www.androidauthority.com/wp-content/uploads/2026/07/Casio-Ring-Smart-Watch-CRW-H001.jpeg"
+  },
+  "scout": {
+    "interesting": true,
+    "score": 80,
+    "reason": "Casio выпустила свой первый смарт-ринг с функциями отслеживания здоровья, продолжая концепцию своих необычных кольцевых часов.",
+    "productType": "smart ring",
+    "isActuallyNew": true,
+    "noveltyEvidence": [
+      "first smart Ring Watch from Casio",
+      "health and fitness tracking features (heart rate, body temperature, blood oxygen)",
+      "LCD panel for time, stopwatch, alarms"
+    ],
+    "existingAlternatives": "Существуют другие смарт-кольца с функциями отслеживания здоровья, но дизайн и бренд Casio являются отличительными чертами.",
+    "functionalDifference": "В отличие от предыдущих кольцевых часов Casio, эта модель добавляет полноценные функции смарт-кольца для отслеживания здоровья и фитнеса, сохраняя при этом ретро-дизайн.",
+    "marketSaturation": "medium",
+    "rejectCode": null
+  },
+  "review": {
+    "technicalVerdict": "Casio выпустила свою первую смарт-кольцо-часы CRW-H001, сочетающую ретро-дизайн с функциями отслеживания здоровья. Устройство доступно для покупки в Китае и предлагает мониторинг пульса, температуры тела и уровня кислорода в крови, а также отслеживание тренировок. Отличительной особенностью является наличие LCD-дисплея, что редко встречается в смарт-кольцах.",
+    "keyAspects": [
+      "Первое смарт-кольцо-часы от Casio",
+      "Функции мониторинга здоровья (пульс, температура, SpO2)",
+      "Наличие LCD-дисплея для отображения времени и функций часов"
+    ]
+  },
+  "draft": {
+    "title": "Casio CRW-H001: смарт-кольцо с мониторингом здоровья",
+    "text": "Casio представила свою первую модель смарт-кольца под названием CRW-H001. Устройство предназначено для отслеживания показателей здоровья и фитнес-активности. Кольцо оснащено небольшим LCD-дисплеем, на котором отображается время, а также могут быть установлены будильники и секундомер. \n\nВ отличие от обычных колец, CRW-H001 может отслеживать частоту сердечных сокращений, температуру тела и уровень кислорода в крови (SpO2). Также заявлена поддержка отслеживания различных видов тренировок. Дизайн устройства выполнен в ретро-стиле, напоминающем классические наручные часы Casio. \n\nНа данный момент Casio CRW-H001 доступно для покупки только на территории Китая. Информация о начале продаж на других рынках отсутствует. Цена устройства также не объявлена. Независимых тестов и обзоров устройства пока нет, поэтому реальная точность измерений и автономность работы остаются неизвестными.",
+    "tags": [
+      "смарт-кольцо",
+      "Casio",
+      "мониторинг здоровья",
+      "носимая электроника",
+      "фитнес-трекер"
+    ],
+    "toneCheck": {
+      "clickbait": false,
+      "hype": false,
+      "unsupportedClaims": false,
+      "limitationsIncluded": true
+    },
+    "imageUrl": "https://www.androidauthority.com/wp-content/uploads/2026/07/Casio-Ring-Smart-Watch-CRW-H001.jpeg"
+  }
+}

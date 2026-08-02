@@ -149,7 +149,10 @@
     "https://www.androidauthority.com/samsung-one-ui-9-permalock-3693475/",
     "https://newatlas.com/electronics/nuwa-pen-handwritten-text-digital/",
     "https://hackaday.com/2026/08/01/bike-trainers-as-video-game-controllers/",
-    "https://www.theverge.com/tech/973249/pixel-11-pro-fold-buds-watch-leaks-google-launch-event"
+    "https://www.theverge.com/tech/973249/pixel-11-pro-fold-buds-watch-leaks-google-launch-event",
+    "https://www.androidauthority.com/pixel-tag-leak-3693436/",
+    "https://www.androidauthority.com/moto-watch-ultra-leak-3693400/",
+    "https://www.androidauthority.com/casio-crw-h001-smart-ring-watch-tracker-launch-3693332/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -301,7 +304,9 @@
     "https://www.androidauthority.com/samsung-one-ui-9-permalock-3693475/",
     "https://newatlas.com/electronics/nuwa-pen-handwritten-text-digital/",
     "https://hackaday.com/?p=1129686",
-    "https://www.theverge.com/?p=973249"
+    "https://www.theverge.com/?p=973249",
+    "https://www.androidauthority.com/moto-watch-ultra-leak-3693400/",
+    "https://www.androidauthority.com/casio-crw-h001-smart-ring-watch-tracker-launch-3693332/"
   ],
   "entries": [
     {
@@ -1697,6 +1702,35 @@
       "status": "published",
       "slug": "pixel-11-pro-fold-design-leaks-ahead-of-google-launch-event",
       "kind": "article"
+    },
+    {
+      "id": "https://www.androidauthority.com/pixel-tag-leak-3693436/",
+      "url": "https://www.androidauthority.com/pixel-tag-leak-3693436/",
+      "title": "Meet the Pixel Tag",
+      "processedAt": "2026-08-02T08:50:39.775Z",
+      "status": "error",
+      "reason": "reviewer incomplete structured data (sticky skip)",
+      "channel": "rss"
+    },
+    {
+      "id": "https://www.androidauthority.com/moto-watch-ultra-leak-3693400/",
+      "url": "https://www.androidauthority.com/moto-watch-ultra-leak-3693400/",
+      "title": "Motorola leak reveals a potential Galaxy Watch Ultra 2 rival",
+      "processedAt": "2026-08-02T08:51:47.344Z",
+      "status": "error",
+      "reason": "Review model returned incomplete structured data.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://www.androidauthority.com/casio-crw-h001-smart-ring-watch-tracker-launch-3693332/",
+      "url": "https://www.androidauthority.com/casio-crw-h001-smart-ring-watch-tracker-launch-3693332/",
+      "title": "Casio CRW-H001: смарт-кольцо с мониторингом здоровья",
+      "processedAt": "2026-08-02T08:51:51.651Z",
+      "status": "published",
+      "scoutScore": 80,
+      "reason": "Casio выпустила свой первый смарт-ринг с функциями отслеживания здоровья, продолжая концепцию своих необычных кольцевых часов.",
+      "slug": "casio-just-turned-its-wild-ring-watch-into-an-actual-smart-ring-with-health-trac",
+      "channel": "rss"
     }
   ]
 }
