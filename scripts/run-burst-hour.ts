@@ -283,8 +283,20 @@ async function collectCandidates(existingUrls: Set<string>, existingIds: Set<str
       console.error(chalk.yellow(`  ${name} failed: ${err instanceof Error ? err.message : String(err)}`));
     }
   }
-  // Prefer items with images; shuffle lightly by source diversity
+  const sourceRank = (name: string) => {
+    const n = (name || '').toLowerCase();
+    if (n.includes('yanko')) return 0;
+    if (n.includes('new atlas')) return 1;
+    if (n.includes('hackaday')) return 2;
+    if (n.includes('kickstarter')) return 3;
+    if (n.includes('the verge')) return 4;
+    if (n.includes('techcrunch')) return 5;
+    return 6;
+  };
+  // Prefer product-heavy sources, then items with images, then newest.
   candidates.sort((a, b) => {
+    const sr = sourceRank(a.sourceName) - sourceRank(b.sourceName);
+    if (sr !== 0) return sr;
     const ai = a.imageUrl ? 0 : 1;
     const bi = b.imageUrl ? 0 : 1;
     if (ai !== bi) return ai - bi;
@@ -397,8 +409,7 @@ async function main(): Promise<void> {
         existingIds.add(item.id);
         await writeFile(journalPath, JSON.stringify(journal, null, 2) + '\n', 'utf8');
         consecutiveErrors = 0;
-        const spent = Date.now() - tickStart;
-        await sleep(Math.max(5_000, INTERVAL_MS - spent));
+        // Immediately try next product candidate — do not burn the cadence on rejects.
         continue;
       }
 
@@ -487,11 +498,9 @@ async function main(): Promise<void> {
           : `feat(burst): news — ${draft.title.slice(0, 60)}`;
         execSync(`git commit -m ${JSON.stringify(msg)}`, { stdio: 'inherit' });
         execSync('git push origin main', { stdio: 'inherit' });
-        console.log(chalk.green('Pushed to origin/main'));
-        execSync('npx vercel --prod --yes', { stdio: 'inherit' });
-        console.log(chalk.green('Deployed to Vercel production'));
+        console.log(chalk.green('Pushed to origin/main (Vercel auto-deploy)'));
       } catch (gitErr) {
-        console.error(chalk.red(`Git/deploy failed: ${gitErr instanceof Error ? gitErr.message : String(gitErr)}`));
+        console.error(chalk.red(`Git push failed: ${gitErr instanceof Error ? gitErr.message : String(gitErr)}`));
       }
 
       consecutiveErrors = 0;
