@@ -75,7 +75,8 @@
     "https://newatlas.com/motorcycles/hmp-flash/",
     "https://newatlas.com/wearables/x1-ai-bone-conduction-4k-headset/",
     "https://newatlas.com/wearables/musiccam-pro-real-time-pov-live-camera-headset/",
-    "https://newatlas.com/electronics/hanboost-t1-compact-laser-engraver/"
+    "https://newatlas.com/electronics/hanboost-t1-compact-laser-engraver/",
+    "https://newatlas.com/wearables/meta-glasses-ai-cameras-kylie-jenner/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -153,7 +154,8 @@
     "https://newatlas.com/motorcycles/hmp-flash/",
     "https://newatlas.com/wearables/x1-ai-bone-conduction-4k-headset/",
     "https://newatlas.com/wearables/musiccam-pro-real-time-pov-live-camera-headset/",
-    "https://newatlas.com/electronics/hanboost-t1-compact-laser-engraver/"
+    "https://newatlas.com/electronics/hanboost-t1-compact-laser-engraver/",
+    "https://newatlas.com/wearables/meta-glasses-ai-cameras-kylie-jenner/"
   ],
   "entries": [
     {
@@ -854,6 +856,15 @@
       "status": "published",
       "slug": "compact-laser-engraver-levels-up-your-diy-crafts-setup",
       "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/wearables/meta-glasses-ai-cameras-kylie-jenner/",
+      "url": "https://newatlas.com/wearables/meta-glasses-ai-cameras-kylie-jenner/",
+      "title": "Умные очки Meta: ИИ-помощник в стильном дизайне",
+      "processedAt": "2026-08-02T05:52:26.167Z",
+      "status": "published",
+      "slug": "meta-s-new-ai-glasses-add-kylie-flair-without-the-designer-badge",
+      "kind": "article"
     }
   ]
 }
