@@ -14,6 +14,7 @@ import { hardRejectTopic, looksBuyableGadget } from '../src/lib/ai/hard-reject';
 import { reviewArticle } from '../src/lib/ai/reviewer';
 import { writeDraft } from '../src/lib/ai/editor';
 import { filterRemovedArticles, isRemovedSlug } from '../src/lib/removed-slugs';
+import { stampAuthorForPipeline } from '../src/lib/authors';
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local'), override: true, quiet: true });
 dotenv.config({ path: path.resolve(process.cwd(), '.env'), quiet: true });
@@ -47,6 +48,9 @@ interface Article {
   publishedAt: string;
   readTime: string;
   imageUrl?: string;
+  author?: string;
+  authorDesk?: string;
+  agentId?: string;
 }
 
 function slugify(title: string): string {
@@ -179,6 +183,7 @@ async function main() {
         publishedAt,
         readTime: '2 мин',
         imageUrl,
+        ...stampAuthorForPipeline('gadgets', { sourceUrl: item.url, slug: slug }),
       };
 
       let latest: Article[] = articles;

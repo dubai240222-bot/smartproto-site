@@ -392,6 +392,7 @@ async function tryChinaPublishOnce(opts: {
       publishedAt,
       readTime: `${Math.max(1, Math.ceil(wc / 150))} мин`,
       imageUrl,
+      ...stampAuthorForPipeline('china-qwen', { sourceUrl: c.sourceUrl, slug }),
     };
 
     const deduped = filterRemovedArticles(
@@ -565,7 +566,7 @@ async function publishRssOnce(opts: {
       publishedAt,
       readTime: estimateReadTime(draft.text),
       ...(imageUrl ? { imageUrl } : {}),
-        ...stampAuthorForPipeline('newsroom-scout', { sourceUrl: item.url, slug: slug }),
+      ...stampAuthorForPipeline('newsroom-scout', { sourceUrl: item.url, slug }),
     };
 
     const deduped = filterRemovedArticles(

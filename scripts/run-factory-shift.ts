@@ -9,6 +9,7 @@ import { scoutArticle, ScoutResult, SCOUT_SCORE_THRESHOLD } from '../src/lib/ai/
 import { reviewArticle, ReviewResult } from '../src/lib/ai/reviewer';
 import { writeDraft, DraftResult } from '../src/lib/ai/editor';
 import { hardRejectTopic } from '../src/lib/ai/hard-reject';
+import { stampAuthorForPipeline } from '../src/lib/authors';
 
 function loadEnvFiles(): void {
   const root = process.cwd();
@@ -44,6 +45,9 @@ interface Article {
   publishedAt: string;
   readTime: string;
   imageUrl?: string;
+  author?: string;
+  authorDesk?: string;
+  agentId?: string;
 }
 
 const SOURCES = [
@@ -378,6 +382,7 @@ async function main(): Promise<void> {
         publishedAt,
         readTime,
         ...(imageUrl ? { imageUrl } : {}),
+        ...stampAuthorForPipeline('factory-shift', { sourceUrl: item.url, slug: slug }),
       };
 
       // Save Draft Payload

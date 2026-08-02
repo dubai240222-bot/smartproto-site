@@ -1,4 +1,4 @@
-﻿import 'dotenv/config';
+import 'dotenv/config';
 
 import chalk from 'chalk';
 import prompts from 'prompts';
@@ -7,6 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { Article } from '../src/data/articles';
+import { stampAuthorForPipeline } from '../src/lib/authors';
 
 type DraftAction = 'approve' | 'delete' | 'skip';
 
@@ -134,6 +135,7 @@ function buildArticle(raw: RawRecord, fileName: string): Article {
     publishedAt: generatedAt,
     readTime,
     ...(imageUrl ? { imageUrl } : {}),
+    ...stampAuthorForPipeline('rss-editor', { sourceUrl, slug }),
   };
 }
 

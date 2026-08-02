@@ -14,6 +14,7 @@ import { fetchRssFeed, RssItem } from '../src/lib/collectors/rss';
 import { extractArticleImage } from '../src/lib/collectors/image-extractor';
 import { getOpenRouterClient, clampText, parseJsonObject } from '../src/lib/ai/shared';
 import { looksBuyableGadget } from '../src/lib/ai/hard-reject';
+import { stampAuthorForPipeline } from '../src/lib/authors';
 
 function acquireBurstLock(lockPath: string): boolean {
   try {
@@ -73,6 +74,9 @@ interface Article {
   publishedAt: string;
   readTime: string;
   imageUrl?: string;
+  author?: string;
+  authorDesk?: string;
+  agentId?: string;
 }
 
 interface DraftResult {
@@ -506,6 +510,7 @@ async function main(): Promise<void> {
         publishedAt,
         readTime: estimateReadTime(draft.text),
         ...(imageUrl ? { imageUrl } : {}),
+        ...stampAuthorForPipeline('burst-hour', { sourceUrl: item.url, slug: slug }),
       };
 
       await mkdir(draftsDir, { recursive: true });

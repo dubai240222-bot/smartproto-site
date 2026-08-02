@@ -1,11 +1,12 @@
-﻿import type { Metadata } from 'next';
+import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Calendar, Clock } from 'lucide-react';
+import { ArrowLeft, Clock } from 'lucide-react';
 import articles, { getArticleBySlug, type Article } from '@/data/articles';
 import { MediaPlaceholder } from '@/components/media-placeholder';
 import { formatPublishedAt, getRelatedArticles } from '@/lib/article-utils';
+import { formatAuthorCredit, resolveAuthorForArticle } from '@/lib/authors';
 
 export async function generateStaticParams() {
   return articles.map((article) => ({ slug: article.slug }));
@@ -206,12 +207,9 @@ export default async function ArticlePage({
             {article.summary}
           </p>
 
-          {/* 4. Date & Read time */}
+          {/* 4. Byline · date · read time */}
           <div className="mt-4 flex flex-wrap items-center gap-4 border-b border-[var(--border)] pb-6 text-xs text-[var(--muted)]">
-            <span className="flex items-center gap-1">
-              <Calendar className="h-3.5 w-3.5" />
-              {formatPublishedAt(article.publishedAt)}
-            </span>
+            <span>{formatAuthorCredit(resolveAuthorForArticle(article).name, formatPublishedAt(article.publishedAt))}</span>
             <span>•</span>
             <span className="flex items-center gap-1">
               <Clock className="h-3.5 w-3.5" />
@@ -303,7 +301,7 @@ export default async function ArticlePage({
                       {rel.summary}
                     </p>
                     <div className="mt-2 text-[10px] text-[var(--muted)]">
-                      {formatPublishedAt(rel.publishedAt)} • {rel.readTime}
+                      {resolveAuthorForArticle(rel).name} · {formatPublishedAt(rel.publishedAt)} • {rel.readTime}
                     </div>
                   </div>
                 ))}

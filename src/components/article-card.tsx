@@ -43,6 +43,12 @@ export function ChinaSourceBadge({ article }: { article: Article }) {
   );
 }
 
+/** Card meta line: fresher timestamps; China channel marked when applicable. */
+function cardByline(article: Article): string {
+  const time = formatPublishedAt(article.publishedAt);
+  return isChinaArticle(article) ? `Китай · Qwen · ${time}` : time;
+}
+
 /* -------------------------------------------------------------------------- */
 /* 1. Standard Article Card (Refreshed for light/dark theme CSS variables)   */
 /* -------------------------------------------------------------------------- */

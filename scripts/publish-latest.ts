@@ -2,6 +2,7 @@ import { readFile, readdir, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
+import { stampAuthorForPipeline } from '../src/lib/authors';
 
 function loadEnvFiles(): void {
   const root = process.cwd();
@@ -43,6 +44,9 @@ interface Article {
   publishedAt: string;
   readTime: string;
   imageUrl?: string;
+  author?: string;
+  authorDesk?: string;
+  agentId?: string;
 }
 
 function transliterateCyrillic(text: string): string {
@@ -175,6 +179,7 @@ async function publishLatest(): Promise<void> {
     publishedAt,
     readTime,
     ...(imageUrl ? { imageUrl } : {}),
+    ...stampAuthorForPipeline('publish-latest', { sourceUrl, slug }),
   };
 
   articles.push(newArticle);

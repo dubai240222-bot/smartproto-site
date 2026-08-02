@@ -180,7 +180,6 @@ async function main() {
       ...c,
       summary: sourceBody.slice(0, 4000),
       imageUrl: pageImage || c.imageUrl,
-      ...stampAuthorForPipeline('china-qwen', { sourceUrl: c.sourceUrl, slug: slug }),
     };
 
     let dossier;
@@ -341,6 +340,7 @@ async function main() {
       publishedAt,
       readTime: `${Math.max(1, Math.ceil(wc / 150))} мин`,
       imageUrl,
+      ...stampAuthorForPipeline('china-qwen', { sourceUrl: c.sourceUrl, slug }),
     };
 
     articles = [article, ...articles.filter((a) => a.id !== slug && a.slug !== slug)];
