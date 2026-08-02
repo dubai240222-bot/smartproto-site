@@ -145,7 +145,9 @@
     "https://newatlas.com/electronics/magmo-pro-iphone-call-recorder/",
     "https://newatlas.com/electronics/computer-memory-resistive-switching-denser-data-storage/",
     "https://newatlas.com/electronics/fineday-3-0-bluetooth-mechanical-keyboard/",
-    "https://www.ithome.com/0/984/751.htm"
+    "https://www.ithome.com/0/984/751.htm",
+    "https://www.androidauthority.com/samsung-one-ui-9-permalock-3693475/",
+    "https://newatlas.com/electronics/nuwa-pen-handwritten-text-digital/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -293,7 +295,9 @@
     "https://newatlas.com/electronics/magmo-pro-iphone-call-recorder/",
     "https://newatlas.com/electronics/computer-memory-resistive-switching-denser-data-storage/",
     "https://newatlas.com/electronics/fineday-3-0-bluetooth-mechanical-keyboard/",
-    "china-g27q3"
+    "china-g27q3",
+    "https://www.androidauthority.com/samsung-one-ui-9-permalock-3693475/",
+    "https://newatlas.com/electronics/nuwa-pen-handwritten-text-digital/"
   ],
   "entries": [
     {
@@ -1625,6 +1629,52 @@
       "reason": "editorial gadget bar (source-backed)",
       "slug": "china-g27q3",
       "channel": "china-qwen"
+    },
+    {
+      "id": "https://www.androidauthority.com/samsung-one-ui-9-permalock-3693475/",
+      "url": "https://www.androidauthority.com/samsung-one-ui-9-permalock-3693475/",
+      "title": "Here’s the screen you never want to see: One UI 9 permalocking your phone",
+      "processedAt": "2026-08-02T08:39:30.522Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Это новость о функции безопасности операционной системы, а не о конкретном покупаемом гаджете.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://www.androidauthority.com/pixel-tag-leak-3693436/",
+      "url": "https://www.androidauthority.com/pixel-tag-leak-3693436/",
+      "title": "Meet the Pixel Tag, Google’s answer to the AirTag",
+      "processedAt": "2026-08-02T08:40:15.071Z",
+      "status": "error",
+      "reason": "Review model returned incomplete structured data.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://www.androidauthority.com/pixel-tag-leak-3693436/",
+      "url": "https://www.androidauthority.com/pixel-tag-leak-3693436/",
+      "title": "Meet the Pixel Tag, Google’s answer to the AirTag",
+      "processedAt": "2026-08-02T08:44:53.307Z",
+      "status": "error",
+      "reason": "Review model returned incomplete structured data.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://www.androidauthority.com/pixel-tag-leak-3693436/",
+      "url": "https://www.androidauthority.com/pixel-tag-leak-3693436/",
+      "title": "Meet the Pixel Tag, Google’s answer to the AirTag",
+      "processedAt": "2026-08-02T08:47:54.490Z",
+      "status": "error",
+      "reason": "Review model returned incomplete structured data.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/electronics/nuwa-pen-handwritten-text-digital/",
+      "url": "https://newatlas.com/electronics/nuwa-pen-handwritten-text-digital/",
+      "title": "Nuwa Pen: Обычная ручка, которая делает ваши записи цифровыми",
+      "processedAt": "2026-08-02T08:48:20.575Z",
+      "status": "published",
+      "slug": "nuwa-pen-converts-text-written-on-regular-paper-into-digital-format",
+      "kind": "news"
     }
   ]
 }
