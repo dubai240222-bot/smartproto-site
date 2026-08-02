@@ -50,7 +50,12 @@
     "https://newatlas.com/automotive/audi-q9-sq9-three-row-suv/",
     "https://newatlas.com/motorcycles/honda-cb500/",
     "https://newatlas.com/tents/gazelle-g4-1-minute-gazebo/",
-    "https://newatlas.com/music/guitar-smart-rgb-lights-litejam-neo/"
+    "https://newatlas.com/music/guitar-smart-rgb-lights-litejam-neo/",
+    "https://www.kickstarter.com/blog/long-story-short-2023-join-kickstarters-annual-celebration-of-0",
+    "https://www.kickstarter.com/blog/meet-the-kickstarter-games-outreach-team",
+    "https://www.kickstarter.com/blog/kickstarter-never-tolerates-abusive-behavior-this-new-feature-0",
+    "https://www.kickstarter.com/blog/ready-to-make-magic-announcing-witchstarter-2022-our-first-op-0",
+    "https://www.kickstarter.com/blog/reporting-back-from-the-first-meeting-of-the-kickstarter-comm"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -103,7 +108,12 @@
     "https://newatlas.com/automotive/audi-q9-sq9-three-row-suv/",
     "https://newatlas.com/motorcycles/honda-cb500/",
     "https://newatlas.com/tents/gazelle-g4-1-minute-gazebo/",
-    "https://newatlas.com/music/guitar-smart-rgb-lights-litejam-neo/"
+    "https://newatlas.com/music/guitar-smart-rgb-lights-litejam-neo/",
+    "tag:www.kickstarter.com,2009-05-04:BlogPost/2853",
+    "tag:www.kickstarter.com,2009-05-04:BlogPost/2833",
+    "tag:www.kickstarter.com,2009-05-04:BlogPost/2826",
+    "tag:www.kickstarter.com,2009-05-04:BlogPost/2821",
+    "tag:www.kickstarter.com,2009-05-04:BlogPost/2812"
   ],
   "entries": [
     {
@@ -579,6 +589,51 @@
       "processedAt": "2026-08-02T00:03:34.256Z",
       "status": "published",
       "slug": "carbon-fiber-guitar-s-smart-rgb-lights-teach-you-how-to-play",
+      "kind": "news"
+    },
+    {
+      "id": "tag:www.kickstarter.com,2009-05-04:BlogPost/2853",
+      "url": "https://www.kickstarter.com/blog/long-story-short-2023-join-kickstarters-annual-celebration-of-0",
+      "title": "Long Story Short 2023: Join Kickstarter’s Annual Celebration of Short Films in March",
+      "processedAt": "2026-08-02T00:03:54.884Z",
+      "status": "rejected",
+      "reason": "editor hard-reject: non-gadget/culture",
+      "kind": "news"
+    },
+    {
+      "id": "tag:www.kickstarter.com,2009-05-04:BlogPost/2833",
+      "url": "https://www.kickstarter.com/blog/meet-the-kickstarter-games-outreach-team",
+      "title": "Meet the Kickstarter Games Outreach Team",
+      "processedAt": "2026-08-02T00:03:55.281Z",
+      "status": "rejected",
+      "reason": "editor hard-reject: non-gadget/culture",
+      "kind": "news"
+    },
+    {
+      "id": "tag:www.kickstarter.com,2009-05-04:BlogPost/2826",
+      "url": "https://www.kickstarter.com/blog/kickstarter-never-tolerates-abusive-behavior-this-new-feature-0",
+      "title": "Kickstarter Never Tolerates Abusive Behavior; This New Feature Makes it Easier for Creators to Take Action",
+      "processedAt": "2026-08-02T00:03:55.835Z",
+      "status": "rejected",
+      "reason": "editor hard-reject: non-gadget/culture",
+      "kind": "article"
+    },
+    {
+      "id": "tag:www.kickstarter.com,2009-05-04:BlogPost/2821",
+      "url": "https://www.kickstarter.com/blog/ready-to-make-magic-announcing-witchstarter-2022-our-first-op-0",
+      "title": "Ready to Make Magic? Announcing Witchstarter 2022, Our First Open Call for Magic & Divination Projects",
+      "processedAt": "2026-08-02T00:03:59.251Z",
+      "status": "rejected",
+      "reason": "editor hard-reject: non-gadget/culture",
+      "kind": "news"
+    },
+    {
+      "id": "tag:www.kickstarter.com,2009-05-04:BlogPost/2812",
+      "url": "https://www.kickstarter.com/blog/reporting-back-from-the-first-meeting-of-the-kickstarter-comm",
+      "title": "Графический роман «Bi Visibility: Still Bi» — история о бисексуальности на Kickstarter!",
+      "processedAt": "2026-08-02T00:04:02.644Z",
+      "status": "published",
+      "slug": "reporting-back-from-the-first-meeting-of-the-kickstarter-community-advisory-coun",
       "kind": "news"
     }
   ]
