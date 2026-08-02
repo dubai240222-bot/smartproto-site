@@ -106,7 +106,8 @@
     "https://newatlas.com/electronics/hyperspace-trackpad-pro/",
     "https://newatlas.com/wearables/prolo-ring-mouse/",
     "https://newatlas.com/electronics/review-akaso-sight-300-night-vision/",
-    "https://newatlas.com/electronics/review-omni-x-uv-laser-engraver/"
+    "https://newatlas.com/electronics/review-omni-x-uv-laser-engraver/",
+    "https://newatlas.com/wearables/battery-less-earbuds-sleep-somnibuds/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -215,7 +216,8 @@
     "https://newatlas.com/electronics/hyperspace-trackpad-pro/",
     "https://newatlas.com/wearables/prolo-ring-mouse/",
     "https://newatlas.com/electronics/review-akaso-sight-300-night-vision/",
-    "https://newatlas.com/electronics/review-omni-x-uv-laser-engraver/"
+    "https://newatlas.com/electronics/review-omni-x-uv-laser-engraver/",
+    "https://newatlas.com/wearables/battery-less-earbuds-sleep-somnibuds/"
   ],
   "entries": [
     {
@@ -1195,6 +1197,15 @@
       "status": "published",
       "slug": "review-is-the-omni-x-the-best-laser-engraver-on-the-market-right-now",
       "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/wearables/battery-less-earbuds-sleep-somnibuds/",
+      "url": "https://newatlas.com/wearables/battery-less-earbuds-sleep-somnibuds/",
+      "title": "Беспроводные наушники для сна SomniBuds: комфорт без подзарядки",
+      "processedAt": "2026-08-02T06:30:16.090Z",
+      "status": "published",
+      "slug": "battery-less-earbuds-promise-better-sleep-without-charging-hassles",
+      "kind": "article"
     }
   ]
 }
