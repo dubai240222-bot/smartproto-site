@@ -124,7 +124,8 @@
     "https://newatlas.com/automotive/lg-ultraview-windshield-display-pace-pilot/",
     "https://newatlas.com/wearables/pebble-index-ring/",
     "https://newatlas.com/wearables/bandage-fingertip-wearable-feel-virtual-textures-touchscreens/",
-    "https://newatlas.com/wearables/casio-g-shock-nano-watch-ring/"
+    "https://newatlas.com/wearables/casio-g-shock-nano-watch-ring/",
+    "https://newatlas.com/wearables/transparent-uv-detector/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -251,7 +252,8 @@
     "https://newatlas.com/automotive/lg-ultraview-windshield-display-pace-pilot/",
     "https://newatlas.com/wearables/pebble-index-ring/",
     "https://newatlas.com/wearables/bandage-fingertip-wearable-feel-virtual-textures-touchscreens/",
-    "https://newatlas.com/wearables/casio-g-shock-nano-watch-ring/"
+    "https://newatlas.com/wearables/casio-g-shock-nano-watch-ring/",
+    "https://newatlas.com/wearables/transparent-uv-detector/"
   ],
   "entries": [
     {
@@ -1392,6 +1394,15 @@
       "processedAt": "2026-08-02T06:49:24.612Z",
       "status": "published",
       "slug": "casio-nano-sizes-the-rugged-g-shock-into-full-functioning-finger-watch",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/wearables/transparent-uv-detector/",
+      "url": "https://newatlas.com/wearables/transparent-uv-detector/",
+      "title": "Прозрачный датчик УФ-излучения для смартфона",
+      "processedAt": "2026-08-02T06:50:24.790Z",
+      "status": "published",
+      "slug": "transparent-uv-light-sensor-warns-users-before-skin-damage-hits",
       "kind": "news"
     }
   ]
