@@ -140,7 +140,8 @@
     "https://newatlas.com/electronics/ai-interactive-vehicle-display-eye-tracking-bus-window/",
     "https://newatlas.com/electronics/playstation-portal-ps5-remote-player-launch-late-2023/",
     "https://newatlas.com/electronics/jiva-soluboard-infineon/",
-    "https://newatlas.com/electronics/wireless-charging-efficiency-80-percent/"
+    "https://newatlas.com/electronics/wireless-charging-efficiency-80-percent/",
+    "https://newatlas.com/electronics/sol-reader-ebook-goggles/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -283,7 +284,8 @@
     "https://newatlas.com/electronics/ai-interactive-vehicle-display-eye-tracking-bus-window/",
     "https://newatlas.com/electronics/playstation-portal-ps5-remote-player-launch-late-2023/",
     "https://newatlas.com/electronics/jiva-soluboard-infineon/",
-    "https://newatlas.com/electronics/wireless-charging-efficiency-80-percent/"
+    "https://newatlas.com/electronics/wireless-charging-efficiency-80-percent/",
+    "https://newatlas.com/electronics/sol-reader-ebook-goggles/"
   ],
   "entries": [
     {
@@ -1568,6 +1570,15 @@
       "processedAt": "2026-08-02T08:28:09.865Z",
       "status": "published",
       "slug": "wireless-charging-technique-boosts-long-distance-efficiency-to-80",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/electronics/sol-reader-ebook-goggles/",
+      "url": "https://newatlas.com/electronics/sol-reader-ebook-goggles/",
+      "title": "Sol Reader: Очки, погружающие в чтение без отвлекающих факторов",
+      "processedAt": "2026-08-02T08:29:00.551Z",
+      "status": "published",
+      "slug": "sol-reader-puts-bookworms-right-inside-their-ebooks",
       "kind": "news"
     }
   ]
