@@ -138,7 +138,8 @@
     "https://newatlas.com/electronics/insta360-ace-pro-2-action-camera/",
     "https://newatlas.com/electronics/gopro-hero-13-black/",
     "https://newatlas.com/electronics/ai-interactive-vehicle-display-eye-tracking-bus-window/",
-    "https://newatlas.com/electronics/playstation-portal-ps5-remote-player-launch-late-2023/"
+    "https://newatlas.com/electronics/playstation-portal-ps5-remote-player-launch-late-2023/",
+    "https://newatlas.com/electronics/jiva-soluboard-infineon/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -279,7 +280,8 @@
     "https://newatlas.com/electronics/insta360-ace-pro-2-action-camera/",
     "https://newatlas.com/electronics/gopro-hero-13-black/",
     "https://newatlas.com/electronics/ai-interactive-vehicle-display-eye-tracking-bus-window/",
-    "https://newatlas.com/electronics/playstation-portal-ps5-remote-player-launch-late-2023/"
+    "https://newatlas.com/electronics/playstation-portal-ps5-remote-player-launch-late-2023/",
+    "https://newatlas.com/electronics/jiva-soluboard-infineon/"
   ],
   "entries": [
     {
@@ -1547,6 +1549,15 @@
       "status": "published",
       "slug": "portal-playstation-s-first-dedicated-remote-player-to-launch-late-2023",
       "kind": "article"
+    },
+    {
+      "id": "https://newatlas.com/electronics/jiva-soluboard-infineon/",
+      "url": "https://newatlas.com/electronics/jiva-soluboard-infineon/",
+      "title": "Jiva Soluboard: Биоразлагаемая печатная плата для снижения электронных отходов",
+      "processedAt": "2026-08-02T08:27:09.356Z",
+      "status": "published",
+      "slug": "plant-based-pcb-substrate-breaks-down-in-water-for-easier-recycling",
+      "kind": "news"
     }
   ]
 }
