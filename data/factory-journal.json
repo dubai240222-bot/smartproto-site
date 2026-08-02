@@ -137,7 +137,8 @@
     "https://newatlas.com/wearables/review-melomania-p100-se-wireless-anc-headphones/",
     "https://newatlas.com/electronics/insta360-ace-pro-2-action-camera/",
     "https://newatlas.com/electronics/gopro-hero-13-black/",
-    "https://newatlas.com/electronics/ai-interactive-vehicle-display-eye-tracking-bus-window/"
+    "https://newatlas.com/electronics/ai-interactive-vehicle-display-eye-tracking-bus-window/",
+    "https://newatlas.com/electronics/playstation-portal-ps5-remote-player-launch-late-2023/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -277,7 +278,8 @@
     "https://newatlas.com/wearables/review-melomania-p100-se-wireless-anc-headphones/",
     "https://newatlas.com/electronics/insta360-ace-pro-2-action-camera/",
     "https://newatlas.com/electronics/gopro-hero-13-black/",
-    "https://newatlas.com/electronics/ai-interactive-vehicle-display-eye-tracking-bus-window/"
+    "https://newatlas.com/electronics/ai-interactive-vehicle-display-eye-tracking-bus-window/",
+    "https://newatlas.com/electronics/playstation-portal-ps5-remote-player-launch-late-2023/"
   ],
   "entries": [
     {
@@ -1536,6 +1538,15 @@
       "status": "published",
       "slug": "eye-tracking-window-tech-tells-sightseers-about-what-they-re-looking-at",
       "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/electronics/playstation-portal-ps5-remote-player-launch-late-2023/",
+      "url": "https://newatlas.com/electronics/playstation-portal-ps5-remote-player-launch-late-2023/",
+      "title": "Sony PlayStation Portal: играйте в игры PS5 на новом устройстве",
+      "processedAt": "2026-08-02T08:25:27.192Z",
+      "status": "published",
+      "slug": "portal-playstation-s-first-dedicated-remote-player-to-launch-late-2023",
+      "kind": "article"
     }
   ]
 }
