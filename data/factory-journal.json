@@ -142,7 +142,9 @@
     "https://newatlas.com/electronics/jiva-soluboard-infineon/",
     "https://newatlas.com/electronics/wireless-charging-efficiency-80-percent/",
     "https://newatlas.com/electronics/sol-reader-ebook-goggles/",
-    "https://newatlas.com/electronics/magmo-pro-iphone-call-recorder/"
+    "https://newatlas.com/electronics/magmo-pro-iphone-call-recorder/",
+    "https://newatlas.com/electronics/computer-memory-resistive-switching-denser-data-storage/",
+    "https://newatlas.com/electronics/fineday-3-0-bluetooth-mechanical-keyboard/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -287,7 +289,9 @@
     "https://newatlas.com/electronics/jiva-soluboard-infineon/",
     "https://newatlas.com/electronics/wireless-charging-efficiency-80-percent/",
     "https://newatlas.com/electronics/sol-reader-ebook-goggles/",
-    "https://newatlas.com/electronics/magmo-pro-iphone-call-recorder/"
+    "https://newatlas.com/electronics/magmo-pro-iphone-call-recorder/",
+    "https://newatlas.com/electronics/computer-memory-resistive-switching-denser-data-storage/",
+    "https://newatlas.com/electronics/fineday-3-0-bluetooth-mechanical-keyboard/"
   ],
   "entries": [
     {
@@ -1591,6 +1595,24 @@
       "status": "published",
       "slug": "magmo-pro-clings-to-iphones-to-auto-record-phone-calls",
       "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/electronics/computer-memory-resistive-switching-denser-data-storage/",
+      "url": "https://newatlas.com/electronics/computer-memory-resistive-switching-denser-data-storage/",
+      "title": "Computer memory prototype ditches 1s and 0s for denser data storage",
+      "processedAt": "2026-08-02T08:31:01.379Z",
+      "status": "rejected",
+      "reason": "editor hard-reject: non-gadget/culture",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/electronics/fineday-3-0-bluetooth-mechanical-keyboard/",
+      "url": "https://newatlas.com/electronics/fineday-3-0-bluetooth-mechanical-keyboard/",
+      "title": "Механическая клавиатура Fineday 3.0: ретро-стиль и тактильная отдача",
+      "processedAt": "2026-08-02T08:31:03.508Z",
+      "status": "published",
+      "slug": "retro-cool-fineday-3-0-bluetooth-keyboard-brings-back-the-clickety-clack",
+      "kind": "article"
     }
   ]
 }
