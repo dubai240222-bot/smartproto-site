@@ -158,7 +158,8 @@
     "https://www.ithome.com/0/984/743.htm",
     "https://www.ithome.com/0/984/774.htm",
     "https://www.ithome.com/0/984/777.htm",
-    "https://www.ithome.com/0/984/789.htm"
+    "https://www.ithome.com/0/984/789.htm",
+    "https://www.yankodesign.com/2026/08/02/forget-lithium-algae-might-be-powering-your-devices-next/?utm_source=rss&utm_medium=rss&utm_campaign=forget-lithium-algae-might-be-powering-your-devices-next"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -318,7 +319,8 @@
     "china-dota2",
     "china-20000mah-pb2045mi",
     "china-hoto",
-    "china-urxr-one"
+    "china-urxr-one",
+    "https://www.yankodesign.com/?p=639268"
   ],
   "entries": [
     {
@@ -1801,6 +1803,16 @@
       "reason": "editorial gadget bar (source-backed)",
       "slug": "china-urxr-one",
       "channel": "china-qwen"
+    },
+    {
+      "id": "https://www.yankodesign.com/?p=639268",
+      "url": "https://www.yankodesign.com/2026/08/02/forget-lithium-algae-might-be-powering-your-devices-next/?utm_source=rss&utm_medium=rss&utm_campaign=forget-lithium-algae-might-be-powering-your-devices-next",
+      "title": "Forget Lithium. Algae Might Be Powering Your Devices Next.",
+      "processedAt": "2026-08-02T14:17:34.480Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Это исследовательский прототип, который нельзя купить или предзаказать — нет коммерческого продукта.",
+      "channel": "rss"
     }
   ]
 }
