@@ -61,7 +61,9 @@
     "https://newatlas.com/drones/quantum-systems-electric-drone-speed-record/",
     "https://newatlas.com/campervans/westfalia-nansen-bunkhouse-camper-van/",
     "https://newatlas.com/outdoor-gear/lighting-drone-heone-x/",
-    "https://newatlas.com/mobile-technology/compact-smartphone-monitor-solves-selfie-headache/"
+    "https://newatlas.com/mobile-technology/compact-smartphone-monitor-solves-selfie-headache/",
+    "https://newatlas.com/robotics/usa-chinese-robot-ban/",
+    "https://newatlas.com/music/anukari-3d-physics-synthesizer-app/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -125,7 +127,9 @@
     "https://newatlas.com/drones/quantum-systems-electric-drone-speed-record/",
     "https://newatlas.com/campervans/westfalia-nansen-bunkhouse-camper-van/",
     "https://newatlas.com/outdoor-gear/lighting-drone-heone-x/",
-    "https://newatlas.com/mobile-technology/compact-smartphone-monitor-solves-selfie-headache/"
+    "https://newatlas.com/mobile-technology/compact-smartphone-monitor-solves-selfie-headache/",
+    "https://newatlas.com/robotics/usa-chinese-robot-ban/",
+    "https://newatlas.com/music/anukari-3d-physics-synthesizer-app/"
   ],
   "entries": [
     {
@@ -700,6 +704,24 @@
       "processedAt": "2026-08-02T00:17:03.132Z",
       "status": "published",
       "slug": "v1-pro-monitor-for-smartphones-makes-solo-filming-easier",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/robotics/usa-chinese-robot-ban/",
+      "url": "https://newatlas.com/robotics/usa-chinese-robot-ban/",
+      "title": "If you planned to buy a Chinese robot in the US, we've got bad news",
+      "processedAt": "2026-08-02T00:17:55.204Z",
+      "status": "rejected",
+      "reason": "editor hard-reject: non-gadget/culture",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/music/anukari-3d-physics-synthesizer-app/",
+      "url": "https://newatlas.com/music/anukari-3d-physics-synthesizer-app/",
+      "title": "Anukari: Синтезатор звука на основе физики для музыкантов",
+      "processedAt": "2026-08-02T00:17:56.118Z",
+      "status": "published",
+      "slug": "wonderfully-oddball-music-app-turns-virtual-physics-into-sounds",
       "kind": "news"
     }
   ]

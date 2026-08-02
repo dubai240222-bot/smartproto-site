@@ -1,5 +1,26 @@
 [
   {
+    "id": "wonderfully-oddball-music-app-turns-virtual-physics-into-sounds",
+    "slug": "wonderfully-oddball-music-app-turns-virtual-physics-into-sounds",
+    "title": "Anukari: Синтезатор звука на основе физики для музыкантов",
+    "category": "НОВИНКА / ПОЛЕЗНО",
+    "tags": [
+      "#новинка",
+      "#полезно",
+      "#гаджет",
+      "#музыка",
+      "#приложение",
+      "#синтезатор",
+      "#звук"
+    ],
+    "summary": "Приложение Anukari предлагает уникальный подход к созданию музыки, используя виртуальную физику для генерации звуков.",
+    "content": "Приложение Anukari предлагает уникальный подход к созданию музыки, используя виртуальную физику для генерации звуков. Вместо традиционных контроллеров, пользователи манипулируют объектами в трехмерном пространстве, наблюдая, как их взаимодействие порождает уникальные аудиопаттерны. Это открывает новые горизонты для экспериментов со звуком и создания оригинальных композиций.\n\nИсточник: New Atlas.",
+    "sourceUrl": "https://newatlas.com/music/anukari-3d-physics-synthesizer-app/",
+    "publishedAt": "2026-08-02T00:17:56.118Z",
+    "readTime": "1 мин",
+    "imageUrl": "https://assets.newatlas.com/dims4/default/50156de/2147483647/strip/true/crop/2586x1542+0+0/resize/1440x859!/format/webp/quality/90/?url=https%3A%2F%2Fnewatlas-brightspot.s3.ap-southeast-2.amazonaws.com%2F9f%2F20%2F82b5730a42a6aa5c9c615af1055f%2Fanukari-screenshot.jpg"
+  },
+  {
     "id": "v1-pro-monitor-for-smartphones-makes-solo-filming-easier",
     "slug": "v1-pro-monitor-for-smartphones-makes-solo-filming-easier",
     "title": "Монитор V1 Pro для смартфона: удобная съемка себя без посторонней помощи",
@@ -123,28 +144,6 @@
     "publishedAt": "2026-08-02T00:12:20.525Z",
     "readTime": "1 мин",
     "imageUrl": "https://www.yankodesign.com/images/design_news/2026/07/replace-100-tutorial-videos-with-this-one-smart-keyboard/keyflowai-00.jpg"
-  },
-  {
-    "id": "domesticating-ai-why-vibe-coding-feels-like-cheating",
-    "slug": "domesticating-ai-why-vibe-coding-feels-like-cheating",
-    "title": "Home Assistant Nabu: Ваш личный ИИ-помощник, который понимает вас с полуслова",
-    "category": "ГАДЖЕТ / ПОЛЕЗНО",
-    "tags": [
-      "#новинка",
-      "#умныйдом",
-      "#AI",
-      "#HomeAssistant",
-      "#Nabu",
-      "#автоматизация",
-      "#полезно",
-      "#гаджет"
-    ],
-    "summary": "Забудьте о сложных командах и заучивании синтаксиса.",
-    "content": "Забудьте о сложных командах и заучивании синтаксиса. С Home Assistant Nabu процесс настройки умного дома становится интуитивно понятным, почти как разговор с другом. Этот ИИ-помощник, который я мысленно окрестил 'Яфл', действительно меняет правила игры. Вместо того чтобы тратить часы на написание кода, вы можете просто описать желаемое поведение системы, и Nabu воплотит это в жизнь. Это как получить секретный код к своему дому, который работает без видимых усилий.  Представьте: вы хотите, чтобы свет включался только тогда, когда вы дома и на улице темно. Раньше это требовало бы логических условий и скриптов. Теперь же вы можете просто сказать Nabu: 'Включай свет, когда я прихожу домой вечером'.  И он поймет.  Это не магия, это результат глубокой интеграции и понимания естественного языка.  Home Assistant Nabu делает управление вашим умным домом настолько простым, что это граничит с читерством.  Попробуйте сами, и вы поймете, о чем я говорю.  Это шаг к по-настоящему умному и отзывчивому дому.",
-    "sourceUrl": "https://newatlas.com/ai-humanoids/domesticating-ai-why-vibe-coding-feels-like-cheating/",
-    "publishedAt": "2026-08-02T00:11:06.848Z",
-    "readTime": "1 мин",
-    "imageUrl": "https://assets.newatlas.com/dims4/default/17b93e6/2147483647/strip/true/crop/2048x1375+0+0/resize/1430x960!/format/webp/quality/90/?url=https%3A%2F%2Fnewatlas-brightspot.s3.ap-southeast-2.amazonaws.com%2F1e%2Ff3%2Fc7b3463b4095959b71e67e6d2946%2Fhow1.jpg"
   },
   {
     "id": "what-s-the-best-handheld-mini-fan",
