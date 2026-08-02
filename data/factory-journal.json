@@ -112,7 +112,8 @@
     "https://newatlas.com/wearables/contact-lens-infrared/",
     "https://newatlas.com/wearables/review-movengine-aircore-owh-headphones/",
     "https://newatlas.com/electronics/worlds-smallest-led-pixels-127000-ppi-display/",
-    "https://newatlas.com/wearables/ring-mouse-android-windows-ios-macos/"
+    "https://newatlas.com/wearables/ring-mouse-android-windows-ios-macos/",
+    "https://newatlas.com/electronics/xring-d13-mouse-trackpad-laser-remote/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -227,7 +228,8 @@
     "https://newatlas.com/wearables/contact-lens-infrared/",
     "https://newatlas.com/wearables/review-movengine-aircore-owh-headphones/",
     "https://newatlas.com/electronics/worlds-smallest-led-pixels-127000-ppi-display/",
-    "https://newatlas.com/wearables/ring-mouse-android-windows-ios-macos/"
+    "https://newatlas.com/wearables/ring-mouse-android-windows-ios-macos/",
+    "https://newatlas.com/electronics/xring-d13-mouse-trackpad-laser-remote/"
   ],
   "entries": [
     {
@@ -1261,6 +1263,15 @@
       "status": "published",
       "slug": "ring-mouse-makes-doomscrolling-easier-than-ever",
       "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/electronics/xring-d13-mouse-trackpad-laser-remote/",
+      "url": "https://newatlas.com/electronics/xring-d13-mouse-trackpad-laser-remote/",
+      "title": "Xring D13: Универсальный пульт с мышью, тачпадом и лазером",
+      "processedAt": "2026-08-02T06:36:17.553Z",
+      "status": "published",
+      "slug": "super-functional-remote-packs-a-wireless-mouse-trackpad-and-laser-beam",
+      "kind": "article"
     }
   ]
 }
