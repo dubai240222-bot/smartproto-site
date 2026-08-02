@@ -95,7 +95,8 @@
     "https://newatlas.com/electronics/d01-visual-soldering-iron/",
     "https://newatlas.com/electronics/cigman-cnvpro-night-vision-binoculars-review/",
     "https://newatlas.com/electronics/nanoflow-i2-air-worlds-smallest-horizontal-mouse/",
-    "https://newatlas.com/wearables/gesture-based-wearable-control/"
+    "https://newatlas.com/wearables/gesture-based-wearable-control/",
+    "https://newatlas.com/wearables/ai-rings-pebble-index-wizpr-sandbar-stream/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -193,7 +194,8 @@
     "https://newatlas.com/electronics/d01-visual-soldering-iron/",
     "https://newatlas.com/electronics/cigman-cnvpro-night-vision-binoculars-review/",
     "https://newatlas.com/electronics/nanoflow-i2-air-worlds-smallest-horizontal-mouse/",
-    "https://newatlas.com/wearables/gesture-based-wearable-control/"
+    "https://newatlas.com/wearables/gesture-based-wearable-control/",
+    "https://newatlas.com/wearables/ai-rings-pebble-index-wizpr-sandbar-stream/"
   ],
   "entries": [
     {
@@ -1073,6 +1075,15 @@
       "processedAt": "2026-08-02T06:10:24.766Z",
       "status": "published",
       "slug": "device-provides-gesture-control-that-works-even-if-you-can-t-sit-still",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/wearables/ai-rings-pebble-index-wizpr-sandbar-stream/",
+      "url": "https://newatlas.com/wearables/ai-rings-pebble-index-wizpr-sandbar-stream/",
+      "title": "AI-кольца: новый форм-фактор для персональных ассистентов",
+      "processedAt": "2026-08-02T06:11:24.670Z",
+      "status": "published",
+      "slug": "ai-rings-are-coming-will-you-wear-one-on-your-finger-next-year",
       "kind": "news"
     }
   ]
