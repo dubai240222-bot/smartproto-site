@@ -76,7 +76,8 @@
     "https://newatlas.com/wearables/x1-ai-bone-conduction-4k-headset/",
     "https://newatlas.com/wearables/musiccam-pro-real-time-pov-live-camera-headset/",
     "https://newatlas.com/electronics/hanboost-t1-compact-laser-engraver/",
-    "https://newatlas.com/wearables/meta-glasses-ai-cameras-kylie-jenner/"
+    "https://newatlas.com/wearables/meta-glasses-ai-cameras-kylie-jenner/",
+    "https://newatlas.com/wearables/the90-gem-pendant-uv-tracking-exposure/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -155,7 +156,8 @@
     "https://newatlas.com/wearables/x1-ai-bone-conduction-4k-headset/",
     "https://newatlas.com/wearables/musiccam-pro-real-time-pov-live-camera-headset/",
     "https://newatlas.com/electronics/hanboost-t1-compact-laser-engraver/",
-    "https://newatlas.com/wearables/meta-glasses-ai-cameras-kylie-jenner/"
+    "https://newatlas.com/wearables/meta-glasses-ai-cameras-kylie-jenner/",
+    "https://newatlas.com/wearables/the90-gem-pendant-uv-tracking-exposure/"
   ],
   "entries": [
     {
@@ -865,6 +867,15 @@
       "status": "published",
       "slug": "meta-s-new-ai-glasses-add-kylie-flair-without-the-designer-badge",
       "kind": "article"
+    },
+    {
+      "id": "https://newatlas.com/wearables/the90-gem-pendant-uv-tracking-exposure/",
+      "url": "https://newatlas.com/wearables/the90-gem-pendant-uv-tracking-exposure/",
+      "title": "The90 Gem: Персональный трекер УФ-излучения в стильном кулоне",
+      "processedAt": "2026-08-02T05:53:23.928Z",
+      "status": "published",
+      "slug": "stylish-pendant-brings-personalized-uv-tracking-to-sun-protection",
+      "kind": "news"
     }
   ]
 }
