@@ -89,7 +89,8 @@
     "https://newatlas.com/wearables/citizen-photon-celebrates-half-century-solar-watch-power/",
     "https://newatlas.com/electronics/oversized-screen-phone-mirror/",
     "https://newatlas.com/wearables/ganance-heir-watch-smartwatch-step-tracking/",
-    "https://newatlas.com/wearables/fort-strength-training-fitness-tracker/"
+    "https://newatlas.com/wearables/fort-strength-training-fitness-tracker/",
+    "https://newatlas.com/electronics/dji-mic-mini-review/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -181,7 +182,8 @@
     "https://newatlas.com/wearables/citizen-photon-celebrates-half-century-solar-watch-power/",
     "https://newatlas.com/electronics/oversized-screen-phone-mirror/",
     "https://newatlas.com/wearables/ganance-heir-watch-smartwatch-step-tracking/",
-    "https://newatlas.com/wearables/fort-strength-training-fitness-tracker/"
+    "https://newatlas.com/wearables/fort-strength-training-fitness-tracker/",
+    "https://newatlas.com/electronics/dji-mic-mini-review/"
   ],
   "entries": [
     {
@@ -1007,6 +1009,15 @@
       "processedAt": "2026-08-02T06:04:24.708Z",
       "status": "published",
       "slug": "this-fitness-tracker-logs-your-lifts-so-you-don-t-have-to",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/electronics/dji-mic-mini-review/",
+      "url": "https://newatlas.com/electronics/dji-mic-mini-review/",
+      "title": "DJI Mic Mini: Компактный звук для ваших видео",
+      "processedAt": "2026-08-02T06:05:24.574Z",
+      "status": "published",
+      "slug": "review-dji-mic-mini-why-it-s-still-unbeatable-in-2026",
       "kind": "news"
     }
   ]
