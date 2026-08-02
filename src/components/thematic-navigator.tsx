@@ -55,6 +55,10 @@ const MAX_VISIBLE_SUBTOPICS = 6;
 function normalizeTag(raw: string): string {
   const t = raw.trim();
   if (!t) return '';
+  // Keep short acronyms (AI, VR, HN) readable
+  if (t.length <= 3 && /^[A-Za-zА-Яа-яЁё0-9]+$/.test(t)) {
+    return t.toUpperCase();
+  }
   return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
 }
 
