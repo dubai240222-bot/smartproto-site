@@ -1,171 +1,170 @@
-import { mkdir, readFile, writeFile, unlink } from 'node:fs/promises';
-import path from 'node:path';
+import { getArticleBySlug } from '@/data/articles';
 import {
   INTEREST_SCORES,
+  applyRatingUpdate,
+  emptySlugStats,
   isInterestScore,
   type InterestScore,
+  type ShareChannel,
   type SlugInterestStats,
 } from '@/lib/interest-rating-shared';
 
-export { INTEREST_SCORES, isInterestScore };
-export type { InterestScore, SlugInterestStats };
+export {
+  INTEREST_SCORES,
+  isInterestScore,
+  toPublicStats,
+  telegramShareUrl,
+  whatsappShareUrl,
+  cleanAnonId,
+  isValidSlug,
+  isShareChannel,
+  MIN_PUBLIC_VOTES,
+  applyRatingUpdate,
+  emptySlugStats,
+} from '@/lib/interest-rating-shared';
+export type {
+  InterestScore,
+  ShareChannel,
+  SlugInterestStats,
+  PublicInterestStats,
+} from '@/lib/interest-rating-shared';
 
-export type InterestStatsFile = {
-  updatedAt: string;
-  slugs: Record<string, SlugInterestStats>;
-};
+const RL_WINDOW_SEC = 60;
+const RL_MAX = 40;
 
-export type InterestVoteRecord = {
-  slug: string;
-  score: InterestScore;
-  ts: string;
-  anonId?: string;
-};
-
-const EMPTY_SCORES = (): Record<InterestScore, number> => ({
-  5: 0,
-  6: 0,
-  7: 0,
-  8: 0,
-  9: 0,
-  10: 0,
-});
-
-function projectDataPath(filename: string): string {
-  return path.join(process.cwd(), 'data', filename);
+export function isInterestStoreConfigured(): boolean {
+  return Boolean(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
 }
 
-function tmpDataPath(filename: string): string {
-  return path.join('/tmp', `smartproto-${filename}`);
+async function redis(command: (string | number)[]): Promise<unknown> {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) throw new Error('UPSTASH_NOT_CONFIGURED');
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(command),
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new Error(`UPSTASH_HTTP_${res.status}`);
+  const data = (await res.json()) as { result?: unknown; error?: string };
+  if (data.error) throw new Error(data.error);
+  return data.result;
 }
 
-function candidatePaths(filename: string): string[] {
-  const primary = projectDataPath(filename);
-  // Vercel / serverless: project FS is often read-only; /tmp is writable per instance.
-  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
-    return [tmpDataPath(filename), primary];
-  }
-  return [primary, tmpDataPath(filename)];
+async function redisPipeline(commands: (string | number)[][]): Promise<unknown[]> {
+  const base = process.env.UPSTASH_REDIS_REST_URL!;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN!;
+  const res = await fetch(`${base.replace(/\/$/, '')}/pipeline`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(commands),
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new Error(`UPSTASH_HTTP_${res.status}`);
+  const data = (await res.json()) as Array<{ result?: unknown; error?: string }>;
+  return data.map((row) => {
+    if (row.error) throw new Error(row.error);
+    return row.result;
+  });
 }
 
-export function emptySlugStats(): SlugInterestStats {
-  return { count: 0, sum: 0, avg: 0, scores: EMPTY_SCORES() };
-}
+const agg = (slug: string) => `sp:fb:${slug}:agg`;
+const ratingKey = (slug: string, anonId: string) => `sp:fb:${slug}:r:${anonId}`;
+const mltKey = (slug: string, anonId: string) => `sp:fb:${slug}:m:${anonId}`;
+const rlKey = (anonId: string) => `sp:fb:rl:${anonId}`;
 
-function normalizeSlugStats(raw: Partial<SlugInterestStats> | undefined): SlugInterestStats {
-  const scores = EMPTY_SCORES();
-  if (raw?.scores && typeof raw.scores === 'object') {
-    for (const score of INTEREST_SCORES) {
-      const n = Number((raw.scores as Record<number, unknown>)[score]);
-      scores[score] = Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
-    }
-  }
-
-  let count = INTEREST_SCORES.reduce((acc, s) => acc + scores[s], 0);
-  let sum = INTEREST_SCORES.reduce((acc, s) => acc + s * scores[s], 0);
-
-  if (typeof raw?.count === 'number' && raw.count >= count) {
-    count = Math.floor(raw.count);
-  }
-  if (typeof raw?.sum === 'number' && raw.sum >= sum) {
-    sum = Math.floor(raw.sum);
-  }
-
-  return {
-    count,
-    sum,
-    avg: count > 0 ? Math.round((sum / count) * 10) / 10 : 0,
-    scores,
+function parseAgg(flat: unknown): SlugInterestStats {
+  const stats = emptySlugStats();
+  if (!Array.isArray(flat) || flat.length === 0) return stats;
+  const map = new Map<string, string>();
+  for (let i = 0; i + 1 < flat.length; i += 2) map.set(String(flat[i]), String(flat[i + 1]));
+  const num = (k: string) => {
+    const n = Number(map.get(k) || 0);
+    return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
   };
+  for (const score of INTEREST_SCORES) stats.scores[score] = num(`d${score}`);
+  stats.count = num('count') || INTEREST_SCORES.reduce((a, s) => a + stats.scores[s], 0);
+  stats.sum = num('sum') || INTEREST_SCORES.reduce((a, s) => a + s * stats.scores[s], 0);
+  stats.avg = stats.count > 0 ? Math.round((stats.sum / stats.count) * 10) / 10 : 0;
+  stats.moreLikeThis = num('mlt');
+  stats.shares = num('shares');
+  stats.shareTelegram = num('sh_tg');
+  stats.shareWhatsApp = num('sh_wa');
+  stats.shareCopy = num('sh_cp');
+  stats.shareNative = num('sh_nv');
+  return stats;
 }
 
-async function readJsonFile<T>(filePath: string): Promise<T | null> {
-  try {
-    const raw = await readFile(filePath, 'utf8');
-    return JSON.parse(raw) as T;
-  } catch {
-    return null;
-  }
+export function resolveArticleMeta(slug: string) {
+  const article = getArticleBySlug(slug);
+  return article ? { slug: article.slug, category: article.category } : null;
 }
 
-async function loadStatsFromDisk(): Promise<{ data: InterestStatsFile; path: string }> {
-  for (const filePath of candidatePaths('interest-stats.json')) {
-    const parsed = await readJsonFile<InterestStatsFile>(filePath);
-    if (parsed && parsed.slugs && typeof parsed.slugs === 'object') {
-      return { data: parsed, path: filePath };
-    }
-  }
-  return {
-    data: { updatedAt: new Date(0).toISOString(), slugs: {} },
-    path: candidatePaths('interest-stats.json')[0],
-  };
-}
-
-async function writeJsonAtomic(filePath: string, data: unknown): Promise<void> {
-  await mkdir(path.dirname(filePath), { recursive: true });
-  const tmp = `${filePath}.${process.pid}.tmp`;
-  const payload = JSON.stringify(data, null, 2) + '\n';
-  await writeFile(tmp, payload, 'utf8');
-  await writeFile(filePath, payload, 'utf8');
-  try {
-    await unlink(tmp);
-  } catch {
-    // ignore
-  }
+export async function checkRateLimit(anonId: string): Promise<boolean> {
+  if (!isInterestStoreConfigured()) return true;
+  const key = rlKey(anonId);
+  const count = Number(await redis(['INCR', key]));
+  if (count === 1) await redis(['EXPIRE', key, RL_WINDOW_SEC]);
+  return count <= RL_MAX;
 }
 
 export async function getSlugInterestStats(slug: string): Promise<SlugInterestStats> {
-  const { data } = await loadStatsFromDisk();
-  return normalizeSlugStats(data.slugs[slug]);
+  if (!isInterestStoreConfigured()) return emptySlugStats();
+  return parseAgg(await redis(['HGETALL', agg(slug)]));
 }
 
-export async function recordInterestVote(vote: InterestVoteRecord): Promise<{
-  stats: SlugInterestStats;
-  persisted: boolean;
-}> {
-  const { data, path: preferredPath } = await loadStatsFromDisk();
-  const current = normalizeSlugStats(data.slugs[vote.slug]);
-  current.scores[vote.score] += 1;
-  current.count += 1;
-  current.sum += vote.score;
-  current.avg = Math.round((current.sum / current.count) * 10) / 10;
-
-  const next: InterestStatsFile = {
-    updatedAt: new Date().toISOString(),
-    slugs: {
-      ...data.slugs,
-      [vote.slug]: current,
-    },
-  };
-
-  let persisted = false;
-  const writeOrder = [
-    preferredPath,
-    ...candidatePaths('interest-stats.json').filter((p) => p !== preferredPath),
-  ];
-
-  for (const filePath of writeOrder) {
-    try {
-      await writeJsonAtomic(filePath, next);
-      persisted = true;
-      break;
-    } catch {
-      // try next candidate
-    }
+export async function recordInterestVote(input: {
+  slug: string;
+  score: InterestScore;
+  anonId: string;
+}): Promise<{ stats: SlugInterestStats; updated: boolean }> {
+  const voteKey = ratingKey(input.slug, input.anonId);
+  const prevRaw = await redis(['GET', voteKey]);
+  const previous =
+    typeof prevRaw === 'string' && isInterestScore(Number(prevRaw))
+      ? (Number(prevRaw) as InterestScore)
+      : null;
+  if (previous === input.score) {
+    return { stats: await getSlugInterestStats(input.slug), updated: false };
   }
 
-  // Append raw vote for offline analysis when FS allows (gitignored).
-  if (persisted) {
-    try {
-      const ratingsPath = projectDataPath('interest-ratings.json');
-      const existing = (await readJsonFile<InterestVoteRecord[]>(ratingsPath)) ?? [];
-      const trimmed = Array.isArray(existing) ? existing.slice(-4999) : [];
-      trimmed.push(vote);
-      await writeJsonAtomic(ratingsPath, trimmed);
-    } catch {
-      // aggregates are enough
-    }
-  }
+  const next = applyRatingUpdate(await getSlugInterestStats(input.slug), input.score, previous);
+  const fields: (string | number)[] = ['count', next.count, 'sum', next.sum];
+  for (const s of INTEREST_SCORES) fields.push(`d${s}`, next.scores[s]);
+  await redisPipeline([
+    ['SET', voteKey, String(input.score)],
+    ['HSET', agg(input.slug), ...fields],
+  ]);
+  return { stats: next, updated: true };
+}
 
-  return { stats: current, persisted };
+export async function recordMoreLikeThis(input: {
+  slug: string;
+  anonId: string;
+}): Promise<{ stats: SlugInterestStats; created: boolean }> {
+  const set = await redis(['SET', mltKey(input.slug, input.anonId), '1', 'NX']);
+  if (set !== 'OK') {
+    return { stats: await getSlugInterestStats(input.slug), created: false };
+  }
+  await redis(['HINCRBY', agg(input.slug), 'mlt', 1]);
+  return { stats: await getSlugInterestStats(input.slug), created: true };
+}
+
+const SHARE_FIELD: Record<ShareChannel, string> = {
+  telegram: 'sh_tg',
+  whatsapp: 'sh_wa',
+  copy: 'sh_cp',
+  native: 'sh_nv',
+};
+
+export async function recordShare(input: {
+  slug: string;
+  channel: ShareChannel;
+}): Promise<SlugInterestStats> {
+  await redisPipeline([
+    ['HINCRBY', agg(input.slug), 'shares', 1],
+    ['HINCRBY', agg(input.slug), SHARE_FIELD[input.channel], 1],
+  ]);
+  return getSlugInterestStats(input.slug);
 }

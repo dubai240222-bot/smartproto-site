@@ -13,6 +13,7 @@
     "test:china-collector": "tsx scripts/test-china-collector.ts",
     "test:china-qwen": "tsx scripts/test-china-qwen.ts",
     "test:niche-pc": "tsx scripts/test-niche-pc-filter.ts",
+    "test:interest-rating": "tsx scripts/test-interest-rating.ts",
     "publish:china-qwen": "tsx scripts/publish-china-qwen.ts",
     "newsroom:tick": "tsx scripts/run-newsroom-tick.ts",
     "factory:accelerated": "tsx scripts/run-accelerated-cycle.ts",

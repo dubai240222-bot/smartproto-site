@@ -254,8 +254,12 @@ export default async function ArticlePage({
             {contentBlocks.map((block, index) => renderBlock(block, index))}
           </div>
 
-          {/* Post-read interest rating */}
-          <InterestRating slug={article.slug} />
+          {/* Post-read reader feedback (SP-A-052) */}
+          <InterestRating
+            slug={article.slug}
+            title={article.title}
+            summary={article.summary}
+          />
 
           {/* 8. Tags / Topic */}
           <div className="mt-8 pt-4 border-t border-[var(--border)] flex items-center justify-between text-xs text-[var(--muted)]">
