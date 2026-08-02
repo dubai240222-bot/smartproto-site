@@ -59,7 +59,8 @@
     "https://newatlas.com/motorcycles/triumph-speed-twin-1200-tfc/",
     "https://newatlas.com/motorcycles/charged-ndara/",
     "https://newatlas.com/drones/quantum-systems-electric-drone-speed-record/",
-    "https://newatlas.com/campervans/westfalia-nansen-bunkhouse-camper-van/"
+    "https://newatlas.com/campervans/westfalia-nansen-bunkhouse-camper-van/",
+    "https://newatlas.com/outdoor-gear/lighting-drone-heone-x/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -121,7 +122,8 @@
     "https://newatlas.com/motorcycles/triumph-speed-twin-1200-tfc/",
     "https://newatlas.com/motorcycles/charged-ndara/",
     "https://newatlas.com/drones/quantum-systems-electric-drone-speed-record/",
-    "https://newatlas.com/campervans/westfalia-nansen-bunkhouse-camper-van/"
+    "https://newatlas.com/campervans/westfalia-nansen-bunkhouse-camper-van/",
+    "https://newatlas.com/outdoor-gear/lighting-drone-heone-x/"
   ],
   "entries": [
     {
@@ -678,6 +680,15 @@
       "processedAt": "2026-08-02T00:15:32.987Z",
       "status": "published",
       "slug": "westfalia-s-latest-camper-van-packs-in-a-bunk-room-and-dry-bathroom",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/outdoor-gear/lighting-drone-heone-x/",
+      "url": "https://newatlas.com/outdoor-gear/lighting-drone-heone-x/",
+      "title": "Дрон Heone-X: мощный и долгий свет для кемпинга",
+      "processedAt": "2026-08-02T00:16:12.261Z",
+      "status": "published",
+      "slug": "heone-x-drone-provides-powerful-long-lasting-campsite-lighting",
       "kind": "news"
     }
   ]
