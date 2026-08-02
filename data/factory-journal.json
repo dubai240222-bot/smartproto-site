@@ -78,7 +78,8 @@
     "https://newatlas.com/electronics/hanboost-t1-compact-laser-engraver/",
     "https://newatlas.com/wearables/meta-glasses-ai-cameras-kylie-jenner/",
     "https://newatlas.com/wearables/the90-gem-pendant-uv-tracking-exposure/",
-    "https://newatlas.com/wearables/sony-reon-pocket-pro-plus-wearable-air-conditioner-upgrade/"
+    "https://newatlas.com/wearables/sony-reon-pocket-pro-plus-wearable-air-conditioner-upgrade/",
+    "https://newatlas.com/wearables/google-screenless-health-tracker-fitbit-air/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -159,7 +160,8 @@
     "https://newatlas.com/electronics/hanboost-t1-compact-laser-engraver/",
     "https://newatlas.com/wearables/meta-glasses-ai-cameras-kylie-jenner/",
     "https://newatlas.com/wearables/the90-gem-pendant-uv-tracking-exposure/",
-    "https://newatlas.com/wearables/sony-reon-pocket-pro-plus-wearable-air-conditioner-upgrade/"
+    "https://newatlas.com/wearables/sony-reon-pocket-pro-plus-wearable-air-conditioner-upgrade/",
+    "https://newatlas.com/wearables/google-screenless-health-tracker-fitbit-air/"
   ],
   "entries": [
     {
@@ -887,6 +889,15 @@
       "status": "published",
       "slug": "sony-s-wearable-air-conditioner-gets-better-fit-and-stronger-cooling",
       "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/wearables/google-screenless-health-tracker-fitbit-air/",
+      "url": "https://newatlas.com/wearables/google-screenless-health-tracker-fitbit-air/",
+      "title": "Google Fitbit Air: Трекер здоровья без экрана для активных пользователей",
+      "processedAt": "2026-08-02T05:55:26.202Z",
+      "status": "published",
+      "slug": "google-enters-the-screenless-health-tracker-race-with-new-fitbit-air",
+      "kind": "article"
     }
   ]
 }
