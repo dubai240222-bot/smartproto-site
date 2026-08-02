@@ -141,7 +141,8 @@
     "https://newatlas.com/electronics/playstation-portal-ps5-remote-player-launch-late-2023/",
     "https://newatlas.com/electronics/jiva-soluboard-infineon/",
     "https://newatlas.com/electronics/wireless-charging-efficiency-80-percent/",
-    "https://newatlas.com/electronics/sol-reader-ebook-goggles/"
+    "https://newatlas.com/electronics/sol-reader-ebook-goggles/",
+    "https://newatlas.com/electronics/magmo-pro-iphone-call-recorder/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -285,7 +286,8 @@
     "https://newatlas.com/electronics/playstation-portal-ps5-remote-player-launch-late-2023/",
     "https://newatlas.com/electronics/jiva-soluboard-infineon/",
     "https://newatlas.com/electronics/wireless-charging-efficiency-80-percent/",
-    "https://newatlas.com/electronics/sol-reader-ebook-goggles/"
+    "https://newatlas.com/electronics/sol-reader-ebook-goggles/",
+    "https://newatlas.com/electronics/magmo-pro-iphone-call-recorder/"
   ],
   "entries": [
     {
@@ -1579,6 +1581,15 @@
       "processedAt": "2026-08-02T08:29:00.551Z",
       "status": "published",
       "slug": "sol-reader-puts-bookworms-right-inside-their-ebooks",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/electronics/magmo-pro-iphone-call-recorder/",
+      "url": "https://newatlas.com/electronics/magmo-pro-iphone-call-recorder/",
+      "title": "Magmo Pro: записывайте звонки на iPhone без сложных настроек",
+      "processedAt": "2026-08-02T08:30:09.763Z",
+      "status": "published",
+      "slug": "magmo-pro-clings-to-iphones-to-auto-record-phone-calls",
       "kind": "news"
     }
   ]

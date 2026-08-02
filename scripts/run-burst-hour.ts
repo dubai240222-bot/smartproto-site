@@ -14,6 +14,7 @@ import { fetchRssFeed, RssItem } from '../src/lib/collectors/rss';
 import { extractArticleImage } from '../src/lib/collectors/image-extractor';
 import { getOpenRouterClient, clampText, parseJsonObject } from '../src/lib/ai/shared';
 import { looksBuyableGadget } from '../src/lib/ai/hard-reject';
+import { filterRemovedArticles, isRemovedSlug } from '../src/lib/removed-slugs';
 import { stampAuthorForPipeline } from '../src/lib/authors';
 
 function acquireBurstLock(lockPath: string): boolean {
@@ -343,6 +344,28 @@ async function main(): Promise<void> {
   loadEnvFiles();
   process.env.SMARTPROTO_FACTORY_ENABLED = 'true';
 
+  // SP-A-048 supersedes 50–60s burst and dual loops — refuse to race the single 3-min cycle.
+  if (process.env.SMARTPROTO_ACCELERATED_CYCLE === 'true') {
+    console.error('SP-A-048 accelerated cycle is active flag — use: npm run factory:accelerated');
+    process.exitCode = 0;
+    return;
+  }
+  const acceleratedLock = path.resolve(process.cwd(), 'data', 'accelerated-cycle.lock');
+  if (existsSync(acceleratedLock)) {
+    const raw = readFileSync(acceleratedLock, 'utf8').trim();
+    const pid = Number(raw);
+    if (Number.isFinite(pid) && pid > 0) {
+      try {
+        process.kill(pid, 0);
+        console.error(`SP-A-048 accelerated cycle running (PID ${pid}). Burst refused.`);
+        process.exitCode = 0;
+        return;
+      } catch {
+        /* stale */
+      }
+    }
+  }
+
   const root = process.cwd();
   const lockPath = path.resolve(root, 'data', 'burst.lock');
   if (!acquireBurstLock(lockPath)) {
@@ -479,6 +502,25 @@ async function main(): Promise<void> {
       }
 
       const slug = generateSlug(draft.title, item.title);
+      if (isRemovedSlug(slug)) {
+        existingUrls.add(item.url);
+        existingIds.add(item.id);
+        journal.processedUrls.push(item.url);
+        journal.processedIds.push(item.id);
+        journal.entries.push({
+          id: item.id,
+          url: item.url,
+          title: item.title,
+          processedAt: new Date().toISOString(),
+          status: 'rejected',
+          reason: 'denylisted slug',
+          kind,
+        });
+        await writeFile(journalPath, JSON.stringify(journal, null, 2) + '\n', 'utf8');
+        console.log(chalk.yellow(`Skipped denylisted slug: ${slug}`));
+        consecutiveErrors = 0;
+        continue;
+      }
       if (existingIds.has(slug)) {
         existingUrls.add(item.url);
         existingIds.add(item.id);
@@ -520,7 +562,21 @@ async function main(): Promise<void> {
         'utf8',
       );
 
-      articles.unshift(newArticle);
+      let latest: Article[] = articles;
+      try {
+        const fresh = JSON.parse((await readFile(articlesPath, 'utf8')).replace(/^\uFEFF/, ''));
+        if (Array.isArray(fresh)) latest = fresh as Article[];
+      } catch {
+        /* keep in-memory fallback */
+      }
+      const deduped = filterRemovedArticles(
+        latest.filter(
+          (a) => a.id !== newArticle.id && a.slug !== newArticle.slug && a.sourceUrl !== newArticle.sourceUrl,
+        ),
+      );
+      deduped.unshift(newArticle);
+      articles.length = 0;
+      articles.push(...deduped);
       await writeFile(articlesPath, JSON.stringify(articles, null, 2) + '\n', 'utf8');
 
       existingUrls.add(item.url);

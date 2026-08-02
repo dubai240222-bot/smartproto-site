@@ -122,12 +122,16 @@ function printFactoryTickSummary(opts: {
   metrics: TickMetrics;
   commitCreated?: boolean;
   pushDone?: boolean;
+  title?: string;
+  slug?: string;
+  wowScore?: number;
 }): void {
   const { factoryEnabled, event, metrics } = opts;
   console.log('');
   console.log('SMARTPROTO FACTORY TICK SUMMARY');
   console.log(`factoryEnabled: ${factoryEnabled}`);
   console.log(`event: ${event}`);
+  console.log(`time: ${new Date().toISOString()}`);
   console.log(`aiStarted: ${metrics.aiStarted}`);
   console.log(`collectorStarted: ${metrics.collectorStarted}`);
   console.log(`publisherStarted: ${metrics.publisherStarted}`);
@@ -137,6 +141,9 @@ function printFactoryTickSummary(opts: {
   console.log(`sentToGemini: ${metrics.sentToGemini}`);
   console.log(`draftsCreated: ${metrics.draftsCreated}`);
   console.log(`articlesPublished: ${metrics.articlesPublished}`);
+  console.log(`title: ${opts.title || '-'}`);
+  console.log(`slug: ${opts.slug || '-'}`);
+  console.log(`wowScore: ${opts.wowScore ?? '-'}`);
   console.log(`commitCreated: ${opts.commitCreated === true}`);
   console.log(`pushDone: ${opts.pushDone === true}`);
   console.log(`reason: ${metrics.reason || 'n/a'}`);
@@ -152,6 +159,20 @@ function slugify(title: string): string {
       .slice(0, 80)
       .replace(/-+$/, '') || `article-${Date.now()}`
   );
+}
+
+/** Normalize product identity for cross-title/slug dedupe (SP-A-048). */
+function normalizeProductIdentity(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/["'`]/g, '')
+    .replace(/[^a-z0-9а-яё]+/gi, ' ')
+    .replace(
+      /\b(the|a|an|new|review|hands.?on|vs|versus|launch|announces?|unveils?|новинка|обзор)\b/gi,
+      ' ',
+    )
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function summaryOf(text: string): string {
@@ -174,6 +195,7 @@ function wordCount(text: string): number {
 async function loadState(journalPath: string, articlesPath: string) {
   const urls = new Set<string>();
   const ids = new Set<string>();
+  const productIds = new Set<string>();
   let journal: JournalData = { processedUrls: [], processedIds: [], entries: [] };
   let articles: Article[] = [];
 
@@ -186,6 +208,10 @@ async function loadState(journalPath: string, articlesPath: string) {
         if (a.sourceUrl) urls.add(a.sourceUrl);
         if (a.id) ids.add(String(a.id));
         if (a.slug) ids.add(String(a.slug));
+        const nameId = normalizeProductIdentity(a.title || '');
+        const slugId = normalizeProductIdentity((a.slug || '').replace(/-/g, ' '));
+        if (nameId) productIds.add(nameId);
+        if (slugId) productIds.add(slugId);
       }
     }
   } catch {
@@ -210,7 +236,18 @@ async function loadState(journalPath: string, articlesPath: string) {
     /* empty */
   }
 
-  return { urls, ids, journal, articles };
+  for (const e of journal.entries) {
+    if (e.status !== 'published') continue;
+    if (e.slug) {
+      ids.add(e.slug);
+      const slugId = normalizeProductIdentity(e.slug.replace(/-/g, ' '));
+      if (slugId) productIds.add(slugId);
+    }
+    const nameId = normalizeProductIdentity(e.title || '');
+    if (nameId) productIds.add(nameId);
+  }
+
+  return { urls, ids, productIds, journal, articles };
 }
 
 async function markRejected(
@@ -242,9 +279,11 @@ async function tryChinaPublishOnce(opts: {
   journalPath: string;
   urls: Set<string>;
   ids: Set<string>;
+  productIds: Set<string>;
   journal: JournalData;
   articles: Article[];
   metrics: TickMetrics;
+  lastPublish?: { title?: string; slug?: string; wowScore?: number };
 }): Promise<boolean> {
   process.env.CHINA_DEPARTMENT_ENABLED = 'true';
   process.env.CHINA_ALLOW_RECOMMEND = 'true';
@@ -423,6 +462,14 @@ async function tryChinaPublishOnce(opts: {
       continue;
     }
 
+    const productKey = normalizeProductIdentity(
+      `${dossier.manufacturer || ''} ${dossier.productName || draft.title}`,
+    );
+    if (productKey && opts.productIds.has(productKey)) {
+      console.log(chalk.yellow(`China product-identity duplicate: ${productKey}`));
+      continue;
+    }
+
     const baseSlug = slugify(
       dossier.productName
         ? `${dossier.manufacturer || 'china'} ${dossier.productName}`
@@ -499,6 +546,16 @@ async function tryChinaPublishOnce(opts: {
     });
     await writeFile(opts.journalPath, JSON.stringify(opts.journal, null, 2) + '\n', 'utf8');
 
+    opts.ids.add(slug);
+    opts.urls.add(c.sourceUrl);
+    if (productKey) opts.productIds.add(productKey);
+    const draftKey = normalizeProductIdentity(draft.title);
+    if (draftKey) opts.productIds.add(draftKey);
+    if (opts.lastPublish) {
+      opts.lastPublish.title = draft.title;
+      opts.lastPublish.slug = slug;
+    }
+
     opts.metrics.publisherStarted = true;
     opts.metrics.articlesPublished += 1;
     opts.metrics.reason = 'published china/qwen';
@@ -520,9 +577,11 @@ async function publishRssOnce(opts: {
   journalPath: string;
   urls: Set<string>;
   ids: Set<string>;
+  productIds: Set<string>;
   journal: JournalData;
   articles: Article[];
   metrics: TickMetrics;
+  lastPublish?: { title?: string; slug?: string; wowScore?: number };
 }): Promise<boolean> {
   console.log(chalk.bold('— Channel B: RSS / editorial office —'));
   opts.metrics.collectorStarted = true;
@@ -537,6 +596,8 @@ async function publishRssOnce(opts: {
         if (opts.urls.has(item.url) || opts.ids.has(item.id)) continue;
         const slug = slugify(item.title);
         if (opts.ids.has(slug) || isRemovedSlug(slug)) continue;
+        const productKey = normalizeProductIdentity(item.title);
+        if (productKey && opts.productIds.has(productKey)) continue;
         if (!looksBuyableGadget(item.title, item.text || '', name)) continue;
         const gate = hardRejectTopic(item.title, item.text || '');
         if (gate.reject) {
@@ -642,6 +703,23 @@ async function publishRssOnce(opts: {
       await markRejected(opts.journal, opts.journalPath, item, `slug blocked: ${slug}`, scout.score);
       return false;
     }
+    const draftProductKey = normalizeProductIdentity(draft.title);
+    const sourceProductKey = normalizeProductIdentity(item.title);
+    if (
+      (draftProductKey && opts.productIds.has(draftProductKey)) ||
+      (sourceProductKey && opts.productIds.has(sourceProductKey))
+    ) {
+      console.log(chalk.yellow(`Skipped product-identity duplicate: ${draftProductKey || sourceProductKey}`));
+      await markRejected(
+        opts.journal,
+        opts.journalPath,
+        item,
+        `product-identity duplicate: ${draftProductKey || sourceProductKey}`,
+        scout.score,
+      );
+      opts.metrics.skipReason = 'product-identity duplicate';
+      return false;
+    }
 
     const publishedAt = new Date().toISOString();
     const article: Article = {
@@ -704,6 +782,16 @@ async function publishRssOnce(opts: {
       channel: 'rss',
     });
     await writeFile(opts.journalPath, JSON.stringify(opts.journal, null, 2) + '\n', 'utf8');
+
+    opts.ids.add(slug);
+    opts.urls.add(item.url);
+    if (draftProductKey) opts.productIds.add(draftProductKey);
+    if (sourceProductKey) opts.productIds.add(sourceProductKey);
+    if (opts.lastPublish) {
+      opts.lastPublish.title = draft.title;
+      opts.lastPublish.slug = slug;
+      opts.lastPublish.wowScore = scout.score;
+    }
 
     opts.metrics.publisherStarted = true;
     opts.metrics.articlesPublished += 1;
@@ -773,13 +861,14 @@ async function main(): Promise<void> {
   const articlesPath = path.resolve(root, 'src', 'data', 'articles.json');
   const draftsDir = path.resolve(root, 'drafts');
 
-  const { urls, ids, journal, articles } = await loadState(journalPath, articlesPath);
+  const { urls, ids, productIds, journal, articles } = await loadState(journalPath, articlesPath);
   const metrics = emptyTickMetrics(
     factoryEnabled ? 'factory on' : 'factory off (forced)',
     'in progress',
   );
+  const lastPublish: { title?: string; slug?: string; wowScore?: number } = {};
 
-  console.log(chalk.bold('=== Newsroom Tick (SP-A-031-R2) ==='));
+  console.log(chalk.bold('=== Newsroom Tick (SP-A-031-R2 / SP-A-048) ==='));
   console.log(`Time: ${new Date().toISOString()}`);
   console.log(`Factory: ${factoryEnabled ? 'ON' : 'OFF (forced)'}`);
   console.log(
@@ -793,9 +882,11 @@ async function main(): Promise<void> {
     journalPath,
     urls,
     ids,
+    productIds,
     journal,
     articles,
     metrics,
+    lastPublish,
   };
 
   const chinaDone = await tryChinaPublishOnce(shared);
@@ -806,9 +897,12 @@ async function main(): Promise<void> {
       factoryEnabled: true,
       event,
       metrics,
-      // commit/push are owned by the GHA workflow step after this script.
+      // commit/push are owned by the GHA workflow / accelerated cycle supervisor.
       commitCreated: false,
       pushDone: false,
+      title: lastPublish.title,
+      slug: lastPublish.slug,
+      wowScore: lastPublish.wowScore,
     });
     return;
   }
@@ -818,6 +912,7 @@ async function main(): Promise<void> {
     ...shared,
     urls: refreshed.urls,
     ids: refreshed.ids,
+    productIds: refreshed.productIds,
     journal: refreshed.journal,
     articles: refreshed.articles,
   });
@@ -836,6 +931,9 @@ async function main(): Promise<void> {
     metrics,
     commitCreated: false,
     pushDone: false,
+    title: lastPublish.title,
+    slug: lastPublish.slug,
+    wowScore: lastPublish.wowScore,
   });
 }
 

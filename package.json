@@ -15,6 +15,7 @@
     "test:niche-pc": "tsx scripts/test-niche-pc-filter.ts",
     "publish:china-qwen": "tsx scripts/publish-china-qwen.ts",
     "newsroom:tick": "tsx scripts/run-newsroom-tick.ts",
+    "factory:accelerated": "tsx scripts/run-accelerated-cycle.ts",
     "factory:shift": "tsx scripts/run-factory-shift.ts",
     "publish:latest": "tsx scripts/publish-latest.ts",
     "polish:published": "tsx scripts/polish-published.ts",
