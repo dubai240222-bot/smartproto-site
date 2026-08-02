@@ -132,7 +132,8 @@
     "https://newatlas.com/electronics/insta360-x5/",
     "https://newatlas.com/wearables/openearables-2-physiological-earphones/",
     "https://newatlas.com/electronics/e-taste-virtual-food-flavor-vr/",
-    "https://newatlas.com/electronics/review-thermal-master-p2-catches-heat-small/"
+    "https://newatlas.com/electronics/review-thermal-master-p2-catches-heat-small/",
+    "https://newatlas.com/automotive/gooloo-ds600-diagnostic-vehicle-tablet/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -267,7 +268,8 @@
     "https://newatlas.com/electronics/insta360-x5/",
     "https://newatlas.com/wearables/openearables-2-physiological-earphones/",
     "https://newatlas.com/electronics/e-taste-virtual-food-flavor-vr/",
-    "https://newatlas.com/electronics/review-thermal-master-p2-catches-heat-small/"
+    "https://newatlas.com/electronics/review-thermal-master-p2-catches-heat-small/",
+    "https://newatlas.com/automotive/gooloo-ds600-diagnostic-vehicle-tablet/"
   ],
   "entries": [
     {
@@ -1481,6 +1483,15 @@
       "status": "published",
       "slug": "review-pint-sized-thermal-master-p2-gives-your-phone-predator-vision",
       "kind": "article"
+    },
+    {
+      "id": "https://newatlas.com/automotive/gooloo-ds600-diagnostic-vehicle-tablet/",
+      "url": "https://newatlas.com/automotive/gooloo-ds600-diagnostic-vehicle-tablet/",
+      "title": "Планшет для диагностики авто: доступ к функциям современных машин",
+      "processedAt": "2026-08-02T08:20:37.289Z",
+      "status": "published",
+      "slug": "sub-300-diagnostics-tablet-jailbreaks-modern-vehicle-software-locks",
+      "kind": "news"
     }
   ]
 }
