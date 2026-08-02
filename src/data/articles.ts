@@ -1,4 +1,5 @@
 ﻿import articles from './articles.json';
+import { filterRemovedArticles } from '@/lib/removed-slugs';
 
 export interface Article {
   id: string;
@@ -13,7 +14,7 @@ export interface Article {
   imageUrl?: string;
 }
 
-const typedArticles = articles as Article[];
+const typedArticles = filterRemovedArticles(articles as Article[]);
 
 export default typedArticles;
 
