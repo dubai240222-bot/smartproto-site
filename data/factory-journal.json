@@ -74,7 +74,8 @@
     "https://newatlas.com/telecommunications/amazon-leo-d2d-satellite-phone-network/",
     "https://newatlas.com/motorcycles/hmp-flash/",
     "https://newatlas.com/wearables/x1-ai-bone-conduction-4k-headset/",
-    "https://newatlas.com/wearables/musiccam-pro-real-time-pov-live-camera-headset/"
+    "https://newatlas.com/wearables/musiccam-pro-real-time-pov-live-camera-headset/",
+    "https://newatlas.com/electronics/hanboost-t1-compact-laser-engraver/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -151,7 +152,8 @@
     "https://newatlas.com/telecommunications/amazon-leo-d2d-satellite-phone-network/",
     "https://newatlas.com/motorcycles/hmp-flash/",
     "https://newatlas.com/wearables/x1-ai-bone-conduction-4k-headset/",
-    "https://newatlas.com/wearables/musiccam-pro-real-time-pov-live-camera-headset/"
+    "https://newatlas.com/wearables/musiccam-pro-real-time-pov-live-camera-headset/",
+    "https://newatlas.com/electronics/hanboost-t1-compact-laser-engraver/"
   ],
   "entries": [
     {
@@ -842,6 +844,15 @@
       "processedAt": "2026-08-02T05:50:24.156Z",
       "status": "published",
       "slug": "lifelogging-set-to-go-mainstream-with-229-all-purpose-4k-streaming-headset",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/electronics/hanboost-t1-compact-laser-engraver/",
+      "url": "https://newatlas.com/electronics/hanboost-t1-compact-laser-engraver/",
+      "title": "Компактный лазерный гравер Hanboost T1 для DIY-проектов",
+      "processedAt": "2026-08-02T05:51:23.925Z",
+      "status": "published",
+      "slug": "compact-laser-engraver-levels-up-your-diy-crafts-setup",
       "kind": "news"
     }
   ]
