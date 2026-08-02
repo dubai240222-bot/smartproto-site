@@ -103,7 +103,8 @@
     "https://newatlas.com/wearables/ixi-autofocus-eyeglasses/",
     "https://newatlas.com/electronics/ultrabar-x-modular-command-center/",
     "https://newatlas.com/wearables/puma-white-hunter-knife/",
-    "https://newatlas.com/electronics/hyperspace-trackpad-pro/"
+    "https://newatlas.com/electronics/hyperspace-trackpad-pro/",
+    "https://newatlas.com/wearables/prolo-ring-mouse/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -209,7 +210,8 @@
     "https://newatlas.com/wearables/ixi-autofocus-eyeglasses/",
     "https://newatlas.com/electronics/ultrabar-x-modular-command-center/",
     "https://newatlas.com/wearables/puma-white-hunter-knife/",
-    "https://newatlas.com/electronics/hyperspace-trackpad-pro/"
+    "https://newatlas.com/electronics/hyperspace-trackpad-pro/",
+    "https://newatlas.com/wearables/prolo-ring-mouse/"
   ],
   "entries": [
     {
@@ -1162,6 +1164,15 @@
       "status": "published",
       "slug": "windows-users-finally-get-their-version-of-apple-s-magic-trackpad",
       "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/wearables/prolo-ring-mouse/",
+      "url": "https://newatlas.com/wearables/prolo-ring-mouse/",
+      "title": "Prolo Ring: Управление компьютером с пальца",
+      "processedAt": "2026-08-02T06:27:16.908Z",
+      "status": "published",
+      "slug": "mouse-replacing-minimalistic-ring-offers-full-desktop-control",
+      "kind": "article"
     }
   ]
 }
