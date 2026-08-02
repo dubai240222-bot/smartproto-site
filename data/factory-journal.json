@@ -115,7 +115,8 @@
     "https://newatlas.com/wearables/ring-mouse-android-windows-ios-macos/",
     "https://newatlas.com/electronics/xring-d13-mouse-trackpad-laser-remote/",
     "https://newatlas.com/electronics/ultrasonic-wireless-cutter/",
-    "https://newatlas.com/electronics/dji-osmo-action-5-pro-review/"
+    "https://newatlas.com/electronics/dji-osmo-action-5-pro-review/",
+    "https://newatlas.com/electronics/byok-writing-lcd-screen/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -233,7 +234,8 @@
     "https://newatlas.com/wearables/ring-mouse-android-windows-ios-macos/",
     "https://newatlas.com/electronics/xring-d13-mouse-trackpad-laser-remote/",
     "https://newatlas.com/electronics/ultrasonic-wireless-cutter/",
-    "https://newatlas.com/electronics/dji-osmo-action-5-pro-review/"
+    "https://newatlas.com/electronics/dji-osmo-action-5-pro-review/",
+    "https://newatlas.com/electronics/byok-writing-lcd-screen/"
   ],
   "entries": [
     {
@@ -1294,6 +1296,15 @@
       "status": "published",
       "slug": "review-the-349-dji-osmo-action-5-pro-comes-for-gopro-s-crown",
       "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/electronics/byok-writing-lcd-screen/",
+      "url": "https://newatlas.com/electronics/byok-writing-lcd-screen/",
+      "title": "BYOK: Экран для концентрации на письме без отвлечений",
+      "processedAt": "2026-08-02T06:39:15.887Z",
+      "status": "published",
+      "slug": "simple-li-l-screen-pairs-with-your-keyboard-to-minimize-distractions",
+      "kind": "article"
     }
   ]
 }
