@@ -77,7 +77,8 @@
     "https://newatlas.com/wearables/musiccam-pro-real-time-pov-live-camera-headset/",
     "https://newatlas.com/electronics/hanboost-t1-compact-laser-engraver/",
     "https://newatlas.com/wearables/meta-glasses-ai-cameras-kylie-jenner/",
-    "https://newatlas.com/wearables/the90-gem-pendant-uv-tracking-exposure/"
+    "https://newatlas.com/wearables/the90-gem-pendant-uv-tracking-exposure/",
+    "https://newatlas.com/wearables/sony-reon-pocket-pro-plus-wearable-air-conditioner-upgrade/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -157,7 +158,8 @@
     "https://newatlas.com/wearables/musiccam-pro-real-time-pov-live-camera-headset/",
     "https://newatlas.com/electronics/hanboost-t1-compact-laser-engraver/",
     "https://newatlas.com/wearables/meta-glasses-ai-cameras-kylie-jenner/",
-    "https://newatlas.com/wearables/the90-gem-pendant-uv-tracking-exposure/"
+    "https://newatlas.com/wearables/the90-gem-pendant-uv-tracking-exposure/",
+    "https://newatlas.com/wearables/sony-reon-pocket-pro-plus-wearable-air-conditioner-upgrade/"
   ],
   "entries": [
     {
@@ -875,6 +877,15 @@
       "processedAt": "2026-08-02T05:53:23.928Z",
       "status": "published",
       "slug": "stylish-pendant-brings-personalized-uv-tracking-to-sun-protection",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/wearables/sony-reon-pocket-pro-plus-wearable-air-conditioner-upgrade/",
+      "url": "https://newatlas.com/wearables/sony-reon-pocket-pro-plus-wearable-air-conditioner-upgrade/",
+      "title": "Sony Reon Pocket 5: Персональный климат-контроль для комфорта в любое время",
+      "processedAt": "2026-08-02T05:54:24.410Z",
+      "status": "published",
+      "slug": "sony-s-wearable-air-conditioner-gets-better-fit-and-stronger-cooling",
       "kind": "news"
     }
   ]
