@@ -38,6 +38,11 @@ const HARD_REJECT_PATTERNS: RegExp[] = [
   /\bmemoir\b/i,
   /\bauthor interview\b/i,
   /\bangela nissel\b/i,
+  /\bgraphic novel\b/i,
+  /\bкомикс\b/i,
+  /\bграфический роман\b/i,
+  /\bcommunity advisory\b/i,
+  /\bsubscribe to it instead\b/i,
   /\bписател/i,
   /\bпевец\b/i,
   /\bзнаменит/i,
@@ -82,6 +87,11 @@ const HARD_REJECT_PATTERNS: RegExp[] = [
   /\bxmems\b/i,
   /\bconcept (keyboard|device|product)\b/i,
   /\bdesigner (presented|unveiled) a concept\b/i,
+  /\badvisory council\b/i,
+  /\bcommercialization and innovation\b/i,
+  /\bbrowser-based 3d editor\b/i,
+  /\bsubscribe to it instead\b/i,
+  /\bstewart platform\b/i,
 ];
 
 /** Signals that a concrete purchasable / preorderable product is present. */
