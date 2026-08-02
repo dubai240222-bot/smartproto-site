@@ -71,6 +71,10 @@ const HARD_REJECT_PATTERNS: RegExp[] = [
   /\bgalaxy cruiser\b/i,
   /\baudi q9\b/i,
   /\b\d[\d,]*-?hp\b/i,
+  /\bcamper van\b/i,
+  /\bmotorcycle\b/i,
+  /\bspeed twin\b/i,
+  /\bwestfalia\b/i,
   // Internal / meta / infra — no consumer purchase path
   /\bdocker\b/i,
   /\bhacker news\b/i,

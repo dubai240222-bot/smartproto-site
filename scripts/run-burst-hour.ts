@@ -14,6 +14,7 @@ import { fetchRssFeed, RssItem } from '../src/lib/collectors/rss';
 import { extractArticleImage } from '../src/lib/collectors/image-extractor';
 import { getOpenRouterClient, clampText, parseJsonObject } from '../src/lib/ai/shared';
 import { looksBuyableGadget } from '../src/lib/ai/hard-reject';
+import { filterRemovedArticles, isRemovedSlug } from '../src/lib/removed-slugs';
 
 function acquireBurstLock(lockPath: string): boolean {
   try {
@@ -515,7 +516,27 @@ async function main(): Promise<void> {
         'utf8',
       );
 
-      articles.unshift(newArticle);
+      // Re-read disk before write so parallel polish/edits are not clobbered by in-memory snapshot.
+      let latest: Article[] = articles;
+      try {
+        const fresh = JSON.parse((await readFile(articlesPath, 'utf8')).replace(/^\uFEFF/, ''));
+        if (Array.isArray(fresh)) latest = fresh as Article[];
+      } catch {
+        /* keep in-memory fallback */
+      }
+      if (isRemovedSlug(newArticle.slug)) {
+        console.log(chalk.yellow(`Skipped denylisted slug: ${newArticle.slug}`));
+        consecutiveErrors = 0;
+        continue;
+      }
+      const deduped = filterRemovedArticles(
+        latest.filter(
+          (a) => a.id !== newArticle.id && a.slug !== newArticle.slug && a.sourceUrl !== newArticle.sourceUrl,
+        ),
+      );
+      deduped.unshift(newArticle);
+      articles.length = 0;
+      articles.push(...deduped);
       await writeFile(articlesPath, JSON.stringify(articles, null, 2) + '\n', 'utf8');
 
       existingUrls.add(item.url);

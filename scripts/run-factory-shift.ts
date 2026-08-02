@@ -313,8 +313,8 @@ async function main(): Promise<void> {
       const review: ReviewResult = await reviewArticle(item);
       aiRuns++;
 
-      if (/^REJECT\b/i.test(review.technicalVerdict)) {
-        console.log(chalk.yellow(`Reviewer hard-reject: ${review.technicalVerdict}`));
+      if (/^(REJECT|RETURN)\b/i.test(review.technicalVerdict)) {
+        console.log(chalk.yellow(`Reviewer gate: ${review.technicalVerdict}`));
         rejectedCount++;
         journal.entries.push({
           id: item.id,
@@ -338,9 +338,12 @@ async function main(): Promise<void> {
       if (
         draft.title.trim().toUpperCase() === 'REJECT' ||
         draft.tags.some((t) => t.toLowerCase() === '#reject') ||
-        draft.text.trim().toLowerCase() === 'off-topic'
+        draft.text.trim().toLowerCase() === 'off-topic' ||
+        draft.toneCheck.clickbait ||
+        draft.toneCheck.hype ||
+        draft.toneCheck.unsupportedClaims
       ) {
-        console.log(chalk.yellow('Editor hard-reject: non-buyable / off-topic'));
+        console.log(chalk.yellow('Editor hard-reject: off-topic or toneCheck gate'));
         rejectedCount++;
         journal.entries.push({
           id: item.id,
@@ -349,7 +352,7 @@ async function main(): Promise<void> {
           processedAt: new Date().toISOString(),
           status: 'rejected',
           scoutScore: scout.score,
-          reason: 'editor hard-reject: non-buyable',
+          reason: 'editor hard-reject: off-topic or toneCheck',
         });
         await writeFile(journalPath, JSON.stringify(journal, null, 2) + '\n', 'utf8');
         consecutiveErrors = 0;

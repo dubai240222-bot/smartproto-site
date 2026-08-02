@@ -14,7 +14,8 @@
     "polish:published": "tsx scripts/polish-published.ts",
     "gadgets:loop": "tsx scripts/run-gadgets-loop.ts",
     "polish:inspect": "tsx scripts/inspect-polish-articles.ts",
-    "inspect:articles": "tsx scripts/inspect-polish-articles.ts"
+    "inspect:articles": "tsx scripts/inspect-polish-articles.ts",
+    "audit:tone": "tsx scripts/audit-published-tone.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
