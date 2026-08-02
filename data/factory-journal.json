@@ -101,7 +101,8 @@
     "https://newatlas.com/wearables/dotlumen-ai-glasses-blind-independence/",
     "https://newatlas.com/electronics/kode-dot-dev-board-electronics-hacker-tool/",
     "https://newatlas.com/wearables/ixi-autofocus-eyeglasses/",
-    "https://newatlas.com/electronics/ultrabar-x-modular-command-center/"
+    "https://newatlas.com/electronics/ultrabar-x-modular-command-center/",
+    "https://newatlas.com/wearables/puma-white-hunter-knife/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -205,7 +206,8 @@
     "https://newatlas.com/wearables/dotlumen-ai-glasses-blind-independence/",
     "https://newatlas.com/electronics/kode-dot-dev-board-electronics-hacker-tool/",
     "https://newatlas.com/wearables/ixi-autofocus-eyeglasses/",
-    "https://newatlas.com/electronics/ultrabar-x-modular-command-center/"
+    "https://newatlas.com/electronics/ultrabar-x-modular-command-center/",
+    "https://newatlas.com/wearables/puma-white-hunter-knife/"
   ],
   "entries": [
     {
@@ -1140,6 +1142,15 @@
       "status": "published",
       "slug": "modular-magnetic-command-center-moves-app-control-off-your-screen",
       "kind": "article"
+    },
+    {
+      "id": "https://newatlas.com/wearables/puma-white-hunter-knife/",
+      "url": "https://newatlas.com/wearables/puma-white-hunter-knife/",
+      "title": "Легендарный нож Puma White Hunter теперь доступен для покупки",
+      "processedAt": "2026-08-02T06:25:15.655Z",
+      "status": "published",
+      "slug": "puma-white-hunter-the-legendary-multi-tool-hunting-knife",
+      "kind": "news"
     }
   ]
 }
