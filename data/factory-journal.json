@@ -155,7 +155,8 @@
     "https://www.androidauthority.com/casio-crw-h001-smart-ring-watch-tracker-launch-3693332/",
     "https://www.androidauthority.com/lenovo-googlebook-leak-3693356/",
     "https://9to5google.com/2026/07/30/deals-galaxy-z-fold-8-trade-deals-2026-surface-laptop/",
-    "https://www.ithome.com/0/984/743.htm"
+    "https://www.ithome.com/0/984/743.htm",
+    "https://www.ithome.com/0/984/774.htm"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -312,7 +313,8 @@
     "https://www.androidauthority.com/casio-crw-h001-smart-ring-watch-tracker-launch-3693332/",
     "https://www.androidauthority.com/lenovo-googlebook-leak-3693356/",
     "https://9to5google.com/?p=724152",
-    "china-dota2"
+    "china-dota2",
+    "china-20000mah-pb2045mi"
   ],
   "entries": [
     {
@@ -1764,6 +1766,16 @@
       "status": "published",
       "reason": "editorial gadget bar (source-backed)",
       "slug": "china-dota2",
+      "channel": "china-qwen"
+    },
+    {
+      "id": "china-20000mah-pb2045mi",
+      "url": "https://www.ithome.com/0/984/774.htm",
+      "title": "Внешний аккумулятор Xiaomi 20000 мАч с кабелем и быстрой зарядкой",
+      "processedAt": "2026-08-02T09:32:53.759Z",
+      "status": "published",
+      "reason": "editorial gadget bar (source-backed)",
+      "slug": "china-20000mah-pb2045mi",
       "channel": "china-qwen"
     }
   ]
