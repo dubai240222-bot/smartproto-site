@@ -81,7 +81,8 @@
     "https://newatlas.com/wearables/sony-reon-pocket-pro-plus-wearable-air-conditioner-upgrade/",
     "https://newatlas.com/wearables/google-screenless-health-tracker-fitbit-air/",
     "https://newatlas.com/wearables/sabi-mind-reading-beanie-typing-eeg/",
-    "https://newatlas.com/wearables/postech-ai-neckband-words-speech/"
+    "https://newatlas.com/wearables/postech-ai-neckband-words-speech/",
+    "https://newatlas.com/wearables/vuebuds-ai-earbuds-described-audio/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -165,7 +166,8 @@
     "https://newatlas.com/wearables/sony-reon-pocket-pro-plus-wearable-air-conditioner-upgrade/",
     "https://newatlas.com/wearables/google-screenless-health-tracker-fitbit-air/",
     "https://newatlas.com/wearables/sabi-mind-reading-beanie-typing-eeg/",
-    "https://newatlas.com/wearables/postech-ai-neckband-words-speech/"
+    "https://newatlas.com/wearables/postech-ai-neckband-words-speech/",
+    "https://newatlas.com/wearables/vuebuds-ai-earbuds-described-audio/"
   ],
   "entries": [
     {
@@ -920,6 +922,15 @@
       "status": "published",
       "slug": "ai-neckband-lets-you-talk-without-saying-a-word",
       "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/wearables/vuebuds-ai-earbuds-described-audio/",
+      "url": "https://newatlas.com/wearables/vuebuds-ai-earbuds-described-audio/",
+      "title": "VueBuds: умные наушники с AI-камерой для распознавания объектов",
+      "processedAt": "2026-08-02T05:58:26.479Z",
+      "status": "published",
+      "slug": "camera-equipped-ai-earbuds-tell-you-what-you-re-looking-at",
+      "kind": "article"
     }
   ]
 }
