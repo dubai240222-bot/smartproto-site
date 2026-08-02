@@ -73,7 +73,8 @@
     "https://newatlas.com/wearables/garmin-screenless-cirqa-fitness-tracker/",
     "https://newatlas.com/telecommunications/amazon-leo-d2d-satellite-phone-network/",
     "https://newatlas.com/motorcycles/hmp-flash/",
-    "https://newatlas.com/wearables/x1-ai-bone-conduction-4k-headset/"
+    "https://newatlas.com/wearables/x1-ai-bone-conduction-4k-headset/",
+    "https://newatlas.com/wearables/musiccam-pro-real-time-pov-live-camera-headset/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -149,7 +150,8 @@
     "https://newatlas.com/wearables/garmin-screenless-cirqa-fitness-tracker/",
     "https://newatlas.com/telecommunications/amazon-leo-d2d-satellite-phone-network/",
     "https://newatlas.com/motorcycles/hmp-flash/",
-    "https://newatlas.com/wearables/x1-ai-bone-conduction-4k-headset/"
+    "https://newatlas.com/wearables/x1-ai-bone-conduction-4k-headset/",
+    "https://newatlas.com/wearables/musiccam-pro-real-time-pov-live-camera-headset/"
   ],
   "entries": [
     {
@@ -832,6 +834,15 @@
       "status": "published",
       "slug": "ai-spiked-action-headset-immerses-itself-naturally-in-your-world",
       "kind": "article"
+    },
+    {
+      "id": "https://newatlas.com/wearables/musiccam-pro-real-time-pov-live-camera-headset/",
+      "url": "https://newatlas.com/wearables/musiccam-pro-real-time-pov-live-camera-headset/",
+      "title": "MusicCam Pro: гарнитура для стриминга 4K с видом от первого лица",
+      "processedAt": "2026-08-02T05:50:24.156Z",
+      "status": "published",
+      "slug": "lifelogging-set-to-go-mainstream-with-229-all-purpose-4k-streaming-headset",
+      "kind": "news"
     }
   ]
 }
