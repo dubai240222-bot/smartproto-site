@@ -152,7 +152,10 @@
     "https://www.theverge.com/tech/973249/pixel-11-pro-fold-buds-watch-leaks-google-launch-event",
     "https://www.androidauthority.com/pixel-tag-leak-3693436/",
     "https://www.androidauthority.com/moto-watch-ultra-leak-3693400/",
-    "https://www.androidauthority.com/casio-crw-h001-smart-ring-watch-tracker-launch-3693332/"
+    "https://www.androidauthority.com/casio-crw-h001-smart-ring-watch-tracker-launch-3693332/",
+    "https://www.androidauthority.com/lenovo-googlebook-leak-3693356/",
+    "https://9to5google.com/2026/07/30/deals-galaxy-z-fold-8-trade-deals-2026-surface-laptop/",
+    "https://www.ithome.com/0/984/743.htm"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -306,7 +309,10 @@
     "https://hackaday.com/?p=1129686",
     "https://www.theverge.com/?p=973249",
     "https://www.androidauthority.com/moto-watch-ultra-leak-3693400/",
-    "https://www.androidauthority.com/casio-crw-h001-smart-ring-watch-tracker-launch-3693332/"
+    "https://www.androidauthority.com/casio-crw-h001-smart-ring-watch-tracker-launch-3693332/",
+    "https://www.androidauthority.com/lenovo-googlebook-leak-3693356/",
+    "https://9to5google.com/?p=724152",
+    "china-dota2"
   ],
   "entries": [
     {
@@ -1731,6 +1737,34 @@
       "reason": "Casio выпустила свой первый смарт-ринг с функциями отслеживания здоровья, продолжая концепцию своих необычных кольцевых часов.",
       "slug": "casio-just-turned-its-wild-ring-watch-into-an-actual-smart-ring-with-health-trac",
       "channel": "rss"
+    },
+    {
+      "id": "https://www.androidauthority.com/lenovo-googlebook-leak-3693356/",
+      "url": "https://www.androidauthority.com/lenovo-googlebook-leak-3693356/",
+      "title": "Here’s an early look at Lenovo’s inaugural Googlebooks",
+      "processedAt": "2026-08-02T08:54:11.012Z",
+      "status": "error",
+      "reason": "Review model returned incomplete structured data.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://9to5google.com/?p=724152",
+      "url": "https://9to5google.com/2026/07/30/deals-galaxy-z-fold-8-trade-deals-2026-surface-laptop/",
+      "title": "Deals: Galaxy Z Fold 8 trades – $600 back + $350 gift card, 2026 Surface Laptop at $600 off, charger deals, more",
+      "processedAt": "2026-08-02T08:54:13.091Z",
+      "status": "error",
+      "reason": "Review model returned incomplete structured data.",
+      "channel": "rss"
+    },
+    {
+      "id": "china-dota2",
+      "url": "https://www.ithome.com/0/984/743.htm",
+      "title": "ASUS ROG выпустила игровые аксессуары в стиле DOTA 2",
+      "processedAt": "2026-08-02T08:57:13.632Z",
+      "status": "published",
+      "reason": "editorial gadget bar (source-backed)",
+      "slug": "china-dota2",
+      "channel": "china-qwen"
     }
   ]
 }

@@ -1,0 +1,82 @@
+{
+  "generatedAt": "2026-08-02T08:57:13.632Z",
+  "channel": "china-qwen",
+  "source": {
+    "sourceId": "ithome-rss",
+    "sourceName": "IT之家",
+    "sourceUrl": "https://www.ithome.com/0/984/743.htm",
+    "platform": "rss",
+    "language": "zh",
+    "title": "华硕 ROG 推出 DOTA2 联名键盘、鼠标、耳机礼盒，849-1249 元",
+    "summary": "IT之家 8 月 2 日消息，华硕 ROG 玩家国度官方今日公布了与 DOTA2 联名礼盒的相关消息，新品将于 8 月 7 日 20:00 开售。\n\nIT之家附礼盒信息如下：\nROG 魔导士 Ace 75HE V2X 轴键盘礼盒\n售价 1249 元，礼盒内含：\nROG 魔导士 Ace 75HE V2X 轴键盘\n\n刀塔主题铝合金键帽\n\nROG 龙鳞 2 Ace 鼠标礼盒\n售价 999 元，礼盒内含：\nROG 龙鳞 2 ACE 鼠标\n\n龙骑士主题鼠标防滑贴\n\n刀塔英雄手办盲盒\n\nROG 破风耳机礼盒\n黑色款 849 元、白色款 899 元，礼盒内含：\nROG 破风耳机\n\n风行者主题耳机彩贴\n\n刀塔英雄手办盲盒\n\n相关阅读：\n《华硕 ROG 推出 Falchion 魔导士 Ace 75 HE V2X 键盘：原装搭载 HFX V2X 轴体》\n\n《华硕 ROG 龙鳞 2 Ace 无线游戏鼠标上市：原生 8K 回报率、48g 轻量化设计》\n\n《华硕 ROG 破风头戴式三模电竞耳机首销：50mm 动圈、三级可调弹性头戴》",
+    "priceText": "",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/5c7ac949-8c4b-4d11-9876-bd308fadaadd.jpg",
+    "publishedAt": "2026-08-02T07:28:58.000Z",
+    "rawSignals": [
+      "新品",
+      "推出",
+      "上市",
+      "开售"
+    ],
+    "collectedAt": "2026-08-02T08:56:58.176Z"
+  },
+  "dossier": {
+    "originalTitle": "华硕 ROG 推出 DOTA2 联名键盘、鼠标、耳机礼盒，849-1249 元",
+    "translatedTitle": "",
+    "productName": "DOTA2 联名礼盒系列",
+    "manufacturer": "",
+    "platform": "rss",
+    "productUrl": "",
+    "sourceUrl": "https://www.ithome.com/0/984/743.htm",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/5c7ac949-8c4b-4d11-9876-bd308fadaadd.jpg",
+    "whatItDoes": "华硕 ROG 玩家国度官方今日公布了与 DOTA2 联名礼盒的相关消息，新品将于 8 月 7 日 20:00 开售。\n\nIT之家 8 月 2 日消息，华硕 ROG 玩家国度官方今日公布了与 DOTA2 联名礼盒的相关消息，新品将于 8 月 7 日 20:00 开售。\n\nIT之家附礼盒信息如下：\nROG 魔导士 Ace 75HE V2X 轴键盘礼盒\n售价 1249 元，礼盒内含：\nROG 魔导士 Ace 75HE V2X 轴键盘\n\n刀塔主题铝合金键帽\n\nROG 龙鳞 2 Ace 鼠标礼盒\n售价 999 元，礼盒内含：\nROG 龙鳞 2 ACE 鼠标\n\n龙骑士主题鼠标防滑贴\n\n刀塔英雄手办盲盒\n\nROG 破风耳机礼盒\n黑色款 849 元、白色款 899 元，礼盒内含：\nROG 破风耳机\n\n风行者主题耳机彩贴\n\n刀塔英雄手办盲盒\n\n相关阅读：\n《华硕 ROG 推出 Falchion 魔导士 Ac",
+    "whyItIsNew": "",
+    "consumerUse": "",
+    "priceOriginal": null,
+    "currency": null,
+    "priceApproxUsd": null,
+    "availability": "",
+    "launchDate": null,
+    "market": "",
+    "prototypeOrSale": "",
+    "evidence": [],
+    "unknownFacts": [
+      "未明确说明手办盲盒是否重复（各礼盒均含），是否为同一套英雄或不同款",
+      "未提供具体轴体型号（HFX V2X）的详细参数或手感描述",
+      "未说明礼盒是否支持单独购买组件"
+    ],
+    "warningFlags": [
+      "标题与正文重复出现两次相同语句，疑似 RSS 摘要冗余或排版错误",
+      "相关阅读中提及的「Falchion 魔导士 Ace 75 HE V2X 键盘」与主文「魔导士 Ace 75HE V2X 轴键盘」命名略有差异，需确认是否为同一型号",
+      "手办盲盒为非实物核心卖点，存在收藏价值主观性风险"
+    ],
+    "recommended": false,
+    "sourceSuggestions": []
+  },
+  "draft": {
+    "id": "china-dota2",
+    "slug": "china-dota2",
+    "title": "ASUS ROG выпустила игровые аксессуары в стиле DOTA 2",
+    "category": "КИТАЙ / ГАДЖЕТ",
+    "tags": [
+      "ASUS ROG",
+      "DOTA 2",
+      "игровые аксессуары",
+      "клавиатура",
+      "мышь",
+      "наушники",
+      "Китай",
+      "Qwen",
+      "новинка"
+    ],
+    "summary": "Компания ASUS ROG представила серию игровых аксессуаров, созданных в коллаборации с DOTA 2.",
+    "content": "Компания ASUS ROG представила серию игровых аксессуаров, созданных в коллаборации с DOTA 2. В линейку вошли механическая клавиатура, беспроводная мышь и игровые наушники. Продажи стартуют 7 августа.\n\nВ набор с клавиатурой ROG Falchion Ace 75HE V2X входит сама клавиатура, алюминиевые кейкапы с тематикой DOTA 2. Стоимость комплекта — 1249 юаней. Игровой набор с мышью ROG Gladius 2 Ace включает мышь, противоскользящие накладки с дизайном Dragon Knight и слепой бокс с фигуркой героя DOTA 2. Цена — 999 юаней. Наушники ROG Strix Fusion 300 в черном и белом исполнении обойдутся в 849 и 899 юаней соответственно, в комплекте также идет стикер с изображением Windranger и слепой бокс с фигуркой героя.\n\nПроизводитель не уточнил детали о механических переключателях клавиатуры HFX V2X, а также не предоставил информацию о том, будут ли фигурки в слепых боксах повторяться в разных комплектах. Неизвестно, возможна ли покупка отдельных компонентов наборов. Независимые обзоры продуктов пока отсутствуют.",
+    "sourceUrl": "https://www.ithome.com/0/984/743.htm",
+    "publishedAt": "2026-08-02T08:57:13.632Z",
+    "readTime": "1 мин",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/5c7ac949-8c4b-4d11-9876-bd308fadaadd.jpg",
+    "author": "Линь Цзе",
+    "authorDesk": "China desk",
+    "agentId": "china-qwen"
+  }
+}
