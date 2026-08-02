@@ -1,5 +1,28 @@
 [
   {
+    "id": "wireless-charging-technique-boosts-long-distance-efficiency-to-80",
+    "slug": "wireless-charging-technique-boosts-long-distance-efficiency-to-80",
+    "title": "Беспроводная зарядка на расстоянии: новая технология повышает эффективность до 80%",
+    "category": "НОВИНКА / ПОЛЕЗНО",
+    "tags": [
+      "#новинка",
+      "#полезно",
+      "#гаджет",
+      "#беспроводнаязарядка",
+      "#технологии",
+      "#AaltoUniversity"
+    ],
+    "summary": "Инженеры из Университета Аалто разработали систему, которая значительно повышает эффективность беспроводной передачи энергии на большие расстояния.",
+    "content": "Инженеры из Университета Аалто разработали систему, которая значительно повышает эффективность беспроводной передачи энергии на большие расстояния. Это может стать ключевым фактором для более широкого распространения беспроводных зарядных устройств, делая их удобнее и практичнее для повседневного использования. Технология обещает сделать зарядку гаджетов менее зависимой от проводов и точного позиционирования. Источник: New Atlas Electronics.",
+    "sourceUrl": "https://newatlas.com/electronics/wireless-charging-efficiency-80-percent/",
+    "publishedAt": "2026-08-02T08:28:09.865Z",
+    "readTime": "1 мин",
+    "imageUrl": "https://assets.newatlas.com/dims4/default/b8cb984/2147483647/strip/true/crop/1380x600+0+0/resize/1380x600!/format/webp/quality/90/?url=https%3A%2F%2Fnewatlas-brightspot.s3.ap-southeast-2.amazonaws.com%2F82%2Ff9%2Ff422e60f463585b1c7907578f770%2Fwireless-charging.jpeg",
+    "author": "Том Рид",
+    "authorDesk": "US wire",
+    "agentId": "factory-shift"
+  },
+  {
     "id": "plant-based-pcb-substrate-breaks-down-in-water-for-easier-recycling",
     "slug": "plant-based-pcb-substrate-breaks-down-in-water-for-easier-recycling",
     "title": "Jiva Soluboard: Биоразлагаемая печатная плата для снижения электронных отходов",

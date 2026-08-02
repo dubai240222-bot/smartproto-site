@@ -139,7 +139,8 @@
     "https://newatlas.com/electronics/gopro-hero-13-black/",
     "https://newatlas.com/electronics/ai-interactive-vehicle-display-eye-tracking-bus-window/",
     "https://newatlas.com/electronics/playstation-portal-ps5-remote-player-launch-late-2023/",
-    "https://newatlas.com/electronics/jiva-soluboard-infineon/"
+    "https://newatlas.com/electronics/jiva-soluboard-infineon/",
+    "https://newatlas.com/electronics/wireless-charging-efficiency-80-percent/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -281,7 +282,8 @@
     "https://newatlas.com/electronics/gopro-hero-13-black/",
     "https://newatlas.com/electronics/ai-interactive-vehicle-display-eye-tracking-bus-window/",
     "https://newatlas.com/electronics/playstation-portal-ps5-remote-player-launch-late-2023/",
-    "https://newatlas.com/electronics/jiva-soluboard-infineon/"
+    "https://newatlas.com/electronics/jiva-soluboard-infineon/",
+    "https://newatlas.com/electronics/wireless-charging-efficiency-80-percent/"
   ],
   "entries": [
     {
@@ -1557,6 +1559,15 @@
       "processedAt": "2026-08-02T08:27:09.356Z",
       "status": "published",
       "slug": "plant-based-pcb-substrate-breaks-down-in-water-for-easier-recycling",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/electronics/wireless-charging-efficiency-80-percent/",
+      "url": "https://newatlas.com/electronics/wireless-charging-efficiency-80-percent/",
+      "title": "Беспроводная зарядка на расстоянии: новая технология повышает эффективность до 80%",
+      "processedAt": "2026-08-02T08:28:09.865Z",
+      "status": "published",
+      "slug": "wireless-charging-technique-boosts-long-distance-efficiency-to-80",
       "kind": "news"
     }
   ]
