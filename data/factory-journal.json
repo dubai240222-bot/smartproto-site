@@ -118,7 +118,8 @@
     "https://newatlas.com/electronics/dji-osmo-action-5-pro-review/",
     "https://newatlas.com/electronics/byok-writing-lcd-screen/",
     "https://newatlas.com/electronics/q-pixel-microled-display/",
-    "https://newatlas.com/electronics/diamond-data-storage-density-single-atom/"
+    "https://newatlas.com/electronics/diamond-data-storage-density-single-atom/",
+    "https://newatlas.com/electronics/colorpik-pen-color-scanning/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -239,7 +240,8 @@
     "https://newatlas.com/electronics/dji-osmo-action-5-pro-review/",
     "https://newatlas.com/electronics/byok-writing-lcd-screen/",
     "https://newatlas.com/electronics/q-pixel-microled-display/",
-    "https://newatlas.com/electronics/diamond-data-storage-density-single-atom/"
+    "https://newatlas.com/electronics/diamond-data-storage-density-single-atom/",
+    "https://newatlas.com/electronics/colorpik-pen-color-scanning/"
   ],
   "entries": [
     {
@@ -1327,6 +1329,15 @@
       "status": "published",
       "slug": "diamond-data-storage-breakthrough-writes-and-rewrites-down-to-single-atom",
       "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/electronics/colorpik-pen-color-scanning/",
+      "url": "https://newatlas.com/electronics/colorpik-pen-color-scanning/",
+      "title": "Colorpik Pen: Рисуйте любыми цветами из вашего окружения",
+      "processedAt": "2026-08-02T06:42:16.942Z",
+      "status": "published",
+      "slug": "colorpik-pen-draws-from-its-surroundings-to-draw-in-16-million-colors",
+      "kind": "article"
     }
   ]
 }
