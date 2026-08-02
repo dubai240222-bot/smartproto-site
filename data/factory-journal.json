@@ -93,7 +93,8 @@
     "https://newatlas.com/electronics/dji-mic-mini-review/",
     "https://newatlas.com/electronics/eon-level-lego-clock-with-galactic-display/",
     "https://newatlas.com/electronics/d01-visual-soldering-iron/",
-    "https://newatlas.com/electronics/cigman-cnvpro-night-vision-binoculars-review/"
+    "https://newatlas.com/electronics/cigman-cnvpro-night-vision-binoculars-review/",
+    "https://newatlas.com/electronics/nanoflow-i2-air-worlds-smallest-horizontal-mouse/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -189,7 +190,8 @@
     "https://newatlas.com/electronics/dji-mic-mini-review/",
     "https://newatlas.com/electronics/eon-level-lego-clock-with-galactic-display/",
     "https://newatlas.com/electronics/d01-visual-soldering-iron/",
-    "https://newatlas.com/electronics/cigman-cnvpro-night-vision-binoculars-review/"
+    "https://newatlas.com/electronics/cigman-cnvpro-night-vision-binoculars-review/",
+    "https://newatlas.com/electronics/nanoflow-i2-air-worlds-smallest-horizontal-mouse/"
   ],
   "entries": [
     {
@@ -1052,6 +1054,15 @@
       "status": "published",
       "slug": "budget-night-vision-with-big-sensor-cigman-cnvpro-field-tested",
       "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/electronics/nanoflow-i2-air-worlds-smallest-horizontal-mouse/",
+      "url": "https://newatlas.com/electronics/nanoflow-i2-air-worlds-smallest-horizontal-mouse/",
+      "title": "Компактная горизонтальная мышь NanoFlow i2 Air для комфортной работы",
+      "processedAt": "2026-08-02T06:09:26.888Z",
+      "status": "published",
+      "slug": "world-s-smallest-ergonomic-horizontal-mouse-can-be-used-almost-anywhere",
+      "kind": "article"
     }
   ]
 }
