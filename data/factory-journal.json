@@ -58,7 +58,8 @@
     "https://www.kickstarter.com/blog/reporting-back-from-the-first-meeting-of-the-kickstarter-comm",
     "https://newatlas.com/motorcycles/triumph-speed-twin-1200-tfc/",
     "https://newatlas.com/motorcycles/charged-ndara/",
-    "https://newatlas.com/drones/quantum-systems-electric-drone-speed-record/"
+    "https://newatlas.com/drones/quantum-systems-electric-drone-speed-record/",
+    "https://newatlas.com/campervans/westfalia-nansen-bunkhouse-camper-van/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -119,7 +120,8 @@
     "tag:www.kickstarter.com,2009-05-04:BlogPost/2812",
     "https://newatlas.com/motorcycles/triumph-speed-twin-1200-tfc/",
     "https://newatlas.com/motorcycles/charged-ndara/",
-    "https://newatlas.com/drones/quantum-systems-electric-drone-speed-record/"
+    "https://newatlas.com/drones/quantum-systems-electric-drone-speed-record/",
+    "https://newatlas.com/campervans/westfalia-nansen-bunkhouse-camper-van/"
   ],
   "entries": [
     {
@@ -667,6 +669,15 @@
       "processedAt": "2026-08-02T00:14:41.165Z",
       "status": "published",
       "slug": "apex-recordhunter-becomes-the-world-s-fastest-electric-drone",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/campervans/westfalia-nansen-bunkhouse-camper-van/",
+      "url": "https://newatlas.com/campervans/westfalia-nansen-bunkhouse-camper-van/",
+      "title": "Westfalia Nansen Bunkhouse: Компактный кемпер с двумя спальными местами и душем",
+      "processedAt": "2026-08-02T00:15:32.987Z",
+      "status": "published",
+      "slug": "westfalia-s-latest-camper-van-packs-in-a-bunk-room-and-dry-bathroom",
       "kind": "news"
     }
   ]
