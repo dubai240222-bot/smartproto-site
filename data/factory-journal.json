@@ -119,7 +119,9 @@
     "https://newatlas.com/electronics/byok-writing-lcd-screen/",
     "https://newatlas.com/electronics/q-pixel-microled-display/",
     "https://newatlas.com/electronics/diamond-data-storage-density-single-atom/",
-    "https://newatlas.com/electronics/colorpik-pen-color-scanning/"
+    "https://newatlas.com/electronics/colorpik-pen-color-scanning/",
+    "https://hackaday.com/2026/08/01/uv-printer-3d-printer-heygears-says-why-not-both/",
+    "https://newatlas.com/automotive/lg-ultraview-windshield-display-pace-pilot/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -241,7 +243,9 @@
     "https://newatlas.com/electronics/byok-writing-lcd-screen/",
     "https://newatlas.com/electronics/q-pixel-microled-display/",
     "https://newatlas.com/electronics/diamond-data-storage-density-single-atom/",
-    "https://newatlas.com/electronics/colorpik-pen-color-scanning/"
+    "https://newatlas.com/electronics/colorpik-pen-color-scanning/",
+    "uv-printer-3d-printer-heygears-says-why-not-both",
+    "https://newatlas.com/automotive/lg-ultraview-windshield-display-pace-pilot/"
   ],
   "entries": [
     {
@@ -1338,6 +1342,24 @@
       "status": "published",
       "slug": "colorpik-pen-draws-from-its-surroundings-to-draw-in-16-million-colors",
       "kind": "article"
+    },
+    {
+      "id": "uv-printer-3d-printer-heygears-says-why-not-both",
+      "url": "https://hackaday.com/2026/08/01/uv-printer-3d-printer-heygears-says-why-not-both/",
+      "title": "HeyGears",
+      "processedAt": "2026-08-02T06:46:16.402Z",
+      "status": "published",
+      "slug": "uv-printer-3d-printer-heygears-says-why-not-both",
+      "kind": "article"
+    },
+    {
+      "id": "https://newatlas.com/automotive/lg-ultraview-windshield-display-pace-pilot/",
+      "url": "https://newatlas.com/automotive/lg-ultraview-windshield-display-pace-pilot/",
+      "title": "LG UltraView: проекционный дисплей для лобового стекла автомобиля",
+      "processedAt": "2026-08-02T06:46:36.749Z",
+      "status": "published",
+      "slug": "hovering-optical-screen-adds-depth-to-the-digital-cockpit",
+      "kind": "news"
     }
   ]
 }
