@@ -1,0 +1,58 @@
+{
+  "generatedAt": "2026-08-02T17:33:49.643Z",
+  "channel": "rss",
+  "cycle": "news",
+  "format": "news",
+  "source": "Gadget Flow",
+  "article": {
+    "id": "https://thegadgetflow.com/product/attack-shark-rs6-ultra-gaming-mouse/",
+    "title": "ATTACK SHARK RS6 ULTRA Wireless Gaming Mouse",
+    "url": "https://thegadgetflow.com/product/attack-shark-rs6-ultra-gaming-mouse/",
+    "text": "Reserve the ATTACK SHARK RS6 ULTRA now. It pairs a carbon fiber shell with a 52,000 DPI sensor and dual 8000Hz wireless for real esports performance.\n\nDual Magnetic Battery System: One battery runs the mouse while a spare charges in the SHARK 8K receiver, so swapping never slows you down.\n\nSHARKSHADOW Tuning: Five sensor positions adapt to your grip, cutting path deviation and sharpening aim.\n\nPAW3955MAX Sensor: The PixArt sensor tracks up to 52,000 DPI in single-step increments for precise, consistent movement.\n\nCarbon Fiber Shell: A hollow carbon fiber build keeps weight at 63 grams without giving up strength.\n\nDual 8000Hz Wireless: SHARK wireless tech delivers 8000Hz polling wired or wireless, with click latency as low as 0.168ms.\n\nPre-orders are open now at the VIP price of $89.99, with shipping set for August 14, 2026.\n\nThe post ATTACK SHARK RS6 ULTRA Wireless Gaming Mouse appeared first on Gadget Flow.",
+    "publishedAt": "2026-07-31T00:00:10.000Z",
+    "sourceName": "Gadget Flow",
+    "imageUrl": "https://thegadgetflow.com/wp-content/uploads/2026/07/Attack-Shark-Mouse-01-1200x899.jpeg"
+  },
+  "scout": {
+    "interesting": true,
+    "score": 85,
+    "reason": "Беспроводная игровая мышь с передовыми технологиями для киберспорта, предлагающая уникальную систему двойной зарядки и высокую производительность.",
+    "productType": "gaming mouse",
+    "isActuallyNew": true,
+    "noveltyEvidence": [
+      "Dual 8000Hz wireless polling rate",
+      "Dual Magnetic Battery System for continuous play",
+      "SHARKSHADOW Tuning for sensor position adjustment",
+      "Carbon Fiber Shell for lightweight design"
+    ],
+    "existingAlternatives": "Множество беспроводных игровых мышей с высокой частотой опроса и низким весом, но система двойной зарядки и уникальная настройка сенсора выделяют эту модель.",
+    "functionalDifference": "Система двойной магнитной батареи позволяет мгновенно менять севшую батарею на заряженную без прерывания игры, а настройка SHARKSHADOW позволяет адаптировать положение сенсора под индивидуальный хват для максимальной точности.",
+    "marketSaturation": "medium",
+    "rejectCode": null
+  },
+  "review": {
+    "technicalVerdict": "ATTACK SHARK RS6 ULTRA — это новая беспроводная игровая мышь, доступная для предзаказа. Она оснащена передовыми технологиями, такими как датчик PAW3955MAX с разрешением до 52 000 DPI, двойная беспроводная связь с частотой опроса 8000 Гц и система двойных магнитных батарей для непрерывной игры. Корпус из углеродного волокна обеспечивает легкий вес (63 г) при сохранении прочности. Цена предзаказа составляет $89.99, а доставка запланирована на 14 августа 2026 года. Это делает ее привлекательным выбором для геймеров, ищущих высокопроизводительное периферийное устройство.",
+    "keyAspects": [
+      "Датчик PAW3955MAX с разрешением до 52 000 DPI для максимальной точности.",
+      "Двойная беспроводная связь 8000 Гц и система двойных магнитных батарей для непрерывной игры.",
+      "Ультралегкий корпус из углеродного волокна (63 г) и низкая задержка клика (0.168 мс)."
+    ]
+  },
+  "draft": {
+    "title": "Игровая мышь ATTACK SHARK RS6 ULTRA с датчиком 52 000 DPI",
+    "text": "Представлена беспроводная игровая мышь ATTACK SHARK RS6 ULTRA, доступная для предзаказа. Устройство оснащено датчиком PAW3955MAX с разрешением до 52 000 DPI и двойной беспроводной связью с частотой опроса 8000 Гц. Система двойных магнитных батарей позволяет мгновенно менять севшие аккумуляторы на заряженные, не прерывая игру. Корпус из углеродного волокна весит 63 грамма. Цена предзаказа составляет $89.99, доставка ожидается 14 августа 2026 года.",
+    "tags": [
+      "игровые мыши",
+      "периферия",
+      "компьютерные аксессуары",
+      "Attack Shark"
+    ],
+    "toneCheck": {
+      "clickbait": false,
+      "hype": false,
+      "unsupportedClaims": false,
+      "limitationsIncluded": true
+    },
+    "imageUrl": "https://thegadgetflow.com/wp-content/uploads/2026/07/Attack-Shark-Mouse-01-1200x899.jpeg"
+  }
+}
