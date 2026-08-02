@@ -1,0 +1,82 @@
+{
+  "generatedAt": "2026-08-02T10:19:24.380Z",
+  "channel": "china-qwen",
+  "source": {
+    "sourceId": "ithome-rss",
+    "sourceName": "IT之家",
+    "sourceUrl": "https://www.ithome.com/0/984/789.htm",
+    "platform": "rss",
+    "language": "zh",
+    "title": "URXR One 头戴式显示器发布：Pancake 光学方案、支持 6DOF 模式，800 美元",
+    "summary": "IT之家 8 月 2 日消息，XR 硬件公司 Unseen Reality 现已正式发布一款“显示替代型眼镜”URXR One，该产品将于 8 月 4 日正式开启 Kickstarter 众筹，早鸟价格为 800 美元（IT之家注：现汇率约合 5415 元人民币），正式零售价预计为 900 美元（现汇率约合 6092 元人民币），计划于 2026 年 10 月中旬开始发货。\n\n与强调沉浸式虚拟现实体验的 VR 头显不同，URXR One 本质上就是一款头戴式显示器，主要用于显示传统 2D 内容。官方表示，该设备针对长时间使用场景进行了优化，并支持 3DOF 与 6DOF 两种模式，其中 6DOF 空间定位由双摄像头 SLAM 追踪系统实现。\n\nURXR One 整机重量仅 93 克，采用轻量化设计，使用 Mini Pancake 光学方案，配备双 1.03 英寸 Micro OLED 显示屏，分辨率为 2448×2064，刷新率为 90Hz，用户可以根据需求将画面从“笔记本电脑大小”扩展至最大 200 英寸。\nURXR One 并未搭载独立计算芯片，完全利用 USB-C DisplayPort 连接外部设备。不过部分手机由于供电和视频输出能力限制，需要搭配官方另售 69 美元（现汇率约合 467 元人民币）的 URXR Power Hub 配件才能使用。",
+    "priceText": "",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/0e7e4d61-dde9-4cb1-b090-1097399fdf8a.png?x-bce-process=image/format,f_auto",
+    "publishedAt": "2026-08-02T10:18:49.000Z",
+    "rawSignals": [
+      "众筹",
+      "发布"
+    ],
+    "collectedAt": "2026-08-02T10:19:09.845Z"
+  },
+  "dossier": {
+    "originalTitle": "URXR One 头戴式显示器发布：Pancake 光学方案、支持 6DOF 模式，800 美元",
+    "translatedTitle": "",
+    "productName": "URXR One",
+    "manufacturer": "",
+    "platform": "rss",
+    "productUrl": "",
+    "sourceUrl": "https://www.ithome.com/0/984/789.htm",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/0e7e4d61-dde9-4cb1-b090-1097399fdf8a.png?x-bce-process=image/format,f_auto",
+    "whatItDoes": "该产品主打显示传统 2D 内容，采用 Mini Pancake 光学方案，支持两种定位模式，即将开启众筹，早鸟价 800 美元，预计今年 10 月发货。#URXR One# #头戴式显示器#\n\nIT之家 8 月 2 日消息，XR 硬件公司 Unseen Reality 现已正式发布一款“显示替代型眼镜”URXR One，该产品将于 8 月 4 日正式开启 Kickstarter 众筹，早鸟价格为 800 美元（IT之家注：现汇率约合 5415 元人民币），正式零售价预计为 900 美元（现汇率约合 6092 元人民币），计划于 2026 年 10 月中旬开始发货。\n\n与强调沉浸式虚拟现实体验的 VR 头显不同，URXR One 本质上就是一款头戴式显示器，主要用于显示传统 2D 内容。官方表示，该设备针对长时间使用场景进行了优化，并支持 3DOF 与 6DOF 两种模式，其中 6DOF 空",
+    "whyItIsNew": "",
+    "consumerUse": "",
+    "priceOriginal": null,
+    "currency": null,
+    "priceApproxUsd": null,
+    "availability": "",
+    "launchDate": "2026-08-04",
+    "market": "",
+    "prototypeOrSale": "",
+    "evidence": [],
+    "unknownFacts": [
+      "未提及是否支持 HDR、亮度/对比度参数、视场角（FOV）、瞳距调节方式",
+      "未说明是否支持眼动追踪或屈光度调节",
+      "未提供操作系统/驱动兼容性细节（如是否支持 macOS / Linux / Android）",
+      "未说明是否支持无线连接（如 AirPlay、Miracast）"
+    ],
+    "warningFlags": [
+      "非消费级 VR 设备，定位为显示替代型 HMD",
+      "依赖外部设备输出视频信号，兼容性受限于主机 USB-C DP 能力",
+      "部分手机需额外购买配件（Power Hub）才能使用",
+      "众筹阶段，量产与交付存在不确定性",
+      "2026 年 10 月发货属远期计划，存在延期风险"
+    ],
+    "recommended": false,
+    "sourceSuggestions": []
+  },
+  "draft": {
+    "id": "china-urxr-one",
+    "slug": "china-urxr-one",
+    "title": "URXR One: очки для отображения 2D-контента",
+    "category": "КИТАЙ / ГАДЖЕТ",
+    "tags": [
+      "URXR One",
+      "гарнитура",
+      "дисплей",
+      "2D-контент",
+      "Unseen Reality",
+      "Китай",
+      "Qwen",
+      "новинка"
+    ],
+    "summary": "Компания Unseen Reality представила URXR One — устройство, позиционируемое как «очки, заменяющие дисплей».",
+    "content": "Компания Unseen Reality представила URXR One — устройство, позиционируемое как «очки, заменяющие дисплей». В отличие от VR-гарнитур, оно предназначено для вывода традиционного 2D-контента, такого как рабочий стол компьютера или интерфейс смартфона. Производитель заявляет, что устройство оптимизировано для длительного использования.\n\nURXR One использует оптическую схему Mini Pancake и оснащено двумя Micro OLED дисплеями с разрешением 2448×2064 на каждый глаз и частотой обновления 90 Гц. Пользователь может масштабировать изображение от размера ноутбука до 200 дюймов. Устройство поддерживает режимы отслеживания 3DOF и 6DOF, последний реализован с помощью системы SLAM на базе двух камер. URXR One не имеет собственного процессора и подключается к внешним устройствам через USB-C DisplayPort. Для некоторых смартфонов потребуется дополнительный аксессуар URXR Power Hub.\n\nУстройство готовится к запуску на Kickstarter 4 августа. Цена для ранних покупателей составит 800 долларов, розничная цена ожидается в 900 долларов. Отгрузка запланирована на середину октября 2026 года.\n\nПроизводитель не уточнил параметры HDR, яркости, контрастности и угла обзора. Неизвестно о поддержке отслеживания взгляда, регулировки диоптрий, операционных систем, кроме тех, что поддерживают DisplayPort через USB-C, а также о поддержке беспроводных протоколов. Поскольку продукт находится на стадии краудфандинга, сроки производства и доставки могут измениться.",
+    "sourceUrl": "https://www.ithome.com/0/984/789.htm",
+    "publishedAt": "2026-08-02T10:19:24.380Z",
+    "readTime": "2 мин",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/0e7e4d61-dde9-4cb1-b090-1097399fdf8a.png?x-bce-process=image/format,f_auto",
+    "author": "Линь Цзе",
+    "authorDesk": "China desk",
+    "agentId": "china-qwen"
+  }
+}
