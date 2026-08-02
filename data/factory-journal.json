@@ -129,7 +129,8 @@
     "https://newatlas.com/wearables/meta-ray-ban-smart-glasses-ar-display-wristband/",
     "https://newatlas.com/wearables/hydration-sensor-wearable/",
     "https://newatlas.com/wearables/anker-soundcore-p41i-earphones-charging-case-phone/",
-    "https://newatlas.com/electronics/insta360-x5/"
+    "https://newatlas.com/electronics/insta360-x5/",
+    "https://newatlas.com/wearables/openearables-2-physiological-earphones/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -261,7 +262,8 @@
     "https://newatlas.com/wearables/meta-ray-ban-smart-glasses-ar-display-wristband/",
     "https://newatlas.com/wearables/hydration-sensor-wearable/",
     "https://newatlas.com/wearables/anker-soundcore-p41i-earphones-charging-case-phone/",
-    "https://newatlas.com/electronics/insta360-x5/"
+    "https://newatlas.com/electronics/insta360-x5/",
+    "https://newatlas.com/wearables/openearables-2-physiological-earphones/"
   ],
   "entries": [
     {
@@ -1448,6 +1450,15 @@
       "status": "published",
       "slug": "all-new-insta360-x5-the-360-actioncam-becomes-tougher-than-ever",
       "kind": "article"
+    },
+    {
+      "id": "https://newatlas.com/wearables/openearables-2-physiological-earphones/",
+      "url": "https://newatlas.com/wearables/openearables-2-physiological-earphones/",
+      "title": "Наушники OpenEarable 2.0 измеряют более 30 физиологических параметров",
+      "processedAt": "2026-08-02T06:55:24.855Z",
+      "status": "published",
+      "slug": "next-gen-earphones-check-out-your-vitals-as-you-listen-to-music",
+      "kind": "news"
     }
   ]
 }
