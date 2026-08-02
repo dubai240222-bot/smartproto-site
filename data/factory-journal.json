@@ -104,7 +104,8 @@
     "https://newatlas.com/electronics/ultrabar-x-modular-command-center/",
     "https://newatlas.com/wearables/puma-white-hunter-knife/",
     "https://newatlas.com/electronics/hyperspace-trackpad-pro/",
-    "https://newatlas.com/wearables/prolo-ring-mouse/"
+    "https://newatlas.com/wearables/prolo-ring-mouse/",
+    "https://newatlas.com/electronics/review-akaso-sight-300-night-vision/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -211,7 +212,8 @@
     "https://newatlas.com/electronics/ultrabar-x-modular-command-center/",
     "https://newatlas.com/wearables/puma-white-hunter-knife/",
     "https://newatlas.com/electronics/hyperspace-trackpad-pro/",
-    "https://newatlas.com/wearables/prolo-ring-mouse/"
+    "https://newatlas.com/wearables/prolo-ring-mouse/",
+    "https://newatlas.com/electronics/review-akaso-sight-300-night-vision/"
   ],
   "entries": [
     {
@@ -1173,6 +1175,15 @@
       "status": "published",
       "slug": "mouse-replacing-minimalistic-ring-offers-full-desktop-control",
       "kind": "article"
+    },
+    {
+      "id": "https://newatlas.com/electronics/review-akaso-sight-300-night-vision/",
+      "url": "https://newatlas.com/electronics/review-akaso-sight-300-night-vision/",
+      "title": "Akaso Sight-300: Доступная ночная видимость для ваших задач",
+      "processedAt": "2026-08-02T06:28:15.729Z",
+      "status": "published",
+      "slug": "review-akaso-sight-300-night-vision-for-a-tenth-of-the-cost",
+      "kind": "news"
     }
   ]
 }
