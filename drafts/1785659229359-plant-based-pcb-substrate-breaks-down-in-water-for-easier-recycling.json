@@ -1,0 +1,28 @@
+{
+  "generatedAt": "2026-08-02T08:27:09.356Z",
+  "kind": "news",
+  "source": "New Atlas Electronics",
+  "article": {
+    "id": "https://newatlas.com/electronics/jiva-soluboard-infineon/",
+    "title": "Plant-based PCB substrate breaks down in water for easier recycling",
+    "url": "https://newatlas.com/electronics/jiva-soluboard-infineon/",
+    "text": "Our appetite for new gadgets is resulting in a huge e-waste problem, with just a fraction of the 50 million tonnes of tech thrown away each year being recycled. Looking to tackle a significant part of the problem, the UK's Jiva Materials has developed a PCB substrate that breaks down in water for easier recovery of materials. The startup is now partnering with European manufacturers to demo and evaluate the Soluboards.\nContinue Reading\nCategory: Electronics, Consumer Tech, Technology\nTags: Circuit, Recyclable, E-waste",
+    "publishedAt": "2023-08-01T11:06:13.000Z",
+    "sourceName": "New Atlas Electronics",
+    "imageUrl": "https://assets.newatlas.com/dims4/default/dba3f9c/2147483647/strip/true/crop/2126x1383+0+0/resize/1440x937!/format/webp/quality/90/?url=https%3A%2F%2Fnewatlas-brightspot.s3.ap-southeast-2.amazonaws.com%2F57%2F58%2F7c5950af46e591ad1b9d3225681c%2Fsoluboard-disassembled.jpg"
+  },
+  "draft": {
+    "title": "Jiva Soluboard: Биоразлагаемая печатная плата для снижения электронных отходов",
+    "text": "Компания Jiva Materials представила Soluboard – инновационную печатную плату на основе растительных материалов. Её ключевая особенность – способность распадаться в воде, что значительно упрощает процесс переработки и снижает объём электронных отходов. Это решение призвано сделать производство электроники более экологичным. Источник: New Atlas Electronics.",
+    "tags": [
+      "#новинка",
+      "#полезно",
+      "#гаджет",
+      "#экология",
+      "#переработка",
+      "#JivaMaterials",
+      "#электроника"
+    ],
+    "imageUrl": "https://assets.newatlas.com/dims4/default/dba3f9c/2147483647/strip/true/crop/2126x1383+0+0/resize/1440x937!/format/webp/quality/90/?url=https%3A%2F%2Fnewatlas-brightspot.s3.ap-southeast-2.amazonaws.com%2F57%2F58%2F7c5950af46e591ad1b9d3225681c%2Fsoluboard-disassembled.jpg"
+  }
+}

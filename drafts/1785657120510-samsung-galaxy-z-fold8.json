@@ -1,0 +1,76 @@
+{
+  "generatedAt": "2026-08-02T07:52:00.507Z",
+  "source": {
+    "sourceId": "ithome-rss",
+    "sourceName": "IT之家",
+    "sourceUrl": "https://www.ithome.com/0/984/696.htm",
+    "platform": "rss",
+    "language": "zh",
+    "title": "消息称安卓首款阔折叠手机 Galaxy Z Fold8 预售火爆超预期，三星已向供应商追加订单",
+    "summary": "IT之家 8 月 2 日消息，博主 @i冰宇宙 今日发文透露，安卓首款阔折叠手机 —— Galaxy Z Fold8 预售火爆超出预期，现在三星已经向供应商追加订单了。\n\n据IT之家此前报道，三星已于 7 月 22 日正式发布了 Galaxy Z Fold8，这是该公司六年来首款采用全新机身形态的折叠屏手机。与此前历代 Galaxy Z Fold 相比，新机机身更短、更宽，主打影音娱乐体验，起售价 12999 元。\n\n该机配备一块 5.5 英寸外屏和一块 7.6 英寸内折叠屏，两块屏幕均采用 Dynamic AMOLED 2X 面板，支持 1Hz 至 120Hz 自适应刷新率，并兼容 HDR10、HDR10+ 和 HLG 显示标准。\n三星 Galaxy Z Fold8 后置双摄系统，包括一颗支持光学防抖（OIS）、F1.8 光圈的 5000 万像素主摄，以及一颗 5000 万像素超广角镜头（F1.9 光圈）。此外，外屏和内屏各配备一颗 1000 万像素前置摄像头。所有摄像头均支持 4K 60fps HDR 视频录制，后置摄像头还可拍摄 8K 30fps 视频。\n该机还搭载了高通骁龙 8 Elite Gen5 for Galaxy 处理器。256GB 和 512GB 版本配备 12GB 内存，1TB 顶配版则升级至 16GB 内存。\n\n相关阅读：\n《三星 Galaxy Z Fold8 阔折叠手机发布：全新机身形态，起售价 12999 元》",
+    "priceText": "",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/53e1715e-a7cb-49b3-acbc-d85c4b7252c5.png",
+    "publishedAt": "2026-08-02T03:08:45.000Z",
+    "rawSignals": [
+      "预售",
+      "发布"
+    ],
+    "collectedAt": "2026-08-02T07:51:40.478Z"
+  },
+  "dossier": {
+    "originalTitle": "消息称安卓首款阔折叠手机 Galaxy Z Fold8 预售火爆超预期，三星已向供应商追加订单",
+    "translatedTitle": "",
+    "productName": "三星 Galaxy Z Fold8",
+    "manufacturer": "",
+    "platform": "rss",
+    "productUrl": "",
+    "sourceUrl": "https://www.ithome.com/0/984/696.htm",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/53e1715e-a7cb-49b3-acbc-d85c4b7252c5.png",
+    "whatItDoes": "三星已于 7 月 22 日正式发布了安卓首款阔折叠手机 —— #三星 GalaxyZ Fold8#。博主 @i冰宇宙 今日发文透露，Galaxy Z Fold8 预售火爆超出预期，现在三星已经向供应商追加订单了。\n\n感谢IT之家网友 不一样的体验 的线索投递！\n\n IT之家 8 月 2 日消息，博主 @i冰宇宙 今日发文透露，安卓首款阔折叠手机 —— Galaxy Z Fold8 预售火爆超出预期，现在三星已经向供应商追加订单了。\n\n据IT之家此前报道，三星已于 7 月 22 日正式发布了 Galaxy Z Fold8，这是该公司六年来首款采用全新机身形态的折叠屏手机。与此前历代 Galaxy Z Fold 相比，新机机身更短、更宽，主打影音娱乐体验，起售价 12999 元。\n\n该机配备一块 5.5 英寸外屏和一块 7.6 英寸内折叠屏，两块屏幕均采用 Dynamic AMOLED 2X ",
+    "whyItIsNew": "",
+    "consumerUse": "",
+    "priceOriginal": null,
+    "currency": null,
+    "priceApproxUsd": null,
+    "availability": "",
+    "launchDate": null,
+    "market": "",
+    "prototypeOrSale": "",
+    "evidence": [],
+    "unknownFacts": [
+      "中国区具体开售日期未披露",
+      "是否支持 5G 全球频段（尤其中国三大运营商频段）未说明",
+      "IP等级（防水防尘）未提及",
+      "电池容量未提供",
+      "是否预装 One UI / 是否适配中国本地服务（如微信分屏优化、鸿蒙互传兼容性等）未说明"
+    ],
+    "warningFlags": [
+      "标题称‘安卓首款阔折叠手机’存在误导：Galaxy Z Fold8 是三星首款‘阔折叠’形态手机，但非安卓阵营首款折叠屏；此前已有华为、小米、OPPO 等多款横向/纵向折叠屏安卓手机上市",
+      "‘阔折叠’为营销术语，非行业通用分类；需注意与传统横向折叠屏（如 Z Fold 系列）区分",
+      "中国区具体发售/开售时间未在文中明确，仅提及‘预售火爆’，尚无确切到货时间"
+    ],
+    "recommended": false,
+    "sourceSuggestions": []
+  },
+  "draft": {
+    "id": "samsung-galaxy-z-fold8",
+    "slug": "samsung-galaxy-z-fold8",
+    "title": "Samsung Galaxy Z Fold8: новый складной смартфон с широким форм-фактором",
+    "category": "ГАДЖЕТ / Китай",
+    "tags": [
+      "Samsung",
+      "Galaxy Z Fold8",
+      "смартфон",
+      "складной телефон",
+      "гаджет",
+      "Китай",
+      "новинка"
+    ],
+    "summary": "Представлен смартфон Samsung Galaxy Z Fold8, отличающийся новым дизайном корпуса.",
+    "content": "Представлен смартфон Samsung Galaxy Z Fold8, отличающийся новым дизайном корпуса. Устройство позиционируется как решение для мультимедийных задач благодаря более короткому и широкому форм-фактору по сравнению с предыдущими моделями серии Galaxy Z Fold. Стартовая цена составляет 12999 юаней.\n\nСмартфон оснащен внешним 5,5-дюймовым и внутренним 7,6-дюймовым складным дисплеями Dynamic AMOLED 2X с адаптивной частотой обновления от 1 Гц до 120 Гц. Устройство получило двойную основную камеру на 50 Мп с оптической стабилизацией и сверхширокоугольный модуль на 50 Мп, а также две фронтальные камеры по 10 Мп. Аппаратной основой стал процессор Qualcomm Snapdragon 8 Elite Gen5 for Galaxy. Варианты памяти включают 12 ГБ ОЗУ с 256/512 ГБ накопителя и 16 ГБ ОЗУ с 1 ТБ накопителя.\n\nПроизводитель сообщает о высоком спросе на предзаказах, что привело к увеличению заказов у поставщиков. Точная дата начала продаж в Китае и информация о поддержке глобальных 5G-частот не уточняются. Также не указаны степень защиты от воды и пыли (IP-рейтинг) и емкость аккумулятора. Независимые тесты и обзоры устройства пока отсутствуют.",
+    "sourceUrl": "https://www.ithome.com/0/984/696.htm",
+    "publishedAt": "2026-08-02T07:52:00.507Z",
+    "readTime": "2 мин",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/53e1715e-a7cb-49b3-acbc-d85c4b7252c5.png"
+  }
+}
