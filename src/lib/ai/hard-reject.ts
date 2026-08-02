@@ -75,6 +75,15 @@ const HARD_REJECT_PATTERNS: RegExp[] = [
   /\bopinion:\b/i,
   /\bshopping guide\b/i,
   /\bback to school\b/i,
+  // Soft/app roundups / podcasts — not physical consumer gadgets
+  /\blaunchers?\b/i,
+  /\bapp deals?\b/i,
+  /\bfreebies\b/i,
+  /\bandroid app deals\b/i,
+  /\bpixelated\b/i,
+  /\bpodcast\b/i,
+  /\bbest apps?\b/i,
+  /\bapps? you should skip\b/i,
   // Cars / automotive news without a consumer gadget
   /\bhybrid suv\b/i,
   /\blargest suv\b/i,
@@ -145,6 +154,32 @@ const BUYABLE_PRODUCT_PATTERNS: RegExp[] = [
   /\be-?ink\b/i,
   /\bstream deck\b/i,
   /\bcontroller\b/i,
+  /\bprinter\b/i,
+  /\b3d print/i,
+  /\bdrone\b/i,
+  /\bmouse\b/i,
+  /\blamp\b/i,
+  /\bspeaker\b/i,
+  /\bmicrophone\b/i,
+  /\bmic\b/i,
+  /\bwatch\b/i,
+  /\bring\b/i,
+  /\brobot\b/i,
+  /\bvacuum\b/i,
+  /\bnotebook\b/i,
+  /\bmonitor\b/i,
+  /\brouter\b/i,
+  /\btracker\b/i,
+  /\bheadset\b/i,
+  /\bportable\b/i,
+  /\bbattery\b/i,
+  /\bsensor\b/i,
+  /\bdisplay\b/i,
+  /\bice maker\b/i,
+  /\bsmartwatch\b/i,
+  /\bsmart ring\b/i,
+  /\bnuc\b/i,
+  /\bdesktop\b/i,
   /\bgamepad\b/i,
   /\brobot\b/i,
   /вентилятор/i,
@@ -172,6 +207,9 @@ const BUYABLE_PRODUCT_PATTERNS: RegExp[] = [
   /наушник/i,
   /\bпроектор/i,
   /\bклавиатур/i,
+  // Chinese consumer gadgets (China Collector / IT之家 / 36Kr)
+  /手机|手表|手环|耳机|音箱|手柄|键盘|鼠标|相机|充电器|充电宝|显示器|平板|眼镜|路由器|扫地|投影|无人机|散热器|支架臂/,
+  /智能家居|可穿戴|消费电子|游戏手柄/,
 ];
 
 /** Lab / abstract research without a consumer SKU. */
@@ -189,7 +227,7 @@ const NON_BUYABLE_RESEARCH: RegExp[] = [
 ];
 
 const NOVELTY_RE =
-  /предзаказ|pre-?order|kickstarter|indiegogo|анонс|launch|термоэлектри|sodium-?ion|натрий-?ион|живого перевода|live translat|новой систем|без интернета|offline|складывает одежд|измеряет показатель|поддерживает \d+\s*язык|патент|новая модель|new model|перв\w*\s+серийн|фабричн/i;
+  /предзаказ|pre-?order|kickstarter|indiegogo|анонс|\b(launched|launching|product launch|launches)\b|термоэлектри|sodium-?ion|натрий-?ион|живого перевода|live translat|новой систем|без интернета|offline|складывает одежд|измеряет показатель|поддерживает \d+\s*язык|патент|новая модель|new model|перв\w*\s+серийн|фабричн|debut|unveils?|announces?|представлен|推出|发布|发售|预热|上市|开售|首发|预售|众筹|新品|新款|搭载/i;
 const COSMETIC_RE =
   /нов(ый|ая|ое|ым)?\s+цвет|new color|другой упаковк|new packaging|только (цвет|форма|упаковка|дизайн)/i;
 const FAKE_NEW_RE =
@@ -197,12 +235,29 @@ const FAKE_NEW_RE =
 const SATURATED_RE =
   /обычный\s+(мини-?)?вентилятор|мини-?вентилятор с новым цветом|power bank.{0,40}упаковк|\btws\b/i;
 
-export function assessNovelty(title: string, text = ''): NoveltyAssessment {
+export function assessNovelty(title: string, text = '', opts?: { sourceName?: string }): NoveltyAssessment {
   const hay = `${title}\n${text}`;
   const noveltyEvidence = NOVELTY_RE.test(hay) ? [NOVELTY_RE.source] : [];
   const cosmetic = COSMETIC_RE.test(hay);
   const fakeNew = FAKE_NEW_RE.test(hay);
   const high = SATURATED_RE.test(hay) || cosmetic || fakeNew;
+  // Design/hardware launch feeds: buyable product signal counts as novelty evidence
+  // when the snippet lacks explicit "launch/preorder" wording.
+  const source = (opts?.sourceName || '').toLowerCase();
+  const designFeed =
+    source.includes('yanko') ||
+    source.includes('new atlas') ||
+    source.includes('hackaday') ||
+    source.includes('engadget') ||
+    source.includes('ithome') ||
+    source.includes('it之家') ||
+    source.includes('36kr') ||
+    source.includes('anker');
+  if (!noveltyEvidence.length && designFeed && !cosmetic && !fakeNew && !high) {
+    if (BUYABLE_PRODUCT_PATTERNS.some((re) => re.test(hay))) {
+      noveltyEvidence.push('design-feed-buyable-product');
+    }
+  }
   const functionalDifference = noveltyEvidence.length
     ? 'Функциональный/запусковый признак новизны.'
     : cosmetic
@@ -219,7 +274,7 @@ export function assessNovelty(title: string, text = ''): NoveltyAssessment {
   };
 }
 
-export function hardRejectTopic(title: string, text = ''): HardRejectResult {
+export function hardRejectTopic(title: string, text = '', sourceName = ''): HardRejectResult {
   const hay = `${title}\n${text}`.trim();
   if (!hay) {
     return { reject: true, reason: 'Пустой материал — нет покупаемого продукта.', rejectCode: 'NO_PRODUCT' };
@@ -249,7 +304,7 @@ export function hardRejectTopic(title: string, text = ''): HardRejectResult {
       rejectCode: 'NO_PRODUCT',
     };
   }
-  const novelty = assessNovelty(title, text);
+  const novelty = assessNovelty(title, text, { sourceName });
   if (!novelty.isActuallyNew) {
     return {
       reject: true,
@@ -277,31 +332,40 @@ export function evaluateTopicLocal(title: string, text = '') {
   };
 }
 
-/** Keyword prefilter for RSS (same policy as hardRejectTopic, looser on product signals for gadget feeds). */
+/** Keyword prefilter for RSS — must pass novelty; NO_PRODUCT may pass on known gadget feeds. */
 export function looksBuyableGadget(title: string, text = '', sourceName = ''): boolean {
-  const gate = hardRejectTopic(title, text);
-  if (gate.reject && !gate.reason.includes('нет явного покупаемого')) {
+  const gate = hardRejectTopic(title, text, sourceName);
+  if (!gate.reject) return true;
+  // Never soften HARD_TOPIC / research rejects.
+  if (gate.rejectCode === 'HARD_TOPIC' || gate.rejectCode === 'NON_BUYABLE_RESEARCH') return false;
+
+  const source = sourceName.toLowerCase();
+  const hay = `${title} ${text}`.toLowerCase();
+  if (
+    /\b(tower|museum|building|architecture|wildlife|nature|author|memoir|singer|album|film|movie|trump|politic|graphic novel|advisory council|launcher|app deals|freebies|podcast|indie games?)\b/.test(
+      hay,
+    )
+  ) {
     return false;
   }
-  if (!gate.reject) return true;
 
-  // On known gadget feeds, allow through if hard topic reject did not fire —
-  // product signal may be weak in the RSS snippet; Scout will re-check.
-  const source = sourceName.toLowerCase();
+  // Yanko / New Atlas: product-design feeds — let Reviewer decide when topic is clean.
+  if (source.includes('yanko') || source.includes('new atlas')) {
+    return true;
+  }
+
   if (
-    source.includes('yanko') ||
-    source.includes('new atlas') ||
     source.includes('hackaday') ||
     source.includes('gadget') ||
     source.includes('engadget') ||
     source.includes('adafruit') ||
     source.includes('raspberry')
   ) {
-    const hay = `${title} ${text}`.toLowerCase();
-    if (/\b(tower|museum|building|architecture|wildlife|nature|author|memoir|singer|album|film|movie|trump|politic|graphic novel|advisory council)\b/.test(hay)) {
-      return false;
+    if (gate.rejectCode === 'NO_PRODUCT') {
+      return assessNovelty(title, text, { sourceName }).isActuallyNew;
     }
-    return true;
+    // NOT_ACTUALLY_NEW on hardware feeds still blocked.
+    return false;
   }
   return false;
 }
