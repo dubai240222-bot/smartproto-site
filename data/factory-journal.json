@@ -128,7 +128,8 @@
     "https://newatlas.com/wearables/transparent-uv-detector/",
     "https://newatlas.com/wearables/meta-ray-ban-smart-glasses-ar-display-wristband/",
     "https://newatlas.com/wearables/hydration-sensor-wearable/",
-    "https://newatlas.com/wearables/anker-soundcore-p41i-earphones-charging-case-phone/"
+    "https://newatlas.com/wearables/anker-soundcore-p41i-earphones-charging-case-phone/",
+    "https://newatlas.com/electronics/insta360-x5/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -259,7 +260,8 @@
     "https://newatlas.com/wearables/transparent-uv-detector/",
     "https://newatlas.com/wearables/meta-ray-ban-smart-glasses-ar-display-wristband/",
     "https://newatlas.com/wearables/hydration-sensor-wearable/",
-    "https://newatlas.com/wearables/anker-soundcore-p41i-earphones-charging-case-phone/"
+    "https://newatlas.com/wearables/anker-soundcore-p41i-earphones-charging-case-phone/",
+    "https://newatlas.com/electronics/insta360-x5/"
   ],
   "entries": [
     {
@@ -1437,6 +1439,15 @@
       "status": "published",
       "slug": "affordable-wireless-anc-earbuds-come-with-smartphone-charging-case",
       "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/electronics/insta360-x5/",
+      "url": "https://newatlas.com/electronics/insta360-x5/",
+      "title": "Insta360 X5: Прочная экшн-камера с 360° обзором для ваших приключений",
+      "processedAt": "2026-08-02T06:54:26.985Z",
+      "status": "published",
+      "slug": "all-new-insta360-x5-the-360-actioncam-becomes-tougher-than-ever",
+      "kind": "article"
     }
   ]
 }
