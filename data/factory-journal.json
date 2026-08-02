@@ -49,7 +49,8 @@
     "https://arstechnica.com/security/2026/07/likely-illegally-claude-gained-access-to-3-networks-will-anthropic-be-held-to-account/",
     "https://newatlas.com/automotive/audi-q9-sq9-three-row-suv/",
     "https://newatlas.com/motorcycles/honda-cb500/",
-    "https://newatlas.com/tents/gazelle-g4-1-minute-gazebo/"
+    "https://newatlas.com/tents/gazelle-g4-1-minute-gazebo/",
+    "https://newatlas.com/music/guitar-smart-rgb-lights-litejam-neo/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -101,7 +102,8 @@
     "https://arstechnica.com/security/2026/07/likely-illegally-claude-gained-access-to-3-networks-will-anthropic-be-held-to-account/",
     "https://newatlas.com/automotive/audi-q9-sq9-three-row-suv/",
     "https://newatlas.com/motorcycles/honda-cb500/",
-    "https://newatlas.com/tents/gazelle-g4-1-minute-gazebo/"
+    "https://newatlas.com/tents/gazelle-g4-1-minute-gazebo/",
+    "https://newatlas.com/music/guitar-smart-rgb-lights-litejam-neo/"
   ],
   "entries": [
     {
@@ -569,6 +571,15 @@
       "status": "published",
       "slug": "gazelle-launches-versatile-g4-screen-tent-that-pops-up-in-60-seconds",
       "kind": "article"
+    },
+    {
+      "id": "https://newatlas.com/music/guitar-smart-rgb-lights-litejam-neo/",
+      "url": "https://newatlas.com/music/guitar-smart-rgb-lights-litejam-neo/",
+      "title": "Учись играть на гитаре с умными LED-подсветками Lite-Jam Neo!",
+      "processedAt": "2026-08-02T00:03:34.256Z",
+      "status": "published",
+      "slug": "carbon-fiber-guitar-s-smart-rgb-lights-teach-you-how-to-play",
+      "kind": "news"
     }
   ]
 }
