@@ -9,6 +9,7 @@
     "lint": "eslint",
     "moderate": "tsx scripts/moderate-drafts.ts",
     "test:newsroom": "tsx scripts/run-newsroom.ts",
+    "newsroom:tick": "tsx scripts/run-newsroom-tick.ts",
     "factory:shift": "tsx scripts/run-factory-shift.ts",
     "publish:latest": "tsx scripts/publish-latest.ts",
     "polish:published": "tsx scripts/polish-published.ts",

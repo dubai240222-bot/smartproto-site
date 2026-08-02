@@ -1,20 +1,54 @@
 # CODEX_HANDOFF — SmartProto
 
-**ID задачи:** SP-A-027  
+**ID задачи:** SP-A-031-R1 (ранее SP-A-027 handoff)  
 **Дата:** 2026-08-02  
-**Источник:** фактическое состояние репо + выводы SP-A-026-R1 / решение владельца SP-A-026-D1  
-**Назначение:** полная передача проекта агенту Codex.  
+**Источник:** фактическое состояние репо + выводы SP-A-026-R1 / решение владельца SP-A-026-D1 / автономия SP-A-031  
+**Назначение:** полная передача проекта агенту Codex + статус промежуточной автономии.  
 **Язык:** русский (ключевые идентификаторы — как в коде).
 
 ---
 
-## 0. Жёсткие ограничения этой передачи
+## 0. Автономия SP-A-031-R1 (текущий рабочий режим)
 
-- **Этап B (Stage B) НЕ начат и НЕ должен стартовать в рамках SP-A-027.**
-- **НЕ создавать** в этой задаче: Vercel Cron, `/api/newsroom/tick`, Postgres, worker, admin API, новые env-переменные, deployment.
-- **НЕ реализовывать** код SP-A-026.
-- Единственный ожидаемый артефакт SP-A-027: этот файл `CODEX_HANDOFF.md`.
-- Причина паузы (SP-A-026-D1): Cursor временно передаёт проект Codex из‑за лимита кредитов.
+**Цель владельца:** 100% автономная публикация без команд Cursor каждые 10 минут.
+
+**Что сделано (interim, без Postgres):**
+
+| Артефакт | Путь |
+|---|---|
+| GitHub Actions cron | `.github/workflows/newsroom-cron.yml` |
+| Один цикл публикации | `scripts/run-newsroom-tick.ts` → `npm run newsroom:tick` |
+
+**Как работает:**
+
+1. GHA schedule `*/10 * * * *` (+ `workflow_dispatch` вручную).
+2. Если секрет `SMARTPROTO_FACTORY_ENABLED` ≠ `true` → workflow тихо выходит (factory OFF).
+3. Иначе: `npm ci` → `npm run newsroom:tick` (1 кандидат: RSS → hardReject/novelty → Scout → Reviewer → Editor → `articles.json`).
+4. Если изменились `articles.json` / journal / drafts → bot commit + `git push` на `main` → Vercel деплоит сайт.
+
+**Stage B** (Vercel Cron → `/api/newsroom/tick` → Worker → Postgres) по-прежнему **PLANNED**, не блокирует interim-автономию.
+
+### GitHub Secrets (обязательно выставить владельцу)
+
+Repo → **Settings → Secrets and variables → Actions**:
+
+| Secret | Значение | Зачем |
+|---|---|---|
+| `OPENROUTER_API_KEY` | ключ OpenRouter | Scout / Reviewer / Editor |
+| `SMARTPROTO_FACTORY_ENABLED` | `true` | Включить автономию |
+
+`GITHUB_TOKEN` выдаётся Actions автоматически (`permissions: contents: write`).
+
+**Выключить автономию:** `SMARTPROTO_FACTORY_ENABLED=false` (или удалить секрет). Workflow продолжит тикать по cron, но AI-цикл пропускается.
+
+**После установки secrets Cursor больше не нужен** для 10-минутных публикаций.
+
+---
+
+## 0b. Исторические ограничения SP-A-027 (архив)
+
+- **Этап B (Stage B)** в рамках SP-A-027 не стартовал (Vercel Cron / Postgres / admin API).
+- Handoff SP-A-027 остаётся справочным; рабочая автономия — через GHA выше (SP-A-031-R1).
 
 ---
 
@@ -47,7 +81,7 @@
 
 | Факт в репо | Следствие |
 |---|---|
-| Нет `vercel.json`, нет GitHub Actions cron | Нет серверного таймера |
+| Нет `vercel.json` / Postgres; есть GHA cron (SP-A-031) | Interim-автономия через Actions → git push |
 | Единственный API: `src/app/api/feed/route.ts` (Hacker News proxy) | Нет protected worker endpoint |
 | Сайт импортирует `articles.json` на build/SSR | Vercel **не видит** локальные правки без push |
 | Publisher пишет в файловую систему | На serverless Vercel нельзя надёжно «дописать файл» в прод |
@@ -139,6 +173,7 @@ Factory RSS-источники (`scripts/run-factory-shift.ts`):
 | Скрипт | npm | Назначение |
 |---|---|---|
 | `scripts/run-newsroom.ts` | `test:newsroom` | Тест пайплайна Scout→Reviewer→Editor→draft (без публикации при обычном тесте) |
+| `scripts/run-newsroom-tick.ts` | `newsroom:tick` | **Один** цикл: RSS→фильтры→Scout→Review→Editor→publish в `articles.json` (для GHA cron) |
 | `scripts/publish-latest.ts` | `publish:latest` | Берёт latest draft → пишет в `articles.json` |
 | `scripts/run-factory-shift.ts` | `factory:shift` | Цикл RSS → Scout → Review → Editor → publish (+ git) |
 | `scripts/polish-published.ts` | `polish:published` | Полировка опубликованных |
@@ -241,6 +276,7 @@ China Collector (allowlisted RSS/API/manual URL)
 "lint": "eslint",
 "moderate": "tsx scripts/moderate-drafts.ts",
 "test:newsroom": "tsx scripts/run-newsroom.ts",
+"newsroom:tick": "tsx scripts/run-newsroom-tick.ts",
 "factory:shift": "tsx scripts/run-factory-shift.ts",
 "publish:latest": "tsx scripts/publish-latest.ts",
 "polish:published": "tsx scripts/polish-published.ts",
@@ -253,6 +289,7 @@ China Collector (allowlisted RSS/API/manual URL)
 Полезные флаги (где поддержано):
 
 - `npm run test:newsroom -- --limit 1` — один кандидат, без публикации.
+- `npm run newsroom:tick` — один автономный цикл (GHA); `--force` / `--dry-run`.
 - `factory:shift` / `publish:latest`: требуют `SMARTPROTO_FACTORY_ENABLED=true` или `--force`.
 - `factory:shift`: `--hours`, `--interval-min`, `--max-ai-runs`, `--max-published`, `--dry-run`, `--force`.
 
@@ -294,14 +331,13 @@ China Collector (allowlisted RSS/API/manual URL)
 ## 9. Краткая шпаргалка для следующего агента
 
 ```
-Сейчас:  RSS/HN (локально) → Scout(75) → Reviewer → Editor → drafts/ → articles.json → git push → Vercel
-Цель:    Vercel Cron → /api/newsroom/tick → Worker → Postgres → сайт из DB
-Пауза:   Stage B ждёт разрешения владельца (Codex handoff из‑за кредитов Cursor)
-Ключ:    OPENROUTER_API_KEY
-Рубильник: SMARTPROTO_FACTORY_ENABLED=false по умолчанию
+Interim (SP-A-031): GHA cron */10 → newsroom:tick → articles.json → git push → Vercel
+Цель Stage B:       Vercel Cron → /api/newsroom/tick → Worker → Postgres → сайт из DB
+Ключ:               OPENROUTER_API_KEY (GitHub Secret)
+Рубильник:          SMARTPROTO_FACTORY_ENABLED=true чтобы ON; false/пусто = OFF
 ```
 
 ---
 
-**Подпись документа:** Cursor (SP-A-027)  
-**Связанные ID:** SP-A-025, SP-A-025-U1, SP-A-026-R1, SP-A-026-D1, SP-A-027
+**Подпись документа:** Cursor (SP-A-031-R1)  
+**Связанные ID:** SP-A-025, SP-A-025-U1, SP-A-026-R1, SP-A-026-D1, SP-A-027, SP-A-030-U1, SP-A-031-R1

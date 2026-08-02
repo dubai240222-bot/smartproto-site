@@ -1,0 +1,76 @@
+# SP-A-031-R1 — Interim autonomy: GitHub Actions cron → one newsroom tick → git push → Vercel.
+# Stage B (Vercel Cron → /api/newsroom/tick → Worker → Postgres) remains PLANNED; this is the
+# fastest autonomy path while articles still live in src/data/articles.json.
+#
+# Required GitHub Secrets (Settings → Secrets and variables → Actions):
+#   OPENROUTER_API_KEY          — OpenRouter API key for Scout/Reviewer/Editor
+#   SMARTPROTO_FACTORY_ENABLED  — set to "true" to enable AI publishes; anything else = OFF
+#
+# Turn OFF autonomy: set SMARTPROTO_FACTORY_ENABLED to "false" (or delete the secret).
+# Auth for push: default GITHUB_TOKEN with contents: write (no extra PAT needed).
+
+name: Newsroom Cron Tick
+
+on:
+  schedule:
+    # Every 10 minutes (GitHub may delay free-tier schedules slightly).
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: newsroom-tick
+  cancel-in-progress: false
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Factory gate
+        id: gate
+        env:
+          SMARTPROTO_FACTORY_ENABLED: ${{ secrets.SMARTPROTO_FACTORY_ENABLED }}
+        run: |
+          if [ "$SMARTPROTO_FACTORY_ENABLED" != "true" ]; then
+            echo "Factory OFF (SMARTPROTO_FACTORY_ENABLED is not true). Skipping AI tick."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+
+      - name: Run one newsroom tick
+        if: steps.gate.outputs.enabled == 'true'
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          SMARTPROTO_FACTORY_ENABLED: 'true'
+        run: npm run newsroom:tick
+
+      - name: Commit and push if changed
+        if: steps.gate.outputs.enabled == 'true'
+        run: |
+          git config user.name "smartproto-newsroom-bot"
+          git config user.email "newsroom-bot@users.noreply.github.com"
+          git add src/data/articles.json data/factory-journal.json drafts/ || true
+          if git diff --staged --quiet; then
+            echo "No articles.json / journal / drafts changes — nothing to publish."
+            exit 0
+          fi
+          git commit -m "feat(newsroom): autonomous tick publish"
+          git push origin HEAD:main
