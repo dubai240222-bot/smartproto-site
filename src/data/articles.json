@@ -1,24 +1,24 @@
 [
   {
-    "id": "stewart-platform-walker-gains-feeling-in-legs-from-resistors",
-    "slug": "stewart-platform-walker-gains-feeling-in-legs-from-resistors",
-    "title": "Робот-гексапод с \"чувством\" ног благодаря резисторам!",
-    "category": "ГАДЖЕТ / ПОЛЕЗНО",
+    "id": "reporting-back-from-the-first-meeting-of-the-kickstarter-community-advisory-coun",
+    "slug": "reporting-back-from-the-first-meeting-of-the-kickstarter-community-advisory-coun",
+    "title": "Графический роман «Bi Visibility: Still Bi» на Kickstarter — успейте поддержать!",
+    "category": "НОВИНКА / ПОЛЕЗНО",
     "tags": [
       "#новинка",
       "#полезно",
-      "#гаджет",
-      "#робототехника",
-      "#DIY",
-      "#инновации",
-      "#SmartProto"
+      "#Kickstarter",
+      "#графическийроман",
+      "#комикс",
+      "#поддержать",
+      "#бисексуальность"
     ],
-    "summary": "Ребята, вы просто не поверите, что я нашел! Этот робот Stewy — просто бомба! У него голова на платформе Стюарта, а ноги.",
-    "content": "Ребята, вы просто не поверите, что я нашел! Этот робот Stewy — просто бомба! У него голова на платформе Стюарта, а ноги... ноги подключены к тем же сервоприводам, что и платформа. Получился такой милый шестиногий ходок. Но была проблема: он не чувствовал, как стоят его ноги. А это важно для передвижения по неровностям, согласитесь? И тут гений [JD] придумал простое, но гениальное решение: он использовал обычные резисторы, чтобы превратить дешевые сервоприводы в датчики силы! Нет, никаких там супер-дорогих тензодатчиков. Просто измеряет падение напряжения на резисторе, который стоит последовательно с сервоприводом. Чем больше нагрузка на мотор, тем больше ток, а значит, и падение напряжения. Закон Ома в действии! И это работает! Данные получаются очень точные для такого простого хака. Робот реально стал лучше чувствовать поверхность. Это не просто игрушка, это шаг к более умным роботам!",
-    "sourceUrl": "https://hackaday.com/2026/08/01/stewart-platform-walker-gains-feeling-in-legs-from-resistors/",
-    "publishedAt": "2026-08-02T00:05:02.382Z",
+    "summary": "Вау, ребята, это просто бомба! На Kickstarter сейчас идет сбор средств на графический роман «Bi Visibility: Still Bi».",
+    "content": "Вау, ребята, это просто бомба! На Kickstarter сейчас идет сбор средств на графический роман «Bi Visibility: Still Bi». Это сборник из 16 новых историй от крутых авторов, исследующих тему бисексуальности в самых разных жанрах – от комедии до супергероики. Визуал просто отвал башки, а истории обещают быть глубокими и захватывающими. Проект заканчивается сегодня вечером, так что действуйте быстро!",
+    "sourceUrl": "https://www.kickstarter.com/blog/reporting-back-from-the-first-meeting-of-the-kickstarter-comm",
+    "publishedAt": "2026-08-02T00:05:09.697Z",
     "readTime": "1 мин",
-    "imageUrl": "https://hackaday.com/wp-content/uploads/2026/07/stewart-robot.jpg"
+    "imageUrl": "https://i.kickstarter.com/assets/038/019/719/d915b922952fef86c9cc7f92334253a0_original.jpg?fit=scale-down&origin=ugc&q=92&v=1658338902&width=700&sig=rKIHEltrlq%2Fhtvse%2FYSKm%2BhabSy4GMP7Fcqwsc%2BiIms%3D"
   },
   {
     "id": "carbon-fiber-guitar-s-smart-rgb-lights-teach-you-how-to-play",
