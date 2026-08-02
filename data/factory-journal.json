@@ -86,7 +86,8 @@
     "https://newatlas.com/wearables/review-renpho-headspace-eyeris-zen-massager/",
     "https://newatlas.com/electronics/meta-nfc-focused-microwaves-circuits/",
     "https://newatlas.com/wearables/mobvoi-ticnote-pods/",
-    "https://newatlas.com/wearables/citizen-photon-celebrates-half-century-solar-watch-power/"
+    "https://newatlas.com/wearables/citizen-photon-celebrates-half-century-solar-watch-power/",
+    "https://newatlas.com/electronics/oversized-screen-phone-mirror/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -175,7 +176,8 @@
     "https://newatlas.com/wearables/review-renpho-headspace-eyeris-zen-massager/",
     "https://newatlas.com/electronics/meta-nfc-focused-microwaves-circuits/",
     "https://newatlas.com/wearables/mobvoi-ticnote-pods/",
-    "https://newatlas.com/wearables/citizen-photon-celebrates-half-century-solar-watch-power/"
+    "https://newatlas.com/wearables/citizen-photon-celebrates-half-century-solar-watch-power/",
+    "https://newatlas.com/electronics/oversized-screen-phone-mirror/"
   ],
   "entries": [
     {
@@ -974,6 +976,15 @@
       "processedAt": "2026-08-02T06:01:24.711Z",
       "status": "published",
       "slug": "citizen-photon-celebrates-half-a-century-of-solar-watch-power",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/electronics/oversized-screen-phone-mirror/",
+      "url": "https://newatlas.com/electronics/oversized-screen-phone-mirror/",
+      "title": "Takolink: 15.6-дюймовый экран для мгновенного дублирования смартфона",
+      "processedAt": "2026-08-02T06:02:24.734Z",
+      "status": "published",
+      "slug": "15-6-inch-screen-instantly-mirrors-any-phone-without-cables-apps-or-wi-fi",
       "kind": "news"
     }
   ]
