@@ -123,7 +123,8 @@
     "https://hackaday.com/2026/08/01/uv-printer-3d-printer-heygears-says-why-not-both/",
     "https://newatlas.com/automotive/lg-ultraview-windshield-display-pace-pilot/",
     "https://newatlas.com/wearables/pebble-index-ring/",
-    "https://newatlas.com/wearables/bandage-fingertip-wearable-feel-virtual-textures-touchscreens/"
+    "https://newatlas.com/wearables/bandage-fingertip-wearable-feel-virtual-textures-touchscreens/",
+    "https://newatlas.com/wearables/casio-g-shock-nano-watch-ring/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -249,7 +250,8 @@
     "uv-printer-3d-printer-heygears-says-why-not-both",
     "https://newatlas.com/automotive/lg-ultraview-windshield-display-pace-pilot/",
     "https://newatlas.com/wearables/pebble-index-ring/",
-    "https://newatlas.com/wearables/bandage-fingertip-wearable-feel-virtual-textures-touchscreens/"
+    "https://newatlas.com/wearables/bandage-fingertip-wearable-feel-virtual-textures-touchscreens/",
+    "https://newatlas.com/wearables/casio-g-shock-nano-watch-ring/"
   ],
   "entries": [
     {
@@ -1382,6 +1384,15 @@
       "status": "published",
       "slug": "fingertip-wearable-lets-you-feel-virtual-textures-on-touchscreens",
       "kind": "article"
+    },
+    {
+      "id": "https://newatlas.com/wearables/casio-g-shock-nano-watch-ring/",
+      "url": "https://newatlas.com/wearables/casio-g-shock-nano-watch-ring/",
+      "title": "Casio G-Shock Nano: Полнофункциональные часы на палец",
+      "processedAt": "2026-08-02T06:49:24.612Z",
+      "status": "published",
+      "slug": "casio-nano-sizes-the-rugged-g-shock-into-full-functioning-finger-watch",
+      "kind": "news"
     }
   ]
 }
