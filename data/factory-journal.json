@@ -82,7 +82,8 @@
     "https://newatlas.com/wearables/google-screenless-health-tracker-fitbit-air/",
     "https://newatlas.com/wearables/sabi-mind-reading-beanie-typing-eeg/",
     "https://newatlas.com/wearables/postech-ai-neckband-words-speech/",
-    "https://newatlas.com/wearables/vuebuds-ai-earbuds-described-audio/"
+    "https://newatlas.com/wearables/vuebuds-ai-earbuds-described-audio/",
+    "https://newatlas.com/wearables/review-renpho-headspace-eyeris-zen-massager/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -167,7 +168,8 @@
     "https://newatlas.com/wearables/google-screenless-health-tracker-fitbit-air/",
     "https://newatlas.com/wearables/sabi-mind-reading-beanie-typing-eeg/",
     "https://newatlas.com/wearables/postech-ai-neckband-words-speech/",
-    "https://newatlas.com/wearables/vuebuds-ai-earbuds-described-audio/"
+    "https://newatlas.com/wearables/vuebuds-ai-earbuds-described-audio/",
+    "https://newatlas.com/wearables/review-renpho-headspace-eyeris-zen-massager/"
   ],
   "entries": [
     {
@@ -931,6 +933,15 @@
       "status": "published",
       "slug": "camera-equipped-ai-earbuds-tell-you-what-you-re-looking-at",
       "kind": "article"
+    },
+    {
+      "id": "https://newatlas.com/wearables/review-renpho-headspace-eyeris-zen-massager/",
+      "url": "https://newatlas.com/wearables/review-renpho-headspace-eyeris-zen-massager/",
+      "title": "Массажер для глаз Renpho Eyeris Zen: расслабление и комфорт для ваших глаз",
+      "processedAt": "2026-08-02T05:59:24.192Z",
+      "status": "published",
+      "slug": "renpho-eyeris-zen-massager-review-it-s-surprisingly-good",
+      "kind": "news"
     }
   ]
 }
