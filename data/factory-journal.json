@@ -102,7 +102,8 @@
     "https://newatlas.com/electronics/kode-dot-dev-board-electronics-hacker-tool/",
     "https://newatlas.com/wearables/ixi-autofocus-eyeglasses/",
     "https://newatlas.com/electronics/ultrabar-x-modular-command-center/",
-    "https://newatlas.com/wearables/puma-white-hunter-knife/"
+    "https://newatlas.com/wearables/puma-white-hunter-knife/",
+    "https://newatlas.com/electronics/hyperspace-trackpad-pro/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -207,7 +208,8 @@
     "https://newatlas.com/electronics/kode-dot-dev-board-electronics-hacker-tool/",
     "https://newatlas.com/wearables/ixi-autofocus-eyeglasses/",
     "https://newatlas.com/electronics/ultrabar-x-modular-command-center/",
-    "https://newatlas.com/wearables/puma-white-hunter-knife/"
+    "https://newatlas.com/wearables/puma-white-hunter-knife/",
+    "https://newatlas.com/electronics/hyperspace-trackpad-pro/"
   ],
   "entries": [
     {
@@ -1150,6 +1152,15 @@
       "processedAt": "2026-08-02T06:25:15.655Z",
       "status": "published",
       "slug": "puma-white-hunter-the-legendary-multi-tool-hunting-knife",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/electronics/hyperspace-trackpad-pro/",
+      "url": "https://newatlas.com/electronics/hyperspace-trackpad-pro/",
+      "title": "HyperSpace Trackpad Pro: Альтернатива Magic Trackpad для Windows",
+      "processedAt": "2026-08-02T06:26:15.553Z",
+      "status": "published",
+      "slug": "windows-users-finally-get-their-version-of-apple-s-magic-trackpad",
       "kind": "news"
     }
   ]
