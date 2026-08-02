@@ -1,5 +1,25 @@
 [
   {
+    "id": "hydration-sensor-alerts-wearer-to-urgent-water-need",
+    "slug": "hydration-sensor-alerts-wearer-to-urgent-water-need",
+    "title": "Носимый датчик гидратации: своевременное напоминание о необходимости пить",
+    "category": "НОВИНКА / ПОЛЕЗНО",
+    "tags": [
+      "#новинка",
+      "#полезно",
+      "#гаджет",
+      "#здоровье",
+      "#носимыеустройства",
+      "#гидратация"
+    ],
+    "summary": "Появился новый носимый датчик, который анализирует уровень гидратации вашего тела и предупреждает о критическом дефиците жидкости.",
+    "content": "Появился новый носимый датчик, который анализирует уровень гидратации вашего тела и предупреждает о критическом дефиците жидкости. Устройство синхронизируется со смартфоном, предоставляя своевременные уведомления. Это может быть особенно полезно для спортсменов, людей, работающих в экстремальных условиях, и всех, кто заботится о своем здоровье.\nИсточник: New Atlas Wearables.",
+    "sourceUrl": "https://newatlas.com/wearables/hydration-sensor-wearable/",
+    "publishedAt": "2026-08-02T06:52:25.188Z",
+    "readTime": "1 мин",
+    "imageUrl": "https://assets.newatlas.com/dims4/default/b6ddf77/2147483647/strip/true/crop/1200x800+0+0/resize/1200x800!/format/webp/quality/90/?url=https%3A%2F%2Fnewatlas-brightspot.s3.ap-southeast-2.amazonaws.com%2Fbf%2Fd2%2Ffdd0d5a34a4eac42c5dac06b05c9%2Fdehydration-sensor.jpg"
+  },
+  {
     "id": "meta-s-799-smart-glasses-get-a-color-ar-display-and-a-wristband",
     "slug": "meta-s-799-smart-glasses-get-a-color-ar-display-and-a-wristband",
     "title": "Умные очки Ray-Ban Meta с цветным AR-дисплеем: информация перед глазами",

@@ -126,7 +126,8 @@
     "https://newatlas.com/wearables/bandage-fingertip-wearable-feel-virtual-textures-touchscreens/",
     "https://newatlas.com/wearables/casio-g-shock-nano-watch-ring/",
     "https://newatlas.com/wearables/transparent-uv-detector/",
-    "https://newatlas.com/wearables/meta-ray-ban-smart-glasses-ar-display-wristband/"
+    "https://newatlas.com/wearables/meta-ray-ban-smart-glasses-ar-display-wristband/",
+    "https://newatlas.com/wearables/hydration-sensor-wearable/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -255,7 +256,8 @@
     "https://newatlas.com/wearables/bandage-fingertip-wearable-feel-virtual-textures-touchscreens/",
     "https://newatlas.com/wearables/casio-g-shock-nano-watch-ring/",
     "https://newatlas.com/wearables/transparent-uv-detector/",
-    "https://newatlas.com/wearables/meta-ray-ban-smart-glasses-ar-display-wristband/"
+    "https://newatlas.com/wearables/meta-ray-ban-smart-glasses-ar-display-wristband/",
+    "https://newatlas.com/wearables/hydration-sensor-wearable/"
   ],
   "entries": [
     {
@@ -1415,6 +1417,15 @@
       "status": "published",
       "slug": "meta-s-799-smart-glasses-get-a-color-ar-display-and-a-wristband",
       "kind": "article"
+    },
+    {
+      "id": "https://newatlas.com/wearables/hydration-sensor-wearable/",
+      "url": "https://newatlas.com/wearables/hydration-sensor-wearable/",
+      "title": "Носимый датчик гидратации: своевременное напоминание о необходимости пить",
+      "processedAt": "2026-08-02T06:52:25.188Z",
+      "status": "published",
+      "slug": "hydration-sensor-alerts-wearer-to-urgent-water-need",
+      "kind": "news"
     }
   ]
 }
