@@ -79,7 +79,8 @@
     "https://newatlas.com/wearables/meta-glasses-ai-cameras-kylie-jenner/",
     "https://newatlas.com/wearables/the90-gem-pendant-uv-tracking-exposure/",
     "https://newatlas.com/wearables/sony-reon-pocket-pro-plus-wearable-air-conditioner-upgrade/",
-    "https://newatlas.com/wearables/google-screenless-health-tracker-fitbit-air/"
+    "https://newatlas.com/wearables/google-screenless-health-tracker-fitbit-air/",
+    "https://newatlas.com/wearables/sabi-mind-reading-beanie-typing-eeg/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -161,7 +162,8 @@
     "https://newatlas.com/wearables/meta-glasses-ai-cameras-kylie-jenner/",
     "https://newatlas.com/wearables/the90-gem-pendant-uv-tracking-exposure/",
     "https://newatlas.com/wearables/sony-reon-pocket-pro-plus-wearable-air-conditioner-upgrade/",
-    "https://newatlas.com/wearables/google-screenless-health-tracker-fitbit-air/"
+    "https://newatlas.com/wearables/google-screenless-health-tracker-fitbit-air/",
+    "https://newatlas.com/wearables/sabi-mind-reading-beanie-typing-eeg/"
   ],
   "entries": [
     {
@@ -898,6 +900,15 @@
       "status": "published",
       "slug": "google-enters-the-screenless-health-tracker-race-with-new-fitbit-air",
       "kind": "article"
+    },
+    {
+      "id": "https://newatlas.com/wearables/sabi-mind-reading-beanie-typing-eeg/",
+      "url": "https://newatlas.com/wearables/sabi-mind-reading-beanie-typing-eeg/",
+      "title": "Шапка с EEG-сенсорами для управления устройствами силой мысли",
+      "processedAt": "2026-08-02T05:56:25.001Z",
+      "status": "published",
+      "slug": "this-mind-reading-beanie-could-make-keyboards-obsolete",
+      "kind": "news"
     }
   ]
 }
