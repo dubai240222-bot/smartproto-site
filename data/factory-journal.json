@@ -122,7 +122,8 @@
     "https://newatlas.com/electronics/colorpik-pen-color-scanning/",
     "https://hackaday.com/2026/08/01/uv-printer-3d-printer-heygears-says-why-not-both/",
     "https://newatlas.com/automotive/lg-ultraview-windshield-display-pace-pilot/",
-    "https://newatlas.com/wearables/pebble-index-ring/"
+    "https://newatlas.com/wearables/pebble-index-ring/",
+    "https://newatlas.com/wearables/bandage-fingertip-wearable-feel-virtual-textures-touchscreens/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -247,7 +248,8 @@
     "https://newatlas.com/electronics/colorpik-pen-color-scanning/",
     "uv-printer-3d-printer-heygears-says-why-not-both",
     "https://newatlas.com/automotive/lg-ultraview-windshield-display-pace-pilot/",
-    "https://newatlas.com/wearables/pebble-index-ring/"
+    "https://newatlas.com/wearables/pebble-index-ring/",
+    "https://newatlas.com/wearables/bandage-fingertip-wearable-feel-virtual-textures-touchscreens/"
   ],
   "entries": [
     {
@@ -1371,6 +1373,15 @@
       "status": "published",
       "slug": "this-99-ring-remembers-everything-so-your-brain-doesn-t-have-to",
       "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/wearables/bandage-fingertip-wearable-feel-virtual-textures-touchscreens/",
+      "url": "https://newatlas.com/wearables/bandage-fingertip-wearable-feel-virtual-textures-touchscreens/",
+      "title": "Тактильный датчик на палец: ощутите текстуры на экране",
+      "processedAt": "2026-08-02T06:48:26.673Z",
+      "status": "published",
+      "slug": "fingertip-wearable-lets-you-feel-virtual-textures-on-touchscreens",
+      "kind": "article"
     }
   ]
 }
