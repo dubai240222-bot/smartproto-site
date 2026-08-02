@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft, Clock } from 'lucide-react';
 import articles, { getArticleBySlug, type Article } from '@/data/articles';
 import { MediaPlaceholder } from '@/components/media-placeholder';
+import { InterestRating } from '@/components/interest-rating';
 import { formatPublishedAt, getRelatedArticles } from '@/lib/article-utils';
 import { formatAuthorCredit, resolveAuthorForArticle } from '@/lib/authors';
 
@@ -252,6 +253,9 @@ export default async function ArticlePage({
           <div className="article-body">
             {contentBlocks.map((block, index) => renderBlock(block, index))}
           </div>
+
+          {/* Post-read interest rating */}
+          <InterestRating slug={article.slug} />
 
           {/* 8. Tags / Topic */}
           <div className="mt-8 pt-4 border-t border-[var(--border)] flex items-center justify-between text-xs text-[var(--muted)]">

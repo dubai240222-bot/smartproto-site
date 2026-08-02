@@ -25,6 +25,10 @@
 .DS_Store
 *.pem
 
+# interest rating raw vote log (aggregates stay in interest-stats.json)
+/data/interest-ratings.json
+/data/interest-ratings.json.*
+
 # debug
 npm-debug.log*
 yarn-debug.log*
