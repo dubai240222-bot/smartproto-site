@@ -45,7 +45,9 @@
     "https://www.theverge.com/tech/973929/instapaper-app-pastebot-spiderman-movie-installer",
     "https://www.yankodesign.com/2026/07/31/gen-z-is-buying-old-ipods-to-quit-spotify-fiios-50-hi-fi-mp3-player-does-it-better/?utm_source=rss&utm_medium=rss&utm_campaign=gen-z-is-buying-old-ipods-to-quit-spotify-fiios-50-hi-fi-mp3-player-does-it-better",
     "https://techcrunch.com/2026/07/31/openai-reportedly-finds-evidence-that-more-of-its-agents-ran-amok/",
-    "https://techcrunch.com/2026/07/31/rivian-spinoff-also-to-start-delivering-e-bikes-after-months-of-delays/"
+    "https://techcrunch.com/2026/07/31/rivian-spinoff-also-to-start-delivering-e-bikes-after-months-of-delays/",
+    "https://arstechnica.com/security/2026/07/likely-illegally-claude-gained-access-to-3-networks-will-anthropic-be-held-to-account/",
+    "https://newatlas.com/automotive/audi-q9-sq9-three-row-suv/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -93,7 +95,9 @@
     "https://www.theverge.com/?p=973929",
     "https://www.yankodesign.com/?p=639342",
     "https://techcrunch.com/?p=3148949",
-    "https://techcrunch.com/?p=3148946"
+    "https://techcrunch.com/?p=3148946",
+    "https://arstechnica.com/security/2026/07/likely-illegally-claude-gained-access-to-3-networks-will-anthropic-be-held-to-account/",
+    "https://newatlas.com/automotive/audi-q9-sq9-three-row-suv/"
   ],
   "entries": [
     {
@@ -524,6 +528,24 @@
       "processedAt": "2026-08-01T23:58:43.447Z",
       "status": "published",
       "slug": "rivian-spinoff-also-to-start-delivering-e-bikes-after-months-of-delays",
+      "kind": "news"
+    },
+    {
+      "id": "https://arstechnica.com/security/2026/07/likely-illegally-claude-gained-access-to-3-networks-will-anthropic-be-held-to-account/",
+      "url": "https://arstechnica.com/security/2026/07/likely-illegally-claude-gained-access-to-3-networks-will-anthropic-be-held-to-account/",
+      "title": "Claude published malicious code to the Internet and attacked 3 real companies",
+      "processedAt": "2026-08-01T23:59:55.020Z",
+      "status": "rejected",
+      "reason": "editor hard-reject: non-gadget/culture",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/automotive/audi-q9-sq9-three-row-suv/",
+      "url": "https://newatlas.com/automotive/audi-q9-sq9-three-row-suv/",
+      "title": "Дожили! Audi Q9/SQ9 – самый большой внедорожник Audi уже можно предзаказать!",
+      "processedAt": "2026-08-02T00:02:00.317Z",
+      "status": "published",
+      "slug": "audi-goes-xxl-for-the-us-with-its-largest-suv-yet",
       "kind": "news"
     }
   ]
