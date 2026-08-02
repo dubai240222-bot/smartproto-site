@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import articles, { type Article } from '@/data/articles';
 import { MediaPlaceholder } from '@/components/media-placeholder';
+import { ThematicNavigator } from '@/components/thematic-navigator';
 import { formatPublishedAt, sortArticlesByPublishedDate } from '@/lib/article-utils';
 import {
   CategoryTags,
@@ -9,6 +10,10 @@ import {
   QuickUpdateItem,
   StratecheryDeepDive,
 } from '@/components/article-card';
+
+function textBlob(a: Article): string {
+  return `${a.category} ${a.title} ${a.summary} ${a.content}`.toLowerCase();
+}
 
 function filterArticlesByCategory(categoryName: string, list: Article[]): Article[] {
   const norm = categoryName.toLowerCase().trim();
@@ -19,20 +24,58 @@ function filterArticlesByCategory(categoryName: string, list: Article[]): Articl
     const title = a.title.toLowerCase();
     const summary = a.summary.toLowerCase();
     const content = a.content.toLowerCase();
+    const blob = textBlob(a);
 
+    if (norm === 'новинки') {
+      return cat.includes('новинк') || title.includes('новинк');
+    }
     if (norm === 'гаджеты') {
       return cat.includes('гаджет') || title.includes('проектор') || title.includes('гаджет');
     }
-    if (norm === 'робототехника') {
-      return cat.includes('робот') || title.includes('робот');
+    if (norm === 'смартфоны') {
+      return (
+        cat.includes('смартфон') ||
+        blob.includes('smartphone') ||
+        blob.includes('android') ||
+        blob.includes('foldable') ||
+        title.includes('iphone')
+      );
     }
-    if (norm === 'искусственный интеллект' || norm === 'ии') {
+    if (norm === 'дом') {
+      return (
+        cat.includes('умный дом') ||
+        cat.includes('умныйдом') ||
+        blob.includes('smart home') ||
+        blob.includes('kitchen') ||
+        blob.includes('household') ||
+        (cat.includes('дом') && !cat.includes('смартфон'))
+      );
+    }
+    if (norm === 'игры') {
+      return cat.includes('игр') || blob.includes('game') || cat.includes('vr');
+    }
+    if (norm === 'ai' || norm === 'искусственный интеллект' || norm === 'ии') {
       return (
         cat.includes('искусственный интеллект') ||
         cat.includes('ии') ||
+        /\bai\b/.test(cat) ||
+        cat.includes('ai') ||
         title.includes('интеллект') ||
-        title.includes('обучается')
+        title.includes('обучается') ||
+        blob.includes('assistant') ||
+        blob.includes('translator')
       );
+    }
+    if (norm === 'здоровье') {
+      return (
+        cat.includes('здоров') ||
+        cat.includes('фитнес') ||
+        blob.includes('health') ||
+        blob.includes('fitness')
+      );
+    }
+    if (norm === 'робототехника') {
+      return cat.includes('робот') || title.includes('робот');
     }
     if (norm === 'open source') {
       return (
@@ -58,40 +101,6 @@ function filterArticlesByCategory(categoryName: string, list: Article[]): Articl
   });
 }
 
-// Extract all unique semantic tag topics for navigation
-function getNavigationTopics(list: Article[]): string[] {
-  const defaultTopics = [
-    'Гаджеты',
-    'Робототехника',
-    'Искусственный интеллект',
-    'Open Source',
-    'Аналитика',
-    'Инфраструктура',
-    'Редакция',
-    'Разборы',
-  ];
-
-  const extracted = new Set<string>();
-  for (const item of list) {
-    if (item.category) {
-      const parts = item.category.split('/').map((s) => s.trim());
-      for (const p of parts) {
-        if (p && p.length > 2) {
-          // Normalize title case
-          const capitalized = p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
-          extracted.add(capitalized);
-        }
-      }
-    }
-  }
-
-  for (const t of defaultTopics) {
-    extracted.add(t);
-  }
-
-  return Array.from(extracted);
-}
-
 export default async function HomePage({
   searchParams,
 }: {
@@ -101,7 +110,6 @@ export default async function HomePage({
   const activeCategory = params.category?.trim();
 
   const sortedArticles = sortArticlesByPublishedDate(articles);
-  const navigationTopics = getNavigationTopics(sortedArticles);
 
   // Articles for specific editorial slots
   const mainStory = sortedArticles[0];
@@ -123,50 +131,7 @@ export default async function HomePage({
     : [];
 
   const thematicNavigator = (
-    <section className="border-b border-[var(--border)] pb-4 space-y-2">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-mono font-bold uppercase tracking-wider text-[var(--muted)]">
-          Тематический навигатор
-        </span>
-        {activeCategory && (
-          <Link
-            href="/"
-            className="text-xs text-[var(--accent)] hover:underline font-medium"
-          >
-            Сбросить фильтр
-          </Link>
-        )}
-      </div>
-      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-1">
-        <Link
-          href="/"
-          className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-            !activeCategory
-              ? 'bg-[var(--text)] text-[var(--bg)] shadow-sm'
-              : 'bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] hover:border-[var(--accent)]'
-          }`}
-        >
-          Все материалы
-        </Link>
-        {navigationTopics.map((topic) => {
-          const isActive =
-            activeCategory?.toLowerCase() === topic.toLowerCase();
-          return (
-            <Link
-              key={topic}
-              href={`/?category=${encodeURIComponent(topic)}`}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-                isActive
-                  ? 'bg-[var(--accent)] text-white shadow-sm'
-                  : 'bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--accent)]'
-              }`}
-            >
-              {topic}
-            </Link>
-          );
-        })}
-      </div>
-    </section>
+    <ThematicNavigator activeCategory={activeCategory} articles={sortedArticles} />
   );
 
   return (
