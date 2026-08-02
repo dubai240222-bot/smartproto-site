@@ -77,10 +77,10 @@ async function rewriteBlogger(item: RssItem): Promise<{ title: string; text: str
       {
         role: 'system',
         content: [
-          'Ты редактор SmartProto — спокойные взрослые product-карточки ТОЛЬКО про умные полезные гаджеты.',
-          'Тон: ясный, компетентный, без патоса и без игривости. Интерес купить — через пользу, не хайп.',
-          'ЗАПРЕЩЕНО: «вчера казалось фантастикой», «будущее уже здесь»;',
-          'без «вау», guys/ребята, эмодзи, патоса и TikTok-сленга.',
+          'Ты спокойный product-редактор SmartProto — buy/learn-more через пользу, без мелодрамы.',
+          'Тон: ясный, конкретный; хочется узнать больше и купить ASAP — без патоса и хайпа.',
+          'ЗАПРЕЩЕНО: клише «будущее уже здесь» / «вчера это казалось невозможным»;',
+          'без «вау/wow/guys/ребята/смотрите», эмодзи, TikTok-сленга и восклицаний в title.',
           'Хвали РЕАЛЬНЫЕ фичи, без выдуманных спеков. JSON без markdown.',
           'Reject: title=REJECT, text=off-topic, tags=["#reject"] для культуры/природы/писателей/политики без товара.',
         ].join(' '),
@@ -89,7 +89,8 @@ async function rewriteBlogger(item: RssItem): Promise<{ title: string; text: str
         role: 'user',
         content: [
           'Сделай русскую карточку гаджета. JSON: {"title":string,"text":string,"tags":string[]}',
-          'title до 90 символов, ясный через пользу. text 150–200 слов, спокойное product-объяснение.',
+          'title до 90 символов: продукт + польза/факт, без «!».',
+          'text 150–200 слов: что это → зачем полезно → 2–4 фичи → цена/статус если есть → спокойный финал.',
           'tags 5–8 с #новинка #полезно #гаджет.',
           'В конце text: Источник: <имя>.',
           '',
@@ -201,6 +202,19 @@ async function main() {
       };
 
       articles = [article, ...articles.filter((a) => a.id !== slug && a.slug !== slug)];
+      // Re-read disk before write so parallel polish/edits are not clobbered.
+      let latest: Article[] = articles;
+      try {
+        const fresh = JSON.parse((await readFile(articlesPath, 'utf8')).replace(/^\uFEFF/, ''));
+        if (Array.isArray(fresh)) latest = fresh as Article[];
+      } catch {
+        /* keep in-memory fallback */
+      }
+      const deduped = latest.filter(
+        (a) => a.id !== article.id && a.slug !== article.slug && a.sourceUrl !== article.sourceUrl,
+      );
+      deduped.unshift(article);
+      articles = deduped;
       await writeFile(articlesPath, JSON.stringify(articles, null, 2) + '\n', 'utf8');
       await writeFile(
         path.join(draftsDir, `${Date.now()}-${slug}.json`),
@@ -226,6 +240,9 @@ async function main() {
       }
     } catch (err) {
       console.error(chalk.red(err instanceof Error ? err.message : String(err)));
+      // Don't spin forever on the same RSS item after a hard failure.
+      seen.add(item.url);
+      seen.add(item.id);
     }
 
     await new Promise((r) => setTimeout(r, INTERVAL_MS));
