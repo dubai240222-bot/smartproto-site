@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Calendar, Search, X } from 'lucide-react';
 import articles from '@/data/articles';
@@ -40,12 +41,19 @@ export function Header() {
     <header className="border-b border-[var(--border)] bg-[var(--surface)] text-[var(--text)] transition-colors">
       <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          {/* Brand mark */}
-          <Link href="/" className="inline-flex shrink-0 items-center hover:opacity-90">
-            <img
+          {/* Brand mark: icon + SMARTPROTO + slogan (all in the logo image) */}
+          <Link
+            href="/"
+            className="group inline-flex shrink-0 items-center self-start hover:opacity-90"
+            aria-label="SmartProto — на главную"
+          >
+            <Image
               src="/brand/smartproto-logo.png"
-              alt="SmartProto"
-              className="h-9 w-auto sm:h-10"
+              alt="SmartProto — Технологии раньше, чем они станут мейнстримом"
+              width={1024}
+              height={341}
+              priority
+              className="h-10 w-auto max-w-[min(100%,280px)] object-contain object-left sm:h-12 sm:max-w-[340px]"
             />
           </Link>
 
