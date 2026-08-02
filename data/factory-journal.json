@@ -63,7 +63,8 @@
     "https://newatlas.com/outdoor-gear/lighting-drone-heone-x/",
     "https://newatlas.com/mobile-technology/compact-smartphone-monitor-solves-selfie-headache/",
     "https://newatlas.com/robotics/usa-chinese-robot-ban/",
-    "https://newatlas.com/music/anukari-3d-physics-synthesizer-app/"
+    "https://newatlas.com/music/anukari-3d-physics-synthesizer-app/",
+    "https://www.yankodesign.com/2026/08/01/this-damascus-steel-compact-edc-knife-packs-two-sliders-into-a-0-6-inch-body/?utm_source=rss&utm_medium=rss&utm_campaign=this-damascus-steel-compact-edc-knife-packs-two-sliders-into-a-0-6-inch-body"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -129,7 +130,8 @@
     "https://newatlas.com/outdoor-gear/lighting-drone-heone-x/",
     "https://newatlas.com/mobile-technology/compact-smartphone-monitor-solves-selfie-headache/",
     "https://newatlas.com/robotics/usa-chinese-robot-ban/",
-    "https://newatlas.com/music/anukari-3d-physics-synthesizer-app/"
+    "https://newatlas.com/music/anukari-3d-physics-synthesizer-app/",
+    "https://www.yankodesign.com/?p=638656"
   ],
   "entries": [
     {
@@ -722,6 +724,15 @@
       "processedAt": "2026-08-02T00:17:56.118Z",
       "status": "published",
       "slug": "wonderfully-oddball-music-app-turns-virtual-physics-into-sounds",
+      "kind": "news"
+    },
+    {
+      "id": "https://www.yankodesign.com/?p=638656",
+      "url": "https://www.yankodesign.com/2026/08/01/this-damascus-steel-compact-edc-knife-packs-two-sliders-into-a-0-6-inch-body/?utm_source=rss&utm_medium=rss&utm_campaign=this-damascus-steel-compact-edc-knife-packs-two-sliders-into-a-0-6-inch-body",
+      "title": "LUNARK Edge & Pop Dual: нож с двумя выдвижными механизмами в компактном корпусе",
+      "processedAt": "2026-08-02T05:41:09.934Z",
+      "status": "published",
+      "slug": "this-damascus-steel-compact-edc-knife-packs-two-sliders-into-a-0-6-inch-body",
       "kind": "news"
     }
   ]
