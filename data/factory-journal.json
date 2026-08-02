@@ -114,7 +114,8 @@
     "https://newatlas.com/electronics/worlds-smallest-led-pixels-127000-ppi-display/",
     "https://newatlas.com/wearables/ring-mouse-android-windows-ios-macos/",
     "https://newatlas.com/electronics/xring-d13-mouse-trackpad-laser-remote/",
-    "https://newatlas.com/electronics/ultrasonic-wireless-cutter/"
+    "https://newatlas.com/electronics/ultrasonic-wireless-cutter/",
+    "https://newatlas.com/electronics/dji-osmo-action-5-pro-review/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -231,7 +232,8 @@
     "https://newatlas.com/electronics/worlds-smallest-led-pixels-127000-ppi-display/",
     "https://newatlas.com/wearables/ring-mouse-android-windows-ios-macos/",
     "https://newatlas.com/electronics/xring-d13-mouse-trackpad-laser-remote/",
-    "https://newatlas.com/electronics/ultrasonic-wireless-cutter/"
+    "https://newatlas.com/electronics/ultrasonic-wireless-cutter/",
+    "https://newatlas.com/electronics/dji-osmo-action-5-pro-review/"
   ],
   "entries": [
     {
@@ -1282,6 +1284,15 @@
       "processedAt": "2026-08-02T06:37:14.912Z",
       "status": "published",
       "slug": "wireless-ultrasonic-knife-glides-through-most-things-like-butter",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/electronics/dji-osmo-action-5-pro-review/",
+      "url": "https://newatlas.com/electronics/dji-osmo-action-5-pro-review/",
+      "title": "DJI Osmo Action 5 Pro: новая экшн-камера для профессиональной съемки",
+      "processedAt": "2026-08-02T06:38:14.955Z",
+      "status": "published",
+      "slug": "review-the-349-dji-osmo-action-5-pro-comes-for-gopro-s-crown",
       "kind": "news"
     }
   ]
