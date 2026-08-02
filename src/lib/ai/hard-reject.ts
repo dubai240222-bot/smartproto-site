@@ -211,9 +211,17 @@ export function looksBuyableGadget(title: string, text = '', sourceName = ''): b
   // On known gadget feeds, allow through if hard topic reject did not fire —
   // product signal may be weak in the RSS snippet; Scout will re-check.
   const source = sourceName.toLowerCase();
-  if (source.includes('yanko') || source.includes('new atlas') || source.includes('hackaday')) {
+  if (
+    source.includes('yanko') ||
+    source.includes('new atlas') ||
+    source.includes('hackaday') ||
+    source.includes('gadget') ||
+    source.includes('engadget') ||
+    source.includes('adafruit') ||
+    source.includes('raspberry')
+  ) {
     const hay = `${title} ${text}`.toLowerCase();
-    if (/\b(tower|museum|building|architecture|wildlife|nature|author|memoir|singer|album|film|movie|trump|politic)\b/.test(hay)) {
+    if (/\b(tower|museum|building|architecture|wildlife|nature|author|memoir|singer|album|film|movie|trump|politic|graphic novel|advisory council)\b/.test(hay)) {
       return false;
     }
     return true;
