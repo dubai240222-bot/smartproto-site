@@ -4,9 +4,20 @@
  * to improve life or work. Everything else is rejected.
  */
 
+export type MarketSaturation = 'low' | 'medium' | 'high';
+export interface NoveltyAssessment {
+  isActuallyNew: boolean;
+  noveltyEvidence: string[];
+  existingAlternatives: string;
+  functionalDifference: string;
+  marketSaturation: MarketSaturation;
+  rejectCode: string | null;
+}
 export interface HardRejectResult {
   reject: boolean;
   reason: string;
+  rejectCode?: string | null;
+  novelty?: NoveltyAssessment;
 }
 
 /** Topics that are never publishable, regardless of "wow". */
@@ -77,6 +88,11 @@ const HARD_REJECT_PATTERNS: RegExp[] = [
   /\bhn digest\b/i,
   /\bdevops\b/i,
   /\bkubernetes\b/i,
+  /\bdeployment\b/i,
+  /\bsmartproto\b/i,
+  /\bраскатываем\b/i,
+  /\b(npm package|open[- ]source library|sdk)\b/i,
+  /\bалгоритм обработки массивов\b/i,
   /\binternal (site|note|digest)\b/i,
   /\bsite[- ]internal\b/i,
   // Event badges / OEM parts / concepts without a consumer SKU
@@ -131,6 +147,10 @@ const BUYABLE_PRODUCT_PATTERNS: RegExp[] = [
   /\bcontroller\b/i,
   /\bgamepad\b/i,
   /\brobot\b/i,
+  /вентилятор/i,
+  /\bfan\b/i,
+  /нит[ьи]/i,
+  /\bthread\b/i,
   /\blego\b/i,
   /\be-?bike\b/i,
   /\bchess\b/i,
@@ -149,7 +169,7 @@ const BUYABLE_PRODUCT_PATTERNS: RegExp[] = [
   /\bустройств/i,
   /\bможно купить/i,
   /\bпредзаказ/i,
-  /\bнаушник/i,
+  /наушник/i,
   /\bпроектор/i,
   /\bклавиатур/i,
 ];
@@ -168,39 +188,93 @@ const NON_BUYABLE_RESEARCH: RegExp[] = [
   /\bнельзя купить/i,
 ];
 
+const NOVELTY_RE =
+  /предзаказ|pre-?order|kickstarter|indiegogo|анонс|launch|термоэлектри|sodium-?ion|натрий-?ион|живого перевода|live translat|новой систем|без интернета|offline|складывает одежд|измеряет показатель|поддерживает \d+\s*язык|патент|новая модель|new model|перв\w*\s+серийн|фабричн/i;
+const COSMETIC_RE =
+  /нов(ый|ая|ое|ым)?\s+цвет|new color|другой упаковк|new packaging|только (цвет|форма|упаковка|дизайн)/i;
+const FAKE_NEW_RE =
+  /продавец назвал|назвал[аи]?\s+новинк|\bстарые?\b.{0,40}(наушник|tws|товар)/i;
+const SATURATED_RE =
+  /обычный\s+(мини-?)?вентилятор|мини-?вентилятор с новым цветом|power bank.{0,40}упаковк|\btws\b/i;
+
+export function assessNovelty(title: string, text = ''): NoveltyAssessment {
+  const hay = `${title}\n${text}`;
+  const noveltyEvidence = NOVELTY_RE.test(hay) ? [NOVELTY_RE.source] : [];
+  const cosmetic = COSMETIC_RE.test(hay);
+  const fakeNew = FAKE_NEW_RE.test(hay);
+  const high = SATURATED_RE.test(hay) || cosmetic || fakeNew;
+  const functionalDifference = noveltyEvidence.length
+    ? 'Функциональный/запусковый признак новизны.'
+    : cosmetic
+      ? 'Только косметическое отличие.'
+      : '';
+  const isActuallyNew = noveltyEvidence.length > 0 && !cosmetic && !fakeNew;
+  return {
+    isActuallyNew,
+    noveltyEvidence,
+    existingAlternatives: high ? 'Много аналогов на маркетплейсах.' : '',
+    functionalDifference,
+    marketSaturation: high ? 'high' : noveltyEvidence.length ? 'low' : 'medium',
+    rejectCode: isActuallyNew ? null : 'NOT_ACTUALLY_NEW',
+  };
+}
+
 export function hardRejectTopic(title: string, text = ''): HardRejectResult {
   const hay = `${title}\n${text}`.trim();
   if (!hay) {
-    return { reject: true, reason: 'Пустой материал — нет покупаемого продукта.' };
+    return { reject: true, reason: 'Пустой материал — нет покупаемого продукта.', rejectCode: 'NO_PRODUCT' };
   }
-
   for (const re of HARD_REJECT_PATTERNS) {
     if (re.test(hay)) {
       return {
         reject: true,
         reason: `Жёсткий reject: политика/знаменитости/культура/природа/непокупаемая тема (${re.source}).`,
+        rejectCode: 'HARD_TOPIC',
       };
     }
   }
-
   for (const re of NON_BUYABLE_RESEARCH) {
     if (re.test(hay)) {
       return {
         reject: true,
         reason: 'Жёсткий reject: исследование/прототип без товара, который можно купить или предзаказать.',
+        rejectCode: 'NON_BUYABLE_RESEARCH',
       };
     }
   }
-
-  const hasBuyableSignal = BUYABLE_PRODUCT_PATTERNS.some((re) => re.test(hay));
-  if (!hasBuyableSignal) {
+  if (!BUYABLE_PRODUCT_PATTERNS.some((re) => re.test(hay))) {
     return {
       reject: true,
       reason: 'Жёсткий reject: нет явного покупаемого продукта/устройства (buy/preorder).',
+      rejectCode: 'NO_PRODUCT',
     };
   }
+  const novelty = assessNovelty(title, text);
+  if (!novelty.isActuallyNew) {
+    return {
+      reject: true,
+      reason: 'Жёсткий reject: NOT_ACTUALLY_NEW — нет новизны / массовый старый товар / только косметика.',
+      rejectCode: 'NOT_ACTUALLY_NEW',
+      novelty,
+    };
+  }
+  return { reject: false, reason: '', rejectCode: null, novelty };
+}
 
-  return { reject: false, reason: '' };
+/** Deterministic Scout/U1 gate for tests (no OpenRouter). */
+export function evaluateTopicLocal(title: string, text = '') {
+  const gate = hardRejectTopic(title, text);
+  const novelty = gate.novelty ?? assessNovelty(title, text);
+  const interesting = !gate.reject;
+  return {
+    interesting,
+    score: interesting ? 75 : 0,
+    reason: gate.reject ? gate.reason : 'Покупаемый новый consumer-продукт с признаком новизны.',
+    productType: interesting ? 'gadget' : 'none',
+    ...novelty,
+    rejectCode: gate.rejectCode ?? novelty.rejectCode,
+    isActuallyNew: interesting,
+  };
 }
 
 /** Keyword prefilter for RSS (same policy as hardRejectTopic, looser on product signals for gadget feeds). */

@@ -1,7 +1,7 @@
 ﻿import { getOpenRouterClient, parseJsonObject, clampText } from './shared';
-import { hardRejectTopic } from './hard-reject';
+import { hardRejectTopic, evaluateTopicLocal, type NoveltyAssessment } from './hard-reject';
 
-export interface ScoutResult {
+export interface ScoutResult extends Partial<NoveltyAssessment> {
   interesting: boolean;
   score: number;
   reason: string;
@@ -20,8 +20,8 @@ const SCOUT_SYSTEM_PROMPT = [
   'чтобы улучшить быт или работу. Без покупаемого продукта — всегда reject.',
   'Мы на шаг впереди маркетплейсов: ищем то, что скоро окажется на Taobao/Temu/Amazon/AliExpress',
   'или уже на Kickstarter/Indiegogo и в gadget-прессе (New Atlas, Yanko Design).',
-  'Главный вопрос: есть ли конкретный ТОВАР/УСТРОЙСТВО, и захочет ли обычный человек его купить?',
-  'Лёгкий плюс к оценке, если товар вызывает «вау / не могу поверить, что это уже существует».',
+  'Главный вопрос: это конкретный НОВЫЙ товар/устройство, о котором обычный человек захочет узнать, показать другу или подумать о покупке?',
+  'Поля: isActuallyNew, noveltyEvidence[], functionalDifference, marketSaturation, rejectCode. Пустая новизна / только цвет-упаковка → rejectCode=NOT_ACTUALLY_NEW.',
   '',
   'Оценка 0–100 строго суммой A–E:',
   'A желание купить 0–30; B новизна / wow-disbelief 0–20; C практическая польза (быт/работа) 0–20;',
@@ -56,12 +56,7 @@ const SCOUT_SYSTEM_PROMPT = [
 export async function scoutArticle(title: string, text: string): Promise<ScoutResult> {
   const gate = hardRejectTopic(title, text);
   if (gate.reject) {
-    return {
-      interesting: false,
-      score: 0,
-      reason: gate.reason,
-      productType: 'none',
-    };
+    return { ...evaluateTopicLocal(title, text), interesting: false, score: 0, productType: 'none' };
   }
 
   const client = getOpenRouterClient();
@@ -86,11 +81,12 @@ export async function scoutArticle(title: string, text: string): Promise<ScoutRe
           `Текст: ${clampText(text, 8000)}`,
           '',
           'Верни только JSON:',
-          '{"interesting": boolean, "score": number, "reason": string, "productType": string,',
-          ' "parts": {"a": number, "b": number, "c": number, "d": number, "e": number}}',
-          'score = a+b+c+d+e. interesting=true только если score>=75 и есть покупаемый продукт/устройство.',
-          'Если политика/celebrities/певцы/непокупаемая тема — score=0, interesting=false, productType="none".',
-          'productType: краткий тип товара или "none". reason: 1 короткое предложение на русском.',
+          '{"interesting":boolean,"score":number,"reason":string,"productType":string,"isActuallyNew":boolean,',
+          '"noveltyEvidence":string[],"existingAlternatives":string,"functionalDifference":string,',
+          '"marketSaturation":"low"|"medium"|"high","rejectCode":string|null,',
+          '"parts":{"a":number,"b":number,"c":number,"d":number,"e":number}}',
+          'score=a+b+c+d+e. interesting=true только если score>=75, покупаемый НОВЫЙ продукт, isActuallyNew, noveltyEvidence не пуст.',
+          'high+пустой functionalDifference / только косметика → rejectCode=NOT_ACTUALLY_NEW. productType или "none". reason: 1 фраза RU.',
         ].join('\n'),
       },
     ],
@@ -135,13 +131,30 @@ export async function scoutArticle(title: string, text: string): Promise<ScoutRe
     productType.toLowerCase() === 'none' ||
     productType.toLowerCase() === 'n/a';
 
-  // Prefer model hard-reject flag; also reject missing product; otherwise gate on threshold 75.
+  // Deterministic novelty already passed hardReject; model may still veto.
+  const n = gate.novelty!;
+  const modelEvidence = Array.isArray(parsed.noveltyEvidence)
+    ? parsed.noveltyEvidence.filter((x): x is string => typeof x === 'string' && !!x.trim())
+    : n.noveltyEvidence;
+  const functionalDifference =
+    typeof parsed.functionalDifference === 'string' && parsed.functionalDifference.trim()
+      ? parsed.functionalDifference.trim()
+      : n.functionalDifference;
+  const marketSaturation =
+    parsed.marketSaturation === 'low' ||
+    parsed.marketSaturation === 'medium' ||
+    parsed.marketSaturation === 'high'
+      ? parsed.marketSaturation
+      : n.marketSaturation;
+  const isActuallyNew =
+    parsed.isActuallyNew !== false &&
+    modelEvidence.length > 0 &&
+    !(marketSaturation === 'high' && !functionalDifference);
   const interesting =
-    parsed.interesting === false || noProduct ? false : score >= SCOUT_SCORE_THRESHOLD;
-
-  if (interesting === false && noProduct && score > 0) {
-    score = 0;
-  }
+    parsed.interesting === false || noProduct || !isActuallyNew
+      ? false
+      : score >= SCOUT_SCORE_THRESHOLD;
+  if (!interesting && (noProduct || !isActuallyNew) && score > 0) score = 0;
 
   return {
     interesting,
@@ -151,9 +164,20 @@ export async function scoutArticle(title: string, text: string): Promise<ScoutRe
         ? parsed.reason
         : noProduct
           ? 'Нет явного покупаемого продукта/устройства.'
-          : 'No reason provided by scout model.',
+          : !isActuallyNew
+            ? 'Нет доказательства новизны (NOT_ACTUALLY_NEW).'
+            : 'No reason provided by scout model.',
     productType: productType || 'none',
+    isActuallyNew,
+    noveltyEvidence: modelEvidence,
+    existingAlternatives:
+      typeof parsed.existingAlternatives === 'string'
+        ? parsed.existingAlternatives
+        : n.existingAlternatives,
+    functionalDifference,
+    marketSaturation,
+    rejectCode: interesting ? null : isActuallyNew ? null : 'NOT_ACTUALLY_NEW',
   };
 }
 
-export { scoutArticle as scouterArticle };
+export { scoutArticle as scouterArticle, evaluateTopicLocal };

@@ -7,16 +7,21 @@ export interface ReviewResult {
 }
 
 const REVIEW_MODEL = process.env.OPENROUTER_REVIEW_MODEL ?? 'google/gemini-2.5-flash-lite';
+
+/** Blogger / ad headline — return to Editor (SP-A-030-U1). */
+const BLOGGER_TONE_RE =
+  /ребята|друзья|вы\s+только\s+посмотрите|ваш\s+спаситель|этот\s+малыш|просто\s+находка|это\s+же\s+не\s+просто|забудьте\s+про|вы\s+будете\s+в\s+восторге|берите,?\s+пока|маст-?хэв|идеальный\s+выбор|стильный\s+аксессуар|!\s*$/im;
+
 const REVIEW_SYSTEM_PROMPT = [
-  'Ты технический эксперт SmartProto — медиа ТОЛЬКО о товарах, которые обычный человек может КУПИТЬ или ПРЕДЗАКАЗАТЬ',
+  'Ты технический эксперт SmartProto — медиа ТОЛЬКО о НОВЫХ товарах, которые обычный человек может КУПИТЬ или ПРЕДЗАКАЗАТЬ',
   'и использовать для быта/работы: smart gadgets / work tools / portable electronics / AI hardware / productivity devices.',
-  'HARD REJECT — technicalVerdict ОБЯЗАН начинаться с REJECT:, если:',
-  'нет конкретного покупаемого продукта/устройства; Trump/политика/госновости;',
-  'celebrities/певцы/знаменитости/актёры; singers/музыка/чарты; writers/книги/мемуары;',
-  'кино/сериалы/culture drama; природа/wildlife/слоны; музеи/архитектура;',
-  'лабораторный прототип без buy/preorder; абстрактные новости без товара.',
+  'HARD REJECT / вернуть Editor — technicalVerdict ОБЯЗАН начинаться с REJECT:, если:',
+  'нет покупаемого продукта; нет доказательства новизны; массовый старый товар как сенсация;',
+  'заголовок-реклама; обращение к читателю; блогерский тон; нет сравнения с аналогами;',
+  'не ясно почему писать сейчас; Trump/политика; celebrities; writers; кино; wildlife; музеи;',
+  'лабораторный прототип без buy/preorder; Docker/DevOps/SmartProto-internal/API libs.',
   'keyAspects всё равно 3 коротких пункта.',
-  'Иначе подтверди техническую достоверность и выдели 3 ключевых инженерных/продуктовых аспекта.',
+  'Иначе подтверди достоверность и 3 аспекта, включая отличие от аналогов.',
 ].join(' ');
 
 function normalizeKeyAspects(value: unknown): string[] {
@@ -42,13 +47,8 @@ export async function reviewArticle(articleData: object): Promise<ReviewResult> 
       : typeof (articleData as { content?: unknown }).content === 'string'
         ? (articleData as { content: string }).content
         : '';
-  const gate = hardRejectTopic(title, text);
-  if (gate.reject) {
-    return {
-      technicalVerdict: `REJECT: ${gate.reason}`,
-      keyAspects: ['нет покупаемого продукта', 'off-topic для SmartProto', 'не публиковать'],
-    };
-  }
+  const local = reviewDraftLocal(title, text);
+  if (local) return local;
 
   const client = getOpenRouterClient();
   const completion = await client.chat.completions.create({
@@ -87,6 +87,32 @@ export async function reviewArticle(articleData: object): Promise<ReviewResult> 
     technicalVerdict: parsed.technicalVerdict,
     keyAspects,
   };
+}
+
+/** Deterministic Reviewer gate for tests (no OpenRouter). */
+export function reviewDraftLocal(title: string, text: string): ReviewResult | null {
+  const gate = hardRejectTopic(title, text);
+  if (gate.reject) {
+    return {
+      technicalVerdict: `REJECT: ${gate.reason}`,
+      keyAspects: [
+        gate.rejectCode === 'NOT_ACTUALLY_NEW' ? 'нет доказательства новизны' : 'нет покупаемого продукта',
+        'off-topic для SmartProto',
+        'не публиковать',
+      ],
+    };
+  }
+  if (BLOGGER_TONE_RE.test(`${title}\n${text}`)) {
+    return {
+      technicalVerdict: 'REJECT: блогерский/рекламный тон — вернуть Editor (спокойный tech-журналист).',
+      keyAspects: [
+        'убрать обращения к читателю',
+        'убрать рекламные формулировки',
+        'добавить новизну и сравнение с аналогами',
+      ],
+    };
+  }
+  return null;
 }
 
 export { reviewArticle as reviewerArticle };
