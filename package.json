@@ -10,7 +10,11 @@
     "moderate": "tsx scripts/moderate-drafts.ts",
     "test:newsroom": "tsx scripts/run-newsroom.ts",
     "factory:shift": "tsx scripts/run-factory-shift.ts",
-    "publish:latest": "tsx scripts/publish-latest.ts"
+    "publish:latest": "tsx scripts/publish-latest.ts",
+    "polish:published": "tsx scripts/polish-published.ts",
+    "gadgets:loop": "tsx scripts/run-gadgets-loop.ts",
+    "polish:inspect": "tsx scripts/inspect-polish-articles.ts",
+    "inspect:articles": "tsx scripts/inspect-polish-articles.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

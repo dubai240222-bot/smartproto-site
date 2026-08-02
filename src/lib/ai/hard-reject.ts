@@ -59,6 +59,13 @@ const HARD_REJECT_PATTERNS: RegExp[] = [
   /\bopinion:\b/i,
   /\bshopping guide\b/i,
   /\bback to school\b/i,
+  // Cars / automotive news without a consumer gadget
+  /\bhybrid suv\b/i,
+  /\blargest suv\b/i,
+  /\boff-road (power|suv)\b/i,
+  /\bgalaxy cruiser\b/i,
+  /\baudi q9\b/i,
+  /\b\d[\d,]*-?hp\b/i,
   // Internal / meta / infra — no consumer purchase path
   /\bdocker\b/i,
   /\bhacker news\b/i,
