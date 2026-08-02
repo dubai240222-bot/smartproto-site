@@ -111,7 +111,8 @@
     "https://newatlas.com/wearables/astell-kern-luna-iem/",
     "https://newatlas.com/wearables/contact-lens-infrared/",
     "https://newatlas.com/wearables/review-movengine-aircore-owh-headphones/",
-    "https://newatlas.com/electronics/worlds-smallest-led-pixels-127000-ppi-display/"
+    "https://newatlas.com/electronics/worlds-smallest-led-pixels-127000-ppi-display/",
+    "https://newatlas.com/wearables/ring-mouse-android-windows-ios-macos/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -225,7 +226,8 @@
     "https://newatlas.com/wearables/astell-kern-luna-iem/",
     "https://newatlas.com/wearables/contact-lens-infrared/",
     "https://newatlas.com/wearables/review-movengine-aircore-owh-headphones/",
-    "https://newatlas.com/electronics/worlds-smallest-led-pixels-127000-ppi-display/"
+    "https://newatlas.com/electronics/worlds-smallest-led-pixels-127000-ppi-display/",
+    "https://newatlas.com/wearables/ring-mouse-android-windows-ios-macos/"
   ],
   "entries": [
     {
@@ -1249,6 +1251,15 @@
       "processedAt": "2026-08-02T06:34:15.213Z",
       "status": "published",
       "slug": "world-s-smallest-led-pixels-squeeze-into-astounding-127-000-ppi-display",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/wearables/ring-mouse-android-windows-ios-macos/",
+      "url": "https://newatlas.com/wearables/ring-mouse-android-windows-ios-macos/",
+      "title": "Кольцо-мышь для удобного управления устройствами",
+      "processedAt": "2026-08-02T06:35:15.032Z",
+      "status": "published",
+      "slug": "ring-mouse-makes-doomscrolling-easier-than-ever",
       "kind": "news"
     }
   ]
