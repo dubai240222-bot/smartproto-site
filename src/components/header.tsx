@@ -41,20 +41,28 @@ export function Header() {
     <header className="border-b border-[var(--border)] bg-[var(--surface)] text-[var(--text)] transition-colors">
       <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          {/* Brand mark: icon + SMARTPROTO + slogan (all in the logo image) */}
+          {/* Brand: advanced SP mark + wordmark + slogan */}
           <Link
             href="/"
-            className="group inline-flex shrink-0 items-center self-start hover:opacity-90"
+            className="group inline-flex min-w-0 max-w-full shrink-0 items-center gap-2.5 self-start sm:gap-3"
             aria-label="SmartProto — на главную"
           >
             <Image
-              src="/brand/smartproto-logo.png"
-              alt="SmartProto — Технологии раньше, чем они станут мейнстримом"
-              width={1024}
-              height={341}
+              src="/brand/smartproto-mark.png"
+              alt=""
+              width={622}
+              height={670}
               priority
-              className="h-10 w-auto max-w-[min(100%,280px)] object-contain object-left sm:h-12 sm:max-w-[340px]"
+              className="h-9 w-9 shrink-0 object-contain object-center sm:h-10 sm:w-10"
             />
+            <span className="min-w-0 leading-tight">
+              <span className="block font-serif text-base font-bold tracking-[0.04em] text-[var(--text)] transition group-hover:text-[var(--accent)] sm:text-lg">
+                SMARTPROTO
+              </span>
+              <span className="mt-0.5 block truncate text-[10px] leading-snug text-[var(--muted)] sm:text-[11px]">
+                Технологии раньше, чем они станут мейнстримом
+              </span>
+            </span>
           </Link>
 
           {/* Right Controls: Search, RU, Theme Toggle */}
