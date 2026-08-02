@@ -1,0 +1,12 @@
+{
+  "mode": "SP-A-050",
+  "cycle": "news",
+  "intervalMs": 600000,
+  "updatedAt": "2026-08-02T17:38:45.227Z",
+  "ticksRan": 1,
+  "published": 1,
+  "consecutiveErrors": 0,
+  "stopped": false,
+  "lastTitle": "3D-принтер Anycubic Photon P1 Max для крупной печати",
+  "lastSlug": "anycubic-photon-p1-max-3d-printer"
+}

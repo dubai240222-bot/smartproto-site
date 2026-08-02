@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { ArrowRight, Clock, Calendar, Sparkles } from 'lucide-react';
 import type { Article } from '@/data/articles';
-import { formatPublishedAt, isChinaArticle } from '@/lib/article-utils';
+import { formatPublishedAt } from '@/lib/article-utils';
 import { formatAuthorByline, resolveAuthorForArticle } from '@/lib/authors';
 import { MediaPlaceholder, MediaThumb } from '@/components/media-placeholder';
+import { toPublicCategory } from '@/lib/public-labels';
 
 export function CategoryTags({
   category,
@@ -12,7 +13,9 @@ export function CategoryTags({
   category: string;
   className?: string;
 }) {
-  const parts = category ? category.split('/').map((s) => s.trim()).filter(Boolean) : ['ОБЩЕЕ'];
+  // SP-A-050: never show КИТАЙ / Qwen / factory marks on cards.
+  const publicCat = toPublicCategory(category);
+  const parts = publicCat ? [publicCat] : ['Гаджеты'];
 
   return (
     <div className={`flex flex-wrap items-center gap-1.5 ${className}`}>
@@ -31,17 +34,9 @@ export function CategoryTags({
   );
 }
 
-/** Small China · Qwen chip — only when article is from that channel. */
-export function ChinaSourceBadge({ article }: { article: Article }) {
-  if (!isChinaArticle(article)) return null;
-  return (
-    <Link
-      href={`/?category=${encodeURIComponent('Китай')}`}
-      className="inline-flex items-center rounded border border-[var(--accent)]/40 bg-[var(--accent)]/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--accent)] hover:underline"
-    >
-      Китай · Qwen
-    </Link>
-  );
+/** SP-A-050: factory-origin badge removed from public UI. */
+export function ChinaSourceBadge(_props: { article: Article }) {
+  return null;
 }
 
 /** Card meta: author persona · published time (China desk resolves to Линь Цзе). */
@@ -245,7 +240,6 @@ export function QuickUpdateItem({ article }: { article: Article }) {
             {cardByline(article)}
           </span>
           <span className="text-[var(--muted)] opacity-40">•</span>
-          <ChinaSourceBadge article={article} />
           <CategoryTags category={article.category} />
         </div>
 

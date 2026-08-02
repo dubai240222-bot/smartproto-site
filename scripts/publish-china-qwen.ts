@@ -324,13 +324,14 @@ async function main() {
       id: slug,
       slug,
       title: draft.title,
-      category: 'КИТАЙ / ГАДЖЕТ',
+      category: 'Гаджеты',
       tags: Array.from(
         new Set([
-          ...draft.tags.map((t) => t.replace(/^#/, '')),
-          'Китай',
-          'Qwen',
+          ...draft.tags
+            .map((t) => t.replace(/^#/, ''))
+            .filter((t) => !/^(китай|china|qwen|gemini)$/i.test(t)),
           'новинка',
+          'гаджет',
           dossier.manufacturer,
         ].filter(Boolean)),
       ).slice(0, 10),

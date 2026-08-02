@@ -1,31 +1,36 @@
 /**
- * SP-A-031-R2 — One newsroom tick (no multi-hour loops).
+ * SP-A-050 — One newsroom tick for a single cycle type.
  *
  * Order per tick (max 1 publish total — bounds AI spend):
  *   1) China Collector → Qwen → Editor (if a good candidate exists)
  *   2) else RSS → hardReject → Scout → Reviewer → Editor
  *
- * Git commit/push is left to GitHub Actions (or the operator).
- * TEST cadence: GHA cron every 3 minutes.
+ * Cycle types (independent supervisors / GHA jobs):
+ *   news    — short format; interval floor 10m (not an obligation to publish junk)
+ *   article — fuller + consumer scenario + Wow Score; interval floor 60m
+ *
+ * Git commit/push is left to the dual supervisor or GitHub Actions.
  */
 import path from 'node:path';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { existsSync, readFileSync, writeFileSync, unlinkSync } from 'node:fs';
 import dotenv from 'dotenv';
 import chalk from 'chalk';
 import { fetchRssFeed, type RssItem } from '../src/lib/collectors/rss';
 import { extractArticleImage } from '../src/lib/collectors/image-extractor';
 import { scoutArticle, SCOUT_SCORE_THRESHOLD } from '../src/lib/ai/scout';
 import { reviewArticle } from '../src/lib/ai/reviewer';
-import { writeDraft } from '../src/lib/ai/editor';
+import { writeDraft, type DraftFormat } from '../src/lib/ai/editor';
 import { hardRejectTopic, looksBuyableGadget } from '../src/lib/ai/hard-reject';
 import { filterRemovedArticles, isRemovedSlug } from '../src/lib/removed-slugs';
 import { stampAuthorForPipeline } from '../src/lib/authors';
+import { toPublicCategory, toPublicTags } from '../src/lib/public-labels';
 import {
   CHINA_CATEGORY,
-  CHINA_SOURCE_TAG,
-  CHINA_TAG,
   dossierPublishable,
 } from '../src/lib/ai/china-publish-gate';
+
+export type CycleType = 'news' | 'article';
 
 function loadEnvFiles(): void {
   const root = process.cwd();
@@ -36,9 +41,13 @@ function loadEnvFiles(): void {
 const SOURCES: [string, string][] = [
   ['Yanko Design', 'https://www.yankodesign.com/feed/'],
   ['New Atlas', 'https://newatlas.com/index.rss'],
+  ['New Atlas Electronics', 'https://newatlas.com/electronics/index.rss'],
+  ['New Atlas Wearables', 'https://newatlas.com/wearables/index.rss'],
+  ['Gadget Flow', 'https://thegadgetflow.com/feed/'],
   ['Hackaday', 'https://hackaday.com/blog/feed/'],
   ['TechCrunch', 'https://techcrunch.com/feed/'],
   ['The Verge', 'https://www.theverge.com/rss/index.xml'],
+  ['The Verge Gadgets', 'https://www.theverge.com/rss/gadgets/index.xml'],
   ['Engadget', 'https://www.engadget.com/rss.xml'],
   ['9to5Google', 'https://9to5google.com/feed/'],
   ['Android Authority', 'https://www.androidauthority.com/feed'],
@@ -56,6 +65,8 @@ interface JournalEntry {
   reason?: string;
   slug?: string;
   channel?: 'china-qwen' | 'rss';
+  /** SP-A-050 — which independent cycle published this */
+  cycle?: CycleType;
 }
 
 interface JournalData {
@@ -82,7 +93,67 @@ interface Article {
 }
 
 function parseArgs(argv: string[]) {
-  return { force: argv.includes('--force'), dryRun: argv.includes('--dry-run') };
+  let cycle: CycleType = 'news';
+  let cycleFromCli = false;
+  for (const a of argv) {
+    if (a === '--cycle=article' || a === '--article') {
+      cycle = 'article';
+      cycleFromCli = true;
+    }
+    if (a === '--cycle=news' || a === '--news') {
+      cycle = 'news';
+      cycleFromCli = true;
+    }
+  }
+  if (!cycleFromCli) {
+    const envCycle = process.env.SMARTPROTO_CYCLE_TYPE?.trim().toLowerCase();
+    if (envCycle === 'article' || envCycle === 'news') cycle = envCycle;
+  }
+  return {
+    force: argv.includes('--force'),
+    dryRun: argv.includes('--dry-run'),
+    cycle,
+    format: (cycle === 'news' ? 'news' : 'article') as DraftFormat,
+  };
+}
+
+const PUBLISH_LOCK = path.resolve(process.cwd(), 'data', 'factory-publish.lock');
+
+function acquirePublishLock(): boolean {
+  try {
+    if (existsSync(PUBLISH_LOCK)) {
+      const raw = readFileSync(PUBLISH_LOCK, 'utf8').trim();
+      const [pidStr, tsStr] = raw.split(':');
+      const pid = Number(pidStr);
+      const ts = Number(tsStr);
+      // Stale after 10 minutes
+      if (Number.isFinite(ts) && Date.now() - ts < 10 * 60 * 1000) {
+        try {
+          if (Number.isFinite(pid) && pid > 0) {
+            process.kill(pid, 0);
+            return false;
+          }
+        } catch {
+          /* stale pid */
+        }
+      }
+    }
+    writeFileSync(PUBLISH_LOCK, `${process.pid}:${Date.now()}`, 'utf8');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function releasePublishLock(): void {
+  try {
+    if (existsSync(PUBLISH_LOCK)) {
+      const raw = readFileSync(PUBLISH_LOCK, 'utf8').trim();
+      if (raw.startsWith(`${process.pid}:`)) unlinkSync(PUBLISH_LOCK);
+    }
+  } catch {
+    /* ignore */
+  }
 }
 
 /** SP-A-042 — console-only factory tick summary (GHA + local). */
@@ -256,9 +327,17 @@ async function markRejected(
   item: RssItem,
   reason: string,
   scoutScore?: number,
+  opts?: { permanent?: boolean },
 ): Promise<void> {
-  if (!journal.processedUrls.includes(item.url)) journal.processedUrls.push(item.url);
-  if (!journal.processedIds.includes(item.id)) journal.processedIds.push(item.id);
+  // SP-A-050: soft scout/worthiness skips must NOT permanently burn the URL —
+  // interval ticks need another chance when a better angle or higher Wow appears.
+  const permanent =
+    opts?.permanent !== false &&
+    !/scout reject|not worthy|draft too short|score \d+/i.test(reason || '');
+  if (permanent) {
+    if (!journal.processedUrls.includes(item.url)) journal.processedUrls.push(item.url);
+    if (!journal.processedIds.includes(item.id)) journal.processedIds.push(item.id);
+  }
   journal.entries.push({
     id: item.id,
     url: item.url,
@@ -274,6 +353,8 @@ async function markRejected(
 
 async function tryChinaPublishOnce(opts: {
   dryRun: boolean;
+  cycle: CycleType;
+  format: DraftFormat;
   articlesPath: string;
   draftsDir: string;
   journalPath: string;
@@ -393,7 +474,7 @@ async function tryChinaPublishOnce(opts: {
     };
 
     const reviewData = {
-      technicalVerdict: 'PASS: China Qwen dossier — buyable consumer gadget candidate',
+      technicalVerdict: 'PASS: buyable consumer gadget candidate (dossier)',
       productName: dossier.productName,
       manufacturer: dossier.manufacturer,
       evidence: dossier.evidence,
@@ -401,6 +482,7 @@ async function tryChinaPublishOnce(opts: {
 
     const framed = {
       ...articleData,
+      format: opts.format,
       title: dossier.productName || articleData.title,
       text: [
         `Новый гаджет / устройство (источник: ${c.sourceName}).`,
@@ -426,7 +508,7 @@ async function tryChinaPublishOnce(opts: {
             {
               ...reviewData,
               technicalVerdict:
-                'PASS with limits: sparse China source — mark unknowns, no unsupported claims',
+                'PASS with limits: sparse source — mark unknowns, no unsupported claims',
             },
           );
         } catch (err2) {
@@ -451,8 +533,9 @@ async function tryChinaPublishOnce(opts: {
     }
 
     const wc = wordCount(draft.text);
-    if (wc < 100) {
-      console.log(chalk.yellow(`China draft too short (${wc})`));
+    const minWords = opts.format === 'news' ? 40 : 120;
+    if (wc < minWords) {
+      console.log(chalk.yellow(`China draft too short for ${opts.format} (${wc} < ${minWords})`));
       continue;
     }
 
@@ -485,84 +568,109 @@ async function tryChinaPublishOnce(opts: {
       continue;
     }
 
-    const publishedAt = new Date().toISOString();
-    const article: Article = {
-      id: slug,
-      slug,
-      title: draft.title,
-      category: CHINA_CATEGORY,
-      tags: Array.from(
-        new Set(
-          [
-            ...draft.tags.map((t) => t.replace(/^#/, '')),
-            CHINA_TAG,
-            CHINA_SOURCE_TAG,
-            'новинка',
-            dossier.manufacturer,
-          ].filter(Boolean),
+    if (!acquirePublishLock()) {
+      console.log(chalk.yellow('Publish lock held — another cycle writing; skip to avoid double publish'));
+      opts.metrics.skipReason = 'cross-cycle publish lock';
+      return false;
+    }
+    try {
+      // Re-check product identity after lock (other cycle may have just published)
+      const fresh = await loadState(opts.journalPath, opts.articlesPath);
+      if (productKey && fresh.productIds.has(productKey)) {
+        console.log(chalk.yellow(`Cross-cycle product duplicate after lock: ${productKey}`));
+        opts.metrics.skipReason = 'cross-cycle product-identity';
+        continue;
+      }
+
+      const publishedAt = new Date().toISOString();
+      const publicTags = toPublicTags([
+        ...draft.tags.map((t) => t.replace(/^#/, '')),
+        'новинка',
+        'гаджет',
+        dossier.manufacturer || '',
+        opts.cycle === 'news' ? 'новость' : 'обзор',
+      ]);
+      const article: Article = {
+        id: slug,
+        slug,
+        title: draft.title,
+        category: toPublicCategory(CHINA_CATEGORY),
+        tags: Array.from(new Set(publicTags)).slice(0, 10),
+        summary: summaryOf(draft.text),
+        content: draft.text,
+        sourceUrl: c.sourceUrl,
+        publishedAt,
+        readTime: `${Math.max(1, Math.ceil(wc / 150))} мин`,
+        imageUrl,
+        ...stampAuthorForPipeline('china-qwen', { sourceUrl: c.sourceUrl, slug }),
+      };
+
+      const deduped = filterRemovedArticles(
+        fresh.articles.filter(
+          (a) => a.id !== article.id && a.slug !== article.slug && a.sourceUrl !== article.sourceUrl,
         ),
-      ).slice(0, 10),
-      summary: summaryOf(draft.text),
-      content: draft.text,
-      sourceUrl: c.sourceUrl,
-      publishedAt,
-      readTime: `${Math.max(1, Math.ceil(wc / 150))} мин`,
-      imageUrl,
-      ...stampAuthorForPipeline('china-qwen', { sourceUrl: c.sourceUrl, slug }),
-    };
+      );
+      deduped.unshift(article);
+      await writeFile(opts.articlesPath, JSON.stringify(deduped, null, 2) + '\n', 'utf8');
 
-    const deduped = filterRemovedArticles(
-      opts.articles.filter(
-        (a) => a.id !== article.id && a.slug !== article.slug && a.sourceUrl !== article.sourceUrl,
-      ),
-    );
-    deduped.unshift(article);
-    await writeFile(opts.articlesPath, JSON.stringify(deduped, null, 2) + '\n', 'utf8');
+      await mkdir(opts.draftsDir, { recursive: true });
+      await writeFile(
+        path.join(opts.draftsDir, `${Date.now()}-${slug}.json`),
+        JSON.stringify(
+          {
+            generatedAt: publishedAt,
+            channel: 'china-qwen',
+            cycle: opts.cycle,
+            format: opts.format,
+            source: c,
+            dossier,
+            draft: article,
+          },
+          null,
+          2,
+        ),
+        'utf8',
+      );
 
-    await mkdir(opts.draftsDir, { recursive: true });
-    await writeFile(
-      path.join(opts.draftsDir, `${Date.now()}-${slug}.json`),
-      JSON.stringify(
-        { generatedAt: publishedAt, channel: 'china-qwen', source: c, dossier, draft: article },
-        null,
-        2,
-      ),
-      'utf8',
-    );
+      if (!fresh.journal.processedUrls.includes(c.sourceUrl)) {
+        fresh.journal.processedUrls.push(c.sourceUrl);
+      }
+      fresh.journal.processedIds.push(slug);
+      fresh.journal.entries.push({
+        id: slug,
+        url: c.sourceUrl,
+        title: draft.title,
+        processedAt: publishedAt,
+        status: 'published',
+        reason: gate.reason,
+        slug,
+        channel: 'china-qwen',
+        cycle: opts.cycle,
+      });
+      await writeFile(opts.journalPath, JSON.stringify(fresh.journal, null, 2) + '\n', 'utf8');
 
-    if (!opts.journal.processedUrls.includes(c.sourceUrl)) {
-      opts.journal.processedUrls.push(c.sourceUrl);
+      opts.ids.add(slug);
+      opts.urls.add(c.sourceUrl);
+      if (productKey) opts.productIds.add(productKey);
+      const draftKey = normalizeProductIdentity(draft.title);
+      if (draftKey) opts.productIds.add(draftKey);
+      if (opts.lastPublish) {
+        opts.lastPublish.title = draft.title;
+        opts.lastPublish.slug = slug;
+      }
+
+      opts.metrics.publisherStarted = true;
+      opts.metrics.articlesPublished += 1;
+      opts.metrics.reason = `published china/${opts.cycle}`;
+      opts.metrics.skipReason = 'none';
+      console.log(
+        chalk.green.bold(`Published (${opts.cycle}/internal-desk): "${draft.title}" (slug: ${slug})`),
+      );
+      console.log(`Live path: /articles/${slug}`);
+      return true;
+    } finally {
+      releasePublishLock();
     }
-    opts.journal.processedIds.push(slug);
-    opts.journal.entries.push({
-      id: slug,
-      url: c.sourceUrl,
-      title: draft.title,
-      processedAt: publishedAt,
-      status: 'published',
-      reason: gate.reason,
-      slug,
-      channel: 'china-qwen',
-    });
-    await writeFile(opts.journalPath, JSON.stringify(opts.journal, null, 2) + '\n', 'utf8');
-
-    opts.ids.add(slug);
-    opts.urls.add(c.sourceUrl);
-    if (productKey) opts.productIds.add(productKey);
-    const draftKey = normalizeProductIdentity(draft.title);
-    if (draftKey) opts.productIds.add(draftKey);
-    if (opts.lastPublish) {
-      opts.lastPublish.title = draft.title;
-      opts.lastPublish.slug = slug;
-    }
-
-    opts.metrics.publisherStarted = true;
-    opts.metrics.articlesPublished += 1;
-    opts.metrics.reason = 'published china/qwen';
-    opts.metrics.skipReason = 'none';
-    console.log(chalk.green.bold(`Published (China/Qwen): "${draft.title}" (slug: ${slug})`));
-    console.log(`Live path: /articles/${slug}`);
-    return true;
   }
 
   console.log(chalk.gray('China candidates exhausted without publish — fall through to RSS.'));
@@ -572,6 +680,8 @@ async function tryChinaPublishOnce(opts: {
 
 async function publishRssOnce(opts: {
   dryRun: boolean;
+  cycle: CycleType;
+  format: DraftFormat;
   articlesPath: string;
   draftsDir: string;
   journalPath: string;
@@ -583,14 +693,18 @@ async function publishRssOnce(opts: {
   metrics: TickMetrics;
   lastPublish?: { title?: string; slug?: string; wowScore?: number };
 }): Promise<boolean> {
-  console.log(chalk.bold('— Channel B: RSS / editorial office —'));
+  console.log(chalk.bold(`— Channel B: RSS / editorial office (${opts.cycle}) —`));
   opts.metrics.collectorStarted = true;
+  const scoutFloor =
+    opts.cycle === 'article'
+      ? Math.max(SCOUT_SCORE_THRESHOLD, 75)
+      : Math.max(SCOUT_SCORE_THRESHOLD, 70);
 
   const candidates: RssItem[] = [];
   for (const [name, feedUrl] of SOURCES) {
     try {
-      // TEST: dig deeper into feeds (backlog weeks) — 30 items/source
-      const items = await fetchRssFeed(feedUrl, { limit: 30, sourceName: name });
+      // Permanent mode: dig deep enough that 10m/60m ticks still find fresh worthy items.
+      const items = await fetchRssFeed(feedUrl, { limit: 50, sourceName: name });
       for (const item of items) {
         if (!item.url || !item.title) continue;
         if (opts.urls.has(item.url) || opts.ids.has(item.id)) continue;
@@ -598,9 +712,9 @@ async function publishRssOnce(opts: {
         if (opts.ids.has(slug) || isRemovedSlug(slug)) continue;
         const productKey = normalizeProductIdentity(item.title);
         if (productKey && opts.productIds.has(productKey)) continue;
-        if (!looksBuyableGadget(item.title, item.text || '', name)) continue;
-        const gate = hardRejectTopic(item.title, item.text || '');
-        if (gate.reject) {
+        // looksBuyableGadget already applies hardReject + SP-A-049 commodity + feed soften.
+        // Do not re-hardReject here — that undoes Yanko/New Atlas soften and empties the pool.
+        if (!looksBuyableGadget(item.title, item.text || '', name)) {
           opts.metrics.hardRejected += 1;
           continue;
         }
@@ -614,213 +728,332 @@ async function publishRssOnce(opts: {
     }
   }
 
-  candidates.sort(
-    (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
-  );
+  const sourceRank = (name: string) => {
+    const n = (name || '').toLowerCase();
+    if (n.includes('yanko')) return 0;
+    if (n.includes('gadget flow')) return 1;
+    if (n.includes('wearables')) return 2;
+    if (n.includes('electronics')) return 3;
+    if (n.includes('new atlas')) return 4;
+    if (n.includes('verge gadgets')) return 5;
+    if (n.includes('hackaday')) return 6;
+    return 8;
+  };
+  const looksExplainer = (title: string) =>
+    /^(what is|how to|common problems|can using|why you|forget lithium|the seven)\b/i.test(
+      title.trim(),
+    ) ||
+    /\b(how to fix|explained|problems with|partnership|marks breakthrough)\b/i.test(title);
+  candidates.sort((a, b) => {
+    const ae = looksExplainer(a.title) ? 1 : 0;
+    const be = looksExplainer(b.title) ? 1 : 0;
+    if (ae !== be) return ae - be;
+    const sr = sourceRank(a.sourceName) - sourceRank(b.sourceName);
+    if (sr !== 0) return sr;
+    const ai = a.imageUrl ? 0 : 1;
+    const bi = b.imageUrl ? 0 : 1;
+    if (ai !== bi) return ai - bi;
+    return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+  });
 
   opts.metrics.candidatesCollected += candidates.length;
   console.log(`New gadget candidates after filters: ${candidates.length}`);
-  console.log(`Scout threshold: ${SCOUT_SCORE_THRESHOLD}`);
+  console.log(`Scout threshold: ${scoutFloor} (cycle=${opts.cycle})`);
 
-  const item = candidates[0];
-  if (!item) {
+  if (candidates.length === 0) {
     console.log('No RSS candidate — tick idle exit 0.');
     opts.metrics.skipReason = 'no rss candidate';
     return false;
   }
 
-  console.log(chalk.cyan(`Pick: [${item.sourceName}] ${item.title}`));
-  console.log(chalk.gray(item.url));
-
   if (opts.dryRun) {
-    console.log(chalk.cyan('Dry-run: would process this RSS candidate. Stop.'));
+    const item = candidates[0];
+    console.log(chalk.cyan(`Dry-run pick: [${item.sourceName}] ${item.title}`));
     opts.metrics.reason = 'dry-run rss pick';
     return true;
   }
 
-  try {
-    console.log(chalk.gray('Scout...'));
-    opts.metrics.aiStarted = true;
-    opts.metrics.sentToGemini += 1;
-    const scout = await scoutArticle(item.title, item.text || item.title);
-    console.log(`Scout: score=${scout.score} interesting=${scout.interesting} — ${scout.reason}`);
+  // Max 1 publish / tick; try more candidates so soft scout rejects do not idle the cycle.
+  const maxAttempts = Math.min(12, candidates.length);
+  let lastSkip = 'no rss candidate';
 
-    if (!scout.interesting || scout.score < SCOUT_SCORE_THRESHOLD) {
-      console.log(chalk.yellow(`Scout reject (score ${scout.score} < ${SCOUT_SCORE_THRESHOLD}).`));
-      await markRejected(opts.journal, opts.journalPath, item, scout.reason, scout.score);
-      opts.metrics.skipReason = 'scout reject';
-      return false;
-    }
+  for (let i = 0; i < maxAttempts; i++) {
+    const item = candidates[i];
+    console.log(chalk.cyan(`Pick (${i + 1}/${maxAttempts}): [${item.sourceName}] ${item.title}`));
+    console.log(chalk.gray(item.url));
 
-    const sourcePayload = {
-      title: item.title,
-      text: item.text || item.title,
-      url: item.url,
-      sourceName: item.sourceName,
-    };
-
-    console.log(chalk.gray('Reviewer...'));
-    opts.metrics.sentToGemini += 1;
-    const review = await reviewArticle(sourcePayload);
-    if (/^REJECT\b/i.test(review.technicalVerdict)) {
-      console.log(chalk.yellow(`Reviewer reject: ${review.technicalVerdict}`));
-      await markRejected(
-        opts.journal,
-        opts.journalPath,
-        item,
-        review.technicalVerdict,
-        scout.score,
-      );
-      opts.metrics.skipReason = 'reviewer reject';
-      return false;
-    }
-
-    console.log(chalk.gray('Editor...'));
-    opts.metrics.sentToGemini += 1;
-    const draft = await writeDraft(sourcePayload, review);
-    opts.metrics.draftsCreated += 1;
-    if (
-      draft.title.trim().toUpperCase() === 'REJECT' ||
-      draft.tags.some((t) => t.toLowerCase() === '#reject') ||
-      draft.text.trim().toLowerCase() === 'off-topic'
-    ) {
-      console.log(chalk.yellow('Editor hard-reject'));
-      await markRejected(opts.journal, opts.journalPath, item, 'editor hard-reject', scout.score);
-      opts.metrics.skipReason = 'editor hard-reject';
-      return false;
-    }
-
-    let imageUrl = item.imageUrl;
     try {
-      if (!imageUrl) imageUrl = (await extractArticleImage(item.url, draft.title)) || undefined;
-    } catch {
-      /* optional */
-    }
+      console.log(chalk.gray('Scout...'));
+      opts.metrics.aiStarted = true;
+      opts.metrics.sentToGemini += 1;
+      const scout = await scoutArticle(item.title, item.text || item.title);
+      console.log(`Scout: score=${scout.score} interesting=${scout.interesting} — ${scout.reason}`);
 
-    const slug = slugify(item.title);
-    if (isRemovedSlug(slug) || opts.ids.has(slug)) {
-      console.log(chalk.yellow(`Skipped denylisted/seen slug: ${slug}`));
-      await markRejected(opts.journal, opts.journalPath, item, `slug blocked: ${slug}`, scout.score);
-      return false;
-    }
-    const draftProductKey = normalizeProductIdentity(draft.title);
-    const sourceProductKey = normalizeProductIdentity(item.title);
-    if (
-      (draftProductKey && opts.productIds.has(draftProductKey)) ||
-      (sourceProductKey && opts.productIds.has(sourceProductKey))
-    ) {
-      console.log(chalk.yellow(`Skipped product-identity duplicate: ${draftProductKey || sourceProductKey}`));
-      await markRejected(
-        opts.journal,
-        opts.journalPath,
-        item,
-        `product-identity duplicate: ${draftProductKey || sourceProductKey}`,
-        scout.score,
-      );
-      opts.metrics.skipReason = 'product-identity duplicate';
-      return false;
-    }
+      if (!scout.interesting || scout.score < scoutFloor) {
+        console.log(chalk.yellow(`Scout reject (score ${scout.score} < ${scoutFloor}).`));
+        await markRejected(opts.journal, opts.journalPath, item, scout.reason, scout.score, {
+          permanent: false,
+        });
+        // Do not burn URL in opts.urls — news/article ticks may retry later.
+        lastSkip = 'scout reject';
+        continue;
+      }
 
-    const publishedAt = new Date().toISOString();
-    const article: Article = {
-      id: slug,
-      slug,
-      title: draft.title,
-      category: 'ГАДЖЕТ / ПОЛЕЗНО',
-      tags: draft.tags,
-      summary: summaryOf(draft.text),
-      content: draft.text,
-      sourceUrl: item.url,
-      publishedAt,
-      readTime: estimateReadTime(draft.text),
-      ...(imageUrl ? { imageUrl } : {}),
-      ...stampAuthorForPipeline('newsroom-scout', { sourceUrl: item.url, slug }),
-    };
+      // Article cycle: require stronger wow (score) — interval is min pause, not obligation.
+      if (opts.cycle === 'article' && scout.score < 75) {
+        console.log(chalk.yellow(`Article cycle: not worthy enough (wow ${scout.score} < 75)`));
+        lastSkip = 'not worthy for article cycle';
+        continue;
+      }
 
-    const deduped = filterRemovedArticles(
-      opts.articles.filter(
-        (a) => a.id !== article.id && a.slug !== article.slug && a.sourceUrl !== article.sourceUrl,
-      ),
-    );
-    deduped.unshift(article);
-    await writeFile(opts.articlesPath, JSON.stringify(deduped, null, 2) + '\n', 'utf8');
+      const sourcePayload = {
+        title: item.title,
+        text: item.text || item.title,
+        url: item.url,
+        sourceName: item.sourceName,
+        format: opts.format,
+      };
 
-    await mkdir(opts.draftsDir, { recursive: true });
-    await writeFile(
-      path.join(opts.draftsDir, `${Date.now()}-${slug}.json`),
-      JSON.stringify(
-        {
-          generatedAt: publishedAt,
+      console.log(chalk.gray('Reviewer...'));
+      opts.metrics.sentToGemini += 1;
+      const review = await reviewArticle(sourcePayload);
+      if (/^REJECT\b/i.test(review.technicalVerdict)) {
+        console.log(chalk.yellow(`Reviewer reject: ${review.technicalVerdict}`));
+        await markRejected(
+          opts.journal,
+          opts.journalPath,
+          item,
+          review.technicalVerdict,
+          scout.score,
+        );
+        opts.urls.add(item.url);
+        lastSkip = 'reviewer reject';
+        continue;
+      }
+
+      console.log(chalk.gray(`Editor (${opts.format})...`));
+      opts.metrics.sentToGemini += 1;
+      const draft = await writeDraft(sourcePayload, review);
+      opts.metrics.draftsCreated += 1;
+      if (
+        draft.title.trim().toUpperCase() === 'REJECT' ||
+        draft.tags.some((t) => t.toLowerCase() === '#reject') ||
+        draft.text.trim().toLowerCase() === 'off-topic'
+      ) {
+        console.log(chalk.yellow('Editor hard-reject'));
+        await markRejected(opts.journal, opts.journalPath, item, 'editor hard-reject', scout.score);
+        opts.urls.add(item.url);
+        lastSkip = 'editor hard-reject';
+        continue;
+      }
+
+      const wc = wordCount(draft.text);
+      const minWords = opts.format === 'news' ? 40 : 120;
+      if (wc < minWords) {
+        console.log(chalk.yellow(`Draft too short for ${opts.format} (${wc} < ${minWords})`));
+        lastSkip = 'draft too short';
+        continue;
+      }
+
+      let imageUrl = item.imageUrl;
+      try {
+        if (!imageUrl) imageUrl = (await extractArticleImage(item.url, draft.title)) || undefined;
+      } catch {
+        /* optional */
+      }
+
+      const slug = slugify(item.title);
+      if (isRemovedSlug(slug) || opts.ids.has(slug)) {
+        console.log(chalk.yellow(`Skipped denylisted/seen slug: ${slug}`));
+        await markRejected(opts.journal, opts.journalPath, item, `slug blocked: ${slug}`, scout.score);
+        opts.urls.add(item.url);
+        lastSkip = `slug blocked: ${slug}`;
+        continue;
+      }
+      const draftProductKey = normalizeProductIdentity(draft.title);
+      const sourceProductKey = normalizeProductIdentity(item.title);
+      if (
+        (draftProductKey && opts.productIds.has(draftProductKey)) ||
+        (sourceProductKey && opts.productIds.has(sourceProductKey))
+      ) {
+        console.log(
+          chalk.yellow(
+            `Skipped product-identity duplicate: ${draftProductKey || sourceProductKey}`,
+          ),
+        );
+        await markRejected(
+          opts.journal,
+          opts.journalPath,
+          item,
+          `product-identity duplicate: ${draftProductKey || sourceProductKey}`,
+          scout.score,
+        );
+        opts.urls.add(item.url);
+        lastSkip = 'product-identity duplicate';
+        continue;
+      }
+
+      if (!acquirePublishLock()) {
+        console.log(chalk.yellow('Publish lock held — skip to avoid double product publish'));
+        lastSkip = 'cross-cycle publish lock';
+        opts.metrics.skipReason = lastSkip;
+        return false;
+      }
+      try {
+        const fresh = await loadState(opts.journalPath, opts.articlesPath);
+        if (
+          (draftProductKey && fresh.productIds.has(draftProductKey)) ||
+          (sourceProductKey && fresh.productIds.has(sourceProductKey)) ||
+          fresh.urls.has(item.url) ||
+          fresh.ids.has(slug)
+        ) {
+          console.log(chalk.yellow('Cross-cycle race: product/url already published'));
+          await markRejected(
+            fresh.journal,
+            opts.journalPath,
+            item,
+            'cross-cycle product-identity',
+            scout.score,
+          );
+          opts.urls.add(item.url);
+          lastSkip = 'cross-cycle product-identity';
+          continue;
+        }
+
+        const publishedAt = new Date().toISOString();
+        const article: Article = {
+          id: slug,
+          slug,
+          title: draft.title,
+          category: toPublicCategory('Гаджеты'),
+          tags: toPublicTags([
+            ...draft.tags.map((t) => t.replace(/^#/, '')),
+            opts.cycle === 'news' ? 'новость' : 'обзор',
+          ]),
+          summary: summaryOf(draft.text),
+          content: draft.text,
+          sourceUrl: item.url,
+          publishedAt,
+          readTime: estimateReadTime(draft.text),
+          ...(imageUrl ? { imageUrl } : {}),
+          ...stampAuthorForPipeline('newsroom-scout', { sourceUrl: item.url, slug }),
+        };
+
+        const deduped = filterRemovedArticles(
+          fresh.articles.filter(
+            (a) =>
+              a.id !== article.id && a.slug !== article.slug && a.sourceUrl !== article.sourceUrl,
+          ),
+        );
+        deduped.unshift(article);
+        await writeFile(opts.articlesPath, JSON.stringify(deduped, null, 2) + '\n', 'utf8');
+
+        await mkdir(opts.draftsDir, { recursive: true });
+        await writeFile(
+          path.join(opts.draftsDir, `${Date.now()}-${slug}.json`),
+          JSON.stringify(
+            {
+              generatedAt: publishedAt,
+              channel: 'rss',
+              cycle: opts.cycle,
+              format: opts.format,
+              source: item.sourceName,
+              article: item,
+              scout,
+              review,
+              draft: { ...draft, imageUrl },
+            },
+            null,
+            2,
+          ),
+          'utf8',
+        );
+
+        if (!fresh.journal.processedUrls.includes(item.url)) {
+          fresh.journal.processedUrls.push(item.url);
+        }
+        if (!fresh.journal.processedIds.includes(item.id)) {
+          fresh.journal.processedIds.push(item.id);
+        }
+        fresh.journal.entries.push({
+          id: item.id,
+          url: item.url,
+          title: draft.title,
+          processedAt: publishedAt,
+          status: 'published',
+          scoutScore: scout.score,
+          reason: scout.reason,
+          slug,
           channel: 'rss',
-          source: item.sourceName,
-          article: item,
-          scout,
-          review,
-          draft: { ...draft, imageUrl },
-        },
-        null,
-        2,
-      ),
-      'utf8',
-    );
+          cycle: opts.cycle,
+        });
+        await writeFile(opts.journalPath, JSON.stringify(fresh.journal, null, 2) + '\n', 'utf8');
 
-    if (!opts.journal.processedUrls.includes(item.url)) {
-      opts.journal.processedUrls.push(item.url);
-    }
-    if (!opts.journal.processedIds.includes(item.id)) {
-      opts.journal.processedIds.push(item.id);
-    }
-    opts.journal.entries.push({
-      id: item.id,
-      url: item.url,
-      title: draft.title,
-      processedAt: publishedAt,
-      status: 'published',
-      scoutScore: scout.score,
-      reason: scout.reason,
-      slug,
-      channel: 'rss',
-    });
-    await writeFile(opts.journalPath, JSON.stringify(opts.journal, null, 2) + '\n', 'utf8');
+        opts.ids.add(slug);
+        opts.urls.add(item.url);
+        if (draftProductKey) opts.productIds.add(draftProductKey);
+        if (sourceProductKey) opts.productIds.add(sourceProductKey);
+        if (opts.lastPublish) {
+          opts.lastPublish.title = draft.title;
+          opts.lastPublish.slug = slug;
+          opts.lastPublish.wowScore = scout.score;
+        }
 
-    opts.ids.add(slug);
-    opts.urls.add(item.url);
-    if (draftProductKey) opts.productIds.add(draftProductKey);
-    if (sourceProductKey) opts.productIds.add(sourceProductKey);
-    if (opts.lastPublish) {
-      opts.lastPublish.title = draft.title;
-      opts.lastPublish.slug = slug;
-      opts.lastPublish.wowScore = scout.score;
+        opts.metrics.publisherStarted = true;
+        opts.metrics.articlesPublished += 1;
+        opts.metrics.reason = `published rss/${opts.cycle}`;
+        opts.metrics.skipReason = 'none';
+        console.log(
+          chalk.green.bold(`Published (RSS/${opts.cycle}): "${draft.title}" (slug: ${slug})`),
+        );
+        console.log(`Live path: /articles/${slug}`);
+        return true;
+      } finally {
+        releasePublishLock();
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(chalk.red(`RSS candidate error: ${msg}`));
+      if (!opts.journal.processedUrls.includes(item.url)) {
+        opts.journal.processedUrls.push(item.url);
+      }
+      if (!opts.journal.processedIds.includes(item.id)) {
+        opts.journal.processedIds.push(item.id);
+      }
+      opts.urls.add(item.url);
+      opts.journal.entries.push({
+        id: item.id,
+        url: item.url,
+        title: item.title,
+        processedAt: new Date().toISOString(),
+        status: 'error',
+        reason: msg,
+        channel: 'rss',
+      });
+      await writeFile(opts.journalPath, JSON.stringify(opts.journal, null, 2) + '\n', 'utf8');
+      lastSkip = `rss error: ${msg}`;
+      // Try next candidate in this tick (still max 1 publish).
+      continue;
     }
-
-    opts.metrics.publisherStarted = true;
-    opts.metrics.articlesPublished += 1;
-    opts.metrics.reason = 'published rss';
-    opts.metrics.skipReason = 'none';
-    console.log(chalk.green.bold(`Published (RSS): "${draft.title}" (slug: ${slug})`));
-    console.log(`Live path: /articles/${slug}`);
-    return true;
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error(chalk.red(`RSS tick error: ${msg}`));
-    opts.journal.entries.push({
-      id: item.id,
-      url: item.url,
-      title: item.title,
-      processedAt: new Date().toISOString(),
-      status: 'error',
-      reason: msg,
-      channel: 'rss',
-    });
-    await writeFile(opts.journalPath, JSON.stringify(opts.journal, null, 2) + '\n', 'utf8');
-    opts.metrics.skipReason = `rss error: ${msg}`;
-    process.exitCode = 1;
-    return false;
   }
+
+  opts.metrics.skipReason = lastSkip;
+  // Soft AI/candidate exhaustion should not hard-fail the process for the supervisor.
+  return false;
 }
 
 async function main(): Promise<void> {
   loadEnvFiles();
+  // Dual supervisor / GHA set factory ON; re-assert China desk for internal pipeline.
+  if (
+    process.env.SMARTPROTO_ACCELERATED_CYCLE === 'true' ||
+    process.env.SMARTPROTO_CYCLE_TYPE === 'news' ||
+    process.env.SMARTPROTO_CYCLE_TYPE === 'article'
+  ) {
+    process.env.SMARTPROTO_FACTORY_ENABLED = 'true';
+    process.env.CHINA_DEPARTMENT_ENABLED = 'true';
+    process.env.CHINA_ALLOW_RECOMMEND = 'true';
+  }
   const options = parseArgs(process.argv.slice(2));
   const event =
     process.env.GITHUB_EVENT_NAME?.trim() ||
@@ -868,15 +1101,17 @@ async function main(): Promise<void> {
   );
   const lastPublish: { title?: string; slug?: string; wowScore?: number } = {};
 
-  console.log(chalk.bold('=== Newsroom Tick (SP-A-031-R2 / SP-A-048) ==='));
+  console.log(chalk.bold('=== Newsroom Tick (SP-A-050 dual factory) ==='));
   console.log(`Time: ${new Date().toISOString()}`);
   console.log(`Factory: ${factoryEnabled ? 'ON' : 'OFF (forced)'}`);
   console.log(
-    `Mode: dryRun=${options.dryRun ? 'YES' : 'NO'} | max 1 publish / tick | scout≥${SCOUT_SCORE_THRESHOLD}`,
+    `Cycle: ${options.cycle} | format=${options.format} | dryRun=${options.dryRun ? 'YES' : 'NO'} | max 1 publish | scout≥${SCOUT_SCORE_THRESHOLD}`,
   );
 
   const shared = {
     dryRun: options.dryRun,
+    cycle: options.cycle,
+    format: options.format,
     articlesPath,
     draftsDir,
     journalPath,
@@ -891,13 +1126,12 @@ async function main(): Promise<void> {
 
   const chinaDone = await tryChinaPublishOnce(shared);
   if (chinaDone) {
-    console.log(chalk.bold('Tick complete (China/Qwen).'));
+    console.log(chalk.bold(`Tick complete (internal desk / ${options.cycle}).`));
     if (metrics.skipReason === 'in progress') metrics.skipReason = 'none';
     printFactoryTickSummary({
       factoryEnabled: true,
       event,
       metrics,
-      // commit/push are owned by the GHA workflow / accelerated cycle supervisor.
       commitCreated: false,
       pushDone: false,
       title: lastPublish.title,
@@ -937,9 +1171,14 @@ async function main(): Promise<void> {
   });
 }
 
-main().catch((err) => {
-  console.error(
-    chalk.red(`Newsroom tick failed: ${err instanceof Error ? err.message : String(err)}`),
-  );
-  process.exitCode = 1;
-});
+main()
+  .catch((err) => {
+    console.error(
+      chalk.red(`Newsroom tick failed: ${err instanceof Error ? err.message : String(err)}`),
+    );
+    process.exitCode = 1;
+  })
+  .finally(() => {
+    // OpenRouter keep-alive can hold the event loop; accelerated cycle needs a hard exit.
+    process.exit(process.exitCode ?? 0);
+  });

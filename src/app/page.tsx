@@ -29,21 +29,26 @@ function filterArticlesByCategory(categoryName: string, list: Article[]): Articl
     const tags = Array.isArray(a.tags) ? a.tags.join(' ').toLowerCase() : '';
     const blob = textBlob(a);
 
+    // SP-A-050: Китай/Qwen are not public filter categories anymore.
     if (norm === 'китай' || norm === 'china' || norm === 'qwen') {
-      return (
-        cat.includes('китай') ||
-        cat.includes('china') ||
-        tags.includes('китай') ||
-        tags.includes('china') ||
-        tags.includes('qwen') ||
-        blob.includes('китай')
-      );
+      return cat.includes('гаджет');
     }
     if (norm === 'новинки') {
       return cat.includes('новинк') || title.includes('новинк');
     }
     if (norm === 'гаджеты') {
       return cat.includes('гаджет') || title.includes('проектор') || title.includes('гаджет');
+    }
+    if (norm === 'приложения' || norm === 'apps' || norm === 'приложен') {
+      return (
+        cat.includes('приложен') ||
+        tags.includes('приложен') ||
+        blob.includes('mobile app') ||
+        blob.includes('app store') ||
+        blob.includes('google play') ||
+        /\bapps?\b/.test(tags) ||
+        title.includes('приложен')
+      );
     }
     if (norm === 'смартфоны') {
       return (

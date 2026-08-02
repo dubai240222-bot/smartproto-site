@@ -3,6 +3,8 @@ import {
   hardRejectTopic,
   evaluateTopicLocal,
   PREFERRED_GADGET_CATEGORIES,
+  PREFERRED_APP_CATEGORIES,
+  type EditorialMode,
   type NoveltyAssessment,
 } from './hard-reject';
 
@@ -24,7 +26,7 @@ export const SCOUT_SCORE_THRESHOLD = (() => {
 
 const SCOUT_MODEL = process.env.OPENROUTER_SCOUT_MODEL ?? 'deepseek/deepseek-v4-flash:latest';
 
-const SCOUT_SYSTEM_PROMPT = [
+const SCOUT_SYSTEM_PROMPT_GADGET = [
   'Ты разведчик SmartProto — медиа ТОЛЬКО про умные/полезные потребительские гаджеты',
   'и товары для повседневности и продуктивности на работе.',
   'HARD FILTER: публикуем ТОЛЬКО то, что обычный человек может КУПИТЬ или ПРЕДЗАКАЗАТЬ и использовать',
@@ -53,6 +55,10 @@ const SCOUT_SYSTEM_PROMPT = [
   'реальный wow-factor. Если интересно ТОЛЬКО сборщикам ПК / инженерам / разработчикам /',
   'hardware-энтузиастам → REJECT или score далеко ниже 75.',
   '',
+  'DOWNRANK / REJECT (SP-A-049): обычные мониторы, power bank без новой функции, merch/collab gift boxes,',
+  'нишевые maker-tools (паяльники, осциллографы, filament) без сильного wow/consumer-angle.',
+  'KEEP reference: Casio CRW-H001 / unusual smart rings / foldables / translators — НЕ резать.',
+  '',
   'Жёсткий reject ВСЕГДА (score=0, interesting=false, productType="none"), если funnel мёртв:',
   '- нет конкретного имени товара + пути «хочу купить / где взять» (buy, preorder, KS/IG, магазин);',
   '- Trump / politics / выборы / губернаторы / госновости без товара;',
@@ -73,11 +79,40 @@ const SCOUT_SYSTEM_PROMPT = [
   'Не выдумывай цену, дату и площадку, если их нет в тексте.',
 ].join('\n');
 
-export async function scoutArticle(title: string, text: string): Promise<ScoutResult> {
-  const gate = hardRejectTopic(title, text);
-  if (gate.reject) {
-    return { ...evaluateTopicLocal(title, text), interesting: false, score: 0, productType: 'none' };
+const SCOUT_SYSTEM_PROMPT_APP = [
+  'Ты разведчик SmartProto — стол Mobile Apps: полезные мобильные приложения и редкие/замечательные игры.',
+  'HARD FILTER: одно конкретное приложение или игра, которое реально помогает жить/учиться/работать',
+  'или это яркая novelty-игра. digital product OK (App Store / Google Play / TestFlight).',
+  `Приоритет: ${PREFERRED_APP_CATEGORIES}.`,
+  'Оценка 0–100 суммой A–E (желание попробовать / новизна / польза / визуал / потенциал).',
+  'REJECT всегда: SEO roundups («50 apps you need»), app deals, gambling, casino, crypto/NFT pumps,',
+  'generic listicles, enterprise fluff без consumer value, политика, celebrities.',
+  'Games OK только если wonderful/notable — не ежедневный free-to-play спам.',
+  'productType = "app" | "game" | "none". Не выдумывай цену/рейтинг если нет в тексте.',
+].join('\n');
+
+export async function scoutArticle(
+  title: string,
+  text: string,
+  mode: EditorialMode = 'gadget',
+): Promise<ScoutResult> {
+  const gate = hardRejectTopic(title, text, { mode });
+  // Hard short-circuit definitive bans. NOT_ACTUALLY_NEW may still reach the model —
+  // RSS summaries are thin; body text can reveal a real launch/SKU (SP-A-050).
+  if (gate.reject && gate.rejectCode !== 'NOT_ACTUALLY_NEW') {
+    return {
+      ...evaluateTopicLocal(title, text),
+      interesting: false,
+      score: 0,
+      productType: 'none',
+    };
   }
+
+  const systemPrompt = mode === 'app' ? SCOUT_SYSTEM_PROMPT_APP : SCOUT_SYSTEM_PROMPT_GADGET;
+  const passHint =
+    mode === 'app'
+      ? 'interesting=true только если score>=75, конкретное НОВОЕ полезное app/game, isActuallyNew, noveltyEvidence не пуст.'
+      : 'interesting=true только если score>=75, покупаемый НОВЫЙ продукт, isActuallyNew, noveltyEvidence не пуст.';
 
   const client = getOpenRouterClient();
   const completion = await client.chat.completions.create({
@@ -92,7 +127,7 @@ export async function scoutArticle(title: string, text: string): Promise<ScoutRe
       reasoning: { max_tokens: 0 },
     },
     messages: [
-      { role: 'system', content: SCOUT_SYSTEM_PROMPT },
+      { role: 'system', content: systemPrompt },
       {
         role: 'user',
         content: [
@@ -105,7 +140,7 @@ export async function scoutArticle(title: string, text: string): Promise<ScoutRe
           '"noveltyEvidence":string[],"existingAlternatives":string,"functionalDifference":string,',
           '"marketSaturation":"low"|"medium"|"high","rejectCode":string|null,',
           '"parts":{"a":number,"b":number,"c":number,"d":number,"e":number}}',
-          'score=a+b+c+d+e. interesting=true только если score>=75, покупаемый НОВЫЙ продукт, isActuallyNew, noveltyEvidence не пуст.',
+          `score=a+b+c+d+e. ${passHint}`,
           'high+пустой functionalDifference / только косметика → rejectCode=NOT_ACTUALLY_NEW. productType или "none". reason: 1 фраза RU.',
         ].join('\n'),
       },

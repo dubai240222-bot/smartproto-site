@@ -1,5 +1,5 @@
 ﻿import { getOpenRouterClient, clampText } from './shared';
-import { hardRejectTopic } from './hard-reject';
+import { hardRejectTopic, type EditorialMode } from './hard-reject';
 
 export interface ToneCheck {
   clickbait: boolean;
@@ -98,6 +98,8 @@ const REJECT_DRAFT: DraftResult = {
   },
 };
 
+export type DraftFormat = 'news' | 'article';
+
 export async function writeDraft(articleData: object, reviewData: object): Promise<DraftResult> {
   const sourceTitle =
     typeof (articleData as { title?: unknown }).title === 'string'
@@ -113,7 +115,11 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
     typeof (articleData as { sourceName?: unknown }).sourceName === 'string'
       ? (articleData as { sourceName: string }).sourceName
       : '';
-  const gate = hardRejectTopic(sourceTitle, sourceText, sourceName);
+  const mode: EditorialMode =
+    (articleData as { mode?: unknown }).mode === 'app' ? 'app' : 'gadget';
+  const format: DraftFormat =
+    (articleData as { format?: unknown }).format === 'news' ? 'news' : 'article';
+  const gate = hardRejectTopic(sourceTitle, sourceText, { sourceName, mode });
   const reviewVerdict =
     typeof (reviewData as { technicalVerdict?: unknown }).technicalVerdict === 'string'
       ? (reviewData as { technicalVerdict: string }).technicalVerdict
@@ -122,32 +128,50 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
     return REJECT_DRAFT;
   }
 
+  const formatInstructions =
+    format === 'news'
+      ? [
+          'ФОРМАТ: короткая новость (SHORT NEWS). 60–110 слов. 1–2 абзаца.',
+          'Структура: что анонсировали → зачем обычному человеку → цена/статус если есть.',
+          'Без длинного разбора и без списков на полстраницы. Без внутренних меток (Qwen/Gemini/Китай-отдел).',
+        ]
+      : [
+          'ФОРМАТ: полный материал / обзор (FULL ARTICLE). 160–240 слов.',
+          'Структура строго:',
+          '1) что представлено и для чего;',
+          '2) потребительский сценарий (когда и зачем обычный человек этим воспользуется);',
+          '3) чем отличается / почему это Wow (факт из источника, не хайп);',
+          '4) цена / дата / доступность (или прямо «не объявлено»);',
+          '5) ограничения, сомнения, неизвестные данные / нет независимых тестов.',
+          'Без внутренних меток (Qwen/Gemini/Китай-отдел / «материал подготовлен китайским отделом»).',
+        ];
+
   const client = getOpenRouterClient();
   const completion = await client.chat.completions.create({
     model: EDITOR_MODEL,
     temperature: 0.35,
     top_p: 0.85,
-    max_tokens: 700,
+    max_tokens: format === 'news' ? 450 : 900,
     messages: [
       { role: 'system', content: EDITOR_SYSTEM_PROMPT },
       {
         role: 'user',
         content: [
-          'Подготовь заметку ТОЛЬКО о покупаемом/предзаказываемом гаджете/товаре для быта или работы.',
-          'Если тема off-topic / нет покупаемого продукта — верни REJECT-черновик.',
+          mode === 'app'
+            ? 'Подготовь заметку о конкретном полезном мобильном приложении или notable-игре (App Store / Google Play OK).'
+            : 'Подготовь заметку ТОЛЬКО о покупаемом/предзаказываемом гаджете/товаре для быта или работы.',
+          mode === 'app'
+            ? 'Если SEO-roundup / gambling / crypto / нет конкретного app — верни REJECT-черновик. Добавь тег «приложения».'
+            : 'Если тема off-topic / нет покупаемого продукта — верни REJECT-черновик.',
+          ...formatInstructions,
           'Верни СТРОГО JSON:',
           '{"title":string,"text":string,"tags":string[],"toneCheck":{"clickbait":bool,"hype":bool,"unsupportedClaims":bool,"limitationsIncluded":bool}}',
           '',
           'title: русский, до 90 символов; продукт + польза/факт; без восклицательных знаков.',
-          'text: ~150–200 слов, без паддинга. Структура строго:',
-          '1) что представлено и для чего;',
-          '2) как работает и чем отличается;',
-          '3) цена / дата / доступность (или прямо «не объявлено»);',
-          '4) ограничения, сомнения, неизвестные данные / нет независимых тестов.',
           'Строго по фактам источника. Суперлативы производителя — только через «Производитель утверждает…».',
-          'tags: 4–8; тематика + бренд если есть; без Docker/DevOps/HN.',
+          'tags: 4–8; тематика + бренд если есть; БЕЗ тегов Китай/Qwen/Gemini/China Department.',
           'toneCheck: честно оцени свой текст (clickbait/hype/unsupportedClaims должны быть false;',
-          'limitationsIncluded=true если абзац 4 или явные оговорки есть).',
+          'limitationsIncluded=true если есть явные оговорки).',
           '',
           'Статья:',
           clampText(JSON.stringify(articleData, null, 2), 10000),

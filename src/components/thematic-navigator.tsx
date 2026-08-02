@@ -1,10 +1,12 @@
 import Link from 'next/link';
 import type { Article } from '@/data/articles';
+import { isInternalPublicLabel } from '@/lib/public-labels';
 
 /** Level-1 rubrics — display labels + filter query values. */
 export const MAIN_RUBRICS = [
   { label: 'Новинки', category: 'Новинки' },
   { label: 'Гаджеты', category: 'Гаджеты' },
+  { label: 'Приложения', category: 'Приложения' },
   { label: 'Смартфоны', category: 'Смартфоны' },
   { label: 'Дом', category: 'Дом' },
   { label: 'Игры', category: 'Игры' },
@@ -32,6 +34,17 @@ const RUBRIC_HINTS: Record<string, string[]> = {
     'гравер',
     'экран',
     'аудио',
+  ],
+  Приложения: [
+    'приложен',
+    'app',
+    'apps',
+    'ios',
+    'android app',
+    'mobile app',
+    'app store',
+    'google play',
+    'testflight',
   ],
   Смартфоны: ['смартфон', 'phone', 'android', 'foldable', 'iphone'],
   Дом: ['умный дом', 'умныйдом', 'kitchen', 'household', 'дом'],
@@ -72,12 +85,13 @@ function countTags(list: Article[]): Map<string, number> {
   for (const item of list) {
     const parts: string[] = [];
     if (item.category) parts.push(...item.category.split('/'));
-    // Article tags (e.g. «Китай») must surface in the thematic navigator.
+    // SP-A-050: never surface КИТАЙ / Qwen / internal factory marks.
     if (Array.isArray(item.tags)) parts.push(...item.tags);
     for (const part of parts) {
       const tag = normalizeTag(part);
       if (!tag || tag.length < 2) continue;
       if (NOISE_TAGS.has(tag.toLowerCase())) continue;
+      if (isInternalPublicLabel(tag)) continue;
       counts.set(tag, (counts.get(tag) || 0) + 1);
     }
   }

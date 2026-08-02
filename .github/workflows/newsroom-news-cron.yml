@@ -1,14 +1,13 @@
-# SP-A-050 — legacy single cron DISABLED.
-# Replaced by independent dual cycles:
-#   - newsroom-news-cron.yml     (*/10)  SHORT NEWS
-#   - newsroom-article-cron.yml  (0 * *) FULL ARTICLES
+# SP-A-050 — SHORT NEWS cycle (independent).
+# Max 1 publish / 10 minutes. Interval = min pause, not obligation to publish junk.
 #
-# This file kept only so old schedule links do not surprise operators.
-# workflow_dispatch remains for emergency single news tick.
+# Required: OPENROUTER_API_KEY + SMARTPROTO_FACTORY_ENABLED=true
 
-name: Newsroom Cron Tick (legacy — prefer dual cycles)
+name: Factory News Cycle
 
 on:
+  schedule:
+    - cron: '*/10 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -19,7 +18,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  tick:
+  news-tick:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -47,11 +46,11 @@ jobs:
           if [ -z "$raw" ]; then raw="${FACTORY_SECRET:-}"; fi
           norm=$(printf '%s' "$raw" | tr -d '\r\n"'\''[:space:]' | tr '[:upper:]' '[:lower:]')
           case "$norm" in
-            true|1|yes|on) echo "enabled=true" >> "$GITHUB_OUTPUT" ;;
-            *) echo "enabled=false" >> "$GITHUB_OUTPUT" ;;
+            true|1|yes|on) echo "enabled=true" >> "$GITHUB_OUTPUT"; echo "Factory ON (news)" ;;
+            *) echo "enabled=false" >> "$GITHUB_OUTPUT"; echo "Factory OFF" ;;
           esac
 
-      - name: Run one news tick (legacy dispatch)
+      - name: Run news tick
         if: steps.gate.outputs.enabled == 'true'
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
@@ -74,8 +73,9 @@ jobs:
           git add -- src/data/articles.json data/factory-journal.json drafts/ || true
           if [ -f data/topic-rotation.json ]; then git add -- data/topic-rotation.json || true; fi
           if git diff --staged --quiet; then
-            echo "No publish this tick."
+            echo "No news publish this tick."
             exit 0
           fi
-          git commit -m "feat(newsroom): legacy dispatch news publish"
+          git commit -m "feat(newsroom): news cycle publish"
           git push origin HEAD:main
+          echo "Pushed — Vercel auto-deploy expected (no force vercel --prod)."

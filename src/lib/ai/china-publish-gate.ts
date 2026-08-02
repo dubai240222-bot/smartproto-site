@@ -47,7 +47,12 @@ export function dossierPublishable(
   return { ok: false, reason: 'weak dossier / thin source' };
 }
 
-/** Category + tags that make China/Qwen pubs noticeable on the homepage. */
-export const CHINA_CATEGORY = 'КИТАЙ / ГАДЖЕТ';
-export const CHINA_TAG = 'Китай';
-export const CHINA_SOURCE_TAG = 'Qwen';
+/**
+ * SP-A-050 — Public category/tags for China-pipeline pubs.
+ * Internal China/Qwen still runs; reader-facing labels must NOT say КИТАЙ / Qwen.
+ */
+export const CHINA_CATEGORY = 'Гаджеты';
+/** @deprecated SP-A-050 — do not add to public tags */
+export const CHINA_TAG = 'новинка';
+/** @deprecated SP-A-050 — do not add to public tags */
+export const CHINA_SOURCE_TAG = 'гаджет';

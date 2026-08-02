@@ -1,0 +1,65 @@
+{
+  "mode": "SP-A-048",
+  "startedAt": "2026-08-02T08:35:38.405Z",
+  "updatedAt": "2026-08-02T17:54:36.515Z",
+  "ticksRan": 292,
+  "published": 6,
+  "consecutiveErrors": 0,
+  "publications": [
+    {
+      "title": "Монитор Gigabyte G27Q3: 27 дюймов, 2K и 300 Гц",
+      "slug": "china-g27q3",
+      "commitSha": "66d1b1b716809b6de3d8292b7d63b168a9045379",
+      "liveStatus": 404,
+      "at": "2026-08-02T08:36:27.492Z"
+    },
+    {
+      "title": "Casio CRW-H001: смарт-кольцо с мониторингом здоровья",
+      "slug": "casio-just-turned-its-wild-ring-watch-into-an-actual-smart-ring-with-health-trac",
+      "commitSha": "6bb66acea2da3f546bcde87ea0709354bd037b89",
+      "liveStatus": 404,
+      "at": "2026-08-02T08:51:51.745Z"
+    },
+    {
+      "title": "ASUS ROG выпустила игровые аксессуары в стиле DOTA 2",
+      "slug": "china-dota2",
+      "commitSha": "2029d479ffc8e715fa715ae2e2d3c7b4b85a2349",
+      "liveStatus": 404,
+      "at": "2026-08-02T08:57:13.740Z"
+    },
+    {
+      "title": "Внешний аккумулятор Xiaomi 20000 мАч с кабелем и быстрой зарядкой",
+      "slug": "china-20000mah-pb2045mi",
+      "commitSha": "6926fe8da25cb24468442effd898ed73b6e28d6c",
+      "liveStatus": 404,
+      "at": "2026-08-02T09:32:53.867Z"
+    },
+    {
+      "title": "HOTO SNAPBLOQ-A06: умный паяльник с экраном и батареей",
+      "slug": "china-hoto",
+      "commitSha": "e36d8a224cfc05d7e0753b2e66170b113276fa66",
+      "liveStatus": 200,
+      "at": "2026-08-02T09:42:13.046Z"
+    },
+    {
+      "title": "URXR One: очки для отображения 2D-контента",
+      "slug": "china-urxr-one",
+      "commitSha": "367aee76ec507d8b10ec2ef449f15666473ff828",
+      "liveStatus": 200,
+      "at": "2026-08-02T10:19:24.435Z"
+    }
+  ],
+  "lastTick": {
+    "tick": 292,
+    "time": "2026-08-02T17:21:34.625Z",
+    "candidatesCollected": 0,
+    "hardRejected": 10,
+    "sentToQwen": 0,
+    "sentToGemini": 0,
+    "draftsCreated": 0,
+    "articlesPublished": 0,
+    "rejectOrError": "no rss candidate"
+  },
+  "done": true,
+  "stopReason": "SP-A-050: left accelerated test; permanent dual factory mode"
+}

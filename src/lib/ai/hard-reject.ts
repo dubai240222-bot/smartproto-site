@@ -2,9 +2,19 @@
  * HARD editorial gate for SmartProto:
  * ONLY publish what ordinary people can BUY / PREORDER and USE
  * to improve life or work. Everything else is rejected.
+ *
+ * Mode `app` (Mobile Apps desk): digital apps/games that help daily life OK;
+ * still reject SEO spam, gambling, crypto pumps, generic roundups.
  */
 
 export type MarketSaturation = 'low' | 'medium' | 'high';
+export type EditorialMode = 'gadget' | 'app';
+
+export interface HardRejectOpts {
+  sourceName?: string;
+  mode?: EditorialMode;
+}
+
 export interface NoveltyAssessment {
   isActuallyNew: boolean;
   noveltyEvidence: string[];
@@ -18,6 +28,14 @@ export interface HardRejectResult {
   reason: string;
   rejectCode?: string | null;
   novelty?: NoveltyAssessment;
+}
+
+function resolveOpts(sourceNameOrOpts: string | HardRejectOpts = ''): HardRejectOpts {
+  if (typeof sourceNameOrOpts === 'string') return { sourceName: sourceNameOrOpts, mode: 'gadget' };
+  return {
+    sourceName: sourceNameOrOpts.sourceName || '',
+    mode: sourceNameOrOpts.mode || 'gadget',
+  };
 }
 
 /** Topics that are never publishable, regardless of "wow". */
@@ -75,7 +93,7 @@ const HARD_REJECT_PATTERNS: RegExp[] = [
   /\bopinion:\b/i,
   /\bshopping guide\b/i,
   /\bback to school\b/i,
-  // Soft/app roundups / podcasts — not physical consumer gadgets
+  // Soft/app roundups / podcasts — not physical consumer gadgets (gadget mode)
   /\blaunchers?\b/i,
   /\bapp deals?\b/i,
   /\bfreebies\b/i,
@@ -120,6 +138,51 @@ const HARD_REJECT_PATTERNS: RegExp[] = [
   /\bvibe coding\b/i,
   /\bfeels like cheating\b/i,
   /\bdomesticating ai\b/i,
+];
+
+/**
+ * App-desk spam / scam — rejected even in mode=app.
+ * Useful single-app launches and notable games are allowed separately.
+ */
+const APP_SPAM_PATTERNS: RegExp[] = [
+  /\bbest apps?\b/i,
+  /\btop\s+\d+\s+apps?\b/i,
+  /\b\d+\s+apps?\s+(you|to)\b/i,
+  /\bapps? you (need|should|must)\b/i,
+  /\bapp deals?\b/i,
+  /\bandroid app deals\b/i,
+  /\bfreebies\b/i,
+  /\blaunchers?\b/i,
+  /\bgambling\b/i,
+  /\bcasino\b/i,
+  /\bsports?\s*betting\b/i,
+  /\bcrypto\b/i,
+  /\bbitcoin\b/i,
+  /\bnft\b/i,
+  /\bweb3\b/i,
+  /\bairdrop\b/i,
+  /\bseo\s*(app|apps|tool|tools|spam)\b/i,
+  /\bpixelated\b/i,
+  /\bpodcast\b/i,
+];
+
+/** Signals a concrete mobile app / notable mobile game. */
+const USEFUL_APP_PATTERNS: RegExp[] = [
+  /\bapp(s|lication)?\b/i,
+  /\bios\b/i,
+  /\bandroid\b/i,
+  /\biphone\b/i,
+  /\bipad\b/i,
+  /\bapp store\b/i,
+  /\bgoogle play\b/i,
+  /\bplay store\b/i,
+  /\btestflight\b/i,
+  /\bmobile game\b/i,
+  /\bindie game\b/i,
+  /\bapk\b/i,
+  /\bприложен/i,
+  /\bмобильн\w*\s+(игр|приложен)/i,
+  /应用|手游|App Store|Google Play/,
 ];
 
 /** Signals that a concrete purchasable / preorderable product is present. */
@@ -236,6 +299,36 @@ const SATURATED_RE =
   /обычный\s+(мини-?)?вентилятор|мини-?вентилятор с новым цветом|power bank.{0,40}упаковк|\btws\b/i;
 
 /**
+ * SP-A-049 / SP-A-050 — ordinary commodity / low-wow topics.
+ * Downrank → hard reject unless strong wow / consumer angle (Casio CRW-H001 KEEP).
+ */
+const COMMODITY_LOW_WOW_PATTERNS: RegExp[] = [
+  /\b(ordinary|generic|standard|basic)\s+(monitor|display|power\s*bank|charger|ssd)\b/i,
+  /\b\d{2,3}(["″]|-?inch)?\s*(ips|va|tn)?\s*monitor\b/i,
+  /\b(gaming\s*)?monitor\b.{0,40}\b(144|165|180|240)\s*hz\b/i,
+  /\b(power\s*bank|портативн\w*\s*заряд|повербанк|пауэрбанк)\b/i,
+  /\b(merch|merchandise|collab(?:oration)?|gift\s*box|blind\s*box)\b/i,
+  /\b(коллаборац|мерч|подарочн\w*\s*набор|blind\s*box)\b/i,
+  /\b(3d\s*printer\s*(filament|nozzle|bed)|soldering\s*(iron|station)|oscilloscope|multimeter|bench\s*supply)\b/i,
+  /\b(maker[- ]?tool|cnc\s*spindle|hot\s*air\s*station|fume\s*extractor)\b/i,
+  /обычн\w*\s*(монитор|пауэрбанк|повербанк|зарядк)/i,
+  /монитор.{0,30}(144|165|180|240)\s*гц/i,
+];
+
+/** KEEP reference — unusual wearables must not be killed by commodity rules. */
+const KEEP_WOW_EXCEPTIONS: RegExp[] = [
+  /\bcasio\b/i,
+  /\bcrw[- ]?h001\b/i,
+  /\bsmart\s*ring\b/i,
+  /\bring[- ]?watch\b/i,
+  /\bкольц[оа].{0,20}(час|smart|здоров)/i,
+  /\bunusual\s+(phone|smartphone|controller|wearable)\b/i,
+  /\bfoldable\b/i,
+  /\btranslator\b/i,
+  /\brobot\s*(vacuum|pet|companion|lawn)/i,
+];
+
+/**
  * SP-A-039-ALT (from SP-A-038) — niche PC / engineering parts. Not a full ban:
  * reject only when there is no strong consumer angle.
  */
@@ -292,6 +385,10 @@ const STRONG_CONSUMER_ANGLE: RegExp[] = [
 export const PREFERRED_GADGET_CATEGORIES =
   'unusual smartphones, game controllers, wearables, smart rings, smart home, travel gadgets, AI hardware, home robots, cameras, audio gadgets, phone accessories, power banks/chargers, mini projectors, portable displays, car gadgets, translators, health/sleep devices, kitchen gadgets, children/education gadgets';
 
+/** Preferred app desks — life improvement / learning / rare finds / wonderful games. */
+export const PREFERRED_APP_CATEGORIES =
+  'useful mobile apps (learn better, life improvement, productivity, health, travel), novel AI apps for consumers, rare App Store / Play finds, wonderful or notable mobile games — NOT SEO roundups, gambling, or crypto pumps';
+
 export function isNicheTechTopic(title: string, text = ''): boolean {
   const hay = `${title}\n${text}`;
   return NICHE_TECH_PATTERNS.some((re) => re.test(hay));
@@ -302,8 +399,25 @@ export function hasStrongConsumerAngle(title: string, text = ''): boolean {
   return STRONG_CONSUMER_ANGLE.some((re) => re.test(hay));
 }
 
-export function assessNovelty(title: string, text = '', opts?: { sourceName?: string }): NoveltyAssessment {
+export function isKeepWowException(title: string, text = ''): boolean {
   const hay = `${title}\n${text}`;
+  return KEEP_WOW_EXCEPTIONS.some((re) => re.test(hay));
+}
+
+/** SP-A-049: ordinary monitors / power banks / merch / niche maker-tools without wow. */
+export function isCommodityLowWow(title: string, text = ''): boolean {
+  if (isKeepWowException(title, text)) return false;
+  const hay = `${title}\n${text}`;
+  return COMMODITY_LOW_WOW_PATTERNS.some((re) => re.test(hay));
+}
+
+export function assessNovelty(
+  title: string,
+  text = '',
+  opts?: { sourceName?: string; mode?: EditorialMode },
+): NoveltyAssessment {
+  const hay = `${title}\n${text}`;
+  const mode = opts?.mode || 'gadget';
   const noveltyEvidence = NOVELTY_RE.test(hay) ? [NOVELTY_RE.source] : [];
   const cosmetic = COSMETIC_RE.test(hay);
   const fakeNew = FAKE_NEW_RE.test(hay);
@@ -314,16 +428,38 @@ export function assessNovelty(title: string, text = '', opts?: { sourceName?: st
   const designFeed =
     source.includes('yanko') ||
     source.includes('new atlas') ||
+    source.includes('gadget flow') ||
+    source.includes('verge gadgets') ||
     source.includes('hackaday') ||
     source.includes('engadget') ||
     source.includes('ithome') ||
     source.includes('it之家') ||
     source.includes('36kr') ||
     source.includes('anker');
+  const appFeed =
+    source.includes('macstories') ||
+    source.includes('cult of mac') ||
+    source.includes('toucharcade') ||
+    source.includes('9to5google') ||
+    source.includes('google play') ||
+    source.includes('product hunt') ||
+    source.includes('android authority') ||
+    source.includes('appadvice');
   if (!noveltyEvidence.length && designFeed && !cosmetic && !fakeNew && !high) {
     if (BUYABLE_PRODUCT_PATTERNS.some((re) => re.test(hay))) {
       noveltyEvidence.push('design-feed-buyable-product');
     }
+  }
+  if (
+    mode === 'app' &&
+    !noveltyEvidence.length &&
+    appFeed &&
+    !cosmetic &&
+    !fakeNew &&
+    !high &&
+    USEFUL_APP_PATTERNS.some((re) => re.test(hay))
+  ) {
+    noveltyEvidence.push('app-feed-concrete-app');
   }
   const functionalDifference = noveltyEvidence.length
     ? 'Функциональный/запусковый признак новизны.'
@@ -341,12 +477,48 @@ export function assessNovelty(title: string, text = '', opts?: { sourceName?: st
   };
 }
 
-export function hardRejectTopic(title: string, text = '', sourceName = ''): HardRejectResult {
+export function hardRejectTopic(
+  title: string,
+  text = '',
+  sourceNameOrOpts: string | HardRejectOpts = '',
+): HardRejectResult {
+  const { sourceName = '', mode = 'gadget' } = resolveOpts(sourceNameOrOpts);
   const hay = `${title}\n${text}`.trim();
   if (!hay) {
-    return { reject: true, reason: 'Пустой материал — нет покупаемого продукта.', rejectCode: 'NO_PRODUCT' };
+    return {
+      reject: true,
+      reason:
+        mode === 'app'
+          ? 'Пустой материал — нет конкретного приложения.'
+          : 'Пустой материал — нет покупаемого продукта.',
+      rejectCode: 'NO_PRODUCT',
+    };
   }
-  for (const re of HARD_REJECT_PATTERNS) {
+
+  // App spam always blocked (both modes).
+  for (const re of APP_SPAM_PATTERNS) {
+    if (re.test(hay)) {
+      return {
+        reject: true,
+        reason: `Жёсткий reject: SEO/spam/gambling/crypto app-мусор (${re.source}).`,
+        rejectCode: 'HARD_TOPIC',
+      };
+    }
+  }
+
+  // In app mode, skip gadget-only soft/app roundup patterns already covered by APP_SPAM;
+  // still apply politics/celebrity/etc. from HARD_REJECT, but ignore the soft/app block lines.
+  const hardPatterns =
+    mode === 'app'
+      ? HARD_REJECT_PATTERNS.filter(
+          (re) =>
+            !/launcher|app deals|freebies|android app deals|pixelated|podcast|best apps|apps\? you should/i.test(
+              re.source,
+            ),
+        )
+      : HARD_REJECT_PATTERNS;
+
+  for (const re of hardPatterns) {
     if (re.test(hay)) {
       return {
         reject: true,
@@ -364,6 +536,38 @@ export function hardRejectTopic(title: string, text = '', sourceName = ''): Hard
       };
     }
   }
+
+  if (mode === 'app') {
+    if (!USEFUL_APP_PATTERNS.some((re) => re.test(hay))) {
+      return {
+        reject: true,
+        reason: 'Жёсткий reject: нет явного mobile app / game сигнала.',
+        rejectCode: 'NO_PRODUCT',
+      };
+    }
+    const novelty = assessNovelty(title, text, { sourceName, mode: 'app' });
+    if (!novelty.isActuallyNew) {
+      return {
+        reject: true,
+        reason: 'Жёсткий reject: NOT_ACTUALLY_NEW — нет новизны приложения / только косметика.',
+        rejectCode: 'NOT_ACTUALLY_NEW',
+        novelty,
+      };
+    }
+    return { reject: false, reason: '', rejectCode: null, novelty };
+  }
+
+  // SP-A-049 / SP-A-050: downrank ordinary monitors, power banks, merch, maker-tools.
+  // Casio CRW-H001 / smart rings KEEP via isKeepWowException.
+  if (isCommodityLowWow(title, text) && !hasStrongConsumerAngle(title, text)) {
+    return {
+      reject: true,
+      reason:
+        'Жёсткий reject: обычный монитор/пауэрбанк/мерч/maker-tool без сильного wow/consumer-angle (SP-A-049).',
+      rejectCode: 'COMMODITY_LOW_WOW',
+    };
+  }
+
   // SP-A-039-ALT: niche PC/engineering components — allow only with strong consumer angle.
   // Runs before NO_PRODUCT so ordinary coolers/boards get a clear niche reject code.
   if (isNicheTechTopic(title, text) && !hasStrongConsumerAngle(title, text)) {
@@ -381,7 +585,7 @@ export function hardRejectTopic(title: string, text = '', sourceName = ''): Hard
       rejectCode: 'NO_PRODUCT',
     };
   }
-  const novelty = assessNovelty(title, text, { sourceName });
+  const novelty = assessNovelty(title, text, { sourceName, mode: 'gadget' });
   if (!novelty.isActuallyNew) {
     return {
       reject: true,
@@ -411,13 +615,14 @@ export function evaluateTopicLocal(title: string, text = '') {
 
 /** Keyword prefilter for RSS — must pass novelty; NO_PRODUCT may pass on known gadget feeds. */
 export function looksBuyableGadget(title: string, text = '', sourceName = ''): boolean {
-  const gate = hardRejectTopic(title, text, sourceName);
+  const gate = hardRejectTopic(title, text, { sourceName, mode: 'gadget' });
   if (!gate.reject) return true;
-  // Never soften HARD_TOPIC / research / niche-PC rejects.
+  // Never soften HARD_TOPIC / research / niche-PC / commodity rejects.
   if (
     gate.rejectCode === 'HARD_TOPIC' ||
     gate.rejectCode === 'NON_BUYABLE_RESEARCH' ||
-    gate.rejectCode === 'NICHE_NO_CONSUMER_ANGLE'
+    gate.rejectCode === 'NICHE_NO_CONSUMER_ANGLE' ||
+    gate.rejectCode === 'COMMODITY_LOW_WOW'
   ) {
     return false;
   }
@@ -432,8 +637,13 @@ export function looksBuyableGadget(title: string, text = '', sourceName = ''): b
     return false;
   }
 
-  // Yanko / New Atlas: product-design feeds — let Reviewer decide when topic is clean.
-  if (source.includes('yanko') || source.includes('new atlas')) {
+  // Product-heavy feeds — let Scout/Reviewer decide when topic is clean (SP-A-050).
+  if (
+    source.includes('yanko') ||
+    source.includes('new atlas') ||
+    source.includes('gadget flow') ||
+    source.includes('verge gadgets')
+  ) {
     return true;
   }
 
@@ -445,10 +655,43 @@ export function looksBuyableGadget(title: string, text = '', sourceName = ''): b
     source.includes('raspberry')
   ) {
     if (gate.rejectCode === 'NO_PRODUCT') {
-      return assessNovelty(title, text, { sourceName }).isActuallyNew;
+      return assessNovelty(title, text, { sourceName, mode: 'gadget' }).isActuallyNew;
     }
     // NOT_ACTUALLY_NEW on hardware feeds still blocked.
     return false;
+  }
+  return false;
+}
+
+/**
+ * Prefilter for Mobile Apps desk — useful / novel apps & wonderful games.
+ * Softens NOT_ACTUALLY_NEW slightly on dedicated app feeds when a concrete app signal exists.
+ */
+export function looksUsefulApp(title: string, text = '', sourceName = ''): boolean {
+  const gate = hardRejectTopic(title, text, { sourceName, mode: 'app' });
+  if (!gate.reject) return true;
+  if (gate.rejectCode === 'HARD_TOPIC' || gate.rejectCode === 'NON_BUYABLE_RESEARCH') {
+    return false;
+  }
+
+  const source = sourceName.toLowerCase();
+  const hay = `${title}\n${text}`;
+  if (!USEFUL_APP_PATTERNS.some((re) => re.test(hay))) return false;
+
+  const dedicatedAppFeed =
+    source.includes('macstories') ||
+    source.includes('cult of mac') ||
+    source.includes('toucharcade') ||
+    source.includes('9to5google') ||
+    source.includes('google play') ||
+    source.includes('product hunt');
+
+  if (dedicatedAppFeed && gate.rejectCode === 'NOT_ACTUALLY_NEW') {
+    // Let Scout/Reviewer judge single-app stories from trusted app desks.
+    return true;
+  }
+  if (dedicatedAppFeed && gate.rejectCode === 'NO_PRODUCT') {
+    return true;
   }
   return false;
 }

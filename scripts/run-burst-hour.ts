@@ -365,6 +365,25 @@ async function main(): Promise<void> {
       }
     }
   }
+  // Also refuse while an unfinished SP-A-048 run is recorded (external supervisors keep respawning burst).
+  const accelProgressPath = path.resolve(process.cwd(), 'data', 'accelerated-progress.json');
+  if (existsSync(accelProgressPath)) {
+    try {
+      const prog = JSON.parse(readFileSync(accelProgressPath, 'utf8')) as {
+        mode?: string;
+        done?: boolean;
+        published?: number;
+      };
+      const maxPub = Number(process.env.SMARTPROTO_TEST_MAX_PUBLISHES || '12');
+      if (prog.mode === 'SP-A-048' && prog.done !== true && (prog.published ?? 0) < maxPub) {
+        console.error('SP-A-048 accelerated-progress active (not done). Burst refused.');
+        process.exitCode = 0;
+        return;
+      }
+    } catch {
+      /* ignore */
+    }
+  }
 
   const root = process.cwd();
   const lockPath = path.resolve(root, 'data', 'burst.lock');
