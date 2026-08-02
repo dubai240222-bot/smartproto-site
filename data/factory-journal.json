@@ -148,7 +148,8 @@
     "https://www.ithome.com/0/984/751.htm",
     "https://www.androidauthority.com/samsung-one-ui-9-permalock-3693475/",
     "https://newatlas.com/electronics/nuwa-pen-handwritten-text-digital/",
-    "https://hackaday.com/2026/08/01/bike-trainers-as-video-game-controllers/"
+    "https://hackaday.com/2026/08/01/bike-trainers-as-video-game-controllers/",
+    "https://www.theverge.com/tech/973249/pixel-11-pro-fold-buds-watch-leaks-google-launch-event"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -299,7 +300,8 @@
     "china-g27q3",
     "https://www.androidauthority.com/samsung-one-ui-9-permalock-3693475/",
     "https://newatlas.com/electronics/nuwa-pen-handwritten-text-digital/",
-    "https://hackaday.com/?p=1129686"
+    "https://hackaday.com/?p=1129686",
+    "https://www.theverge.com/?p=973249"
   ],
   "entries": [
     {
@@ -1686,6 +1688,15 @@
       "status": "published",
       "slug": "bike-trainers-as-video-game-controllers",
       "kind": "news"
+    },
+    {
+      "id": "https://www.theverge.com/?p=973249",
+      "url": "https://www.theverge.com/tech/973249/pixel-11-pro-fold-buds-watch-leaks-google-launch-event",
+      "title": "Google Pixel 11 Pro Fold: новые рендеры раскрывают дизайн складного смартфона",
+      "processedAt": "2026-08-02T08:50:09.215Z",
+      "status": "published",
+      "slug": "pixel-11-pro-fold-design-leaks-ahead-of-google-launch-event",
+      "kind": "article"
     }
   ]
 }
