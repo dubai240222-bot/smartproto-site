@@ -39,12 +39,12 @@ export function Header() {
 
   return (
     <header className="border-b border-[var(--border)] bg-[var(--surface)] text-[var(--text)] transition-colors">
-      <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-5 lg:px-8">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
           {/* Brand: SP mark + HTML wordmark (scales; not a tiny raster lockup) */}
           <Link
             href="/"
-            className="group inline-flex min-w-0 max-w-full shrink-0 items-center gap-2.5 self-start sm:gap-3"
+            className="group inline-flex min-w-0 max-w-full shrink-0 items-center gap-3 self-start sm:gap-3.5"
             aria-label="SmartProto — на главную"
           >
             <Image
@@ -53,21 +53,21 @@ export function Header() {
               width={512}
               height={512}
               priority
-              className="h-9 w-9 shrink-0 object-contain sm:h-11 sm:w-11 md:h-12 md:w-12"
+              className="h-12 w-12 shrink-0 object-contain sm:h-14 sm:w-14 md:h-16 md:w-16"
             />
             <span className="flex min-w-0 flex-col leading-none">
-              <span className="text-[1.25rem] font-extrabold tracking-tight sm:text-[1.5rem] md:text-[1.625rem]">
+              <span className="text-[1.625rem] font-extrabold tracking-tight sm:text-[1.875rem] md:text-[2.25rem]">
                 <span className="text-[var(--text)]">SMART</span>
                 <span className="text-[var(--accent)]">PROTO</span>
               </span>
-              <span className="mt-1 hidden text-[11px] font-medium leading-snug tracking-normal text-[var(--muted)] sm:block sm:text-xs">
+              <span className="mt-1.5 hidden text-[11px] font-medium leading-snug tracking-normal text-[var(--muted)] sm:block sm:text-xs md:text-[13px]">
                 Технологии раньше, чем они станут мейнстримом
               </span>
             </span>
           </Link>
 
           {/* Right Controls: Search, RU, Theme Toggle */}
-          <div className="flex items-center gap-3 self-end md:self-auto">
+          <div className="flex shrink items-center gap-2 self-end sm:gap-3 md:self-auto">
             {/* Desktop Search */}
             <div ref={searchRef} className="relative">
               <div className="relative hidden items-center sm:flex">
@@ -81,7 +81,7 @@ export function Header() {
                     setIsResultsOpen(true);
                   }}
                   onFocus={() => setIsResultsOpen(true)}
-                  className="w-48 rounded border border-[var(--border)] bg-[var(--bg)] py-1.5 pl-8 pr-8 text-xs text-[var(--text)] transition-all duration-200 placeholder:text-[var(--muted)] focus:w-64 focus:border-[var(--accent)] focus:outline-none"
+                  className="w-40 rounded border border-[var(--border)] bg-[var(--bg)] py-1.5 pl-8 pr-8 text-xs text-[var(--text)] transition-all duration-200 placeholder:text-[var(--muted)] focus:w-56 focus:border-[var(--accent)] focus:outline-none lg:w-48 lg:focus:w-64"
                 />
                 {query && (
                   <button
@@ -194,7 +194,7 @@ export function Header() {
         </div>
 
         {/* Navigation links */}
-        <nav className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-[var(--border)] pt-3 text-xs font-medium text-[var(--text)]">
+        <nav className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-[var(--border)] pt-3 text-xs font-medium text-[var(--text)] sm:mt-4 sm:gap-x-5 md:gap-x-6">
           <Link href="/" className="transition hover:text-[var(--accent)]">
             Главная
           </Link>
