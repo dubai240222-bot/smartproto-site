@@ -14,7 +14,16 @@
     "https://thegadgetflow.com/product/gopro-mission-1-cinema-camera/",
     "https://thegadgetflow.com/product/attack-shark-rs6-ultra-gaming-mouse/",
     "https://thegadgetflow.com/product/anycubic-photon-p1-max-resin-printer/",
-    "https://thegadgetflow.com/product/dji-osmo-pocket-4p-gimbal-camera/"
+    "https://thegadgetflow.com/product/dji-osmo-pocket-4p-gimbal-camera/",
+    "https://newatlas.com/wearables/garmin-screenless-cirqa-fitness-tracker/",
+    "https://newatlas.com/wearables/caligo-pants-all-terrain-travel-adventure/",
+    "https://newatlas.com/wearables/pebble-core-2-duo-time-smartwatch/",
+    "https://newatlas.com/wearables/tecno-ai-glasses-smart-camera/",
+    "https://newatlas.com/wearables/review-eyeoasis-2-heat-massage-ocular-relaxation/",
+    "https://newatlas.com/wearables/cenwatch-lidar-midair-hand-gestures/",
+    "https://newatlas.com/wearables/powerbeats-pro2-heart-rate-wireless-charging/",
+    "https://newatlas.com/wearables/audio-technica-cartilage-conduction-headphones/",
+    "https://newatlas.com/electronics/pocketbyte-modular-computer/"
   ],
   "processedIds": [
     "https://thegadgetflow.com/product/khadas-tea-pro-headphone-amp/",
@@ -31,7 +40,16 @@
     "https://thegadgetflow.com/product/gopro-mission-1-cinema-camera/",
     "https://thegadgetflow.com/product/attack-shark-rs6-ultra-gaming-mouse/",
     "https://thegadgetflow.com/product/anycubic-photon-p1-max-resin-printer/",
-    "https://thegadgetflow.com/product/dji-osmo-pocket-4p-gimbal-camera/"
+    "https://thegadgetflow.com/product/dji-osmo-pocket-4p-gimbal-camera/",
+    "https://newatlas.com/wearables/garmin-screenless-cirqa-fitness-tracker/",
+    "https://newatlas.com/wearables/caligo-pants-all-terrain-travel-adventure/",
+    "https://newatlas.com/wearables/pebble-core-2-duo-time-smartwatch/",
+    "https://newatlas.com/wearables/tecno-ai-glasses-smart-camera/",
+    "https://newatlas.com/wearables/review-eyeoasis-2-heat-massage-ocular-relaxation/",
+    "https://newatlas.com/wearables/cenwatch-lidar-midair-hand-gestures/",
+    "https://newatlas.com/wearables/powerbeats-pro2-heart-rate-wireless-charging/",
+    "https://newatlas.com/wearables/audio-technica-cartilage-conduction-headphones/",
+    "https://newatlas.com/electronics/pocketbyte-modular-computer/"
   ],
   "entries": [
     {
@@ -269,6 +287,117 @@
       "slug": "dji-osmo-pocket-4p-gimbal-camera",
       "channel": "rss",
       "cycle": "article"
+    },
+    {
+      "id": "https://newatlas.com/wearables/garmin-screenless-cirqa-fitness-tracker/",
+      "url": "https://newatlas.com/wearables/garmin-screenless-cirqa-fitness-tracker/",
+      "title": "Garmin ditches screens and subscriptions for its new fitness tracker",
+      "processedAt": "2026-08-02T19:31:36.654Z",
+      "status": "error",
+      "reason": "Scout model (deepseek/deepseek-v4-flash:latest) returned an empty response. finish_reason: length, reasoning present: false",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/wearables/caligo-pants-all-terrain-travel-adventure/",
+      "url": "https://newatlas.com/wearables/caligo-pants-all-terrain-travel-adventure/",
+      "title": "What would you stuff in Caligo's 18-pocketed pants?",
+      "processedAt": "2026-08-02T19:31:47.693Z",
+      "status": "error",
+      "reason": "Scout model (deepseek/deepseek-v4-flash:latest) returned an empty response. finish_reason: length, reasoning present: false",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/wearables/fiio-fx17-in-ear-monitors-13-drivers-titanium/",
+      "url": "https://newatlas.com/wearables/fiio-fx17-in-ear-monitors-13-drivers-titanium/",
+      "title": "13 audio drivers crammed into titanium-wrapped ear candy",
+      "processedAt": "2026-08-02T19:31:47.694Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Жёсткий reject: нет явного покупаемого продукта/устройства (buy/preorder).",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/wearables/pebble-core-2-duo-time-smartwatch/",
+      "url": "https://newatlas.com/wearables/pebble-core-2-duo-time-smartwatch/",
+      "title": "$149 gets you a 30-day battery smartwatch with sleek ePaper display",
+      "processedAt": "2026-08-02T19:32:21.058Z",
+      "status": "error",
+      "reason": "Scout model (deepseek/deepseek-v4-flash:latest) returned an empty response. finish_reason: length, reasoning present: false",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/wearables/tecno-ai-glasses-smart-camera/",
+      "url": "https://newatlas.com/wearables/tecno-ai-glasses-smart-camera/",
+      "title": "Smart AI-driven AR glasses to compete with Meta Ray-Bans",
+      "processedAt": "2026-08-02T19:32:28.170Z",
+      "status": "error",
+      "reason": "Scout model (deepseek/deepseek-v4-flash:latest) returned an empty response. finish_reason: length, reasoning present: false",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/wearables/smart-textile-finger-movements/",
+      "url": "https://newatlas.com/wearables/smart-textile-finger-movements/",
+      "title": "Smart clothing controls devices via finger movements – no touching required",
+      "processedAt": "2026-08-02T19:32:28.171Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Жёсткий reject: нет явного покупаемого продукта/устройства (buy/preorder).",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/wearables/review-eyeoasis-2-heat-massage-ocular-relaxation/",
+      "url": "https://newatlas.com/wearables/review-eyeoasis-2-heat-massage-ocular-relaxation/",
+      "title": "Review: EyeOasis 2 brings heat and massage for ocular relaxation",
+      "processedAt": "2026-08-02T19:32:33.377Z",
+      "status": "error",
+      "reason": "Scout model (deepseek/deepseek-v4-flash:latest) returned an empty response. finish_reason: length, reasoning present: false",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/wearables/cenwatch-lidar-midair-hand-gestures/",
+      "url": "https://newatlas.com/wearables/cenwatch-lidar-midair-hand-gestures/",
+      "title": "Laser-shooting watch lets you control devices via midair hand gestures",
+      "processedAt": "2026-08-02T19:33:07.491Z",
+      "status": "error",
+      "reason": "Model response was not valid JSON: {\n  \"interesting\": true,\n  \"score\": 75,\n  \"reason\": \"Умные часы CenWatch с LIDAR-сканированием ладони для управления жестами — новинка на Kickstarter, которую можно предзаказать.\",\n  \"productType\": \"smartwatch\",\n  \"isActuallyNew\": true,\n  \"noveltyEvidence\": [\n    \"LIDAR-сканер на нижней стороне руки для распознавания жестов\",\n    \"Управление",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/wearables/powerbeats-pro2-heart-rate-wireless-charging/",
+      "url": "https://newatlas.com/wearables/powerbeats-pro2-heart-rate-wireless-charging/",
+      "title": "Apple Powerbeats Pro 2 get heart-rate monitoring, wireless charging",
+      "processedAt": "2026-08-02T19:33:14.191Z",
+      "status": "error",
+      "reason": "Model response was not valid JSON: ```json\n{\n  \"interesting\": true,\n  \"score\": 83,\n  \"reason\": \"Новые Powerbeats Pro 2 с мониторингом пульса",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/wearables/audio-technica-cartilage-conduction-headphones/",
+      "url": "https://newatlas.com/wearables/audio-technica-cartilage-conduction-headphones/",
+      "title": "Novel wraparound earphones take the plugs out for high-quality sound",
+      "processedAt": "2026-08-02T19:33:25.622Z",
+      "status": "error",
+      "reason": "Scout model (deepseek/deepseek-v4-flash:latest) returned an empty response. finish_reason: length, reasoning present: false",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/electronics/pocketbyte-modular-computer/",
+      "url": "https://newatlas.com/electronics/pocketbyte-modular-computer/",
+      "title": "Pocketbyte customizable portable computer opens doors for makers",
+      "processedAt": "2026-08-02T19:33:43.698Z",
+      "status": "error",
+      "reason": "Scout model (deepseek/deepseek-v4-flash:latest) returned an empty response. finish_reason: length, reasoning present: false",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/electronics/meta-nfc-focused-microwaves-circuits/",
+      "url": "https://newatlas.com/electronics/meta-nfc-focused-microwaves-circuits/",
+      "title": "Focused microwaves allow 3D printers to fuse circuits onto almost anything",
+      "processedAt": "2026-08-02T19:33:49.502Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Научное исследование, не готовый к покупке продукт.",
+      "channel": "rss"
     }
   ]
 }
