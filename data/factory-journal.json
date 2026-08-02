@@ -60,7 +60,8 @@
     "https://newatlas.com/motorcycles/charged-ndara/",
     "https://newatlas.com/drones/quantum-systems-electric-drone-speed-record/",
     "https://newatlas.com/campervans/westfalia-nansen-bunkhouse-camper-van/",
-    "https://newatlas.com/outdoor-gear/lighting-drone-heone-x/"
+    "https://newatlas.com/outdoor-gear/lighting-drone-heone-x/",
+    "https://newatlas.com/mobile-technology/compact-smartphone-monitor-solves-selfie-headache/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -123,7 +124,8 @@
     "https://newatlas.com/motorcycles/charged-ndara/",
     "https://newatlas.com/drones/quantum-systems-electric-drone-speed-record/",
     "https://newatlas.com/campervans/westfalia-nansen-bunkhouse-camper-van/",
-    "https://newatlas.com/outdoor-gear/lighting-drone-heone-x/"
+    "https://newatlas.com/outdoor-gear/lighting-drone-heone-x/",
+    "https://newatlas.com/mobile-technology/compact-smartphone-monitor-solves-selfie-headache/"
   ],
   "entries": [
     {
@@ -689,6 +691,15 @@
       "processedAt": "2026-08-02T00:16:12.261Z",
       "status": "published",
       "slug": "heone-x-drone-provides-powerful-long-lasting-campsite-lighting",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/mobile-technology/compact-smartphone-monitor-solves-selfie-headache/",
+      "url": "https://newatlas.com/mobile-technology/compact-smartphone-monitor-solves-selfie-headache/",
+      "title": "Монитор V1 Pro для смартфона: удобная съемка себя без посторонней помощи",
+      "processedAt": "2026-08-02T00:17:03.132Z",
+      "status": "published",
+      "slug": "v1-pro-monitor-for-smartphones-makes-solo-filming-easier",
       "kind": "news"
     }
   ]

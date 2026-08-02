@@ -1,25 +1,86 @@
 [
   {
-    "id": "what-is-usb-tethering-and-how-do-you-enable-it-for-mobile-hotspot",
-    "slug": "what-is-usb-tethering-and-how-do-you-enable-it-for-mobile-hotspot",
-    "title": "USB-модем: стабильное интернет-соединение для вашего ноутбука",
-    "category": "ГАДЖЕТ / ПОЛЕЗНО",
+    "id": "v1-pro-monitor-for-smartphones-makes-solo-filming-easier",
+    "slug": "v1-pro-monitor-for-smartphones-makes-solo-filming-easier",
+    "title": "Монитор V1 Pro для смартфона: удобная съемка себя без посторонней помощи",
+    "category": "НОВИНКА / ПОЛЕЗНО",
     "tags": [
-      "#USB",
-      "#модем",
-      "#интернет",
-      "#ноутбук",
-      "#смартфон",
       "#новинка",
       "#полезно",
-      "#гаджет"
+      "#гаджет",
+      "#смартфон",
+      "#видеосъемка",
+      "#аксессуары"
     ],
-    "summary": "USB-модем — это функция, позволяющая использовать смартфон как источник интернет-соединения для другого устройства, например, ноутбука, через USB-кабель.",
-    "content": "USB-модем — это функция, позволяющая использовать смартфон как источник интернет-соединения для другого устройства, например, ноутбука, через USB-кабель. В отличие от Wi-Fi точки доступа, такое подключение обеспечивает более стабильный сигнал и высокую скорость передачи данных, что особенно актуально в местах с плохим Wi-Fi покрытием или при необходимости выполнения задач, требующих надежного соединения.\n\nДля активации USB-модема необходимо подключить смартфон к ноутбуку с помощью USB-кабеля. Затем в настройках смартфона следует найти раздел «Точка доступа и модем» (или аналогичный, в зависимости от операционной системы) и включить опцию «USB-модем». На ноутбуке устройство должно автоматически распознать новое сетевое подключение. Этот метод является простым и эффективным способом обеспечить себе доступ в интернет, когда другие варианты недоступны или менее предпочтительны. Он идеально подходит для работы в дороге, командировках или в ситуациях, когда требуется стабильное подключение для важных задач.\n\nИсточник: Engadget",
-    "sourceUrl": "https://www.engadget.com/2225903/what-is-usb-tethering-how-enable-for-mobile-hotspot/",
-    "publishedAt": "2026-08-02T00:16:56.429Z",
+    "summary": "Снимать себя на смартфон стало проще. Но как быть, если вы хотите использовать основную камеру, чтобы избежать обрезки кадра? Компактный монитор V1 Pro решает эту задачу.",
+    "content": "Снимать себя на смартфон стало проще. Но как быть, если вы хотите использовать основную камеру, чтобы избежать обрезки кадра? Компактный монитор V1 Pro решает эту задачу. Он крепится к вашему телефону и позволяет видеть себя в реальном времени, обеспечивая идеальный ракурс при самостоятельной съемке видео или фото. Это решение для тех, кто ценит качество и удобство при создании контента.\nИсточник: New Atlas.",
+    "sourceUrl": "https://newatlas.com/mobile-technology/compact-smartphone-monitor-solves-selfie-headache/",
+    "publishedAt": "2026-08-02T00:17:03.132Z",
     "readTime": "1 мин",
-    "imageUrl": "https://www.engadget.com/img/gallery/what-is-usb-tethering-and-how-do-you-enable-it-for-mobile-hotspot/l-intro-1785327565.jpg"
+    "imageUrl": "https://assets.newatlas.com/dims4/default/eb10396/2147483647/strip/true/crop/2000x1500+0+0/resize/1280x960!/format/webp/quality/90/?url=https%3A%2F%2Fnewatlas-brightspot.s3.ap-southeast-2.amazonaws.com%2Fb7%2F05%2Fad699c1a4d26b14dcf3bfc816a7c%2Fv1-pro-camera.jpg"
+  },
+  {
+    "id": "heone-x-drone-provides-powerful-long-lasting-campsite-lighting",
+    "slug": "heone-x-drone-provides-powerful-long-lasting-campsite-lighting",
+    "title": "Дрон Heone-X: мощный и долгий свет для кемпинга",
+    "category": "НОВИНКА / ПОЛЕЗНО",
+    "tags": [
+      "#новинка",
+      "#полезно",
+      "#гаджет",
+      "#кемпинг",
+      "#освещение",
+      "#дрон",
+      "#HeoneX"
+    ],
+    "summary": "Представлен дрон Heone-X, предназначенный для освещения кемпинга.",
+    "content": "Представлен дрон Heone-X, предназначенный для освещения кемпинга. Устройство способно работать до 10 часов, обеспечивая яркий свет на большой территории. Это удобное решение для тех, кто часто проводит время на природе и нуждается в надежном источнике освещения, не зависящем от розеток. Источник: New Atlas.",
+    "sourceUrl": "https://newatlas.com/outdoor-gear/lighting-drone-heone-x/",
+    "publishedAt": "2026-08-02T00:16:12.261Z",
+    "readTime": "1 мин",
+    "imageUrl": "https://assets.newatlas.com/dims4/default/13a9582/2147483647/strip/true/crop/1200x800+0+0/resize/1200x800!/format/webp/quality/90/?url=https%3A%2F%2Fnewatlas-brightspot.s3.ap-southeast-2.amazonaws.com%2F4e%2Ffd%2F703403e14941a63115015b373b51%2Fthe-heone-x-ensures-you-never-have-to-fiddle-with-lanterns-or-fires-to-light-up-your-campsite-ever-again.jpg"
+  },
+  {
+    "id": "westfalia-s-latest-camper-van-packs-in-a-bunk-room-and-dry-bathroom",
+    "slug": "westfalia-s-latest-camper-van-packs-in-a-bunk-room-and-dry-bathroom",
+    "title": "Westfalia Nansen Bunkhouse: Компактный кемпер с двумя спальными местами и душем",
+    "category": "НОВИНКА / ПОЛЕЗНО",
+    "tags": [
+      "#новинка",
+      "#полезно",
+      "#гаджет",
+      "#кемпер",
+      "#Westfalia",
+      "#путешествия",
+      "#автодом"
+    ],
+    "summary": "Westfalia представила новую модель кемпера Nansen Bunkhouse на базе Fiat Ducato.",
+    "content": "Westfalia представила новую модель кемпера Nansen Bunkhouse на базе Fiat Ducato. Несмотря на компактные размеры, автомобиль оснащен двумя двухъярусными кроватями и полноценным санузлом с сухим душем. Это решение позволяет комфортно путешествовать семьей или компанией друзей, сохраняя мобильность.\n\nИнновационная компоновка делает Nansen Bunkhouse привлекательным выбором для тех, кто ценит функциональность и удобство в поездках. Источник: New Atlas.",
+    "sourceUrl": "https://newatlas.com/campervans/westfalia-nansen-bunkhouse-camper-van/",
+    "publishedAt": "2026-08-02T00:15:32.987Z",
+    "readTime": "1 мин",
+    "imageUrl": "https://assets.newatlas.com/dims4/default/53a9758/2147483647/strip/true/crop/1620x1080+0+0/resize/1440x960!/format/webp/quality/90/?url=https%3A%2F%2Fnewatlas-brightspot.s3.ap-southeast-2.amazonaws.com%2Fe6%2Ff3%2F03dc5c12417aadd603921a4ce705%2Fwestfalia-nansen-600l-5-1.jpg"
+  },
+  {
+    "id": "apex-recordhunter-becomes-the-world-s-fastest-electric-drone",
+    "slug": "apex-recordhunter-becomes-the-world-s-fastest-electric-drone",
+    "title": "Apex Recordhunter: самый быстрый электрический дрон для скоростных задач",
+    "category": "НОВИНКА / ПОЛЕЗНО",
+    "tags": [
+      "#новинка",
+      "#полезно",
+      "#гаджет",
+      "#дрон",
+      "#скорость",
+      "#QuantumSystems",
+      "#рекорд"
+    ],
+    "summary": "Экспериментальный дрон Apex Recordhunter от Quantum Systems установил новый мировой рекорд скорости для электрических дронов, достигнув 699 км/ч.",
+    "content": "Экспериментальный дрон Apex Recordhunter от Quantum Systems установил новый мировой рекорд скорости для электрических дронов, достигнув 699 км/ч. Эта разработка открывает возможности для применения высокоскоростных беспилотников в задачах, требующих максимальной оперативности и скорости доставки.\n\nИсточник: New Atlas.",
+    "sourceUrl": "https://newatlas.com/drones/quantum-systems-electric-drone-speed-record/",
+    "publishedAt": "2026-08-02T00:14:41.165Z",
+    "readTime": "1 мин",
+    "imageUrl": "https://assets.newatlas.com/dims4/default/d0ae7be/2147483647/strip/true/crop/6966x4644+0+0/resize/1440x960!/format/webp/quality/90/?url=https%3A%2F%2Fnewatlas-brightspot.s3.ap-southeast-2.amazonaws.com%2F15%2Fed%2F16b8bcb14a988fc2b99977dfb4de%2Fdsc08353-hdr.jpg"
   },
   {
     "id": "open-source-stream-deck-targets-flexibility",
