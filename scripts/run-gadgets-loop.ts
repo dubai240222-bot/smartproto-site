@@ -30,6 +30,10 @@ const MAX_MINUTES = Number(process.env.GADGETS_MAX_MINUTES || 25);
 const TARGET_NEW = Number(process.env.GADGETS_TARGET_NEW || 12);
 const MODEL = process.env.OPENROUTER_EDITOR_MODEL ?? 'google/gemini-2.5-flash-lite';
 
+/** Banned hype/cliché phrases in published RU drafts. */
+const BANNED_OUT_RE =
+  /дожили(?:\s+до\s+времени)?|вчера\s+казалось\s+фантастикой|вчера\s+фантастика|будущее\s+уже\s+здесь/i;
+
 interface Article {
   id: string;
   slug: string;
@@ -75,7 +79,7 @@ async function rewriteBlogger(item: RssItem): Promise<{ title: string; text: str
         content: [
           'Ты редактор SmartProto — спокойные взрослые product-карточки ТОЛЬКО про умные полезные гаджеты.',
           'Тон: ясный, компетентный, без патоса и без игривости. Интерес купить — через пользу, не хайп.',
-          'ЗАПРЕЩЕНО: клише «будущее уже здесь» / «вчера это казалось невозможным»;',
+          'ЗАПРЕЩЕНО: «дожили», «дожили до времени», «вчера казалось фантастикой», «будущее уже здесь»;',
           'без «вау», guys/ребята, эмодзи, патоса и TikTok-сленга.',
           'Хвали РЕАЛЬНЫЕ фичи, без выдуманных спеков. JSON без markdown.',
           'Reject: title=REJECT, text=off-topic, tags=["#reject"] для культуры/природы/писателей/политики без товара.',
@@ -162,6 +166,13 @@ async function main() {
       const draft = await rewriteBlogger(item);
       if (draft.title.toUpperCase() === 'REJECT' || draft.tags.includes('#reject')) {
         console.log(chalk.yellow('Editor reject'));
+        seen.add(item.url);
+        seen.add(item.id);
+        await new Promise((r) => setTimeout(r, 10_000));
+        continue;
+      }
+      if (BANNED_OUT_RE.test(`${draft.title}\n${draft.text}`)) {
+        console.log(chalk.yellow('Banned hype/cliché in draft — skip'));
         seen.add(item.url);
         seen.add(item.id);
         await new Promise((r) => setTimeout(r, 10_000));

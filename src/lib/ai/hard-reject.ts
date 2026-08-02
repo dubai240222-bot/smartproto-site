@@ -92,6 +92,9 @@ const HARD_REJECT_PATTERNS: RegExp[] = [
   /\bbrowser-based 3d editor\b/i,
   /\bsubscribe to it instead\b/i,
   /\bstewart platform\b/i,
+  /\bvibe coding\b/i,
+  /\bfeels like cheating\b/i,
+  /\bdomesticating ai\b/i,
 ];
 
 /** Signals that a concrete purchasable / preorderable product is present. */
