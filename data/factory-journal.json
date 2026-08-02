@@ -556,7 +556,7 @@
       "id": "https://newatlas.com/motorcycles/honda-cb500/",
       "url": "https://newatlas.com/motorcycles/honda-cb500/",
       "title": "Could the Honda CB500 be Royal Enfield's Kryptonite?",
-      "processedAt": "2026-08-02T00:02:47.935Z",
+      "processedAt": "2026-08-02T00:02:54.840Z",
       "status": "rejected",
       "reason": "editor hard-reject: non-gadget/culture",
       "kind": "news"
@@ -564,11 +564,11 @@
     {
       "id": "https://newatlas.com/tents/gazelle-g4-1-minute-gazebo/",
       "url": "https://newatlas.com/tents/gazelle-g4-1-minute-gazebo/",
-      "title": "Тент Gazelle G4: мгновенная защита от насекомых за 60 секунд!",
-      "processedAt": "2026-08-02T00:02:49.219Z",
+      "title": "Домик-палатка за 60 секунд? Gazelle G4 - ваш спаситель от комаров!",
+      "processedAt": "2026-08-02T00:02:57.460Z",
       "status": "published",
       "slug": "gazelle-launches-versatile-g4-screen-tent-that-pops-up-in-60-seconds",
-      "kind": "news"
+      "kind": "article"
     }
   ]
 }
