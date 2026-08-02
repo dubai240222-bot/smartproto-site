@@ -47,7 +47,9 @@
     "https://techcrunch.com/2026/07/31/openai-reportedly-finds-evidence-that-more-of-its-agents-ran-amok/",
     "https://techcrunch.com/2026/07/31/rivian-spinoff-also-to-start-delivering-e-bikes-after-months-of-delays/",
     "https://arstechnica.com/security/2026/07/likely-illegally-claude-gained-access-to-3-networks-will-anthropic-be-held-to-account/",
-    "https://newatlas.com/automotive/audi-q9-sq9-three-row-suv/"
+    "https://newatlas.com/automotive/audi-q9-sq9-three-row-suv/",
+    "https://newatlas.com/motorcycles/honda-cb500/",
+    "https://newatlas.com/tents/gazelle-g4-1-minute-gazebo/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -97,7 +99,9 @@
     "https://techcrunch.com/?p=3148949",
     "https://techcrunch.com/?p=3148946",
     "https://arstechnica.com/security/2026/07/likely-illegally-claude-gained-access-to-3-networks-will-anthropic-be-held-to-account/",
-    "https://newatlas.com/automotive/audi-q9-sq9-three-row-suv/"
+    "https://newatlas.com/automotive/audi-q9-sq9-three-row-suv/",
+    "https://newatlas.com/motorcycles/honda-cb500/",
+    "https://newatlas.com/tents/gazelle-g4-1-minute-gazebo/"
   ],
   "entries": [
     {
@@ -546,6 +550,24 @@
       "processedAt": "2026-08-02T00:02:00.317Z",
       "status": "published",
       "slug": "audi-goes-xxl-for-the-us-with-its-largest-suv-yet",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/motorcycles/honda-cb500/",
+      "url": "https://newatlas.com/motorcycles/honda-cb500/",
+      "title": "Could the Honda CB500 be Royal Enfield's Kryptonite?",
+      "processedAt": "2026-08-02T00:02:47.935Z",
+      "status": "rejected",
+      "reason": "editor hard-reject: non-gadget/culture",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/tents/gazelle-g4-1-minute-gazebo/",
+      "url": "https://newatlas.com/tents/gazelle-g4-1-minute-gazebo/",
+      "title": "Тент Gazelle G4: мгновенная защита от насекомых за 60 секунд!",
+      "processedAt": "2026-08-02T00:02:49.219Z",
+      "status": "published",
+      "slug": "gazelle-launches-versatile-g4-screen-tent-that-pops-up-in-60-seconds",
       "kind": "news"
     }
   ]
