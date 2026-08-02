@@ -125,7 +125,8 @@
     "https://newatlas.com/wearables/pebble-index-ring/",
     "https://newatlas.com/wearables/bandage-fingertip-wearable-feel-virtual-textures-touchscreens/",
     "https://newatlas.com/wearables/casio-g-shock-nano-watch-ring/",
-    "https://newatlas.com/wearables/transparent-uv-detector/"
+    "https://newatlas.com/wearables/transparent-uv-detector/",
+    "https://newatlas.com/wearables/meta-ray-ban-smart-glasses-ar-display-wristband/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -253,7 +254,8 @@
     "https://newatlas.com/wearables/pebble-index-ring/",
     "https://newatlas.com/wearables/bandage-fingertip-wearable-feel-virtual-textures-touchscreens/",
     "https://newatlas.com/wearables/casio-g-shock-nano-watch-ring/",
-    "https://newatlas.com/wearables/transparent-uv-detector/"
+    "https://newatlas.com/wearables/transparent-uv-detector/",
+    "https://newatlas.com/wearables/meta-ray-ban-smart-glasses-ar-display-wristband/"
   ],
   "entries": [
     {
@@ -1404,6 +1406,15 @@
       "status": "published",
       "slug": "transparent-uv-light-sensor-warns-users-before-skin-damage-hits",
       "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/wearables/meta-ray-ban-smart-glasses-ar-display-wristband/",
+      "url": "https://newatlas.com/wearables/meta-ray-ban-smart-glasses-ar-display-wristband/",
+      "title": "Умные очки Ray-Ban Meta с цветным AR-дисплеем: информация перед глазами",
+      "processedAt": "2026-08-02T06:51:28.109Z",
+      "status": "published",
+      "slug": "meta-s-799-smart-glasses-get-a-color-ar-display-and-a-wristband",
+      "kind": "article"
     }
   ]
 }
