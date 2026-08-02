@@ -3,6 +3,7 @@ import articles, { type Article } from '@/data/articles';
 import { MediaPlaceholder } from '@/components/media-placeholder';
 import { ThematicNavigator } from '@/components/thematic-navigator';
 import { formatPublishedAt, sortArticlesByPublishedDate } from '@/lib/article-utils';
+import { formatAuthorByline, resolveAuthorForArticle } from '@/lib/authors';
 import {
   CategoryTags,
   VergeNumberedItem,
@@ -12,7 +13,8 @@ import {
 } from '@/components/article-card';
 
 function textBlob(a: Article): string {
-  return `${a.category} ${a.title} ${a.summary} ${a.content}`.toLowerCase();
+  const tags = Array.isArray(a.tags) ? a.tags.join(' ') : '';
+  return `${a.category} ${tags} ${a.title} ${a.summary} ${a.content}`.toLowerCase();
 }
 
 function filterArticlesByCategory(categoryName: string, list: Article[]): Article[] {
@@ -24,8 +26,19 @@ function filterArticlesByCategory(categoryName: string, list: Article[]): Articl
     const title = a.title.toLowerCase();
     const summary = a.summary.toLowerCase();
     const content = a.content.toLowerCase();
+    const tags = Array.isArray(a.tags) ? a.tags.join(' ').toLowerCase() : '';
     const blob = textBlob(a);
 
+    if (norm === 'китай' || norm === 'china' || norm === 'qwen') {
+      return (
+        cat.includes('китай') ||
+        cat.includes('china') ||
+        tags.includes('китай') ||
+        tags.includes('china') ||
+        tags.includes('qwen') ||
+        blob.includes('китай')
+      );
+    }
     if (norm === 'новинки') {
       return cat.includes('новинк') || title.includes('новинк');
     }
@@ -97,7 +110,12 @@ function filterArticlesByCategory(categoryName: string, list: Article[]): Articl
       return cat.includes('разборы') || cat.includes('формат') || title.includes('разбор');
     }
 
-    return cat.includes(norm) || title.includes(norm) || summary.includes(norm);
+    return (
+      cat.includes(norm) ||
+      tags.includes(norm) ||
+      title.includes(norm) ||
+      summary.includes(norm)
+    );
   });
 }
 
@@ -236,7 +254,12 @@ export default async function HomePage({
                     </p>
 
                     <div className="flex items-center gap-3 text-xs text-[var(--muted)] pt-1 border-t border-[var(--border)]">
-                      <span>{formatPublishedAt(mainStory.publishedAt)}</span>
+                      <span>
+                        {formatAuthorByline(
+                          resolveAuthorForArticle(mainStory).name,
+                          formatPublishedAt(mainStory.publishedAt),
+                        )}
+                      </span>
                       <span>•</span>
                       <span>Время чтения: {mainStory.readTime}</span>
                     </div>

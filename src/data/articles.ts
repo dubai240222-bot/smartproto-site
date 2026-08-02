@@ -1,4 +1,4 @@
-﻿import articles from './articles.json';
+import articles from './articles.json';
 import { filterRemovedArticles } from '@/lib/removed-slugs';
 
 export interface Article {
@@ -6,12 +6,16 @@ export interface Article {
   slug: string;
   title: string;
   category: string;
+  tags?: string[];
   summary: string;
   content: string;
   sourceUrl: string;
   publishedAt: string;
   readTime: string;
   imageUrl?: string;
+  author?: string;
+  authorDesk?: string;
+  agentId?: string;
 }
 
 const typedArticles = filterRemovedArticles(articles as Article[]);

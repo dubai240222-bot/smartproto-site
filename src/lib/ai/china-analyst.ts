@@ -69,7 +69,8 @@ const HARD_REJECT: [RegExp, string][] = [
   [/山寨|高仿|同款复刻|拷贝|高仿/i, 'copy of known device'],
   [/SEO|导购合集|热销榜|什么值得买合集/i, 'SEO catalog'],
   [/包治|根治|神药|医疗级疗效|百病/i, 'dubious medical claims'],
-  [/宣传文案|限时疯抢|史上最强(?!功能)/i, 'marketing without facts'],
+  // "史上最强" alone is common CN launch copy — only reject pure promo phrasing.
+  [/宣传文案|限时疯抢|史上最强优惠|史上最低价|史上最强神器/i, 'marketing without facts'],
   // Non-product CN media noise (must not burn Qwen budget)
   [/入职|裁员|人事任命|担任.{0,12}负责人|向CEO/i, 'personnel / hiring'],
   [/十八场对谈|还只是游戏展吗|行业联盟成立/i, 'trade show / industry fluff'],
@@ -119,14 +120,16 @@ export function guessChinaCategory(text: string): string {
 
 /** True when title looks like a named consumer device launch (not HR / stats / essays). */
 export function looksChinaConsumerGadget(title: string, summary = ''): boolean {
-  const hay = `${title}\n${summary}`;
+  // Noise patterns: TITLE only — ITHome/36Kr RSS bodies often include site chrome
+  // (sidebar 爆料/销量/国补 digests) that would false-reject real gadget launches.
   if (
     /入职|十八场对谈|还只是游戏展吗|交付\s*[\d.]+?\s*万|累计销量|预约.{0,12}车票|碰撞测试|票房|总经理|马斯克|全球榜单|爆料|雪藏|创新人才|国补|已完成备案|经销商称/.test(
-      hay,
+      title,
     )
   ) {
     return false;
   }
+  void summary;
   // Require a launch cue in the TITLE so long RSS summaries cannot smuggle 消费电子 into essays.
   if (!TITLE_LAUNCH_RE.test(title) && !BRAND_DEVICE_LAUNCH_RE.test(title)) return false;
   if (!DEVICE_OR_FUNCTION_RE.test(title) && !BRAND_DEVICE_LAUNCH_RE.test(title)) return false;

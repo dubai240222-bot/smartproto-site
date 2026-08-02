@@ -70,8 +70,11 @@ function tagMatchesHints(tag: string, hints: string[]): boolean {
 function countTags(list: Article[]): Map<string, number> {
   const counts = new Map<string, number>();
   for (const item of list) {
-    if (!item.category) continue;
-    for (const part of item.category.split('/')) {
+    const parts: string[] = [];
+    if (item.category) parts.push(...item.category.split('/'));
+    // Article tags (e.g. «Китай») must surface in the thematic navigator.
+    if (Array.isArray(item.tags)) parts.push(...item.tags);
+    for (const part of parts) {
       const tag = normalizeTag(part);
       if (!tag || tag.length < 2) continue;
       if (NOISE_TAGS.has(tag.toLowerCase())) continue;

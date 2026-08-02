@@ -5,6 +5,7 @@
 import path from 'node:path';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import dotenv from 'dotenv';
+import { stampAuthorForPipeline } from '../src/lib/authors';
 import chalk from 'chalk';
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local'), override: true, quiet: true });
@@ -26,6 +27,9 @@ interface Article {
   publishedAt: string;
   readTime: string;
   imageUrl?: string;
+  author?: string;
+  authorDesk?: string;
+  agentId?: string;
 }
 
 function slugify(title: string): string {
@@ -128,11 +132,18 @@ async function main() {
 
   console.log(chalk.bold.green('=== China → Qwen → Editor → publish ==='));
 
-  const filtered = await collectAndFilterChina({ limitPerSource: 25 });
+  const filtered = await collectAndFilterChina({ limitPerSource: 45 });
   const consider = filtered
     .filter((x) => x.decision === 'CONSIDER')
     .filter((x) => looksChinaConsumerGadget(x.candidate.title, x.candidate.summary))
     .filter((x) => !seen.has(x.candidate.sourceUrl))
+    // Prefer phones / wearables / controllers over gift-box collabs & PC commodity.
+    .filter((x) => {
+      const t = x.candidate.title;
+      if (/联名礼盒|礼盒/.test(t) && /键盘|鼠标|耳机/.test(t)) return false;
+      if (/风冷散热器|显示器支架|支架臂|全模组电源|长焦镜头/.test(t)) return false;
+      return true;
+    })
     .sort((a, b) => b.candidate.rawSignals.length - a.candidate.rawSignals.length)
     .slice(0, MAX_QWEN)
     .map((x) => x.candidate);
@@ -169,6 +180,7 @@ async function main() {
       ...c,
       summary: sourceBody.slice(0, 4000),
       imageUrl: pageImage || c.imageUrl,
+      ...stampAuthorForPipeline('china-qwen', { sourceUrl: c.sourceUrl, slug: slug }),
     };
 
     let dossier;
@@ -282,9 +294,20 @@ async function main() {
       continue;
     }
 
+    const brandHint =
+      dossier.manufacturer ||
+      (/(edifier|漫步者|hecate)/i.test(`${dossier.productName} ${c.title}`)
+        ? 'edifier'
+        : /(oppo)/i.test(`${dossier.productName} ${c.title}`)
+          ? 'oppo'
+          : /(samsung|galaxy|三星)/i.test(`${dossier.productName} ${c.title}`)
+            ? 'samsung'
+            : /(xiaomi|redmi|小米|红米)/i.test(`${dossier.productName} ${c.title}`)
+              ? 'xiaomi'
+              : '');
     const baseSlug = slugify(
       dossier.productName
-        ? `${dossier.manufacturer || 'china'} ${dossier.productName}`
+        ? `${brandHint || 'china'} ${dossier.productName}`
         : draft.title,
     );
     let slug = baseSlug;
@@ -302,11 +325,12 @@ async function main() {
       id: slug,
       slug,
       title: draft.title,
-      category: 'ГАДЖЕТ / ПОЛЕЗНО',
+      category: 'КИТАЙ / ГАДЖЕТ',
       tags: Array.from(
         new Set([
           ...draft.tags.map((t) => t.replace(/^#/, '')),
           'Китай',
+          'Qwen',
           'новинка',
           dossier.manufacturer,
         ].filter(Boolean)),
