@@ -90,7 +90,8 @@
     "https://newatlas.com/electronics/oversized-screen-phone-mirror/",
     "https://newatlas.com/wearables/ganance-heir-watch-smartwatch-step-tracking/",
     "https://newatlas.com/wearables/fort-strength-training-fitness-tracker/",
-    "https://newatlas.com/electronics/dji-mic-mini-review/"
+    "https://newatlas.com/electronics/dji-mic-mini-review/",
+    "https://newatlas.com/electronics/eon-level-lego-clock-with-galactic-display/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -183,7 +184,8 @@
     "https://newatlas.com/electronics/oversized-screen-phone-mirror/",
     "https://newatlas.com/wearables/ganance-heir-watch-smartwatch-step-tracking/",
     "https://newatlas.com/wearables/fort-strength-training-fitness-tracker/",
-    "https://newatlas.com/electronics/dji-mic-mini-review/"
+    "https://newatlas.com/electronics/dji-mic-mini-review/",
+    "https://newatlas.com/electronics/eon-level-lego-clock-with-galactic-display/"
   ],
   "entries": [
     {
@@ -1019,6 +1021,15 @@
       "status": "published",
       "slug": "review-dji-mic-mini-why-it-s-still-unbeatable-in-2026",
       "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/electronics/eon-level-lego-clock-with-galactic-display/",
+      "url": "https://newatlas.com/electronics/eon-level-lego-clock-with-galactic-display/",
+      "title": "Часы из Lego: от секунд до эонов на вашем столе",
+      "processedAt": "2026-08-02T06:06:27.639Z",
+      "status": "published",
+      "slug": "eternal-clock-tracks-seconds-to-eons-via-shockingly-simple-components",
+      "kind": "article"
     }
   ]
 }
