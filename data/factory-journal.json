@@ -121,7 +121,8 @@
     "https://newatlas.com/electronics/diamond-data-storage-density-single-atom/",
     "https://newatlas.com/electronics/colorpik-pen-color-scanning/",
     "https://hackaday.com/2026/08/01/uv-printer-3d-printer-heygears-says-why-not-both/",
-    "https://newatlas.com/automotive/lg-ultraview-windshield-display-pace-pilot/"
+    "https://newatlas.com/automotive/lg-ultraview-windshield-display-pace-pilot/",
+    "https://newatlas.com/wearables/pebble-index-ring/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -245,7 +246,8 @@
     "https://newatlas.com/electronics/diamond-data-storage-density-single-atom/",
     "https://newatlas.com/electronics/colorpik-pen-color-scanning/",
     "uv-printer-3d-printer-heygears-says-why-not-both",
-    "https://newatlas.com/automotive/lg-ultraview-windshield-display-pace-pilot/"
+    "https://newatlas.com/automotive/lg-ultraview-windshield-display-pace-pilot/",
+    "https://newatlas.com/wearables/pebble-index-ring/"
   ],
   "entries": [
     {
@@ -1359,6 +1361,15 @@
       "processedAt": "2026-08-02T06:46:36.749Z",
       "status": "published",
       "slug": "hovering-optical-screen-adds-depth-to-the-digital-cockpit",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/wearables/pebble-index-ring/",
+      "url": "https://newatlas.com/wearables/pebble-index-ring/",
+      "title": "Pebble Index Ring: умное кольцо для записи идей и заметок",
+      "processedAt": "2026-08-02T06:47:24.766Z",
+      "status": "published",
+      "slug": "this-99-ring-remembers-everything-so-your-brain-doesn-t-have-to",
       "kind": "news"
     }
   ]
