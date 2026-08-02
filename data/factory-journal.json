@@ -88,7 +88,8 @@
     "https://newatlas.com/wearables/mobvoi-ticnote-pods/",
     "https://newatlas.com/wearables/citizen-photon-celebrates-half-century-solar-watch-power/",
     "https://newatlas.com/electronics/oversized-screen-phone-mirror/",
-    "https://newatlas.com/wearables/ganance-heir-watch-smartwatch-step-tracking/"
+    "https://newatlas.com/wearables/ganance-heir-watch-smartwatch-step-tracking/",
+    "https://newatlas.com/wearables/fort-strength-training-fitness-tracker/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -179,7 +180,8 @@
     "https://newatlas.com/wearables/mobvoi-ticnote-pods/",
     "https://newatlas.com/wearables/citizen-photon-celebrates-half-century-solar-watch-power/",
     "https://newatlas.com/electronics/oversized-screen-phone-mirror/",
-    "https://newatlas.com/wearables/ganance-heir-watch-smartwatch-step-tracking/"
+    "https://newatlas.com/wearables/ganance-heir-watch-smartwatch-step-tracking/",
+    "https://newatlas.com/wearables/fort-strength-training-fitness-tracker/"
   ],
   "entries": [
     {
@@ -997,6 +999,15 @@
       "status": "published",
       "slug": "coin-sized-accessory-turns-your-favorite-watch-into-a-smartwatch",
       "kind": "article"
+    },
+    {
+      "id": "https://newatlas.com/wearables/fort-strength-training-fitness-tracker/",
+      "url": "https://newatlas.com/wearables/fort-strength-training-fitness-tracker/",
+      "title": "Трекер для силовых тренировок: автоматический учет подходов и повторений",
+      "processedAt": "2026-08-02T06:04:24.708Z",
+      "status": "published",
+      "slug": "this-fitness-tracker-logs-your-lifts-so-you-don-t-have-to",
+      "kind": "news"
     }
   ]
 }
