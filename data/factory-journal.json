@@ -134,7 +134,8 @@
     "https://newatlas.com/electronics/e-taste-virtual-food-flavor-vr/",
     "https://newatlas.com/electronics/review-thermal-master-p2-catches-heat-small/",
     "https://newatlas.com/automotive/gooloo-ds600-diagnostic-vehicle-tablet/",
-    "https://newatlas.com/wearables/review-melomania-p100-se-wireless-anc-headphones/"
+    "https://newatlas.com/wearables/review-melomania-p100-se-wireless-anc-headphones/",
+    "https://newatlas.com/electronics/insta360-ace-pro-2-action-camera/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -271,7 +272,8 @@
     "https://newatlas.com/electronics/e-taste-virtual-food-flavor-vr/",
     "https://newatlas.com/electronics/review-thermal-master-p2-catches-heat-small/",
     "https://newatlas.com/automotive/gooloo-ds600-diagnostic-vehicle-tablet/",
-    "https://newatlas.com/wearables/review-melomania-p100-se-wireless-anc-headphones/"
+    "https://newatlas.com/wearables/review-melomania-p100-se-wireless-anc-headphones/",
+    "https://newatlas.com/electronics/insta360-ace-pro-2-action-camera/"
   ],
   "entries": [
     {
@@ -1503,6 +1505,15 @@
       "status": "published",
       "slug": "in-for-the-long-haul-with-the-melomania-p100-se-wireless-anc-headphones",
       "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/electronics/insta360-ace-pro-2-action-camera/",
+      "url": "https://newatlas.com/electronics/insta360-ace-pro-2-action-camera/",
+      "title": "Insta360 Ace Pro 2: Съемка 8K видео в любых условиях с AI",
+      "processedAt": "2026-08-02T08:22:27.187Z",
+      "status": "published",
+      "slug": "insta360-achieves-insane-low-light-360-degree-imaging",
+      "kind": "article"
     }
   ]
 }
