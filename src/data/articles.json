@@ -1,5 +1,26 @@
 [
   {
+    "id": "all-in-one-polychromatic-leds-replace-rgb-for-radically-sharper-screens",
+    "slug": "all-in-one-polychromatic-leds-replace-rgb-for-radically-sharper-screens",
+    "title": "Q-Pixel: Микро-LED дисплеи для сверхчетких изображений",
+    "category": "НОВИНКА / ПОЛЕЗНО",
+    "tags": [
+      "#новинка",
+      "#полезно",
+      "#гаджет",
+      "#дисплей",
+      "#Q-Pixel",
+      "#MicroLED",
+      "#VR"
+    ],
+    "summary": "Стартап Q-Pixel представил новую технологию микро-светодиодных дисплеев, способную значительно повысить разрешение экранов.",
+    "content": "Стартап Q-Pixel представил новую технологию микро-светодиодных дисплеев, способную значительно повысить разрешение экранов. Вместо традиционных RGB-пикселей используются полихромные светодиоды, что позволяет достичь плотности более 6000 PPI. Это открывает новые возможности для создания более реалистичных и детализированных изображений в VR-гарнитурах и других дисплеях.\nИсточник: New Atlas Electronics.",
+    "sourceUrl": "https://newatlas.com/electronics/q-pixel-microled-display/",
+    "publishedAt": "2026-08-02T06:40:15.040Z",
+    "readTime": "1 мин",
+    "imageUrl": "https://assets.newatlas.com/dims4/default/6b110ed/2147483647/strip/true/crop/817x545+0+0/resize/817x545!/format/webp/quality/90/?url=https%3A%2F%2Fnewatlas-brightspot.s3.ap-southeast-2.amazonaws.com%2F5a%2Fa4%2F9393cbe7474eb558461f1199cb95%2Fm9fxcqywr7yhrmr9a4fjwd-1200-80.jpeg"
+  },
+  {
     "id": "simple-li-l-screen-pairs-with-your-keyboard-to-minimize-distractions",
     "slug": "simple-li-l-screen-pairs-with-your-keyboard-to-minimize-distractions",
     "title": "BYOK: Экран для концентрации на письме без отвлечений",

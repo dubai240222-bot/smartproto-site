@@ -116,7 +116,8 @@
     "https://newatlas.com/electronics/xring-d13-mouse-trackpad-laser-remote/",
     "https://newatlas.com/electronics/ultrasonic-wireless-cutter/",
     "https://newatlas.com/electronics/dji-osmo-action-5-pro-review/",
-    "https://newatlas.com/electronics/byok-writing-lcd-screen/"
+    "https://newatlas.com/electronics/byok-writing-lcd-screen/",
+    "https://newatlas.com/electronics/q-pixel-microled-display/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -235,7 +236,8 @@
     "https://newatlas.com/electronics/xring-d13-mouse-trackpad-laser-remote/",
     "https://newatlas.com/electronics/ultrasonic-wireless-cutter/",
     "https://newatlas.com/electronics/dji-osmo-action-5-pro-review/",
-    "https://newatlas.com/electronics/byok-writing-lcd-screen/"
+    "https://newatlas.com/electronics/byok-writing-lcd-screen/",
+    "https://newatlas.com/electronics/q-pixel-microled-display/"
   ],
   "entries": [
     {
@@ -1305,6 +1307,15 @@
       "status": "published",
       "slug": "simple-li-l-screen-pairs-with-your-keyboard-to-minimize-distractions",
       "kind": "article"
+    },
+    {
+      "id": "https://newatlas.com/electronics/q-pixel-microled-display/",
+      "url": "https://newatlas.com/electronics/q-pixel-microled-display/",
+      "title": "Q-Pixel: Микро-LED дисплеи для сверхчетких изображений",
+      "processedAt": "2026-08-02T06:40:15.040Z",
+      "status": "published",
+      "slug": "all-in-one-polychromatic-leds-replace-rgb-for-radically-sharper-screens",
+      "kind": "news"
     }
   ]
 }
