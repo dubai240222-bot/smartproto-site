@@ -1,5 +1,26 @@
 [
   {
+    "id": "ai-powered-glasses-help-the-blind-go-places-safely",
+    "slug": "ai-powered-glasses-help-the-blind-go-places-safely",
+    "title": "Умные очки с ИИ для незрячих: навигация и безопасность в реальном времени",
+    "category": "НОВИНКА / ПОЛЕЗНО",
+    "tags": [
+      "#новинка",
+      "#полезно",
+      "#гаджет",
+      "#ИИ",
+      "#доступность",
+      "#зрение",
+      "#навигация"
+    ],
+    "summary": "Представлены очки Dotlumen, оснащенные искусственным интеллектом для помощи незрячим людям.",
+    "content": "Представлены очки Dotlumen, оснащенные искусственным интеллектом для помощи незрячим людям. Устройство анализирует окружение и передает информацию пользователю, обеспечивая безопасное передвижение в незнакомых местах. Это значительный шаг к повышению независимости и мобильности людей с нарушениями зрения.\n\nИсточник: New Atlas Wearables.",
+    "sourceUrl": "https://newatlas.com/wearables/dotlumen-ai-glasses-blind-independence/",
+    "publishedAt": "2026-08-02T06:13:24.721Z",
+    "readTime": "1 мин",
+    "imageUrl": "https://assets.newatlas.com/dims4/default/ee2098d/2147483647/strip/true/crop/1200x800+0+0/resize/1200x800!/format/webp/quality/90/?url=https%3A%2F%2Fnewatlas-brightspot.s3.ap-southeast-2.amazonaws.com%2F0d%2F97%2F21f794544f53b571a8103fbca53b%2Fthe-lumen-glasses-are-more-of-a-headset-than-spectacles-and-this-device-delivers-haptic-feedback-to-your-forehead-to-guide-you-around-your-surroundings.jpg"
+  },
+  {
     "id": "smart-headphones-hide-a-fold-down-immersive-display-in-the-headband",
     "slug": "smart-headphones-hide-a-fold-down-immersive-display-in-the-headband",
     "title": "Perisphere: Наушники с интегрированным дисплеем для иммерсивного контента",
@@ -681,27 +702,6 @@
     "publishedAt": "2026-08-02T00:14:41.165Z",
     "readTime": "1 мин",
     "imageUrl": "https://assets.newatlas.com/dims4/default/d0ae7be/2147483647/strip/true/crop/6966x4644+0+0/resize/1440x960!/format/webp/quality/90/?url=https%3A%2F%2Fnewatlas-brightspot.s3.ap-southeast-2.amazonaws.com%2F15%2Fed%2F16b8bcb14a988fc2b99977dfb4de%2Fdsc08353-hdr.jpg"
-  },
-  {
-    "id": "what-s-the-best-handheld-mini-fan",
-    "slug": "what-s-the-best-handheld-mini-fan",
-    "title": "Компактный вентилятор: Прохлада всегда под рукой",
-    "category": "ГАДЖЕТ / ПОЛЕЗНО",
-    "tags": [
-      "#минивентилятор",
-      "#портативнаятехника",
-      "#лето",
-      "#гаджет",
-      "#комфорт",
-      "#удобство",
-      "#аксессуар"
-    ],
-    "summary": "Компактный мини-вентилятор обеспечивает мощный и освежающий поток воздуха, решая проблему летней духоты. Идеален для поездок и офиса благодаря мобильности и длительной автономной работе.",
-    "content": "Духота в летний день больше не проблема, если у вас есть этот мини-вентилятор. Забудьте о неудобных громоздких устройствах, этот гаджет создан для комфорта и мобильности. Его компактный размер позволяет легко разместить его в сумке или кармане, что делает его идеальным спутником в поездках, на прогулках или в условиях офиса. Несмотря на скромные габариты, вентилятор обеспечивает мощный и освежающий поток воздуха, моментально рассеивая ощущение жары. Длительное время автономной работы гарантирует, что прохлада будет с вами на протяжении всего дня, избавляя от дискомфорта. Это не просто аксессуар, а практичное решение для тех, кто ценит свое удобство и не хочет зависеть от погодных условий. Инвестируйте в свой комфорт этим летом.",
-    "sourceUrl": "https://techcrunch.com/2026/08/01/whats-the-best-handheld-mini-fan/",
-    "publishedAt": "2026-08-02T00:05:56.426Z",
-    "readTime": "1 мин",
-    "imageUrl": "https://techcrunch.com/wp-content/uploads/2026/07/mini-fans-review.jpg?resize=1200,675"
   },
   {
     "id": "carbon-fiber-guitar-s-smart-rgb-lights-teach-you-how-to-play",

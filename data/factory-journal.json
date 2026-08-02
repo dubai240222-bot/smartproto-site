@@ -97,7 +97,8 @@
     "https://newatlas.com/electronics/nanoflow-i2-air-worlds-smallest-horizontal-mouse/",
     "https://newatlas.com/wearables/gesture-based-wearable-control/",
     "https://newatlas.com/wearables/ai-rings-pebble-index-wizpr-sandbar-stream/",
-    "https://newatlas.com/wearables/perisphere-smart-headphones-immersive-display-cameras-3d/"
+    "https://newatlas.com/wearables/perisphere-smart-headphones-immersive-display-cameras-3d/",
+    "https://newatlas.com/wearables/dotlumen-ai-glasses-blind-independence/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -197,7 +198,8 @@
     "https://newatlas.com/electronics/nanoflow-i2-air-worlds-smallest-horizontal-mouse/",
     "https://newatlas.com/wearables/gesture-based-wearable-control/",
     "https://newatlas.com/wearables/ai-rings-pebble-index-wizpr-sandbar-stream/",
-    "https://newatlas.com/wearables/perisphere-smart-headphones-immersive-display-cameras-3d/"
+    "https://newatlas.com/wearables/perisphere-smart-headphones-immersive-display-cameras-3d/",
+    "https://newatlas.com/wearables/dotlumen-ai-glasses-blind-independence/"
   ],
   "entries": [
     {
@@ -1096,6 +1098,15 @@
       "status": "published",
       "slug": "smart-headphones-hide-a-fold-down-immersive-display-in-the-headband",
       "kind": "article"
+    },
+    {
+      "id": "https://newatlas.com/wearables/dotlumen-ai-glasses-blind-independence/",
+      "url": "https://newatlas.com/wearables/dotlumen-ai-glasses-blind-independence/",
+      "title": "Умные очки с ИИ для незрячих: навигация и безопасность в реальном времени",
+      "processedAt": "2026-08-02T06:13:24.721Z",
+      "status": "published",
+      "slug": "ai-powered-glasses-help-the-blind-go-places-safely",
+      "kind": "news"
     }
   ]
 }
