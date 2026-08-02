@@ -12,6 +12,7 @@
     "test:china-signals": "tsx scripts/test-china-signals.ts",
     "test:china-collector": "tsx scripts/test-china-collector.ts",
     "test:china-qwen": "tsx scripts/test-china-qwen.ts",
+    "test:niche-pc": "tsx scripts/test-niche-pc-filter.ts",
     "publish:china-qwen": "tsx scripts/publish-china-qwen.ts",
     "newsroom:tick": "tsx scripts/run-newsroom-tick.ts",
     "factory:shift": "tsx scripts/run-factory-shift.ts",

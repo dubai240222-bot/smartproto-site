@@ -109,7 +109,11 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
       : typeof (articleData as { content?: unknown }).content === 'string'
         ? (articleData as { content: string }).content
         : '';
-  const gate = hardRejectTopic(sourceTitle, sourceText);
+  const sourceName =
+    typeof (articleData as { sourceName?: unknown }).sourceName === 'string'
+      ? (articleData as { sourceName: string }).sourceName
+      : '';
+  const gate = hardRejectTopic(sourceTitle, sourceText, sourceName);
   const reviewVerdict =
     typeof (reviewData as { technicalVerdict?: unknown }).technicalVerdict === 'string'
       ? (reviewData as { technicalVerdict: string }).technicalVerdict

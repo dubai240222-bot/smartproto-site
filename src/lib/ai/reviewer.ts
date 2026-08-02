@@ -1,5 +1,5 @@
 ﻿import { getOpenRouterClient, parseJsonObject, clampText } from './shared';
-import { hardRejectTopic } from './hard-reject';
+import { hardRejectTopic, PREFERRED_GADGET_CATEGORIES } from './hard-reject';
 
 export interface ReviewResult {
   technicalVerdict: string;
@@ -14,12 +14,18 @@ const BLOGGER_TONE_RE =
 
 const REVIEW_SYSTEM_PROMPT = [
   'Ты технический эксперт SmartProto — медиа ТОЛЬКО о НОВЫХ товарах, которые обычный человек может КУПИТЬ или ПРЕДЗАКАЗАТЬ',
-  'и использовать для быта/работы: smart gadgets / work tools / portable electronics / AI hardware / productivity devices.',
+  'и использовать для быта/работы.',
+  `Приоритет: ${PREFERRED_GADGET_CATEGORIES}.`,
   'HARD REJECT / вернуть Editor — technicalVerdict ОБЯЗАН начинаться с REJECT:, если:',
   'нет покупаемого продукта; нет доказательства новизны; массовый старый товар как сенсация;',
   'заголовок-реклама; обращение к читателю; блогерский тон; нет сравнения с аналогами;',
   'не ясно почему писать сейчас; Trump/политика; celebrities; writers; кино; wildlife; музеи;',
-  'лабораторный прототип без buy/preorder; Docker/DevOps/SmartProto-internal/API libs.',
+  'лабораторный прототип без buy/preorder; Docker/DevOps/SmartProto-internal/API libs;',
+  'нишевый PC/engineering компонент (CPU cooler, motherboard, PC case, PSU, RAM, thermal paste,',
+  'internal SSD, internal/server/enterprise hardware, developer board, bare PCB, NAS parts) без сильного',
+  'consumer-angle — интересен только сборщикам ПК / инженерам / разработчикам / энтузиастам (SP-A-039-ALT).',
+  'Допуск ниши только если есть: обычный человек без техзнаний; готовое устройство; необычный дизайн;',
+  'польза home/travel/car/health/sleep/study/comms/safety; заметно дешевле/меньше/удобнее; wow-factor.',
   'keyAspects всё равно 3 коротких пункта.',
   'Иначе подтверди достоверность и 3 аспекта, включая отличие от аналогов.',
 ].join(' ');
@@ -47,7 +53,11 @@ export async function reviewArticle(articleData: object): Promise<ReviewResult> 
       : typeof (articleData as { content?: unknown }).content === 'string'
         ? (articleData as { content: string }).content
         : '';
-  const local = reviewDraftLocal(title, text);
+  const sourceName =
+    typeof (articleData as { sourceName?: unknown }).sourceName === 'string'
+      ? (articleData as { sourceName: string }).sourceName
+      : '';
+  const local = reviewDraftLocal(title, text, sourceName);
   if (local) return local;
 
   const client = getOpenRouterClient();
@@ -90,16 +100,18 @@ export async function reviewArticle(articleData: object): Promise<ReviewResult> 
 }
 
 /** Deterministic Reviewer gate for tests (no OpenRouter). */
-export function reviewDraftLocal(title: string, text: string): ReviewResult | null {
-  const gate = hardRejectTopic(title, text);
+export function reviewDraftLocal(title: string, text: string, sourceName = ''): ReviewResult | null {
+  const gate = hardRejectTopic(title, text, sourceName);
   if (gate.reject) {
+    const aspect =
+      gate.rejectCode === 'NOT_ACTUALLY_NEW'
+        ? 'нет доказательства новизны'
+        : gate.rejectCode === 'NICHE_NO_CONSUMER_ANGLE'
+          ? 'нишевый PC/engineering без consumer-angle'
+          : 'нет покупаемого продукта';
     return {
       technicalVerdict: `REJECT: ${gate.reason}`,
-      keyAspects: [
-        gate.rejectCode === 'NOT_ACTUALLY_NEW' ? 'нет доказательства новизны' : 'нет покупаемого продукта',
-        'off-topic для SmartProto',
-        'не публиковать',
-      ],
+      keyAspects: [aspect, 'off-topic для SmartProto', 'не публиковать'],
     };
   }
   if (BLOGGER_TONE_RE.test(`${title}\n${text}`)) {

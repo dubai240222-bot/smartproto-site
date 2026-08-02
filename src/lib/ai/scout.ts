@@ -1,5 +1,10 @@
 ﻿import { getOpenRouterClient, parseJsonObject, clampText } from './shared';
-import { hardRejectTopic, evaluateTopicLocal, type NoveltyAssessment } from './hard-reject';
+import {
+  hardRejectTopic,
+  evaluateTopicLocal,
+  PREFERRED_GADGET_CATEGORIES,
+  type NoveltyAssessment,
+} from './hard-reject';
 
 export interface ScoutResult extends Partial<NoveltyAssessment> {
   interesting: boolean;
@@ -28,11 +33,19 @@ const SCOUT_SYSTEM_PROMPT = [
   'D визуальная привлекательность 0–15; E коммерческий потенциал 0–15.',
   'Проходной балл концептуально 75/100.',
   '',
-  'Приоритет (покупаемые устройства): smart gadgets, work tools, portable electronics,',
-  'AI hardware, productivity devices, marketplace novelties;',
-  'wearable, power bank, портативный проектор, переводчик, умный дом, кухонный гаджет,',
-  'здоровье/сон, авто-гаджет, desk/office tools, наушники/камеры/аксессуары,',
+  'Приоритет (покупаемые устройства):',
+  PREFERRED_GADGET_CATEGORIES + ';',
+  'также smart gadgets, work tools, portable electronics, productivity devices,',
   'viral Temu/Amazon/Taobao-находки, Kickstarter/Indiegogo, CES/IFA/Computex.',
+  '',
+  'НИЗКИЙ ПРИОРИТЕТ / REJECT (SP-A-039-ALT) — нишевые PC/engineering товары:',
+  'CPU cooler, motherboard, PC case, PSU, RAM, thermal paste, internal SSD, internal computer component,',
+  'server component, developer board, bare PCB, NAS parts, enterprise hardware.',
+  'Не полный бан: допускай ТОЛЬКО при сильном consumer-angle — хотя бы одно из:',
+  'обычный человек без техзнаний; готовое устройство (не компонент); необычный дизайн;',
+  'явная польза home/travel/car/health/sleep/study/comms/safety; заметно дешевле/меньше/удобнее;',
+  'реальный wow-factor. Если интересно ТОЛЬКО сборщикам ПК / инженерам / разработчикам /',
+  'hardware-энтузиастам → REJECT или score далеко ниже 75.',
   '',
   'Жёсткий reject ВСЕГДА (score=0, interesting=false, productType="none"), если funnel мёртв:',
   '- нет конкретного имени товара + пути «хочу купить / где взять» (buy, preorder, KS/IG, магазин);',
@@ -45,6 +58,7 @@ const SCOUT_SYSTEM_PROMPT = [
   '- абстрактные новости / советы / гайды / shopping guide без одного явного товара;',
   '- лабораторные исследования / прототипы «ещё нельзя купить»;',
   '- OEM-компоненты (вентили, чипы) без готового consumer-девайса на полке;',
+  '- нишевый PC/engineering компонент без сильного consumer-angle (SP-A-039-ALT);',
   '- conference badge / Defcon / DIY без kit/SKU который можно заказать;',
   '- Docker, HN-мета, DevOps, API, библиотеки, инфраструктура, site-internal digests;',
   '- нет пользы для быта/работы или признака новизны;',

@@ -235,6 +235,73 @@ const FAKE_NEW_RE =
 const SATURATED_RE =
   /обычный\s+(мини-?)?вентилятор|мини-?вентилятор с новым цветом|power bank.{0,40}упаковк|\btws\b/i;
 
+/**
+ * SP-A-039-ALT (from SP-A-038) — niche PC / engineering parts. Not a full ban:
+ * reject only when there is no strong consumer angle.
+ */
+const NICHE_TECH_PATTERNS: RegExp[] = [
+  /\bcpu\s*cooler\b/i,
+  /\b(air|liquid|aio)\s*cooler\b/i,
+  /\bcpu\s*cooling\b/i,
+  /\bmotherboard\b/i,
+  /\bmainboard\b/i,
+  /\b(atx|m-?atx|mini-?itx)\s*(motherboard|board|case)?\b/i,
+  /\bpc\s*case\b/i,
+  /\bcomputer\s*case\b/i,
+  /\b(atx|sfx)\s*(psu|power\s*supply)\b/i,
+  /\bpc\s*(psu|power\s*supply)\b/i,
+  /\b(ddr4|ddr5)\s*(ram|memory|dimm)\b/i,
+  /\bram\s*(kit|module|stick|dimm)\b/i,
+  /\bthermal\s*(paste|compound|grease)\b/i,
+  /\binternal\s*(pc|computer)\s*component\b/i,
+  /\binternal\s*(ssd|nvme|hdd|drive)\b/i,
+  /\bserver\s*(ssd|hdd|ram|cpu|motherboard|component|psu|blade|drive)\b/i,
+  /\benterprise\s*(ssd|hdd|hardware|server|storage|nvme)\b/i,
+  /\b(bare|naked)\s*pcb\b/i,
+  /\b(developer|dev)\s*board\b/i,
+  /\bnas\s*(bay|drive\s*cage|parts?|backplane|controller|hdd\s*tray)\b/i,
+  /\bматеринск/i,
+  /\bкулер\s*(для\s*)?(процессор|cpu)/i,
+  /\b(компьютерн\w*\s+)?блок\s*питания\b/i,
+  /\bтермопаст/i,
+  /\bсерверн\w*\s*(ssd|накопител|компонент|железо)/i,
+  /\bвнутренн\w*\s*(ssd|накопител)/i,
+  /主板|导热硅脂|服务器(硬盘|SSD|组件)|开发板|机箱电源|内部SSD/,
+];
+
+/** Strong consumer angle that can salvage a niche-tech match (SP-A-039-ALT). */
+const STRONG_CONSUMER_ANGLE: RegExp[] = [
+  /\b(ordinary|average)\s+(person|people|user|consumer)s?\b/i,
+  /\bwithout\s+(technical|tech|engineering|pc[- ]building)\s+knowledge\b/i,
+  /\bno\s+(technical|tech)\s+knowledge\b/i,
+  /\bfinished\s+(device|product|gadget)\b/i,
+  /\bplug[- ]?and[- ]?play\b/i,
+  /\bunusual\s+design\b/i,
+  /\bwow[- ]?factor\b/i,
+  /\b(home|travel|car|health|sleep|study|comms|safety)\s+(use|benefit|gadget|device|robot)\b/i,
+  /\bfor\s+(home|travel|car|health|sleep|study|kids|children|office|commute)\b/i,
+  /\b(much\s+)?(cheaper|smaller|more\s+convenient)\s+than\b/i,
+  /\bобычн\w*\s+человек/i,
+  /\bбез\s+техн/i,
+  /\bготовое\s+(устройств|издели)/i,
+  /\bнеобычн\w*\s+дизайн/i,
+  /\bдля\s+(дома|путешеств|авто|здоров|сна|учёб|учебы|дет)/i,
+];
+
+/** Preferred SmartProto categories (scout/reviewer guidance + local hints). SP-A-039-ALT */
+export const PREFERRED_GADGET_CATEGORIES =
+  'unusual smartphones, game controllers, wearables, smart rings, smart home, travel gadgets, AI hardware, home robots, cameras, audio gadgets, phone accessories, power banks/chargers, mini projectors, portable displays, car gadgets, translators, health/sleep devices, kitchen gadgets, children/education gadgets';
+
+export function isNicheTechTopic(title: string, text = ''): boolean {
+  const hay = `${title}\n${text}`;
+  return NICHE_TECH_PATTERNS.some((re) => re.test(hay));
+}
+
+export function hasStrongConsumerAngle(title: string, text = ''): boolean {
+  const hay = `${title}\n${text}`;
+  return STRONG_CONSUMER_ANGLE.some((re) => re.test(hay));
+}
+
 export function assessNovelty(title: string, text = '', opts?: { sourceName?: string }): NoveltyAssessment {
   const hay = `${title}\n${text}`;
   const noveltyEvidence = NOVELTY_RE.test(hay) ? [NOVELTY_RE.source] : [];
@@ -297,6 +364,16 @@ export function hardRejectTopic(title: string, text = '', sourceName = ''): Hard
       };
     }
   }
+  // SP-A-039-ALT: niche PC/engineering components — allow only with strong consumer angle.
+  // Runs before NO_PRODUCT so ordinary coolers/boards get a clear niche reject code.
+  if (isNicheTechTopic(title, text) && !hasStrongConsumerAngle(title, text)) {
+    return {
+      reject: true,
+      reason:
+        'Жёсткий reject: нишевый PC/engineering компонент без сильного consumer-angle (интересен только сборщикам ПК / инженерам / энтузиастам).',
+      rejectCode: 'NICHE_NO_CONSUMER_ANGLE',
+    };
+  }
   if (!BUYABLE_PRODUCT_PATTERNS.some((re) => re.test(hay))) {
     return {
       reject: true,
@@ -336,8 +413,14 @@ export function evaluateTopicLocal(title: string, text = '') {
 export function looksBuyableGadget(title: string, text = '', sourceName = ''): boolean {
   const gate = hardRejectTopic(title, text, sourceName);
   if (!gate.reject) return true;
-  // Never soften HARD_TOPIC / research rejects.
-  if (gate.rejectCode === 'HARD_TOPIC' || gate.rejectCode === 'NON_BUYABLE_RESEARCH') return false;
+  // Never soften HARD_TOPIC / research / niche-PC rejects.
+  if (
+    gate.rejectCode === 'HARD_TOPIC' ||
+    gate.rejectCode === 'NON_BUYABLE_RESEARCH' ||
+    gate.rejectCode === 'NICHE_NO_CONSUMER_ANGLE'
+  ) {
+    return false;
+  }
 
   const source = sourceName.toLowerCase();
   const hay = `${title} ${text}`.toLowerCase();
