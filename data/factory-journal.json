@@ -136,7 +136,8 @@
     "https://newatlas.com/automotive/gooloo-ds600-diagnostic-vehicle-tablet/",
     "https://newatlas.com/wearables/review-melomania-p100-se-wireless-anc-headphones/",
     "https://newatlas.com/electronics/insta360-ace-pro-2-action-camera/",
-    "https://newatlas.com/electronics/gopro-hero-13-black/"
+    "https://newatlas.com/electronics/gopro-hero-13-black/",
+    "https://newatlas.com/electronics/ai-interactive-vehicle-display-eye-tracking-bus-window/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -275,7 +276,8 @@
     "https://newatlas.com/automotive/gooloo-ds600-diagnostic-vehicle-tablet/",
     "https://newatlas.com/wearables/review-melomania-p100-se-wireless-anc-headphones/",
     "https://newatlas.com/electronics/insta360-ace-pro-2-action-camera/",
-    "https://newatlas.com/electronics/gopro-hero-13-black/"
+    "https://newatlas.com/electronics/gopro-hero-13-black/",
+    "https://newatlas.com/electronics/ai-interactive-vehicle-display-eye-tracking-bus-window/"
   ],
   "entries": [
     {
@@ -1524,6 +1526,15 @@
       "processedAt": "2026-08-02T08:23:25.078Z",
       "status": "published",
       "slug": "gopro-s-new-hero-13-flagship-has-swappable-lenses-and-a-baby-brother",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/electronics/ai-interactive-vehicle-display-eye-tracking-bus-window/",
+      "url": "https://newatlas.com/electronics/ai-interactive-vehicle-display-eye-tracking-bus-window/",
+      "title": "Умное окно автобуса: информация об объектах без смартфона",
+      "processedAt": "2026-08-02T08:24:24.966Z",
+      "status": "published",
+      "slug": "eye-tracking-window-tech-tells-sightseers-about-what-they-re-looking-at",
       "kind": "news"
     }
   ]
