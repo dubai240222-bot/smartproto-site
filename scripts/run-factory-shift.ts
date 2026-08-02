@@ -5,9 +5,10 @@ import dotenv from 'dotenv';
 import chalk from 'chalk';
 import { fetchRssFeed, RssItem } from '../src/lib/collectors/rss';
 import { extractArticleImage } from '../src/lib/collectors/image-extractor';
-import { scoutArticle, ScoutResult } from '../src/lib/ai/scout';
+import { scoutArticle, ScoutResult, SCOUT_SCORE_THRESHOLD } from '../src/lib/ai/scout';
 import { reviewArticle, ReviewResult } from '../src/lib/ai/reviewer';
 import { writeDraft, DraftResult } from '../src/lib/ai/editor';
+import { hardRejectTopic } from '../src/lib/ai/hard-reject';
 
 function loadEnvFiles(): void {
   const root = process.cwd();
@@ -51,7 +52,7 @@ const SOURCES = [
   'https://techcrunch.com/feed/',
 ];
 
-const SCOUT_THRESHOLD = 70;
+const SCOUT_THRESHOLD = SCOUT_SCORE_THRESHOLD;
 
 function parseArgs(argv: string[]) {
   let hours = 3;
@@ -257,6 +258,26 @@ async function main(): Promise<void> {
     console.log(`URL: ${item.url}`);
 
     try {
+      const topicGate = hardRejectTopic(item.title, item.text);
+      if (topicGate.reject) {
+        console.log(chalk.yellow(`Hard reject (non-buyable): ${topicGate.reason}`));
+        rejectedCount++;
+        journal.processedUrls.push(item.url);
+        journal.processedIds.push(item.id);
+        journal.entries.push({
+          id: item.id,
+          url: item.url,
+          title: item.title,
+          processedAt: new Date().toISOString(),
+          status: 'rejected',
+          scoutScore: 0,
+          reason: topicGate.reason,
+        });
+        await writeFile(journalPath, JSON.stringify(journal, null, 2) + '\n', 'utf8');
+        consecutiveErrors = 0;
+        continue;
+      }
+
       // 1. Scout
       console.log(chalk.gray('Running Scout agent...'));
       const scout: ScoutResult = await scoutArticle(item.title, item.text);
@@ -267,7 +288,7 @@ async function main(): Promise<void> {
       journal.processedUrls.push(item.url);
       journal.processedIds.push(item.id);
 
-      if (scout.score < SCOUT_THRESHOLD) {
+      if (!scout.interesting || scout.score < SCOUT_THRESHOLD) {
         console.log(chalk.yellow(`Candidate rejected by Scout (score ${scout.score} < ${SCOUT_THRESHOLD}).`));
         rejectedCount++;
         journal.entries.push({
@@ -292,10 +313,48 @@ async function main(): Promise<void> {
       const review: ReviewResult = await reviewArticle(item);
       aiRuns++;
 
+      if (/^REJECT\b/i.test(review.technicalVerdict)) {
+        console.log(chalk.yellow(`Reviewer hard-reject: ${review.technicalVerdict}`));
+        rejectedCount++;
+        journal.entries.push({
+          id: item.id,
+          url: item.url,
+          title: item.title,
+          processedAt: new Date().toISOString(),
+          status: 'rejected',
+          scoutScore: scout.score,
+          reason: review.technicalVerdict,
+        });
+        await writeFile(journalPath, JSON.stringify(journal, null, 2) + '\n', 'utf8');
+        consecutiveErrors = 0;
+        continue;
+      }
+
       // 3. Editor
       console.log(chalk.gray('Running Editor agent...'));
       const draft: DraftResult = await writeDraft(item, review);
       aiRuns++;
+
+      if (
+        draft.title.trim().toUpperCase() === 'REJECT' ||
+        draft.tags.some((t) => t.toLowerCase() === '#reject') ||
+        draft.text.trim().toLowerCase() === 'off-topic'
+      ) {
+        console.log(chalk.yellow('Editor hard-reject: non-buyable / off-topic'));
+        rejectedCount++;
+        journal.entries.push({
+          id: item.id,
+          url: item.url,
+          title: item.title,
+          processedAt: new Date().toISOString(),
+          status: 'rejected',
+          scoutScore: scout.score,
+          reason: 'editor hard-reject: non-buyable',
+        });
+        await writeFile(journalPath, JSON.stringify(journal, null, 2) + '\n', 'utf8');
+        consecutiveErrors = 0;
+        continue;
+      }
 
       // 4. Image Extraction
       console.log(chalk.gray('Extracting original lead image...'));

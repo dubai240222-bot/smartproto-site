@@ -6,8 +6,10 @@ import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
 
 import type { ScoutResult } from '../src/lib/ai/scout';
+import { SCOUT_SCORE_THRESHOLD } from '../src/lib/ai/scout';
 import type { ReviewResult } from '../src/lib/ai/reviewer';
 import type { DraftResult } from '../src/lib/ai/editor';
+import { hardRejectTopic } from '../src/lib/ai/hard-reject';
 
 interface NewsroomCandidate {
   id: string;
@@ -33,7 +35,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const draftsDir = path.resolve(__dirname, '..', 'drafts');
 const DEFAULT_LIMIT = 3;
-const SCOUT_SCORE_THRESHOLD = 70;
 
 loadEnvFiles();
 
@@ -210,6 +211,14 @@ async function processCandidate(
       }
     }
 
+    const topicGate = hardRejectTopic(article.title, article.text ?? '');
+    if (topicGate.reject) {
+      outcome.score = 0;
+      outcome.skipReason = topicGate.reason;
+      console.log(chalk.gray(`Hard reject ${article.title}: ${topicGate.reason}`));
+      return outcome;
+    }
+
     console.log(chalk.cyan(`Scouting... ${article.title}`));
     console.log(chalk.gray(`Scout model: ${models.scoutModel}`));
     const scout = await pipeline.scoutArticle(article.title, article.text ?? '');
@@ -217,7 +226,7 @@ async function processCandidate(
     console.log(chalk.gray(`Scout score: ${scout.score}`));
     console.log(chalk.gray(`Scout reason: ${scout.reason}`));
 
-    if (scout.score < SCOUT_SCORE_THRESHOLD) {
+    if (!scout.interesting || scout.score < SCOUT_SCORE_THRESHOLD) {
       outcome.skipReason = `Scout score ${scout.score} < threshold ${SCOUT_SCORE_THRESHOLD}`;
       console.log(
         chalk.gray(
