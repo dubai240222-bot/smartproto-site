@@ -85,6 +85,64 @@ function parseArgs(argv: string[]) {
   return { force: argv.includes('--force'), dryRun: argv.includes('--dry-run') };
 }
 
+/** SP-A-042 — console-only factory tick summary (GHA + local). */
+interface TickMetrics {
+  candidatesCollected: number;
+  hardRejected: number;
+  sentToQwen: number;
+  sentToGemini: number;
+  draftsCreated: number;
+  articlesPublished: number;
+  aiStarted: boolean;
+  collectorStarted: boolean;
+  publisherStarted: boolean;
+  reason: string;
+  skipReason: string;
+}
+
+function emptyTickMetrics(reason = '', skipReason = ''): TickMetrics {
+  return {
+    candidatesCollected: 0,
+    hardRejected: 0,
+    sentToQwen: 0,
+    sentToGemini: 0,
+    draftsCreated: 0,
+    articlesPublished: 0,
+    aiStarted: false,
+    collectorStarted: false,
+    publisherStarted: false,
+    reason,
+    skipReason,
+  };
+}
+
+function printFactoryTickSummary(opts: {
+  factoryEnabled: boolean;
+  event: string;
+  metrics: TickMetrics;
+  commitCreated?: boolean;
+  pushDone?: boolean;
+}): void {
+  const { factoryEnabled, event, metrics } = opts;
+  console.log('');
+  console.log('SMARTPROTO FACTORY TICK SUMMARY');
+  console.log(`factoryEnabled: ${factoryEnabled}`);
+  console.log(`event: ${event}`);
+  console.log(`aiStarted: ${metrics.aiStarted}`);
+  console.log(`collectorStarted: ${metrics.collectorStarted}`);
+  console.log(`publisherStarted: ${metrics.publisherStarted}`);
+  console.log(`candidatesCollected: ${metrics.candidatesCollected}`);
+  console.log(`hardRejected: ${metrics.hardRejected}`);
+  console.log(`sentToQwen: ${metrics.sentToQwen}`);
+  console.log(`sentToGemini: ${metrics.sentToGemini}`);
+  console.log(`draftsCreated: ${metrics.draftsCreated}`);
+  console.log(`articlesPublished: ${metrics.articlesPublished}`);
+  console.log(`commitCreated: ${opts.commitCreated === true}`);
+  console.log(`pushDone: ${opts.pushDone === true}`);
+  console.log(`reason: ${metrics.reason || 'n/a'}`);
+  console.log(`skipReason: ${metrics.skipReason || 'none'}`);
+}
+
 function slugify(title: string): string {
   return (
     title
@@ -186,11 +244,13 @@ async function tryChinaPublishOnce(opts: {
   ids: Set<string>;
   journal: JournalData;
   articles: Article[];
+  metrics: TickMetrics;
 }): Promise<boolean> {
   process.env.CHINA_DEPARTMENT_ENABLED = 'true';
   process.env.CHINA_ALLOW_RECOMMEND = 'true';
 
   console.log(chalk.bold('— Channel A: China → Qwen —'));
+  opts.metrics.collectorStarted = true;
 
   const { collectAndFilterChina } = await import('../src/lib/collectors/china-collector');
   const { analyzeChinaCandidate, looksChinaConsumerGadget } = await import(
@@ -207,6 +267,7 @@ async function tryChinaPublishOnce(opts: {
         `China collect failed: ${err instanceof Error ? err.message : String(err)} — fall through to RSS.`,
       ),
     );
+    opts.metrics.skipReason = 'china collect failed';
     return false;
   }
 
@@ -218,14 +279,17 @@ async function tryChinaPublishOnce(opts: {
     .slice(0, CHINA_MAX_QWEN)
     .map((x) => x.candidate);
 
+  opts.metrics.candidatesCollected += consider.length;
   console.log(`China CONSIDER gadget candidates: ${consider.length} (max Qwen ${CHINA_MAX_QWEN})`);
   if (!consider.length) {
     console.log(chalk.gray('No China/Qwen candidate — fall through to RSS.'));
+    opts.metrics.skipReason = 'no china candidate';
     return false;
   }
 
   if (opts.dryRun) {
     console.log(chalk.cyan(`Dry-run China pick: ${consider[0].title.slice(0, 80)}`));
+    opts.metrics.reason = 'dry-run china pick';
     return true;
   }
 
@@ -251,6 +315,8 @@ async function tryChinaPublishOnce(opts: {
 
     let dossier;
     try {
+      opts.metrics.aiStarted = true;
+      opts.metrics.sentToQwen += 1;
       dossier = await analyzeChinaCandidate(enriched);
     } catch (err) {
       console.log(chalk.yellow(`Qwen fail: ${err instanceof Error ? err.message : String(err)}`));
@@ -306,11 +372,13 @@ async function tryChinaPublishOnce(opts: {
 
     let draft;
     try {
+      opts.metrics.sentToGemini += 1;
       draft = await writeDraft(framed, reviewData);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       if (/unsupportedClaims/.test(msg)) {
         try {
+          opts.metrics.sentToGemini += 1;
           draft = await writeDraft(
             {
               ...framed,
@@ -333,6 +401,7 @@ async function tryChinaPublishOnce(opts: {
         continue;
       }
     }
+    opts.metrics.draftsCreated += 1;
 
     if (
       draft.title.trim().toUpperCase() === 'REJECT' ||
@@ -430,12 +499,17 @@ async function tryChinaPublishOnce(opts: {
     });
     await writeFile(opts.journalPath, JSON.stringify(opts.journal, null, 2) + '\n', 'utf8');
 
+    opts.metrics.publisherStarted = true;
+    opts.metrics.articlesPublished += 1;
+    opts.metrics.reason = 'published china/qwen';
+    opts.metrics.skipReason = 'none';
     console.log(chalk.green.bold(`Published (China/Qwen): "${draft.title}" (slug: ${slug})`));
     console.log(`Live path: /articles/${slug}`);
     return true;
   }
 
   console.log(chalk.gray('China candidates exhausted without publish — fall through to RSS.'));
+  opts.metrics.skipReason = 'china candidates exhausted';
   return false;
 }
 
@@ -448,8 +522,10 @@ async function publishRssOnce(opts: {
   ids: Set<string>;
   journal: JournalData;
   articles: Article[];
+  metrics: TickMetrics;
 }): Promise<boolean> {
   console.log(chalk.bold('— Channel B: RSS / editorial office —'));
+  opts.metrics.collectorStarted = true;
 
   const candidates: RssItem[] = [];
   for (const [name, feedUrl] of SOURCES) {
@@ -463,7 +539,10 @@ async function publishRssOnce(opts: {
         if (opts.ids.has(slug) || isRemovedSlug(slug)) continue;
         if (!looksBuyableGadget(item.title, item.text || '', name)) continue;
         const gate = hardRejectTopic(item.title, item.text || '');
-        if (gate.reject) continue;
+        if (gate.reject) {
+          opts.metrics.hardRejected += 1;
+          continue;
+        }
         candidates.push(item);
       }
       console.log(chalk.gray(`  ${name}: ok`));
@@ -478,12 +557,14 @@ async function publishRssOnce(opts: {
     (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
   );
 
+  opts.metrics.candidatesCollected += candidates.length;
   console.log(`New gadget candidates after filters: ${candidates.length}`);
   console.log(`Scout threshold: ${SCOUT_SCORE_THRESHOLD}`);
 
   const item = candidates[0];
   if (!item) {
     console.log('No RSS candidate — tick idle exit 0.');
+    opts.metrics.skipReason = 'no rss candidate';
     return false;
   }
 
@@ -492,17 +573,21 @@ async function publishRssOnce(opts: {
 
   if (opts.dryRun) {
     console.log(chalk.cyan('Dry-run: would process this RSS candidate. Stop.'));
+    opts.metrics.reason = 'dry-run rss pick';
     return true;
   }
 
   try {
     console.log(chalk.gray('Scout...'));
+    opts.metrics.aiStarted = true;
+    opts.metrics.sentToGemini += 1;
     const scout = await scoutArticle(item.title, item.text || item.title);
     console.log(`Scout: score=${scout.score} interesting=${scout.interesting} — ${scout.reason}`);
 
     if (!scout.interesting || scout.score < SCOUT_SCORE_THRESHOLD) {
       console.log(chalk.yellow(`Scout reject (score ${scout.score} < ${SCOUT_SCORE_THRESHOLD}).`));
       await markRejected(opts.journal, opts.journalPath, item, scout.reason, scout.score);
+      opts.metrics.skipReason = 'scout reject';
       return false;
     }
 
@@ -514,6 +599,7 @@ async function publishRssOnce(opts: {
     };
 
     console.log(chalk.gray('Reviewer...'));
+    opts.metrics.sentToGemini += 1;
     const review = await reviewArticle(sourcePayload);
     if (/^REJECT\b/i.test(review.technicalVerdict)) {
       console.log(chalk.yellow(`Reviewer reject: ${review.technicalVerdict}`));
@@ -524,11 +610,14 @@ async function publishRssOnce(opts: {
         review.technicalVerdict,
         scout.score,
       );
+      opts.metrics.skipReason = 'reviewer reject';
       return false;
     }
 
     console.log(chalk.gray('Editor...'));
+    opts.metrics.sentToGemini += 1;
     const draft = await writeDraft(sourcePayload, review);
+    opts.metrics.draftsCreated += 1;
     if (
       draft.title.trim().toUpperCase() === 'REJECT' ||
       draft.tags.some((t) => t.toLowerCase() === '#reject') ||
@@ -536,6 +625,7 @@ async function publishRssOnce(opts: {
     ) {
       console.log(chalk.yellow('Editor hard-reject'));
       await markRejected(opts.journal, opts.journalPath, item, 'editor hard-reject', scout.score);
+      opts.metrics.skipReason = 'editor hard-reject';
       return false;
     }
 
@@ -615,6 +705,10 @@ async function publishRssOnce(opts: {
     });
     await writeFile(opts.journalPath, JSON.stringify(opts.journal, null, 2) + '\n', 'utf8');
 
+    opts.metrics.publisherStarted = true;
+    opts.metrics.articlesPublished += 1;
+    opts.metrics.reason = 'published rss';
+    opts.metrics.skipReason = 'none';
     console.log(chalk.green.bold(`Published (RSS): "${draft.title}" (slug: ${slug})`));
     console.log(`Live path: /articles/${slug}`);
     return true;
@@ -631,6 +725,7 @@ async function publishRssOnce(opts: {
       channel: 'rss',
     });
     await writeFile(opts.journalPath, JSON.stringify(opts.journal, null, 2) + '\n', 'utf8');
+    opts.metrics.skipReason = `rss error: ${msg}`;
     process.exitCode = 1;
     return false;
   }
@@ -639,15 +734,36 @@ async function publishRssOnce(opts: {
 async function main(): Promise<void> {
   loadEnvFiles();
   const options = parseArgs(process.argv.slice(2));
+  const event =
+    process.env.GITHUB_EVENT_NAME?.trim() ||
+    process.env.SMARTPROTO_TICK_EVENT?.trim() ||
+    'local';
 
   const factoryEnabled = process.env.SMARTPROTO_FACTORY_ENABLED === 'true';
   if (!factoryEnabled && !options.force) {
     console.log('Factory switch: OFF. SMARTPROTO_FACTORY_ENABLED is not set to true. Quiet stop.');
+    printFactoryTickSummary({
+      factoryEnabled: false,
+      event,
+      metrics: emptyTickMetrics(
+        'SMARTPROTO_FACTORY_ENABLED is not true',
+        'SMARTPROTO_FACTORY_ENABLED is not true',
+      ),
+      commitCreated: false,
+      pushDone: false,
+    });
     return;
   }
 
   if (!process.env.OPENROUTER_API_KEY?.trim() && !options.dryRun) {
     console.error('OPENROUTER_API_KEY is missing. Abort.');
+    printFactoryTickSummary({
+      factoryEnabled,
+      event,
+      metrics: emptyTickMetrics('OPENROUTER_API_KEY missing', 'OPENROUTER_API_KEY missing'),
+      commitCreated: false,
+      pushDone: false,
+    });
     process.exitCode = 1;
     return;
   }
@@ -658,6 +774,10 @@ async function main(): Promise<void> {
   const draftsDir = path.resolve(root, 'drafts');
 
   const { urls, ids, journal, articles } = await loadState(journalPath, articlesPath);
+  const metrics = emptyTickMetrics(
+    factoryEnabled ? 'factory on' : 'factory off (forced)',
+    'in progress',
+  );
 
   console.log(chalk.bold('=== Newsroom Tick (SP-A-031-R2) ==='));
   console.log(`Time: ${new Date().toISOString()}`);
@@ -675,11 +795,21 @@ async function main(): Promise<void> {
     ids,
     journal,
     articles,
+    metrics,
   };
 
   const chinaDone = await tryChinaPublishOnce(shared);
   if (chinaDone) {
     console.log(chalk.bold('Tick complete (China/Qwen).'));
+    if (metrics.skipReason === 'in progress') metrics.skipReason = 'none';
+    printFactoryTickSummary({
+      factoryEnabled: true,
+      event,
+      metrics,
+      // commit/push are owned by the GHA workflow step after this script.
+      commitCreated: false,
+      pushDone: false,
+    });
     return;
   }
 
@@ -693,6 +823,20 @@ async function main(): Promise<void> {
   });
 
   console.log(chalk.bold('Tick complete.'));
+  if (metrics.skipReason === 'in progress') {
+    metrics.skipReason = metrics.articlesPublished > 0 ? 'none' : 'tick idle';
+  }
+  if (!metrics.reason || metrics.reason === 'factory on' || metrics.reason === 'factory off (forced)') {
+    metrics.reason =
+      metrics.articlesPublished > 0 ? metrics.reason || 'published' : 'no publish this tick';
+  }
+  printFactoryTickSummary({
+    factoryEnabled: true,
+    event,
+    metrics,
+    commitCreated: false,
+    pushDone: false,
+  });
 }
 
 main().catch((err) => {

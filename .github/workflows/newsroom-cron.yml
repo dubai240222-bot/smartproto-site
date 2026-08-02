@@ -53,6 +53,7 @@ jobs:
         env:
           FACTORY_SECRET: ${{ secrets.SMARTPROTO_FACTORY_ENABLED }}
           FACTORY_VAR: ${{ vars.SMARTPROTO_FACTORY_ENABLED }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           # Prefer visible repo Variable; fall back to Secret.
           # Normalize: strip whitespace/quotes/CRLF; accept true|1|yes|on.
@@ -64,12 +65,43 @@ jobs:
             true|1|yes|on)
               echo "enabled=true" >> "$GITHUB_OUTPUT"
               echo "Factory ON"
+              factory_on=1
               ;;
             *)
               echo "Factory OFF. Set Actions secret OR variable SMARTPROTO_FACTORY_ENABLED to exactly: true"
               echo "enabled=false" >> "$GITHUB_OUTPUT"
+              factory_on=0
               ;;
           esac
+
+          # SP-A-042: always emit a clear tick summary (even when factory OFF / AI skipped).
+          echo ""
+          echo "SMARTPROTO FACTORY TICK SUMMARY"
+          if [ "$factory_on" = "1" ]; then
+            echo "factoryEnabled: true"
+            echo "event: ${EVENT_NAME}"
+            echo "aiStarted: pending"
+            echo "collectorStarted: pending"
+            echo "publisherStarted: pending"
+            echo "reason: factory gate open — newsroom:tick will run"
+            echo "skipReason: none"
+          else
+            echo "factoryEnabled: false"
+            echo "event: ${EVENT_NAME}"
+            echo "aiStarted: false"
+            echo "collectorStarted: false"
+            echo "publisherStarted: false"
+            echo "reason: SMARTPROTO_FACTORY_ENABLED is not true"
+            echo "skipReason: SMARTPROTO_FACTORY_ENABLED is not true"
+            echo "candidatesCollected: 0"
+            echo "hardRejected: 0"
+            echo "sentToQwen: 0"
+            echo "sentToGemini: 0"
+            echo "draftsCreated: 0"
+            echo "articlesPublished: 0"
+            echo "commitCreated: false"
+            echo "pushDone: false"
+          fi
 
       - name: Run one newsroom tick
         if: steps.gate.outputs.enabled == 'true'
@@ -80,18 +112,36 @@ jobs:
           CHINA_ALLOW_RECOMMEND: 'true'
           # TEST: slightly lower Wow Score bar so the pipeline is not empty
           SCOUT_SCORE_THRESHOLD: '65'
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: npm run newsroom:tick
 
       - name: Commit and push if changed
         if: steps.gate.outputs.enabled == 'true'
+        env:
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           git config user.name "smartproto-newsroom-bot"
           git config user.email "newsroom-bot@users.noreply.github.com"
           git pull --rebase origin main || true
-          git add src/data/articles.json data/factory-journal.json drafts/ || true
+          # Persist topic-rotation cursor so desks round-robin across ticks.
+          git add src/data/articles.json data/factory-journal.json data/topic-rotation.json drafts/ || true
           if git diff --staged --quiet; then
-            echo "No articles.json / journal / drafts changes — nothing to publish."
+            echo "No articles.json / journal / rotation / drafts changes — nothing to publish."
+            echo ""
+            echo "SMARTPROTO FACTORY TICK SUMMARY"
+            echo "factoryEnabled: true"
+            echo "event: ${EVENT_NAME}"
+            echo "commitCreated: false"
+            echo "pushDone: false"
+            echo "skipReason: no staged article/journal/rotation/draft changes"
             exit 0
           fi
           git commit -m "feat(newsroom): autonomous tick publish"
           git push origin HEAD:main
+          echo ""
+          echo "SMARTPROTO FACTORY TICK SUMMARY"
+          echo "factoryEnabled: true"
+          echo "event: ${EVENT_NAME}"
+          echo "commitCreated: true"
+          echo "pushDone: true"
+          echo "skipReason: none"
