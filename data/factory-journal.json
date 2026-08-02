@@ -108,7 +108,8 @@
     "https://newatlas.com/electronics/review-akaso-sight-300-night-vision/",
     "https://newatlas.com/electronics/review-omni-x-uv-laser-engraver/",
     "https://newatlas.com/wearables/battery-less-earbuds-sleep-somnibuds/",
-    "https://newatlas.com/wearables/astell-kern-luna-iem/"
+    "https://newatlas.com/wearables/astell-kern-luna-iem/",
+    "https://newatlas.com/wearables/contact-lens-infrared/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -219,7 +220,8 @@
     "https://newatlas.com/electronics/review-akaso-sight-300-night-vision/",
     "https://newatlas.com/electronics/review-omni-x-uv-laser-engraver/",
     "https://newatlas.com/wearables/battery-less-earbuds-sleep-somnibuds/",
-    "https://newatlas.com/wearables/astell-kern-luna-iem/"
+    "https://newatlas.com/wearables/astell-kern-luna-iem/",
+    "https://newatlas.com/wearables/contact-lens-infrared/"
   ],
   "entries": [
     {
@@ -1216,6 +1218,15 @@
       "processedAt": "2026-08-02T06:31:14.802Z",
       "status": "published",
       "slug": "moon-inspired-planar-earphones-come-with-out-of-this-world-price-tag",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/wearables/contact-lens-infrared/",
+      "url": "https://newatlas.com/wearables/contact-lens-infrared/",
+      "title": "Контактные линзы с ИК-зрением: видите сквозь препятствия",
+      "processedAt": "2026-08-02T06:32:14.968Z",
+      "status": "published",
+      "slug": "superhuman-contact-lenses-let-you-see-even-through-closed-eyes",
       "kind": "news"
     }
   ]
