@@ -105,7 +105,8 @@
     "https://newatlas.com/wearables/puma-white-hunter-knife/",
     "https://newatlas.com/electronics/hyperspace-trackpad-pro/",
     "https://newatlas.com/wearables/prolo-ring-mouse/",
-    "https://newatlas.com/electronics/review-akaso-sight-300-night-vision/"
+    "https://newatlas.com/electronics/review-akaso-sight-300-night-vision/",
+    "https://newatlas.com/electronics/review-omni-x-uv-laser-engraver/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -213,7 +214,8 @@
     "https://newatlas.com/wearables/puma-white-hunter-knife/",
     "https://newatlas.com/electronics/hyperspace-trackpad-pro/",
     "https://newatlas.com/wearables/prolo-ring-mouse/",
-    "https://newatlas.com/electronics/review-akaso-sight-300-night-vision/"
+    "https://newatlas.com/electronics/review-akaso-sight-300-night-vision/",
+    "https://newatlas.com/electronics/review-omni-x-uv-laser-engraver/"
   ],
   "entries": [
     {
@@ -1183,6 +1185,15 @@
       "processedAt": "2026-08-02T06:28:15.729Z",
       "status": "published",
       "slug": "review-akaso-sight-300-night-vision-for-a-tenth-of-the-cost",
+      "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/electronics/review-omni-x-uv-laser-engraver/",
+      "url": "https://newatlas.com/electronics/review-omni-x-uv-laser-engraver/",
+      "title": "OMNI X: Лазерный гравер для точных работ дома и в мастерской",
+      "processedAt": "2026-08-02T06:29:14.769Z",
+      "status": "published",
+      "slug": "review-is-the-omni-x-the-best-laser-engraver-on-the-market-right-now",
       "kind": "news"
     }
   ]
