@@ -85,7 +85,8 @@
     "https://newatlas.com/wearables/vuebuds-ai-earbuds-described-audio/",
     "https://newatlas.com/wearables/review-renpho-headspace-eyeris-zen-massager/",
     "https://newatlas.com/electronics/meta-nfc-focused-microwaves-circuits/",
-    "https://newatlas.com/wearables/mobvoi-ticnote-pods/"
+    "https://newatlas.com/wearables/mobvoi-ticnote-pods/",
+    "https://newatlas.com/wearables/citizen-photon-celebrates-half-century-solar-watch-power/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -173,7 +174,8 @@
     "https://newatlas.com/wearables/vuebuds-ai-earbuds-described-audio/",
     "https://newatlas.com/wearables/review-renpho-headspace-eyeris-zen-massager/",
     "https://newatlas.com/electronics/meta-nfc-focused-microwaves-circuits/",
-    "https://newatlas.com/wearables/mobvoi-ticnote-pods/"
+    "https://newatlas.com/wearables/mobvoi-ticnote-pods/",
+    "https://newatlas.com/wearables/citizen-photon-celebrates-half-century-solar-watch-power/"
   ],
   "entries": [
     {
@@ -964,6 +966,15 @@
       "status": "published",
       "slug": "4g-connected-earbuds-use-ai-to-generate-meeting-notes",
       "kind": "article"
+    },
+    {
+      "id": "https://newatlas.com/wearables/citizen-photon-celebrates-half-century-solar-watch-power/",
+      "url": "https://newatlas.com/wearables/citizen-photon-celebrates-half-century-solar-watch-power/",
+      "title": "Citizen Eco-Drive Photon: 50 лет солнечной энергии в часах",
+      "processedAt": "2026-08-02T06:01:24.711Z",
+      "status": "published",
+      "slug": "citizen-photon-celebrates-half-a-century-of-solar-watch-power",
+      "kind": "news"
     }
   ]
 }
