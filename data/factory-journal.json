@@ -131,7 +131,8 @@
     "https://newatlas.com/wearables/anker-soundcore-p41i-earphones-charging-case-phone/",
     "https://newatlas.com/electronics/insta360-x5/",
     "https://newatlas.com/wearables/openearables-2-physiological-earphones/",
-    "https://newatlas.com/electronics/e-taste-virtual-food-flavor-vr/"
+    "https://newatlas.com/electronics/e-taste-virtual-food-flavor-vr/",
+    "https://newatlas.com/electronics/review-thermal-master-p2-catches-heat-small/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -265,7 +266,8 @@
     "https://newatlas.com/wearables/anker-soundcore-p41i-earphones-charging-case-phone/",
     "https://newatlas.com/electronics/insta360-x5/",
     "https://newatlas.com/wearables/openearables-2-physiological-earphones/",
-    "https://newatlas.com/electronics/e-taste-virtual-food-flavor-vr/"
+    "https://newatlas.com/electronics/e-taste-virtual-food-flavor-vr/",
+    "https://newatlas.com/electronics/review-thermal-master-p2-catches-heat-small/"
   ],
   "entries": [
     {
@@ -1470,6 +1472,15 @@
       "status": "published",
       "slug": "e-taste-squirts-virtual-food-flavors-straight-into-your-mouth",
       "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/electronics/review-thermal-master-p2-catches-heat-small/",
+      "url": "https://newatlas.com/electronics/review-thermal-master-p2-catches-heat-small/",
+      "title": "Thermal Master P2: Компактная тепловизионная камера для смартфона",
+      "processedAt": "2026-08-02T06:57:27.451Z",
+      "status": "published",
+      "slug": "review-pint-sized-thermal-master-p2-gives-your-phone-predator-vision",
+      "kind": "article"
     }
   ]
 }
