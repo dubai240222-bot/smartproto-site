@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ArrowRight, Clock, Calendar, Sparkles } from 'lucide-react';
 import type { Article } from '@/data/articles';
 import { formatPublishedAt, isChinaArticle } from '@/lib/article-utils';
+import { formatAuthorByline, resolveAuthorForArticle } from '@/lib/authors';
 import { MediaPlaceholder, MediaThumb } from '@/components/media-placeholder';
 
 export function CategoryTags({
@@ -43,10 +44,12 @@ export function ChinaSourceBadge({ article }: { article: Article }) {
   );
 }
 
-/** Card meta line: fresher timestamps; China channel marked when applicable. */
+/** Card meta: author persona · published time (China desk resolves to Линь Цзе). */
 function cardByline(article: Article): string {
-  const time = formatPublishedAt(article.publishedAt);
-  return isChinaArticle(article) ? `Китай · Qwen · ${time}` : time;
+  return formatAuthorByline(
+    resolveAuthorForArticle(article).name,
+    formatPublishedAt(article.publishedAt),
+  );
 }
 
 /* -------------------------------------------------------------------------- */
