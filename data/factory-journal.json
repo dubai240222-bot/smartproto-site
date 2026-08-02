@@ -96,7 +96,8 @@
     "https://newatlas.com/electronics/cigman-cnvpro-night-vision-binoculars-review/",
     "https://newatlas.com/electronics/nanoflow-i2-air-worlds-smallest-horizontal-mouse/",
     "https://newatlas.com/wearables/gesture-based-wearable-control/",
-    "https://newatlas.com/wearables/ai-rings-pebble-index-wizpr-sandbar-stream/"
+    "https://newatlas.com/wearables/ai-rings-pebble-index-wizpr-sandbar-stream/",
+    "https://newatlas.com/wearables/perisphere-smart-headphones-immersive-display-cameras-3d/"
   ],
   "processedIds": [
     "https://hackaday.com/?p=1131223",
@@ -195,7 +196,8 @@
     "https://newatlas.com/electronics/cigman-cnvpro-night-vision-binoculars-review/",
     "https://newatlas.com/electronics/nanoflow-i2-air-worlds-smallest-horizontal-mouse/",
     "https://newatlas.com/wearables/gesture-based-wearable-control/",
-    "https://newatlas.com/wearables/ai-rings-pebble-index-wizpr-sandbar-stream/"
+    "https://newatlas.com/wearables/ai-rings-pebble-index-wizpr-sandbar-stream/",
+    "https://newatlas.com/wearables/perisphere-smart-headphones-immersive-display-cameras-3d/"
   ],
   "entries": [
     {
@@ -1085,6 +1087,15 @@
       "status": "published",
       "slug": "ai-rings-are-coming-will-you-wear-one-on-your-finger-next-year",
       "kind": "news"
+    },
+    {
+      "id": "https://newatlas.com/wearables/perisphere-smart-headphones-immersive-display-cameras-3d/",
+      "url": "https://newatlas.com/wearables/perisphere-smart-headphones-immersive-display-cameras-3d/",
+      "title": "Perisphere: Наушники с интегрированным дисплеем для иммерсивного контента",
+      "processedAt": "2026-08-02T06:12:27.861Z",
+      "status": "published",
+      "slug": "smart-headphones-hide-a-fold-down-immersive-display-in-the-headband",
+      "kind": "article"
     }
   ]
 }
