@@ -1,0 +1,59 @@
+{
+  "generatedAt": "2026-08-08T22:12:50.218Z",
+  "channel": "rss",
+  "cycle": "news",
+  "format": "news",
+  "source": "Yanko Design",
+  "article": {
+    "id": "https://www.yankodesign.com/?p=640380",
+    "title": "DIY Writing Devices Get Expensive Fast, So This One Costs Almost Nothing",
+    "url": "https://www.yankodesign.com/2026/08/08/diy-writing-devices-get-expensive-fast-so-this-one-costs-almost-nothing/?utm_source=rss&utm_medium=rss&utm_campaign=diy-writing-devices-get-expensive-fast-so-this-one-costs-almost-nothing",
+    "text": "The writerdeck movement has one recurring irony: devices built specifically to cut through digital distraction have a tendency to get expensive. Custom keyboards, purpose-built screens, and precision-machined enclosures can push a DIY writing build well past the cost of a regular laptop, which rather defeats the point. The more interesting entries in the space tend to be the ones that solve the accessibility problem, not just the distraction one.\n\nThe Whale Writer is an open-source, foldable, DIY writing device designed to be as cheap and portable as possible. It&#8217;s the second writerdeck design from its creator, after Bee Write Back, built specifically to address the two most common criticisms of the first: it didn&#8217;t fold, and it cost too much. Both problems are solved here through a combination of 3D-printed parts and off-the-shelf electronics.\n\nDesigner: Simon Shimel\n\nFolding is what separates this from most of the writerdeck category, where non-folding chassis designs are common. When closed, the Whale Writer flattens into a form that can travel in a bag without a full keyboard and screen sticking out at different angles. A device that sits on a café table can fold up and slide into a jacket pocket for the commute.\n\nCentral to the hardware is an unusual display choice. Rather than a backlit LCD, the Whale Writer uses a Waveshare RLCD, a reflective liquid crystal display that reads using ambient light instead of a power-hungry internal backlight. The result is a screen that mimics paper readability and extends battery life considerably, with an ESP32-S3 microcontroller already built into the module so no separate computing board is required.\n\nThe keyboard is the most accessible component here: a standard cheap Bluetooth keyboard is fully disassembled, and its PCB, key matrix, and flex cable are repurposed inside a custom 3D-printed chassis. Four printed parts complete the build: a base plate with a print-in-place hinge, a locking plate that holds the keyboard in position, a battery cover, and a screen bezel with three button cutouts.\n\nPower runs from an 18650 battery cell, and builders have two configurations to choose from. The simpler path keeps the keyboard&#8217;s original battery running independently from the main cell, requiring no soldering. The more involved route splices the keyboard&#8217;s power input directly to the RLCD board&#8217;s output, running everything off a single 18650, which means one battery to charge instead of two.\n\nSoftware is deliberately left open. A basic word processor was built as a functionality test using an AI coding assistant, but the creator frames the Whale Writer as a hardware platform, not a finished product. The ESP32&#8217;s onboard Wi-Fi and Bluetooth leave the door open for everything from a minimal plain-text editor to a wireless draft-syncing terminal, depending on what firmware the community eventually writes.\n\nNone of what the Whale Writer does is entirely new, and it doesn&#8217;t try to suggest otherwise. The category already knows what it&#8217;s supposed to be: a device that only lets you write, without anything else competing for the same moment. What this build adds to that premise is a sincere attempt to make the experience available to people who want it but have been priced out of building one.\n\nThe post DIY Writing Devices Get Expensive Fast, So This One Costs Almost Nothing first appeared on Yanko Design.",
+    "publishedAt": "2026-08-08T11:40:40.000Z",
+    "sourceName": "Yanko Design",
+    "imageUrl": "https://www.yankodesign.com/images/design_news/2026/08/diy-writing-devices-get-expensive-fast-so-this-one-costs-almost-nothing/whale-writer-diy-writerdeck-03.jpg"
+  },
+  "scout": {
+    "interesting": true,
+    "score": 84,
+    "reason": "Доступный и портативный DIY-гаджет для письма без отвлекающих факторов, использующий необычный RLCD-дисплей и складной 3D-печатный корпус.",
+    "productType": "gadget",
+    "isActuallyNew": true,
+    "noveltyEvidence": [
+      "Фолдабельный дизайн, редкость для writerdeck",
+      "Использование RLCD (отражающего дисплея) вместо backlit LCD",
+      "Очень низкая стоимость за счёт 3D-печати и готовых компонентов",
+      "Открытая программная платформа с возможностью кастомизации"
+    ],
+    "existingAlternatives": "Freewrite, Pomera DM30, AlphaSmart — все существенно дороже и/или не фолдабельные",
+    "functionalDifference": "Складной корпус, RLCD для лучшей читаемости и энергоэффективности, цена значительно ниже аналогов, полная открытость",
+    "marketSaturation": "low",
+    "rejectCode": null
+  },
+  "review": {
+    "technicalVerdict": "PASS: The Whale Writer is a compelling DIY project that addresses the accessibility and cost issues often associated with distraction-free writing devices. Its open-source nature, foldable design, and use of readily available components make it an interesting proposition for makers and writers alike.",
+    "keyAspects": [
+      "Foldable and portable design for easy transport.",
+      "Uses a power-efficient RLCD screen for paper-like readability and extended battery life.",
+      "Open-source hardware platform with potential for community-driven firmware development."
+    ]
+  },
+  "draft": {
+    "title": "Whale Writer: складное устройство для письма с открытым исходным кодом",
+    "text": "Представлено устройство Whale Writer — складная DIY-платформа для письма, разработанная для минимизации отвлекающих факторов и снижения стоимости. В отличие от многих аналогов, оно использует 3D-печатные компоненты и доступную электронику, включая энергоэффективный RLCD-экран, имитирующий чтение с бумаги и продлевающий время работы от батареи. Конструкция позволяет компактно складывать устройство для переноски. Программное обеспечение остается открытым, предоставляя платформу для дальнейшего развития сообществом.",
+    "tags": [
+      "DIY",
+      "устройство для письма",
+      "Whale Writer",
+      "открытый исходный код",
+      "портативность"
+    ],
+    "toneCheck": {
+      "clickbait": false,
+      "hype": false,
+      "unsupportedClaims": false,
+      "limitationsIncluded": true
+    },
+    "imageUrl": "https://www.yankodesign.com/images/design_news/2026/08/diy-writing-devices-get-expensive-fast-so-this-one-costs-almost-nothing/whale-writer-diy-writerdeck-03.jpg"
+  }
+}
