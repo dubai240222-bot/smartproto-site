@@ -39,7 +39,11 @@
     "https://newatlas.com/wearables/samsung-ai-eyewear-galaxy-glasses/",
     "https://newatlas.com/ai-humanoids/chatgpt-ai-assistant-shut-up/",
     "https://newatlas.com/medical-ai/ai-medical-scribe-consent-raises-patient-rights-concerns/",
-    "https://newatlas.com/aircraft/meet-halo-civilian-version-thunder-loyal-wingman/"
+    "https://newatlas.com/aircraft/meet-halo-civilian-version-thunder-loyal-wingman/",
+    "https://newatlas.com/automotive/zoox-nhtsa-commercial-exemption-paid-robotaxi/",
+    "https://newatlas.com/ai-humanoids/fraunhofer-realorrender-deepfake-detection/",
+    "https://www.theverge.com/gadgets/976422/birdfy-feeder-rookie-nothing-headphones-deal-sale",
+    "https://hackaday.com/2026/08/07/hacking-a-6000-cotton-candy-machine-to-fully-control-it/"
   ],
   "processedIds": [
     "https://thegadgetflow.com/product/khadas-tea-pro-headphone-amp/",
@@ -81,7 +85,11 @@
     "https://newatlas.com/wearables/samsung-ai-eyewear-galaxy-glasses/",
     "https://newatlas.com/ai-humanoids/chatgpt-ai-assistant-shut-up/",
     "https://newatlas.com/medical-ai/ai-medical-scribe-consent-raises-patient-rights-concerns/",
-    "https://newatlas.com/aircraft/meet-halo-civilian-version-thunder-loyal-wingman/"
+    "https://newatlas.com/aircraft/meet-halo-civilian-version-thunder-loyal-wingman/",
+    "https://newatlas.com/automotive/zoox-nhtsa-commercial-exemption-paid-robotaxi/",
+    "https://newatlas.com/ai-humanoids/fraunhofer-realorrender-deepfake-detection/",
+    "https://www.theverge.com/?p=976422",
+    "https://hackaday.com/?p=1134701"
   ],
   "entries": [
     {
@@ -520,6 +528,42 @@
       "url": "https://newatlas.com/aircraft/meet-halo-civilian-version-thunder-loyal-wingman/",
       "title": "Archer Aviation debuts Halo autonomous VTOL, Thunder's commercial twin",
       "processedAt": "2026-08-08T14:55:40.524Z",
+      "status": "error",
+      "reason": "401 User not found.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/automotive/zoox-nhtsa-commercial-exemption-paid-robotaxi/",
+      "url": "https://newatlas.com/automotive/zoox-nhtsa-commercial-exemption-paid-robotaxi/",
+      "title": "Purpose-built robotaxis get official nod for paid operation in the US",
+      "processedAt": "2026-08-08T15:30:43.287Z",
+      "status": "error",
+      "reason": "401 User not found.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/ai-humanoids/fraunhofer-realorrender-deepfake-detection/",
+      "url": "https://newatlas.com/ai-humanoids/fraunhofer-realorrender-deepfake-detection/",
+      "title": "A deep take for detecting deepfakes",
+      "processedAt": "2026-08-08T15:30:43.302Z",
+      "status": "error",
+      "reason": "401 User not found.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://www.theverge.com/?p=976422",
+      "url": "https://www.theverge.com/gadgets/976422/birdfy-feeder-rookie-nothing-headphones-deal-sale",
+      "title": "Birdfy’s smart bird feeder is on sale for just $60",
+      "processedAt": "2026-08-08T15:30:43.317Z",
+      "status": "error",
+      "reason": "401 User not found.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://hackaday.com/?p=1134701",
+      "url": "https://hackaday.com/2026/08/07/hacking-a-6000-cotton-candy-machine-to-fully-control-it/",
+      "title": "Hacking a $6000 Cotton Candy Machine to Fully Control It",
+      "processedAt": "2026-08-08T15:30:43.332Z",
       "status": "error",
       "reason": "401 User not found.",
       "channel": "rss"
