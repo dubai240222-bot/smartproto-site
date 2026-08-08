@@ -1,11 +1,19 @@
 {
   "processedUrls": [
     "https://www.yankodesign.com/2026/08/08/humanoid-robots-dont-fit-in-store-aisles-so-robbyant-fixed-that/?utm_source=rss&utm_medium=rss&utm_campaign=humanoid-robots-dont-fit-in-store-aisles-so-robbyant-fixed-that",
-    "https://www.yankodesign.com/2026/08/08/diy-writing-devices-get-expensive-fast-so-this-one-costs-almost-nothing/?utm_source=rss&utm_medium=rss&utm_campaign=diy-writing-devices-get-expensive-fast-so-this-one-costs-almost-nothing"
+    "https://www.yankodesign.com/2026/08/08/diy-writing-devices-get-expensive-fast-so-this-one-costs-almost-nothing/?utm_source=rss&utm_medium=rss&utm_campaign=diy-writing-devices-get-expensive-fast-so-this-one-costs-almost-nothing",
+    "https://www.yankodesign.com/2026/08/08/ai-surveillance-cameras-cant-see-through-this-jacket/?utm_source=rss&utm_medium=rss&utm_campaign=ai-surveillance-cameras-cant-see-through-this-jacket",
+    "https://www.yankodesign.com/2026/08/07/a-69-pen-shaped-electric-screwdriver-just-might-save-your-laptops-1000-repair-bill/?utm_source=rss&utm_medium=rss&utm_campaign=a-69-pen-shaped-electric-screwdriver-just-might-save-your-laptops-1000-repair-bill",
+    "https://thegadgetflow.com/product/ascentiz-h-pro-hip-exoskeleton/",
+    "https://thegadgetflow.com/blog/best-us-made-robots-to-add-to-your-life/"
   ],
   "processedIds": [
     "https://www.yankodesign.com/?p=639735",
-    "https://www.yankodesign.com/?p=640380"
+    "https://www.yankodesign.com/?p=640380",
+    "https://www.yankodesign.com/?p=639887",
+    "https://www.yankodesign.com/?p=640502",
+    "https://thegadgetflow.com/product/ascentiz-h-pro-hip-exoskeleton/",
+    "https://thegadgetflow.com/blog/best-us-made-robots-to-add-to-your-life/"
   ],
   "entries": [
     {
@@ -28,6 +36,42 @@
       "slug": "diy-writing-devices-get-expensive-fast-so-this-one-costs-almost-nothing",
       "channel": "rss",
       "cycle": "news"
+    },
+    {
+      "id": "https://www.yankodesign.com/?p=639887",
+      "url": "https://www.yankodesign.com/2026/08/08/ai-surveillance-cameras-cant-see-through-this-jacket/?utm_source=rss&utm_medium=rss&utm_campaign=ai-surveillance-cameras-cant-see-through-this-jacket",
+      "title": "AI Surveillance Cameras Can’t See Through This Jacket",
+      "processedAt": "2026-08-08T22:54:02.875Z",
+      "status": "error",
+      "reason": "Model response was not valid JSON: {\n  \"interesting\": true,\n  \"score\": 77,\n  \"reason\": \"Концептуальная одежда с непрерывным состязательным узором, делающая владельца невидимым для AI-камер наблюдения.\",\n  \"productType\": \"wearable\",\n  \"isActuallyNew\": true,\n  \"noveltyEvidence\": [\n    \"Предыдущие анти-распознавательные дизайны использовали фиксированные печатные патчи, которые теряли эффективность при сгибах ткани или смене угла камеры.\",\n    \"Данная коллекция использует непрерывную состязательную текстуру по всей поверхности одежды, устойчивую к движению и изменению перспективы.\"\n  ],\n  \"existingAlternatives\": \"Фиксированные печатные патчи для анти-распознавания (например, CV D",
+      "channel": "rss"
+    },
+    {
+      "id": "https://www.yankodesign.com/?p=640502",
+      "url": "https://www.yankodesign.com/2026/08/07/a-69-pen-shaped-electric-screwdriver-just-might-save-your-laptops-1000-repair-bill/?utm_source=rss&utm_medium=rss&utm_campaign=a-69-pen-shaped-electric-screwdriver-just-might-save-your-laptops-1000-repair-bill",
+      "title": "A $69 Pen-Shaped Electric Screwdriver Just Might Save Your Laptop’s $1000 Repair Bill",
+      "processedAt": "2026-08-08T22:54:12.738Z",
+      "status": "error",
+      "reason": "Scout model (deepseek/deepseek-v4-flash:latest) returned an empty response. finish_reason: length, reasoning present: false",
+      "channel": "rss"
+    },
+    {
+      "id": "https://thegadgetflow.com/product/ascentiz-h-pro-hip-exoskeleton/",
+      "url": "https://thegadgetflow.com/product/ascentiz-h-pro-hip-exoskeleton/",
+      "title": "Ascentiz H Pro Powered Exoskeleton",
+      "processedAt": "2026-08-08T22:54:32.078Z",
+      "status": "error",
+      "reason": "Model response was not valid JSON: {\n  \"interesting\": true,\n  \"score\": 88,\n  \"reason\": \"Компактный powered hip exoskeleton с AI-адаптацией к 12 типам местности и тремя режимами, включая тренировочный с сопротивлением — практичное и новое wear-устройство для снижения утомляемости при ходьбе и беге\",\n  \"productType\": \"powered exoskeleton\",\n  \"isActuallyNew\": true,\n  \"noveltyEvidence\": [\n    \"складывается до размера листа бумаги для транспортировки\",\n    \"",
+      "channel": "rss"
+    },
+    {
+      "id": "https://thegadgetflow.com/blog/best-us-made-robots-to-add-to-your-life/",
+      "url": "https://thegadgetflow.com/blog/best-us-made-robots-to-add-to-your-life/",
+      "title": "5 best US-made robots to add to your life: The import ban rewrote the personal robot shortlist",
+      "processedAt": "2026-08-08T22:54:55.617Z",
+      "status": "error",
+      "reason": "Scout model (deepseek/deepseek-v4-flash:latest) returned an empty response. finish_reason: length, reasoning present: false",
+      "channel": "rss"
     }
   ]
 }
