@@ -31,7 +31,11 @@
     "https://www.yankodesign.com/2026/08/07/a-69-pen-shaped-electric-screwdriver-just-might-save-your-laptops-1000-repair-bill/?utm_source=rss&utm_medium=rss&utm_campaign=a-69-pen-shaped-electric-screwdriver-just-might-save-your-laptops-1000-repair-bill",
     "https://www.yankodesign.com/2026/08/07/most-laptops-seal-the-battery-in-dynabooks-new-one-lets-you-swap-it/?utm_source=rss&utm_medium=rss&utm_campaign=most-laptops-seal-the-battery-in-dynabooks-new-one-lets-you-swap-it",
     "https://thegadgetflow.com/product/tcl-tab-a1-plus-nxtpaper-tablet/",
-    "https://thegadgetflow.com/blog/best-us-made-robots-to-add-to-your-life/"
+    "https://thegadgetflow.com/blog/best-us-made-robots-to-add-to-your-life/",
+    "https://www.yankodesign.com/2026/08/08/humanoid-robots-dont-fit-in-store-aisles-so-robbyant-fixed-that/?utm_source=rss&utm_medium=rss&utm_campaign=humanoid-robots-dont-fit-in-store-aisles-so-robbyant-fixed-that",
+    "https://thegadgetflow.com/product/zenowell-luna-plus-nerve-stimulator/",
+    "https://thegadgetflow.com/product/msi-crosshair-a16-hx-gaming-laptop/",
+    "https://thegadgetflow.com/blog/best-laptop-for-programming-and-gaming-for-computer-science-students/"
   ],
   "processedIds": [
     "https://thegadgetflow.com/product/khadas-tea-pro-headphone-amp/",
@@ -65,7 +69,11 @@
     "https://www.yankodesign.com/?p=640502",
     "https://www.yankodesign.com/?p=640336",
     "https://thegadgetflow.com/product/tcl-tab-a1-plus-nxtpaper-tablet/",
-    "https://thegadgetflow.com/blog/best-us-made-robots-to-add-to-your-life/"
+    "https://thegadgetflow.com/blog/best-us-made-robots-to-add-to-your-life/",
+    "https://www.yankodesign.com/?p=639735",
+    "https://thegadgetflow.com/product/zenowell-luna-plus-nerve-stimulator/",
+    "https://thegadgetflow.com/product/msi-crosshair-a16-hx-gaming-laptop/",
+    "https://thegadgetflow.com/blog/best-laptop-for-programming-and-gaming-for-computer-science-students/"
   ],
   "entries": [
     {
@@ -434,6 +442,42 @@
       "processedAt": "2026-08-08T12:30:41.368Z",
       "status": "error",
       "reason": "Scout model (deepseek/deepseek-v4-flash:latest) returned an empty response. finish_reason: length, reasoning present: false",
+      "channel": "rss"
+    },
+    {
+      "id": "https://www.yankodesign.com/?p=639735",
+      "url": "https://www.yankodesign.com/2026/08/08/humanoid-robots-dont-fit-in-store-aisles-so-robbyant-fixed-that/?utm_source=rss&utm_medium=rss&utm_campaign=humanoid-robots-dont-fit-in-store-aisles-so-robbyant-fixed-that",
+      "title": "Humanoid Robots Don’t Fit in Store Aisles, So Robbyant Fixed That",
+      "processedAt": "2026-08-08T14:19:35.221Z",
+      "status": "error",
+      "reason": "401 User not found.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://thegadgetflow.com/product/zenowell-luna-plus-nerve-stimulator/",
+      "url": "https://thegadgetflow.com/product/zenowell-luna-plus-nerve-stimulator/",
+      "title": "Zenowell Luna Plus AI-Powered Vagus Nerve Stimulator",
+      "processedAt": "2026-08-08T14:19:35.237Z",
+      "status": "error",
+      "reason": "401 User not found.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://thegadgetflow.com/product/msi-crosshair-a16-hx-gaming-laptop/",
+      "url": "https://thegadgetflow.com/product/msi-crosshair-a16-hx-gaming-laptop/",
+      "title": "MSI Crosshair A16 HX (E8W) Gaming Laptop",
+      "processedAt": "2026-08-08T14:19:35.281Z",
+      "status": "error",
+      "reason": "401 User not found.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://thegadgetflow.com/blog/best-laptop-for-programming-and-gaming-for-computer-science-students/",
+      "url": "https://thegadgetflow.com/blog/best-laptop-for-programming-and-gaming-for-computer-science-students/",
+      "title": "Best laptop for programming and gaming for computer science students: Coding all week, gaming all weekend",
+      "processedAt": "2026-08-08T14:19:35.297Z",
+      "status": "error",
+      "reason": "401 User not found.",
       "channel": "rss"
     }
   ]
