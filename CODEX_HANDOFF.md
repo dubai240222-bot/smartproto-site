@@ -161,6 +161,18 @@ Vercel Cron
 | `rss.ts` | `fetchRssFeed(feedUrl, …)` |
 | `hn.ts` | Hacker News top stories |
 | `image-extractor.ts` | og:image / article image |
+| `app-sources.ts` | Mobile Apps “mine” — safe public RSS/Atom (MacStories, Cult of Mac Apps, 9to5Google Apps, Google Play Blog, Product Hunt, TouchArcade, Android Authority) |
+| `china-collector.ts` / `china-sources.ts` | China desk registry + safe RSS |
+
+### Topic rotation (TEST)
+
+| Файл | Роль |
+|---|---|
+| `src/lib/newsroom/desks.ts` | Desk registry (~8 topics: apps, gadgets, world-tech, ai, wonder-goods, china, health-home, games) |
+| `src/lib/newsroom/topic-rotation.ts` | `nextTopic()` / `topicQueueFrom()` / persist `data/topic-rotation.json` |
+| `data/topic-rotation.json` | Cursor state — committed by GHA so ticks don’t always start at desk 0 |
+
+Tick picks the desk at the cursor, then skips empty desks in round-robin until one publish or all tried; advances cursor afterward.
 
 Factory RSS-источники (`scripts/run-factory-shift.ts`):
 
@@ -173,7 +185,7 @@ Factory RSS-источники (`scripts/run-factory-shift.ts`):
 | Скрипт | npm | Назначение |
 |---|---|---|
 | `scripts/run-newsroom.ts` | `test:newsroom` | Тест пайплайна Scout→Reviewer→Editor→draft (без публикации при обычном тесте) |
-| `scripts/run-newsroom-tick.ts` | `newsroom:tick` | **Один** цикл: RSS→фильтры→Scout→Review→Editor→publish в `articles.json` (для GHA cron) |
+| `scripts/run-newsroom-tick.ts` | `newsroom:tick` | **Один** цикл: topic rotation → desk sources → Scout/Review/Editor (или China/Qwen) → publish (для GHA cron) |
 | `scripts/publish-latest.ts` | `publish:latest` | Берёт latest draft → пишет в `articles.json` |
 | `scripts/run-factory-shift.ts` | `factory:shift` | Цикл RSS → Scout → Review → Editor → publish (+ git) |
 | `scripts/polish-published.ts` | `polish:published` | Полировка опубликованных |

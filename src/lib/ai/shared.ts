@@ -38,13 +38,29 @@ export function parseJsonObject<T>(content: string): T {
     .trim();
 
   const start = normalized.indexOf('{');
-  const end = normalized.lastIndexOf('}');
-
-  if (start < 0 || end <= start) {
+  if (start < 0) {
     throw new Error(`Model response was not valid JSON: ${content}`);
   }
 
-  return JSON.parse(normalized.slice(start, end + 1)) as T;
+  const end = normalized.lastIndexOf('}');
+  if (end > start) {
+    try {
+      return JSON.parse(normalized.slice(start, end + 1)) as T;
+    } catch {
+      /* fall through to salvage */
+    }
+  }
+
+  // Salvage truncated Scout/Reviewer JSON (finish_reason: length).
+  let frag = normalized.slice(start);
+  frag = frag.replace(/,\s*"[^"]*$/s, '');
+  frag = frag.replace(/,\s*$/s, '');
+  if (!frag.trimEnd().endsWith('}')) frag = `${frag}}`;
+  try {
+    return JSON.parse(frag) as T;
+  } catch {
+    throw new Error(`Model response was not valid JSON: ${content}`);
+  }
 }
 
 export function clampText(text: string, maxLength: number): string {

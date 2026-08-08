@@ -21,7 +21,7 @@ import { extractArticleImage } from '../src/lib/collectors/image-extractor';
 import { scoutArticle, SCOUT_SCORE_THRESHOLD } from '../src/lib/ai/scout';
 import { reviewArticle } from '../src/lib/ai/reviewer';
 import { writeDraft, type DraftFormat } from '../src/lib/ai/editor';
-import { hardRejectTopic, looksBuyableGadget } from '../src/lib/ai/hard-reject';
+import { hardRejectTopic, looksBuyableGadget, isAiOrInventionAlert } from '../src/lib/ai/hard-reject';
 import { filterRemovedArticles, isRemovedSlug } from '../src/lib/removed-slugs';
 import { stampAuthorForPipeline } from '../src/lib/authors';
 import { toPublicCategory, toPublicTags } from '../src/lib/public-labels';
@@ -785,8 +785,8 @@ async function publishRssOnce(opts: {
     return true;
   }
 
-  // Max 1 publish / tick; try more candidates so soft scout rejects do not idle the cycle.
-  const maxAttempts = Math.min(12, candidates.length);
+  // Max 1 publish / tick; cap attempts so one tick doesn't burn 10+ Scout calls.
+  const maxAttempts = Math.min(4, candidates.length);
   let lastSkip = 'no rss candidate';
 
   for (let i = 0; i < maxAttempts; i++) {
@@ -830,17 +830,27 @@ async function publishRssOnce(opts: {
       opts.metrics.sentToGemini += 1;
       const review = await reviewArticle(sourcePayload);
       if (/^REJECT\b/i.test(review.technicalVerdict)) {
-        console.log(chalk.yellow(`Reviewer reject: ${review.technicalVerdict}`));
-        await markRejected(
-          opts.journal,
-          opts.journalPath,
-          item,
-          review.technicalVerdict,
-          scout.score,
-        );
-        opts.urls.add(item.url);
-        lastSkip = 'reviewer reject';
-        continue;
+        // Soft override: Scout already scored high on AI/invention alert — don't idle the tick.
+        if (scout.score >= 80 && isAiOrInventionAlert(item.title, item.text || item.title)) {
+          console.log(
+            chalk.yellow(
+              `Reviewer reject soft-pass (AI/invention alert, scout=${scout.score}): ${review.technicalVerdict}`,
+            ),
+          );
+          review.technicalVerdict = `PASS: AI/invention alert (scout ${scout.score})`;
+        } else {
+          console.log(chalk.yellow(`Reviewer reject: ${review.technicalVerdict}`));
+          await markRejected(
+            opts.journal,
+            opts.journalPath,
+            item,
+            review.technicalVerdict,
+            scout.score,
+          );
+          opts.urls.add(item.url);
+          lastSkip = 'reviewer reject';
+          continue;
+        }
       }
 
       console.log(chalk.gray(`Editor (${opts.format})...`));

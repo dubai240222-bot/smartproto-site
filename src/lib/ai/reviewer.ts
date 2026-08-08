@@ -65,9 +65,9 @@ function fallbackReview(title: string, text: string): ReviewResult {
   return {
     technicalVerdict: `PASS: source-backed gadget candidate — ${snippet || title || 'untitled'}`,
     keyAspects: [
-      'конкретный покупаемый продукт из источника',
-      'заявленная новизна / анонс',
-      'потребительская польза для быта или работы',
+      'конкретный предмет интереса из источника',
+      'заявленная новизна / возможность',
+      'польза для читателя SmartProto',
     ],
   };
 }
@@ -115,7 +115,7 @@ export async function reviewArticle(articleData: object): Promise<ReviewResult> 
             'keyAspects ОБЯЗАТЕЛЬНО ровно 3 непустых строки (массив).',
             mode === 'app'
               ? 'Если нет конкретного полезного app/game или SEO/spam — technicalVerdict начинается с REJECT:.'
-              : 'Если нет покупаемого продукта или тема политика/celebrities/певцы/культура/природа — technicalVerdict начинается с REJECT:.',
+              : 'PASS grounded AI/invention/gadget alerts с ясной пользой (покупка НЕ обязательна). REJECT только политика/celebrities/культура/commodity без смысла / price+buy link.',
             'Иначе подтверди техническую достоверность и перечисли ровно 3 ключевых аспекта.',
             '',
             clampText(JSON.stringify(articleData, null, 2), 10000),
@@ -186,7 +186,7 @@ export function reviewDraftLocal(
           ? 'нишевый PC/engineering без consumer-angle'
           : mode === 'app'
             ? 'нет конкретного полезного приложения'
-            : 'нет покупаемого продукта';
+            : 'нет ясного гаджета/AI/изобретения с пользой';
     return {
       technicalVerdict: `REJECT: ${gate.reason}`,
       keyAspects: [aspect, 'off-topic для SmartProto', 'не публиковать'],

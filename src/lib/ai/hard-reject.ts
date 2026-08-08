@@ -564,6 +564,10 @@ export function hardRejectTopic(
   }
   for (const re of NON_BUYABLE_RESEARCH) {
     if (re.test(hay)) {
+      // Allow grounded AI capability / autonomy milestone alerts (owner: invent + AI news).
+      if (isAiOrInventionAlert(title, text)) {
+        break;
+      }
       return {
         reject: true,
         reason: 'Жёсткий reject: исследование/прототип без товара, который можно купить или предзаказать.',
@@ -623,12 +627,18 @@ export function hardRejectTopic(
       rejectCode: 'NICHE_NO_CONSUMER_ANGLE',
     };
   }
+  // SP-A-054 alert mode: AI capability / invention / useful software news may pass
+  // without buy/preorder signal (no prices/links in public copy anyway).
   if (!BUYABLE_PRODUCT_PATTERNS.some((re) => re.test(hay))) {
-    return {
-      reject: true,
-      reason: 'Жёсткий reject: нет явного покупаемого продукта/устройства (buy/preorder).',
-      rejectCode: 'NO_PRODUCT',
-    };
+    if (isAiOrInventionAlert(title, text)) {
+      // allow through — novelty check still applies below with softer AI path
+    } else {
+      return {
+        reject: true,
+        reason: 'Жёсткий reject: нет явного покупаемого продукта/устройства (buy/preorder).',
+        rejectCode: 'NO_PRODUCT',
+      };
+    }
   }
   const novelty = assessNovelty(title, text, { sourceName, mode: 'gadget' });
   if (!novelty.isActuallyNew && !isAiOrInventionAlert(title, text)) {

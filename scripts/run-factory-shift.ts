@@ -9,6 +9,7 @@ import { scoutArticle, ScoutResult, SCOUT_SCORE_THRESHOLD } from '../src/lib/ai/
 import { reviewArticle, ReviewResult } from '../src/lib/ai/reviewer';
 import { writeDraft, DraftResult } from '../src/lib/ai/editor';
 import { hardRejectTopic } from '../src/lib/ai/hard-reject';
+import { filterRemovedArticles, isRemovedSlug } from '../src/lib/removed-slugs';
 import { stampAuthorForPipeline } from '../src/lib/authors';
 
 function loadEnvFiles(): void {
@@ -366,6 +367,21 @@ async function main(): Promise<void> {
 
       // 5. Generate Article Object
       const slug = generateSlug(draft.title, item.title);
+      if (isRemovedSlug(slug)) {
+        console.log(chalk.yellow(`Skipped denylisted slug: ${slug}`));
+        journal.entries.push({
+          id: item.id,
+          url: item.url,
+          title: item.title,
+          processedAt: new Date().toISOString(),
+          status: 'rejected',
+          scoutScore: scout.score,
+          reason: 'denylisted slug',
+        });
+        await writeFile(journalPath, JSON.stringify(journal, null, 2) + '\n', 'utf8');
+        consecutiveErrors = 0;
+        continue;
+      }
       const category = draft.tags.slice(0, 2).map((t) => t.toUpperCase()).join(' / ');
       const summary = generateSummary(draft.text);
       const readTime = estimateReadTime(draft.text);
@@ -405,8 +421,15 @@ async function main(): Promise<void> {
         'utf8'
       );
 
-      // Append to articles.json
-      articles.push(newArticle);
+      // Append to articles.json (strip any denylisted leftovers first)
+      const cleaned = filterRemovedArticles(
+        articles.filter(
+          (a) => a.id !== newArticle.id && a.slug !== newArticle.slug && a.sourceUrl !== newArticle.sourceUrl,
+        ),
+      );
+      cleaned.push(newArticle);
+      articles.length = 0;
+      articles.push(...cleaned);
       await writeFile(articlesPath, JSON.stringify(articles, null, 2) + '\n', 'utf8');
 
       // Update Journal
