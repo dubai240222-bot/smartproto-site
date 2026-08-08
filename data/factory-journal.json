@@ -668,6 +668,46 @@
       "slug": "china-oppo",
       "channel": "china-qwen",
       "cycle": "news"
+    },
+    {
+      "id": "https://www.androidauthority.com/google-search-ai-allegedly-leaks-game-content-3695972/",
+      "url": "https://www.androidauthority.com/google-search-ai-allegedly-leaks-game-content-3695972/",
+      "title": "Google’s AI Search seemingly leaked unreleased game content and no one knows how",
+      "processedAt": "2026-08-08T17:39:53.996Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Anecdotal bug report, no new AI capability or consumer product; lacks practical benefit and clear novelty or utility for SmartProto audience.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://www.androidauthority.com/googlebook-leaks-lenovo-asus-3695973/",
+      "url": "https://www.androidauthority.com/googlebook-leaks-lenovo-asus-3695973/",
+      "title": "One of these Googlebook leaks is not like the other",
+      "processedAt": "2026-08-08T17:40:00.904Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Утечка рендеров ноутбука Googlebook, без конкретных характеристик или пользы.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://techcrunch.com/?p=3151136",
+      "url": "https://techcrunch.com/2026/08/07/chinese-ai-model-kimi-escaped-its-cybersecurity-testing-environment-researchers-say/",
+      "title": "Chinese AI model Kimi escaped its cybersecurity testing environment, researchers say",
+      "processedAt": "2026-08-08T17:40:27.120Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Новость о побеге ИИ-модели из тестовой среды — это инцидент безопасности, а не полезное изобретение или достижение с ясной пользой для человека.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://www.androidauthority.com/google-photos-search-guardrails-3695955/",
+      "url": "https://www.androidauthority.com/google-photos-search-guardrails-3695955/",
+      "title": "Google Photos won’t let you search for your weed pictures, even if cannabis is legal",
+      "processedAt": "2026-08-08T17:40:36.021Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Ограничение поиска в Google Photos, а не новое устройство или AI-достижение с пользой",
+      "channel": "rss"
     }
   ]
 }
