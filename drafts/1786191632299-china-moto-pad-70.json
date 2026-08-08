@@ -1,0 +1,85 @@
+{
+  "generatedAt": "2026-08-08T12:20:32.293Z",
+  "channel": "china-qwen",
+  "cycle": "news",
+  "format": "news",
+  "source": {
+    "sourceId": "ithome-rss",
+    "sourceName": "IT之家",
+    "sourceUrl": "https://www.ithome.com/0/987/422.htm",
+    "platform": "rss",
+    "language": "zh",
+    "title": "摩托罗拉 Moto Pad 70 平板海外发布：天玑 6400 芯片，支持 5G 移动数据网络",
+    "summary": "IT之家 8 月 8 日消息，摩托罗拉现已在印度市场推出 Moto Pad 70 平板电脑，新品配备 12.1 英寸 2.5K 屏幕，拥有联发科天玑 6400 芯片，支持 5G 移动数据网络，起售价 33,999 印度卢比（IT之家注：现汇率约合 2,413 元人民币）。\n\n据介绍，这款平板搭载一块 12.1 英寸 LCD 屏幕，分辨率为 2560*1600，支持 90Hz 高刷，最高亮度可达 800nits，覆盖 96% DCI-P3 色域。\n\n同时，这款平板配备联发科天玑 6400 芯片，提供 8GB LPDDR4X 内存、128GB/256GB UFS 2.2 存储，用户可通过 microSD 卡扩容。该机还带有 1300 万像素后置镜头、800 万像素前置镜头，支持 IP52 级防尘防水。\n此外，这款平板将随机附赠 Moto Pen 手写笔，支持 4096 级压感。新机出厂运行 Android 16 操作系统，支持杜比全景声音效、5G 移动数据网络连接。",
+    "priceText": "",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/f630099c-6e4e-4974-877e-22012b8d97af.jpg?x-bce-process=image/format,f_auto",
+    "publishedAt": "2026-08-08T11:18:42.000Z",
+    "rawSignals": [
+      "新品",
+      "推出",
+      "发布"
+    ],
+    "collectedAt": "2026-08-08T12:20:24.025Z"
+  },
+  "dossier": {
+    "originalTitle": "摩托罗拉 Moto Pad 70 平板海外发布：天玑 6400 芯片，支持 5G 移动数据网络",
+    "translatedTitle": "",
+    "productName": "Moto Pad 70",
+    "manufacturer": "",
+    "platform": "rss",
+    "productUrl": "",
+    "sourceUrl": "https://www.ithome.com/0/987/422.htm",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/f630099c-6e4e-4974-877e-22012b8d97af.jpg?x-bce-process=image/format,f_auto",
+    "whatItDoes": "这款平板配备 12.1 英寸 2.5K 90Hz 高刷屏，搭载天玑 6400 芯片，起售价约 2413 元人民币。它还随机附赠支持 4096 级压感的 Moto Pen 手写笔，并支持 IP52 级防尘防水。#摩托罗拉# 你会考虑吗？\n\nIT之家 8 月 8 日消息，摩托罗拉现已在印度市场推出 Moto Pad 70 平板电脑，新品配备 12.1 英寸 2.5K 屏幕，拥有联发科天玑 6400 芯片，支持 5G 移动数据网络，起售价 33,999 印度卢比（IT之家注：现汇率约合 2,413 元人民币）。\n\n据介绍，这款平板搭载一块 12.1 英寸 LCD 屏幕，分辨率为 2560*1600，支持 90Hz 高刷，最高亮度可达 800nits，覆盖 96% DCI-P3 色域。\n\n同时，这款平板配备联发科天玑 6400 芯片，提供 8GB LPDDR4X 内存、128GB/256GB UF",
+    "whyItIsNew": "",
+    "consumerUse": "",
+    "priceOriginal": null,
+    "currency": "CNY",
+    "priceApproxUsd": null,
+    "availability": "海外上市（印度市场）",
+    "launchDate": null,
+    "market": "",
+    "prototypeOrSale": "",
+    "evidence": [],
+    "unknownFacts": [
+      "未提及电池容量及快充规格",
+      "未说明是否支持蓝牙5.x/Wi-Fi 6/6E",
+      "未提供重量与厚度信息",
+      "未明确是否支持USB OTG/USB-C视频输出",
+      "Android 16为预览/测试版系统（截至2026年8月尚未正式发布，需核实是否为定制版或Beta版）"
+    ],
+    "warningFlags": [
+      "Android 16尚未正式发布（截至2026年8月），设备可能搭载定制/预览版系统，稳定性存疑",
+      "IP52仅防溅水防尘，非专业防护等级，不适用于水下或高湿环境",
+      "仅印度市场首发，暂无中国上市计划信息",
+      "未提供中国入网信息或3C认证记录"
+    ],
+    "recommended": false,
+    "sourceSuggestions": []
+  },
+  "draft": {
+    "id": "china-moto-pad-70",
+    "slug": "china-moto-pad-70",
+    "title": "Motorola Moto Pad 70 с поддержкой 5G и стилусом",
+    "category": "Гаджеты",
+    "tags": [
+      "планшет",
+      "Motorola",
+      "Android",
+      "5G",
+      "стилус",
+      "новинка",
+      "гаджет",
+      "новость"
+    ],
+    "summary": "Motorola представила планшет Moto Pad 70, доступный для покупки на индийском рынке.",
+    "content": "Motorola представила планшет Moto Pad 70, доступный для покупки на индийском рынке. Устройство оснащено 12,1-дюймовым LCD-дисплеем с разрешением 2.5K и частотой обновления 90 Гц. В основе лежит чипсет MediaTek Dimensity 6400, поддерживающий сети 5G. В комплекте поставляется стилус Moto Pen с 4096 уровнями чувствительности к нажатию. Корпус имеет защиту от пыли и брызг по стандарту IP52. Планшет работает под управлением Android 16.",
+    "sourceUrl": "https://www.ithome.com/0/987/422.htm",
+    "publishedAt": "2026-08-08T12:20:32.293Z",
+    "readTime": "1 мин",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/f630099c-6e4e-4974-877e-22012b8d97af.jpg?x-bce-process=image/format,f_auto",
+    "author": "Линь Цзе",
+    "authorDesk": "China desk",
+    "agentId": "china-qwen"
+  }
+}

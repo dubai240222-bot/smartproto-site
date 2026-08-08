@@ -4,13 +4,21 @@
  */
 import path from 'node:path';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
-import { DESKS, getDesk, type Desk, type DeskId } from './desks';
+import {
+  DESKS,
+  ROTATION_ORDER,
+  deskAtRotationIndex,
+  getDesk,
+  rotationLength,
+  type Desk,
+  type DeskId,
+} from './desks';
 
 export const TOPIC_ROTATION_FILENAME = 'topic-rotation.json';
 
 export interface TopicRotationState {
   version: 1;
-  /** Index into DESKS — next desk to try at tick start */
+  /** Index into ROTATION_ORDER (AI-boosted) — next desk to try at tick start */
   index: number;
   lastDeskId: DeskId | null;
   lastPublishedDeskId: DeskId | null;
@@ -34,7 +42,7 @@ export function defaultRotationPath(cwd = process.cwd()): string {
 
 function clampIndex(n: number): number {
   if (!Number.isFinite(n) || n < 0) return 0;
-  return Math.floor(n) % DESKS.length;
+  return Math.floor(n) % rotationLength();
 }
 
 export function normalizeState(raw: unknown): TopicRotationState {
@@ -76,22 +84,23 @@ export async function saveTopicRotation(
 /** Current desk at cursor (does not advance). */
 export function nextTopic(state: TopicRotationState): Desk {
   const s = normalizeState(state);
-  return DESKS[s.index] ?? DESKS[0];
+  return deskAtRotationIndex(s.index);
 }
 
-/** Ordered desk queue starting at cursor (full round). */
+/** Ordered desk queue starting at cursor (full weighted round). */
 export function topicQueueFrom(state: TopicRotationState): Desk[] {
   const s = normalizeState(state);
   const out: Desk[] = [];
-  for (let i = 0; i < DESKS.length; i++) {
-    out.push(DESKS[(s.index + i) % DESKS.length]!);
+  const n = rotationLength();
+  for (let i = 0; i < n; i++) {
+    out.push(deskAtRotationIndex(s.index + i));
   }
   return out;
 }
 
 /**
- * After a tick: advance past the desk we published from,
- * or past the starting desk if nothing published (so we don't stall on empty desks).
+ * After a tick: advance past the rotation slot we published from,
+ * or past the starting slot if nothing published (so we don't stall on empty desks).
  */
 export function advanceAfterTick(
   state: TopicRotationState,
@@ -101,12 +110,20 @@ export function advanceAfterTick(
     skipped: DeskId[];
   },
 ): TopicRotationState {
-  const publishedIdx =
-    opts.publishedDeskId != null
-      ? DESKS.findIndex((d) => d.id === opts.publishedDeskId)
-      : -1;
+  const n = rotationLength();
+  let publishedIdx = -1;
+  if (opts.publishedDeskId != null) {
+    // Prefer the slot at/after start that matches published desk (AI appears multiple times).
+    for (let i = 0; i < n; i++) {
+      const idx = (clampIndex(opts.startedAtIndex) + i) % n;
+      if (ROTATION_ORDER[idx] === opts.publishedDeskId) {
+        publishedIdx = idx;
+        break;
+      }
+    }
+  }
   const base = publishedIdx >= 0 ? publishedIdx : clampIndex(opts.startedAtIndex);
-  const nextIndex = (base + 1) % DESKS.length;
+  const nextIndex = (base + 1) % n;
   return {
     version: 1,
     index: nextIndex,

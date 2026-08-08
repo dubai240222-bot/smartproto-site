@@ -1,8 +1,8 @@
 /**
- * SP-A-050 — Permanent dual factory mode.
+ * SP-A-054 — Permanent dual factory mode.
  *
  * Two independent publisher cycles:
- *   NEWS    — max 1 every 25 minutes (~2–3/h; interval = min pause, not obligation)
+ *   NEWS    — max 1 every ~25m (~2–3/h); during SMARTPROTO_NEWS_WARMUP_UNTIL → 4× (~95m)
  *   ARTICLE — max 1 every 3 hours (fuller + consumer scenario + Wow Score)
  *
  * One process + lock per cycle type. 3 consecutive errors → stop THAT cycle only.
@@ -23,12 +23,14 @@ import {
 import { writeFile, mkdir } from 'node:fs/promises';
 import dotenv from 'dotenv';
 import chalk from 'chalk';
+import {
+  getArticleIntervalMs,
+  getNewsIntervalMs,
+  getNewsWarmupUntilIso,
+  isNewsWarmupActive,
+} from '../src/lib/newsroom/cadence';
 
 const ROOT = process.cwd();
-const NEWS_INTERVAL_MS = Number(process.env.SMARTPROTO_NEWS_INTERVAL_MS || String(25 * 60 * 1000));
-const ARTICLE_INTERVAL_MS = Number(
-  process.env.SMARTPROTO_ARTICLE_INTERVAL_MS || String(3 * 60 * 60 * 1000),
-);
 const MAX_CONSECUTIVE_ERRORS = 3;
 
 type CycleType = 'news' | 'article';
@@ -519,8 +521,13 @@ async function loopCycle(state: CycleState, once: boolean): Promise<void> {
   );
 
   while (!state.stopped) {
+    // Re-resolve news interval each loop so warmup → normal flips without restart.
+    if (state.type === 'news') state.intervalMs = getNewsIntervalMs();
+    else state.intervalMs = getArticleIntervalMs();
     await runOneTick(state);
     if (once || state.stopped) break;
+    if (state.type === 'news') state.intervalMs = getNewsIntervalMs();
+    else state.intervalMs = getArticleIntervalMs();
     logLine(
       state.type,
       chalk.gray(`Sleeping ${Math.round(state.intervalMs / 1000)}s until next ${state.type} tick...`),
@@ -541,14 +548,20 @@ async function main(): Promise<void> {
   const { cycle, once } = parseArgs(process.argv.slice(2));
   await mkdir(path.resolve(ROOT, 'data'), { recursive: true });
 
-  console.log(chalk.bold.green('=== SP-A-050 PERMANENT DUAL FACTORY ==='));
-  console.log(`Factory: ON | news every ${NEWS_INTERVAL_MS / 1000}s | article every ${ARTICLE_INTERVAL_MS / 1000}s`);
+  const newsIntervalMs = getNewsIntervalMs();
+  const articleIntervalMs = getArticleIntervalMs();
+  console.log(chalk.bold.green('=== SP-A-054 PERMANENT DUAL FACTORY ==='));
+  console.log(
+    `Factory: ON | news every ${Math.round(newsIntervalMs / 1000)}s` +
+      (isNewsWarmupActive() ? ` (WARMUP 4× until ${getNewsWarmupUntilIso()})` : ' (normal)') +
+      ` | article every ${Math.round(articleIntervalMs / 1000)}s`,
+  );
   console.log(`Run: cycle=${cycle} once=${once}`);
   console.log('China/Qwen/Gemini may run internally; public labels stripped.');
 
   const news: CycleState = {
     type: 'news',
-    intervalMs: NEWS_INTERVAL_MS,
+    intervalMs: newsIntervalMs,
     lockPath: path.resolve(ROOT, 'data', 'factory-news.lock'),
     progressPath: path.resolve(ROOT, 'data', 'factory-news-progress.json'),
     logPath: path.resolve(ROOT, 'data', 'factory-news.log'),
@@ -559,7 +572,7 @@ async function main(): Promise<void> {
   };
   const article: CycleState = {
     type: 'article',
-    intervalMs: ARTICLE_INTERVAL_MS,
+    intervalMs: articleIntervalMs,
     lockPath: path.resolve(ROOT, 'data', 'factory-article.lock'),
     progressPath: path.resolve(ROOT, 'data', 'factory-article-progress.json'),
     logPath: path.resolve(ROOT, 'data', 'factory-article.log'),

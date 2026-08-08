@@ -50,8 +50,29 @@ const WORLD_TECH: [string, string][] = [
   ['Android Authority', 'https://www.androidauthority.com/feed/'],
 ];
 
-/** Round-robin order (~8 desks). China is one desk — not always first. */
+/**
+ * Round-robin order. SP-A-054: AI desk boosted (listed first + again in ROTATION_ORDER).
+ * China is one desk — not always first; public labels strip China/Qwen.
+ */
 export const DESKS: Desk[] = [
+  {
+    id: 'ai',
+    label: 'Artificial intelligence',
+    labelRu: 'AI',
+    channel: 'rss',
+    publishCategory: 'AI',
+    sources: [
+      ['TechCrunch', 'https://techcrunch.com/feed/'],
+      ['The Verge', 'https://www.theverge.com/rss/index.xml'],
+      ['Engadget', 'https://www.engadget.com/rss.xml'],
+      ['New Atlas', 'https://newatlas.com/index.rss'],
+      ['9to5Google', 'https://9to5google.com/feed/'],
+      ...appSourceFeedPairs().slice(0, 3),
+    ],
+    topicPattern:
+      /\b(ai|a\.i\.|artificial intelligence|chatgpt|gemini|claude|llm|gpt|machine learning|neural|copilot|agentic|autonom(?:y|ous)|superintelligence|agi|on[- ]device ai|ai[- ]powered|foundation model|reasoning model)\b|искусственн\w*\s+интеллект|\bии\b|нейросет|автономн/i,
+    tags: ['AI', 'ии', 'приложения'],
+  },
   {
     id: 'apps',
     label: 'Mobile apps',
@@ -84,21 +105,6 @@ export const DESKS: Desk[] = [
     topicPattern:
       /\b(gadget|device|wearable|phone|smartphone|earbuds?|headphones?|tablet|camera|charger|dock|robot|smart\s*home|launch|unveils?|announces?)\b|гаджет|смартфон|наушник|запуск|анонс/i,
     tags: ['технологии', 'новинка'],
-  },
-  {
-    id: 'ai',
-    label: 'Artificial intelligence',
-    labelRu: 'AI',
-    channel: 'rss',
-    publishCategory: 'AI',
-    sources: [
-      ...WORLD_TECH,
-      ['New Atlas', 'https://newatlas.com/index.rss'],
-      ...appSourceFeedPairs().slice(0, 3),
-    ],
-    topicPattern:
-      /\b(ai|a\.i\.|artificial intelligence|chatgpt|gemini|llm|machine learning|neural|copilot|on[- ]device ai|ai[- ]powered)\b|искусственн\w*\s+интеллект|\bии\b|нейросет/i,
-    tags: ['AI', 'ии', 'приложения'],
   },
   {
     id: 'wonder-goods',
@@ -157,6 +163,23 @@ export const DESKS: Desk[] = [
   },
 ];
 
+/**
+ * SP-A-054 — weighted rotation: AI appears 3× per round so capability news is not starved.
+ * Indices map into DESKS by id (duplicates allowed here).
+ */
+export const ROTATION_ORDER: DeskId[] = [
+  'ai',
+  'gadgets',
+  'ai',
+  'apps',
+  'wonder-goods',
+  'ai',
+  'world-tech',
+  'health-home',
+  'games',
+  'china',
+];
+
 export function getDesk(id: DeskId): Desk {
   const d = DESKS.find((x) => x.id === id);
   if (!d) throw new Error(`Unknown desk: ${id}`);
@@ -165,4 +188,13 @@ export function getDesk(id: DeskId): Desk {
 
 export function listDeskIds(): DeskId[] {
   return DESKS.map((d) => d.id);
+}
+
+export function rotationLength(): number {
+  return ROTATION_ORDER.length;
+}
+
+export function deskAtRotationIndex(index: number): Desk {
+  const id = ROTATION_ORDER[((index % ROTATION_ORDER.length) + ROTATION_ORDER.length) % ROTATION_ORDER.length]!;
+  return getDesk(id);
 }

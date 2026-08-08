@@ -1,0 +1,80 @@
+{
+  "generatedAt": "2026-08-08T12:22:32.183Z",
+  "channel": "china-qwen",
+  "cycle": "news",
+  "format": "news",
+  "source": {
+    "sourceId": "ithome-rss",
+    "sourceName": "IT之家",
+    "sourceUrl": "https://www.ithome.com/0/987/417.htm",
+    "platform": "rss",
+    "language": "zh",
+    "title": "华为 5G 海外回归：科威特花粉在发布会现场展示自己十年藏品，含华为首款 5G 手机",
+    "summary": "IT之家 8 月 8 日消息，据华为终端 BG CEO 何刚分享，在科威特华为 Pura 90s 发布会现场，十年华为老用户 Ahmed 展示了他个人收藏的 23 台华为设备。\n\n从视频画面可以看到，这名来自科威特的华为用户的收藏覆盖了直板手机、折叠屏手机、平板等设备。而他的藏品中就还有华为第一款 5G 手机 —— Mate 20X (5G)。\n\n据IT之家此前报道，今年 7 月，华为面向国际市场发布了 Pura 90s 系列手机，包括 Pro 和 Pro Max 两款机型。值得一提的是，此次发布的新机支持了 5G 通信。这也是时隔多年，5G 在华为手机的国际版上回归。\n作为参考，华为早在 2019 年就遭到了美国政府的制裁，导致华为后续在很长一段时间无法生产、销售 5G 手机。华为此前最后一代明确支持 5G 的旗舰手机就是 Mate 40 系列，于 2020 年 10 月全球发布。后续的旗舰机，例如 Mate 50、P60 等均不支持 5G。\n\n▲ IT之家开箱：华为 Mate 40 Pro 秋日胡杨图赏",
+    "priceText": "",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/3059ac11-ba18-4f5e-a938-20c03ebb046c.jpg",
+    "publishedAt": "2026-08-08T10:49:21.000Z",
+    "rawSignals": [
+      "发布"
+    ],
+    "collectedAt": "2026-08-08T12:22:18.138Z"
+  },
+  "dossier": {
+    "originalTitle": "华为 5G 海外回归：科威特花粉在发布会现场展示自己十年藏品，含华为首款 5G 手机",
+    "translatedTitle": "",
+    "productName": "华为 5G 海外回归：科威特花粉在发布会现场展示自己十年藏品，含华为首款 5G 手机",
+    "manufacturer": "",
+    "platform": "rss",
+    "productUrl": "",
+    "sourceUrl": "https://www.ithome.com/0/987/417.htm",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/3059ac11-ba18-4f5e-a938-20c03ebb046c.jpg",
+    "whatItDoes": "据华为终端 BG CEO 何刚分享，在科威特华为 Pura 90s 发布会现场，十年华为老用户 Ahmed 展示他个人收藏的 23 台华为设备。从视频画面可以看到，这名来自科威特的华为用户的收藏覆盖了直板手机、折叠屏手机、平板等设备。而他的藏品中就还有华为第一款 5G 手机 —— Mate 20X (5G)。#华为5G回归#\n\nIT之家 8 月 8 日消息，据华为终端 BG CEO 何刚分享，在科威特华为 Pura 90s 发布会现场，十年华为老用户 Ahmed 展示了他个人收藏的 23 台华为设备。\n\n从视频画面可以看到，这名来自科威特的华为用户的收藏覆盖了直板手机、折叠屏手机、平板等设备。而他的藏品中就还有华为第一款 5G 手机 —— Mate 20X (5G)。\n\n据IT之家此前报道，今年 7 月，华为面向国际市场发布了 Pura 90s 系列手机，包括 Pro 和 Pro Max ",
+    "whyItIsNew": "",
+    "consumerUse": "",
+    "priceOriginal": null,
+    "currency": null,
+    "priceApproxUsd": null,
+    "availability": "",
+    "launchDate": null,
+    "market": "",
+    "prototypeOrSale": "",
+    "evidence": [],
+    "unknownFacts": [
+      "具体上市国家/地区未详",
+      "是否支持国内 5G 频段未说明",
+      "芯片型号、屏幕规格、电池容量等核心参数缺失",
+      "是否搭载鸿蒙系统未明确"
+    ],
+    "warningFlags": [
+      "信息源为新闻稿，非官方产品页面",
+      "未提供购买链接或渠道信息",
+      "存在未来可能调整配置/上市计划风险"
+    ],
+    "recommended": false,
+    "sourceSuggestions": []
+  },
+  "draft": {
+    "id": "china-5g-5g",
+    "slug": "china-5g-5g",
+    "title": "Huawei возвращает 5G на международный рынок с серией Pura 90s",
+    "category": "Гаджеты",
+    "tags": [
+      "смартфон",
+      "Huawei",
+      "5G",
+      "Pura 90s",
+      "новинка",
+      "гаджет",
+      "новость"
+    ],
+    "summary": "Huawei представила серию смартфонов Pura 90s для международного рынка, включая модели Pro и Pro Max.",
+    "content": "Huawei представила серию смартфонов Pura 90s для международного рынка, включая модели Pro и Pro Max. Эти устройства знаменуют возвращение поддержки 5G в глобальные версии телефонов компании после длительного перерыва, связанного с ограничениями. На презентации в Кувейте один из пользователей продемонстрировал коллекцию устройств Huawei, включая первую 5G-модель Mate 20X (5G). Подробности о доступности на конкретных рынках и полные технические характеристики новых моделей не уточняются.",
+    "sourceUrl": "https://www.ithome.com/0/987/417.htm",
+    "publishedAt": "2026-08-08T12:22:32.183Z",
+    "readTime": "1 мин",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/3059ac11-ba18-4f5e-a938-20c03ebb046c.jpg",
+    "author": "Линь Цзе",
+    "authorDesk": "China desk",
+    "agentId": "china-qwen"
+  }
+}

@@ -1,9 +1,10 @@
 # SP-A-054 — SHORT NEWS cycle (independent).
-# Cadence target: ~2–3 news/hour → cron */25 (~2.4 ticks/h; GHA min ~5m).
-# Max 1 publish per tick; skip if nothing worthy (interval ≠ obligation).
-# Cap: ≤3/hour naturally (*/25 + max-1). Prefer interesting / non-overplayed.
+# Cron stays */25 so after warmup we resume ~2–3/h without another deploy.
+# During SMARTPROTO_NEWS_WARMUP_UNTIL, tick enforces ~95m floor (4× slower).
+# Max 1 publish per tick; skip if nothing worthy / cadence floor.
 #
 # Required: OPENROUTER_API_KEY + SMARTPROTO_FACTORY_ENABLED=true
+# Optional var: SMARTPROTO_NEWS_WARMUP_UNTIL (ISO) — auto-expires to normal 25m.
 
 name: Factory News Cycle
 
@@ -58,6 +59,7 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           SMARTPROTO_FACTORY_ENABLED: 'true'
           SMARTPROTO_CYCLE_TYPE: 'news'
+          SMARTPROTO_NEWS_WARMUP_UNTIL: ${{ vars.SMARTPROTO_NEWS_WARMUP_UNTIL }}
           CHINA_DEPARTMENT_ENABLED: 'true'
           CHINA_ALLOW_RECOMMEND: 'true'
           SCOUT_SCORE_THRESHOLD: '70'

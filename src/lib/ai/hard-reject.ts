@@ -332,6 +332,17 @@ const COMMODITY_LOW_WOW_PATTERNS: RegExp[] = [
   /монитор.{0,30}(144|165|180|240)\s*гц/i,
 ];
 
+/**
+ * SP-A-054 — editorial ALERT mode: interesting AI capability / invention / useful software
+ * may pass without a buyable SKU (no prices/links in public copy).
+ */
+const AI_OR_INVENTION_ALERT_RE =
+  /\b(ai|a\.i\.|artificial intelligence|chatgpt|gemini|claude|llm|gpt|machine learning|neural|copilot|agentic|autonom(?:y|ous)|superintelligence|agi|on[- ]device ai|foundation model|reasoning model|deepfake|robotaxi|vtol|invention|prototype that|breakthrough|milestone)\b|искусственн\w*\s+интеллект|\bии\b|нейросет|автономн|изобретен|достижен\w*\s+(в\s+)?(ии|ai)|суперразум/i;
+
+export function isAiOrInventionAlert(title: string, text = ''): boolean {
+  return AI_OR_INVENTION_ALERT_RE.test(`${title}\n${text}`);
+}
+
 /** KEEP reference — unusual wearables must not be killed by commodity rules. */
 const KEEP_WOW_EXCEPTIONS: RegExp[] = [
   /\bcasio\b/i,
@@ -620,7 +631,7 @@ export function hardRejectTopic(
     };
   }
   const novelty = assessNovelty(title, text, { sourceName, mode: 'gadget' });
-  if (!novelty.isActuallyNew) {
+  if (!novelty.isActuallyNew && !isAiOrInventionAlert(title, text)) {
     return {
       reject: true,
       reason: 'Жёсткий reject: NOT_ACTUALLY_NEW — нет новизны / массовый старый товар / только косметика.',

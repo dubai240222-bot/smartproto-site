@@ -18,21 +18,17 @@ const BLOGGER_TONE_RE =
   /ребята|друзья|вы\s+только\s+посмотрите|ваш\s+спаситель|этот\s+малыш|просто\s+находка|это\s+же\s+не\s+просто|забудьте\s+про|вы\s+будете\s+в\s+восторге|берите,?\s+пока|маст-?хэв|идеальный\s+выбор|стильный\s+аксессуар|!\s*$/im;
 
 const REVIEW_SYSTEM_PROMPT_GADGET = [
-  'Ты технический эксперт SmartProto — медиа ТОЛЬКО о НОВЫХ товарах, которые обычный человек может КУПИТЬ или ПРЕДЗАКАЗАТЬ',
-  'и использовать для быта/работы.',
-  `Приоритет: ${PREFERRED_GADGET_CATEGORIES}.`,
-  'HARD REJECT / вернуть Editor — technicalVerdict ОБЯЗАН начинаться с REJECT:, если:',
-  'нет покупаемого продукта; нет доказательства новизны; массовый старый товар как сенсация;',
-  'заголовок-реклама; обращение к читателю; блогерский тон; нет сравнения с аналогами;',
-  'не ясно почему писать сейчас; Trump/политика; celebrities; writers; кино; wildlife; музеи;',
-  'лабораторный прототип без buy/preorder; Docker/DevOps/SmartProto-internal/API libs;',
-  'нишевый PC/engineering компонент (CPU cooler, motherboard, PC case, PSU, RAM, thermal paste,',
-  'internal SSD, internal/server/enterprise hardware, developer board, bare PCB, NAS parts) без сильного',
-  'consumer-angle — интересен только сборщикам ПК / инженерам / разработчикам / энтузиастам (SP-A-039-ALT).',
-  'Допуск ниши только если есть: обычный человек без техзнаний; готовое устройство; необычный дизайн;',
-  'польза home/travel/car/health/sleep/study/comms/safety; заметно дешевле/меньше/удобнее; wow-factor.',
-  'keyAspects всё равно 3 коротких пункта.',
-  'Иначе подтверди достоверность и 3 аспекта, включая отличие от аналогов.',
+  'Ты технический эксперт SmartProto — editorial alerts о интересных гаджетах/приложениях и grounded AI news.',
+  `Приоритет: ${PREFERRED_GADGET_CATEGORIES}; плюс AI capability / useful AI tools / autonomy milestones.`,
+  'Публичный тон — notice «что умеет», не карточка с ценой. REJECT если материал в основном price + buy link.',
+  'HARD REJECT — technicalVerdict ОБЯЗАН начинаться с REJECT:, если:',
+  'нет ясной новизны/возможности; массовый старый товар как сенсация; overplayed flagship color/rumor junk;',
+  'заголовок-реклама; блогерский тон; Trump/политика; celebrities; writers; кино; wildlife; музеи;',
+  'Docker/DevOps/SmartProto-internal/API libs;',
+  'нишевый PC/engineering компонент без сильного consumer-angle (SP-A-039-ALT).',
+  'AI research/demo OK если grounded (реальный результат, польза людям) — не кликбейт про «сверхразум завтра».',
+  'keyAspects — 3 коротких пункта про возможность/новизну/пользу (не про цену).',
+  'Иначе подтверди достоверность и 3 аспекта.',
 ].join(' ');
 
 const REVIEW_SYSTEM_PROMPT_APP = [

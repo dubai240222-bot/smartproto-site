@@ -1,0 +1,59 @@
+{
+  "generatedAt": "2026-08-08T12:23:58.242Z",
+  "channel": "rss",
+  "cycle": "news",
+  "format": "news",
+  "source": "Gadget Flow",
+  "article": {
+    "id": "https://thegadgetflow.com/product/tcl-tab-a1-plus-nxtpaper-tablet/",
+    "title": "TCL Tab A1 Plus NXTPAPER",
+    "url": "https://thegadgetflow.com/product/tcl-tab-a1-plus-nxtpaper-tablet/",
+    "text": "The TCL Tab A1 Plus NXTPAPER combines a large paper-like screen with a big battery and plenty of storage, built for reading, streaming, and getting work done.\n\n12.2-inch NXTPAPER display: The 2.4K screen cuts glare and mimics paper, staying easy on the eyes during long reading or work.\n\nNXTPAPER Key: A dedicated button switches screen modes in one tap, matching the display to the task at hand.\n\n10,000mAh battery with 33W fast charging: The large cell lasts through a full day, and the fast charger cuts down time plugged in.\n\n256GB of storage: Built-in space holds photos, apps, and files, with a card slot that expands storage up to 2TB.\n\nSplit screen and floating windows: AI tools and multitasking let you run two apps side by side, so work and browsing overlap with less effort.\n\nThe TCL Tab A1 Plus NXTPAPER fits reading, work, and entertainment into one tablet with room to grow.\n\nThe post TCL Tab A1 Plus NXTPAPER appeared first on Gadget Flow.",
+    "publishedAt": "2026-08-07T16:30:17.000Z",
+    "sourceName": "Gadget Flow",
+    "imageUrl": "https://thegadgetflow.com/wp-content/uploads/2026/08/tcl-tab-a1-plus-nxtpaper-tablet-01-1200x1143.jpg"
+  },
+  "scout": {
+    "interesting": true,
+    "score": 78,
+    "reason": "Планшет с уникальным бумагоподобным экраном NXTPAPER, большим аккумулятором и AI-функциями — практичный гаджет для чтения и работы.",
+    "productType": "tablet",
+    "isActuallyNew": true,
+    "noveltyEvidence": [
+      "NXTPAPER display technology reduces eye strain and mimics paper",
+      "Dedicated NXTPAPER key for instant mode switching",
+      "AI multitasking features like split screen and floating windows"
+    ],
+    "existingAlternatives": "Другие планшеты с E-ink (например, Boox) или обычные LCD/OLED, но NXTPAPER сочетает цветной ЖК-экран с бумагоподобным эффектом.",
+    "functionalDifference": "Главное отличие — гибридный дисплей, который переключается между обычным режимом и режимом, имитирующим бумагу, плюс AI-инструменты для продуктивности.",
+    "marketSaturation": "medium",
+    "rejectCode": null
+  },
+  "review": {
+    "technicalVerdict": "Подтверждена техническая достоверность. TCL Tab A1 Plus NXTPAPER — это планшет с акцентом на комфортное чтение и многозадачность, предлагающий ряд интересных функций для повседневного использования.",
+    "keyAspects": [
+      "12.2-дюймовый NXTPAPER дисплей с разрешением 2.4K имитирует бумагу, снижая нагрузку на глаза и блики.",
+      "Выделенная кнопка NXTPAPER Key позволяет быстро переключать режимы экрана для разных задач.",
+      "Аккумулятор на 10 000 мАч с поддержкой быстрой зарядки 33 Вт и 256 ГБ встроенной памяти (расширяемой до 2 ТБ) обеспечивают длительное время работы и большой объем хранения."
+    ]
+  },
+  "draft": {
+    "title": "Планшет TCL Tab A1 Plus NXTPAPER с экраном под бумагу",
+    "text": "Представлен планшет TCL Tab A1 Plus NXTPAPER, ориентированный на комфортное чтение и работу. Устройство оснащено 12,2-дюймовым NXTPAPER дисплеем с разрешением 2.4K, который снижает блики и имитирует текстуру бумаги, уменьшая нагрузку на глаза. Специальная кнопка NXTPAPER Key позволяет мгновенно переключать режимы отображения. Планшет имеет аккумулятор емкостью 10 000 мАч с поддержкой быстрой зарядки 33 Вт и 256 ГБ встроенной памяти, расширяемой до 2 ТБ. Функции многозадачности, такие как разделение экрана и плавающие окна, дополняют возможности устройства для продуктивной работы.",
+    "tags": [
+      "планшет",
+      "TCL",
+      "NXTPAPER",
+      "дисплей",
+      "многозадачность",
+      "работа"
+    ],
+    "toneCheck": {
+      "clickbait": false,
+      "hype": false,
+      "unsupportedClaims": false,
+      "limitationsIncluded": false
+    },
+    "imageUrl": "https://thegadgetflow.com/wp-content/uploads/2026/08/tcl-tab-a1-plus-nxtpaper-tablet-01-1200x1143.jpg"
+  }
+}

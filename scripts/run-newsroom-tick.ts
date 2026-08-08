@@ -29,6 +29,12 @@ import {
   CHINA_CATEGORY,
   dossierPublishable,
 } from '../src/lib/ai/china-publish-gate';
+import {
+  checkCycleCadence,
+  getNewsIntervalMs,
+  getNewsWarmupUntilIso,
+  isNewsWarmupActive,
+} from '../src/lib/newsroom/cadence';
 
 export type CycleType = 'news' | 'article';
 
@@ -456,9 +462,7 @@ async function tryChinaPublishOnce(opts: {
         dossier.whatItDoes,
         dossier.whyItIsNew,
         dossier.consumerUse,
-        dossier.priceOriginal != null
-          ? `Цена (источник): ${dossier.priceOriginal} ${dossier.currency || ''}`.trim()
-          : '',
+        // SP-A-054: do not feed prices into Editor (public text must stay price-free).
         dossier.availability ? `Доступность: ${dossier.availability}` : '',
         dossier.launchDate ? `Дата: ${dossier.launchDate}` : '',
         dossier.prototypeOrSale ? `Статус: ${dossier.prototypeOrSale}` : '',
@@ -739,12 +743,20 @@ async function publishRssOnce(opts: {
     if (n.includes('hackaday')) return 6;
     return 8;
   };
+  const looksAiCapability = (title: string, text: string) =>
+    /\b(ai|a\.i\.|artificial intelligence|chatgpt|gemini|claude|llm|gpt|agentic|autonom(?:y|ous)|superintelligence|agi|copilot|reasoning model|foundation model)\b|искусственн\w*\s+интеллект|\bии\b|нейросет/i.test(
+      `${title}\n${text}`,
+    );
   const looksExplainer = (title: string) =>
     /^(what is|how to|common problems|can using|why you|forget lithium|the seven)\b/i.test(
       title.trim(),
     ) ||
     /\b(how to fix|explained|problems with|partnership|marks breakthrough)\b/i.test(title);
   candidates.sort((a, b) => {
+    // SP-A-054: boost grounded AI capability / useful AI tool stories.
+    const aAi = looksAiCapability(a.title, a.text || '') ? 0 : 1;
+    const bAi = looksAiCapability(b.title, b.text || '') ? 0 : 1;
+    if (aAi !== bAi) return aAi - bAi;
     const ae = looksExplainer(a.title) ? 1 : 0;
     const be = looksExplainer(b.title) ? 1 : 0;
     if (ae !== be) return ae - be;
@@ -1101,12 +1113,39 @@ async function main(): Promise<void> {
   );
   const lastPublish: { title?: string; slug?: string; wowScore?: number } = {};
 
-  console.log(chalk.bold('=== Newsroom Tick (SP-A-050 dual factory) ==='));
+  console.log(chalk.bold('=== Newsroom Tick (SP-A-054 dual factory) ==='));
   console.log(`Time: ${new Date().toISOString()}`);
   console.log(`Factory: ${factoryEnabled ? 'ON' : 'OFF (forced)'}`);
   console.log(
     `Cycle: ${options.cycle} | format=${options.format} | dryRun=${options.dryRun ? 'YES' : 'NO'} | max 1 publish | scout≥${SCOUT_SCORE_THRESHOLD}`,
   );
+  if (options.cycle === 'news') {
+    console.log(
+      `News cadence: ${Math.round(getNewsIntervalMs() / 60_000)}m` +
+        (isNewsWarmupActive() ? ` WARMUP until ${getNewsWarmupUntilIso()}` : ' normal') +
+        (options.force ? ' | BURST --force (cadence bypass)' : ''),
+    );
+  }
+
+  // Warmup / normal floor — --force (owner burst) bypasses so control publishes can land.
+  const cadence = checkCycleCadence({
+    cycle: options.cycle,
+    journal,
+    force: options.force,
+  });
+  console.log(`Cadence: ${cadence.reason}`);
+  if (!cadence.allow) {
+    metrics.skipReason = cadence.reason;
+    metrics.reason = 'cadence floor skip';
+    printFactoryTickSummary({
+      factoryEnabled: true,
+      event,
+      metrics,
+      commitCreated: false,
+      pushDone: false,
+    });
+    return;
+  }
 
   const shared = {
     dryRun: options.dryRun,
