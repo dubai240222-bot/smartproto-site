@@ -56,7 +56,12 @@
     "https://www.androidauthority.com/google-photos-search-guardrails-3695955/",
     "https://techcrunch.com/2026/08/07/chinese-ai-model-kimi-escaped-its-cybersecurity-testing-environment-researchers-say/",
     "https://www.ithome.com/0/987/432.htm",
+<<<<<<< Updated upstream
     "https://thegadgetflow.com/product/ascentiz-h-pro-hip-exoskeleton/"
+=======
+    "https://thegadgetflow.com/product/ascentiz-h-pro-hip-exoskeleton/",
+    "https://www.androidauthority.com/google-search-ai-allegedly-leaks-game-content-3695972/"
+>>>>>>> Stashed changes
   ],
   "processedIds": [
     "https://thegadgetflow.com/product/khadas-tea-pro-headphone-amp/",
@@ -115,7 +120,12 @@
     "https://www.androidauthority.com/google-photos-search-guardrails-3695955/",
     "https://techcrunch.com/?p=3151136",
     "china-v6",
+<<<<<<< Updated upstream
     "https://thegadgetflow.com/product/ascentiz-h-pro-hip-exoskeleton/"
+=======
+    "https://thegadgetflow.com/product/ascentiz-h-pro-hip-exoskeleton/",
+    "https://www.androidauthority.com/google-search-ai-allegedly-leaks-game-content-3695972/"
+>>>>>>> Stashed changes
   ],
   "entries": [
     {
@@ -930,39 +940,65 @@
       "id": "https://thegadgetflow.com/product/ascentiz-h-pro-hip-exoskeleton/",
       "url": "https://thegadgetflow.com/product/ascentiz-h-pro-hip-exoskeleton/",
       "title": "Ascentiz H Pro Powered Exoskeleton",
+<<<<<<< Updated upstream
       "processedAt": "2026-08-08T21:31:41.017Z",
       "status": "error",
       "reason": "Model response was not valid JSON: {\n  \"interesting\": true,\n  \"score\": 80,\n  \"reason\": \"Устройство делает ходьбу и бег легче за счёт AI-адаптации к 12 типам рельефа, складное всего 5.5 фунтов — настоящий шаг к доступным персональным экзоскелетам.\",\n  \"productType\": \"экзоскелет для ходьбы/бега\",\n  \"isActuallyNew\": true,\n  \"noveltyEvidence\": [\n    \"Складной до размера листа бумаги экзоскелет с массой 5.5 lbs\",\n    \"AI OmniTerrain Sensing: переключение между 12 типами местности за 0.2 с\",\n    \"Три режима — облегчение ходьбы, максимальная поддержка и силовые тренировки с сопротивлением до 44 lbs\",\n    \"Быстросменная батарея на 15.5 миль и зарядка за 65 минут\"\n  ],\n  \"existingAlternatives\": \"Hypershell, Dnsys X1, медицинские экзоскелеты (Ekso, ReWalk), но они тяжелее, не складные и без AI-адаптации для спорта\",\n  \"functionalDifference\": \"Лёгкий складной ди",
+=======
+      "processedAt": "2026-08-08T21:32:53.024Z",
+      "status": "error",
+      "reason": "Scout model (deepseek/deepseek-v4-flash:latest) returned an empty response. finish_reason: length, reasoning present: false",
+>>>>>>> Stashed changes
       "channel": "rss"
     },
     {
       "id": "https://www.androidauthority.com/gemini-notebook-source-automation-3696153/",
       "url": "https://www.androidauthority.com/gemini-notebook-source-automation-3696153/",
       "title": "Google is making it easier to add new sources to Gemini Notebook",
+<<<<<<< Updated upstream
       "processedAt": "2026-08-08T21:32:00.105Z",
       "status": "rejected",
       "scoutScore": 0,
       "reason": "Minor automation of source adding in Gemini Notebooks; practical but low novelty for SmartProto readers.",
+=======
+      "processedAt": "2026-08-08T21:33:00.434Z",
+      "status": "rejected",
+      "scoutScore": 35,
+      "reason": "Точечное улучшение интерфейса (автоматизация шага добавления источника) для корпоративных/образовательных пользователей Gemini Notebooks. Функция не является новым изобретением, не предлагает кардинально новой возможности для широкой аудитории и не вызывает желания немедленно попробовать. Практическая польза минимальна, новизна низкая.",
+>>>>>>> Stashed changes
       "channel": "rss"
     },
     {
       "id": "https://techcrunch.com/?p=3151377",
       "url": "https://techcrunch.com/2026/08/08/openai-acquires-presentation-startup-nextslide/",
       "title": "OpenAI acquires presentation startup NextSlide",
+<<<<<<< Updated upstream
       "processedAt": "2026-08-08T21:32:05.633Z",
       "status": "rejected",
       "scoutScore": 0,
       "reason": "Новость о приобретении стартапа, нет конкретного устройства или ИИ-достижения с пользой для человека.",
+=======
+      "processedAt": "2026-08-08T21:33:20.379Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Приобретение стартапа презентаций, но нет нового продукта или возможности для пользователя.",
+>>>>>>> Stashed changes
       "channel": "rss"
     },
     {
       "id": "https://www.androidauthority.com/google-search-ai-allegedly-leaks-game-content-3695972/",
       "url": "https://www.androidauthority.com/google-search-ai-allegedly-leaks-game-content-3695972/",
       "title": "Google’s AI Search seemingly leaked unreleased game content and no one knows how",
+<<<<<<< Updated upstream
       "processedAt": "2026-08-08T21:32:24.438Z",
       "status": "rejected",
       "scoutScore": 0,
       "reason": "Курьезный случай утечки данных через AI поиск, но без практической пользы для пользователя",
+=======
+      "processedAt": "2026-08-08T21:33:30.023Z",
+      "status": "error",
+      "reason": "Model response was not valid JSON: {\n  \"interesting\": false,\n  \"score\": 30,\n  \"reason\": \"Случай утечки данных через AI-поиск, но нет практической пользы для пользователя, скорее проблема безопасности.\",\n  \"productType\": \"AI search system\",\n  \"isActuallyNew\": false,\n  \"noveltyEvidence\": [],\n  \"existingAlternatives\": \"N/A\",\n  \"functionalDifference\": \"N/A\",\n  \"marketSaturation\": \"low\",\n  \"rejectCode\": \"NO_CONSUMER_BENEFIT\",\n  \"parts\": {\n    \"a\": 10",
+>>>>>>> Stashed changes
       "channel": "rss"
     }
   ]
