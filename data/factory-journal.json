@@ -883,6 +883,46 @@
       "slug": "china-v6",
       "channel": "china-qwen",
       "cycle": "news"
+    },
+    {
+      "id": "https://www.androidauthority.com/gemini-notebook-source-automation-3696153/",
+      "url": "https://www.androidauthority.com/gemini-notebook-source-automation-3696153/",
+      "title": "Google is making it easier to add new sources to Gemini Notebook",
+      "processedAt": "2026-08-08T20:55:38.030Z",
+      "status": "rejected",
+      "scoutScore": 50,
+      "reason": "Упрощение добавления источников в Gemini Notebooks, но новинка незначительная и для ограниченной аудитории.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://techcrunch.com/?p=3151377",
+      "url": "https://techcrunch.com/2026/08/08/openai-acquires-presentation-startup-nextslide/",
+      "title": "OpenAI acquires presentation startup NextSlide",
+      "processedAt": "2026-08-08T20:55:41.754Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Приобретение стартапа по презентациям не создаёт нового устройства или функции для пользователя.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://www.androidauthority.com/google-search-ai-allegedly-leaks-game-content-3695972/",
+      "url": "https://www.androidauthority.com/google-search-ai-allegedly-leaks-game-content-3695972/",
+      "title": "Google’s AI Search seemingly leaked unreleased game content and no one knows how",
+      "processedAt": "2026-08-08T20:55:51.233Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Случай с утечкой информации из Google AI Search, но нет конкретного продукта или ясной пользы для пользователя",
+      "channel": "rss"
+    },
+    {
+      "id": "https://www.androidauthority.com/googlebook-leaks-lenovo-asus-3695973/",
+      "url": "https://www.androidauthority.com/googlebook-leaks-lenovo-asus-3695973/",
+      "title": "One of these Googlebook leaks is not like the other",
+      "processedAt": "2026-08-08T20:56:04.101Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Утечки рендеров ноутбуков Googlebook без новой функциональности.",
+      "channel": "rss"
     }
   ]
 }
