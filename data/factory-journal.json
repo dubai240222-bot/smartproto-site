@@ -830,6 +830,46 @@
       "scoutScore": 0,
       "reason": "Сюжет про внутреннюю разработку Airbnb, нет конкретного consumer-продукта или AI-достижения с ясной пользой.",
       "channel": "rss"
+    },
+    {
+      "id": "https://techcrunch.com/?p=3151377",
+      "url": "https://techcrunch.com/2026/08/08/openai-acquires-presentation-startup-nextslide/",
+      "title": "OpenAI acquires presentation startup NextSlide",
+      "processedAt": "2026-08-08T19:50:41.848Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Новость о приобретении стартапа — нет конкретного устройства, приложения или достижения ИИ с понятной пользой для пользователя.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://www.androidauthority.com/google-search-ai-allegedly-leaks-game-content-3695972/",
+      "url": "https://www.androidauthority.com/google-search-ai-allegedly-leaks-game-content-3695972/",
+      "title": "Google’s AI Search seemingly leaked unreleased game content and no one knows how",
+      "processedAt": "2026-08-08T19:50:58.000Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Инцидент с утечкой данных, а не полезное устройство или AI-достижение",
+      "channel": "rss"
+    },
+    {
+      "id": "https://www.androidauthority.com/googlebook-leaks-lenovo-asus-3695973/",
+      "url": "https://www.androidauthority.com/googlebook-leaks-lenovo-asus-3695973/",
+      "title": "One of these Googlebook leaks is not like the other",
+      "processedAt": "2026-08-08T19:51:02.793Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Leaked renders of upcoming Chromebook laptops without any novel functionality or clear consumer benefit.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://techcrunch.com/?p=3151106",
+      "url": "https://techcrunch.com/2026/08/07/airbnb-says-ai-is-helping-it-ship-features-faster-as-it-tests-a-new-search-function/",
+      "title": "Airbnb says AI is helping it ship features faster as it tests a new search function",
+      "processedAt": "2026-08-08T19:51:09.934Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Слишком общее описание AI-функции без конкретных деталей и пользы для пользователя",
+      "channel": "rss"
     }
   ]
 }
