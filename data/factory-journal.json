@@ -43,7 +43,11 @@
     "https://newatlas.com/automotive/zoox-nhtsa-commercial-exemption-paid-robotaxi/",
     "https://newatlas.com/ai-humanoids/fraunhofer-realorrender-deepfake-detection/",
     "https://www.theverge.com/gadgets/976422/birdfy-feeder-rookie-nothing-headphones-deal-sale",
-    "https://hackaday.com/2026/08/07/hacking-a-6000-cotton-candy-machine-to-fully-control-it/"
+    "https://hackaday.com/2026/08/07/hacking-a-6000-cotton-candy-machine-to-fully-control-it/",
+    "https://www.engadget.com/2229993/claude-vs-chatgpt-how-ai-assistants-differ/",
+    "https://techcrunch.com/2026/08/07/after-rippling-blew-millions-on-ai-in-months-it-built-an-employee-roi-tool/",
+    "https://www.theverge.com/entertainment/976939/roku-fairground-ai-fast-channel",
+    "https://www.theverge.com/ai-artificial-intelligence/976948/openai-astra-model-pause-critical-cyber-capabilities"
   ],
   "processedIds": [
     "https://thegadgetflow.com/product/khadas-tea-pro-headphone-amp/",
@@ -89,7 +93,11 @@
     "https://newatlas.com/automotive/zoox-nhtsa-commercial-exemption-paid-robotaxi/",
     "https://newatlas.com/ai-humanoids/fraunhofer-realorrender-deepfake-detection/",
     "https://www.theverge.com/?p=976422",
-    "https://hackaday.com/?p=1134701"
+    "https://hackaday.com/?p=1134701",
+    "https://www.engadget.com/2229993/claude-vs-chatgpt-how-ai-assistants-differ/",
+    "https://techcrunch.com/?p=3151218",
+    "https://www.theverge.com/?p=976939",
+    "https://www.theverge.com/?p=976948"
   ],
   "entries": [
     {
@@ -564,6 +572,42 @@
       "url": "https://hackaday.com/2026/08/07/hacking-a-6000-cotton-candy-machine-to-fully-control-it/",
       "title": "Hacking a $6000 Cotton Candy Machine to Fully Control It",
       "processedAt": "2026-08-08T15:30:43.332Z",
+      "status": "error",
+      "reason": "401 User not found.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://www.engadget.com/2229993/claude-vs-chatgpt-how-ai-assistants-differ/",
+      "url": "https://www.engadget.com/2229993/claude-vs-chatgpt-how-ai-assistants-differ/",
+      "title": "Claude Vs ChatGPT: How These AI Assistants Differ",
+      "processedAt": "2026-08-08T15:32:02.628Z",
+      "status": "error",
+      "reason": "401 User not found.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://techcrunch.com/?p=3151218",
+      "url": "https://techcrunch.com/2026/08/07/after-rippling-blew-millions-on-ai-in-months-it-built-an-employee-roi-tool/",
+      "title": "After Rippling blew millions on AI in months, it built an employee ROI tool",
+      "processedAt": "2026-08-08T15:32:02.645Z",
+      "status": "error",
+      "reason": "401 User not found.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://www.theverge.com/?p=976939",
+      "url": "https://www.theverge.com/entertainment/976939/roku-fairground-ai-fast-channel",
+      "title": "Watching Roku’s AI channel is like eating from a trough",
+      "processedAt": "2026-08-08T15:32:02.661Z",
+      "status": "error",
+      "reason": "401 User not found.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://www.theverge.com/?p=976948",
+      "url": "https://www.theverge.com/ai-artificial-intelligence/976948/openai-astra-model-pause-critical-cyber-capabilities",
+      "title": "OpenAI puts the brakes on a new model because it&#8217;s supposedly too powerful",
+      "processedAt": "2026-08-08T15:32:02.684Z",
       "status": "error",
       "reason": "401 User not found.",
       "channel": "rss"
