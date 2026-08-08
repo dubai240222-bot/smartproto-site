@@ -47,7 +47,11 @@
     "https://www.engadget.com/2229993/claude-vs-chatgpt-how-ai-assistants-differ/",
     "https://techcrunch.com/2026/08/07/after-rippling-blew-millions-on-ai-in-months-it-built-an-employee-roi-tool/",
     "https://www.theverge.com/entertainment/976939/roku-fairground-ai-fast-channel",
-    "https://www.theverge.com/ai-artificial-intelligence/976948/openai-astra-model-pause-critical-cyber-capabilities"
+    "https://www.theverge.com/ai-artificial-intelligence/976948/openai-astra-model-pause-critical-cyber-capabilities",
+    "https://www.androidauthority.com/pixel-11-proactive-assistance-3696051/",
+    "https://www.androidauthority.com/google-conversation-capture-3696029/",
+    "https://www.engadget.com/2229315/ai-changing-cybersecurity-quick-terrifying-way/",
+    "https://techcrunch.com/2026/08/07/cloudflare-launches-kitesurf-a-browser-built-for-ai-agents/"
   ],
   "processedIds": [
     "https://thegadgetflow.com/product/khadas-tea-pro-headphone-amp/",
@@ -97,7 +101,11 @@
     "https://www.engadget.com/2229993/claude-vs-chatgpt-how-ai-assistants-differ/",
     "https://techcrunch.com/?p=3151218",
     "https://www.theverge.com/?p=976939",
-    "https://www.theverge.com/?p=976948"
+    "https://www.theverge.com/?p=976948",
+    "https://www.androidauthority.com/pixel-11-proactive-assistance-3696051/",
+    "https://www.androidauthority.com/google-conversation-capture-3696029/",
+    "https://www.engadget.com/2229315/ai-changing-cybersecurity-quick-terrifying-way/",
+    "https://techcrunch.com/?p=3151175"
   ],
   "entries": [
     {
@@ -608,6 +616,42 @@
       "url": "https://www.theverge.com/ai-artificial-intelligence/976948/openai-astra-model-pause-critical-cyber-capabilities",
       "title": "OpenAI puts the brakes on a new model because it&#8217;s supposedly too powerful",
       "processedAt": "2026-08-08T15:32:02.684Z",
+      "status": "error",
+      "reason": "401 User not found.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://www.androidauthority.com/pixel-11-proactive-assistance-3696051/",
+      "url": "https://www.androidauthority.com/pixel-11-proactive-assistance-3696051/",
+      "title": "Google puts the finishing touches on Proactive Assistance ahead of Pixel 11 launch",
+      "processedAt": "2026-08-08T16:14:21.073Z",
+      "status": "error",
+      "reason": "401 User not found.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://www.androidauthority.com/google-conversation-capture-3696029/",
+      "url": "https://www.androidauthority.com/google-conversation-capture-3696029/",
+      "title": "Forget Recorder — Google’s working on a new AI-powered voice notes tool",
+      "processedAt": "2026-08-08T16:14:21.090Z",
+      "status": "error",
+      "reason": "401 User not found.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://www.engadget.com/2229315/ai-changing-cybersecurity-quick-terrifying-way/",
+      "url": "https://www.engadget.com/2229315/ai-changing-cybersecurity-quick-terrifying-way/",
+      "title": "AI is changing cybersecurity in quick and terrifying ways",
+      "processedAt": "2026-08-08T16:14:21.106Z",
+      "status": "error",
+      "reason": "401 User not found.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://techcrunch.com/?p=3151175",
+      "url": "https://techcrunch.com/2026/08/07/cloudflare-launches-kitesurf-a-browser-built-for-ai-agents/",
+      "title": "Cloudflare launches Kitesurf, a browser built for AI agents",
+      "processedAt": "2026-08-08T16:14:21.122Z",
       "status": "error",
       "reason": "401 User not found.",
       "channel": "rss"
