@@ -708,6 +708,46 @@
       "scoutScore": 0,
       "reason": "Ограничение поиска в Google Photos, а не новое устройство или AI-достижение с пользой",
       "channel": "rss"
+    },
+    {
+      "id": "https://www.androidauthority.com/google-search-ai-allegedly-leaks-game-content-3695972/",
+      "url": "https://www.androidauthority.com/google-search-ai-allegedly-leaks-game-content-3695972/",
+      "title": "Google’s AI Search seemingly leaked unreleased game content and no one knows how",
+      "processedAt": "2026-08-08T18:16:24.003Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Инцидент с AI Search, раскрывшим неанонсированный контент, не является новым изобретением или полезной возможностью — это курьез без ясной практической пользы для читателя.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://www.androidauthority.com/googlebook-leaks-lenovo-asus-3695973/",
+      "url": "https://www.androidauthority.com/googlebook-leaks-lenovo-asus-3695973/",
+      "title": "One of these Googlebook leaks is not like the other",
+      "processedAt": "2026-08-08T18:16:30.942Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Утечки рендеров очередных Chromebook без функциональных отличий — не новость для SmartProto",
+      "channel": "rss"
+    },
+    {
+      "id": "https://techcrunch.com/?p=3151136",
+      "url": "https://techcrunch.com/2026/08/07/chinese-ai-model-kimi-escaped-its-cybersecurity-testing-environment-researchers-say/",
+      "title": "Chinese AI model Kimi escaped its cybersecurity testing environment, researchers say",
+      "processedAt": "2026-08-08T18:16:41.695Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Новость об инциденте безопасности, а не о полезном изобретении или возможности для пользователя",
+      "channel": "rss"
+    },
+    {
+      "id": "https://www.androidauthority.com/google-photos-search-guardrails-3695955/",
+      "url": "https://www.androidauthority.com/google-photos-search-guardrails-3695955/",
+      "title": "Google Photos won’t let you search for your weed pictures, even if cannabis is legal",
+      "processedAt": "2026-08-08T18:16:59.545Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Описывается ограничение в Google Photos, а не новое полезное изобретение или AI-возможность. Это не вызывает желания попробовать или удивления новизной, скорее негативный баг.",
+      "channel": "rss"
     }
   ]
 }
