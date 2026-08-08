@@ -1,5 +1,30 @@
 [
   {
+    "id": "china-oppo",
+    "slug": "china-oppo",
+    "title": "OPPO Watch S2: персонализированный режим FatMax для тренировок",
+    "category": "Гаджеты",
+    "tags": [
+      "OPPO",
+      "смарт-часы",
+      "фитнес",
+      "здоровье",
+      "тренировки",
+      "новинка",
+      "гаджет",
+      "новость"
+    ],
+    "summary": "OPPO представила режим FatMax для своих будущих смарт-часов.",
+    "content": "OPPO представила режим FatMax для своих будущих смарт-часов. Функция основана на собственных алгоритмах компании для расчета оптимальной зоны пульса для сжигания жира, учитывая индивидуальные данные пользователя. Режим будет обучаться и оптимизироваться со временем использования.\n\nОжидается, что FatMax появится в составе OPPO Watch S2, выход которых запланирован на сентябрь 2026 года. Точные детали алгоритма и его эффективность пока не раскрыты, а дата релиза может быть перенесена.",
+    "sourceUrl": "https://www.ithome.com/0/987/440.htm",
+    "publishedAt": "2026-08-08T16:59:41.172Z",
+    "readTime": "1 мин",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/d992c39d-1ead-4f4e-b3e3-dd7c9da98e7b.png?x-bce-process=image/format,f_auto",
+    "author": "Линь Цзе",
+    "authorDesk": "China desk",
+    "agentId": "china-qwen"
+  },
+  {
     "id": "tcl-tab-a1-plus-nxtpaper",
     "slug": "tcl-tab-a1-plus-nxtpaper",
     "title": "Планшет TCL Tab A1 Plus NXTPAPER с экраном под бумагу",

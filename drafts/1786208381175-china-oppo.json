@@ -1,0 +1,81 @@
+{
+  "generatedAt": "2026-08-08T16:59:41.172Z",
+  "channel": "china-qwen",
+  "cycle": "news",
+  "format": "news",
+  "source": {
+    "sourceId": "ithome-rss",
+    "sourceName": "IT之家",
+    "sourceUrl": "https://www.ithome.com/0/987/440.htm",
+    "platform": "rss",
+    "language": "zh",
+    "title": "OPPO 首次推出 FatMax 超燃脂模式：自研算法计算专属燃脂心率区间，9 月随 Watch S2 首发上线",
+    "summary": "IT之家 8 月 8 日消息，今天是我国第十八个全民健身日，OPPO 宣布将首次推出 FatMax 超燃脂模式。该功能将于 2026 年 9 月随 OPPO Watch S2 运动手表一同上线。IT之家届时将为大家带来详细报道。\n\nOPPO 健康产品业务负责人李胜介绍，与目前市面上多数运动手表提供的常规“有氧区间”功能不同，OPPO FatMax 超燃脂模式并非依赖固定的粗略计算公式，其核心在于基于自研的先进健康算法，结合用户的身高、体重、年龄、性别以及日常运动基础等个体数据，测算出适配用户自身的最优燃脂心率区间。这一模式还会随着用户佩戴时长的增加不断迭代优化，让测算结果更贴合用户的实际运动状态。\n据介绍，传统燃脂心率区间通常按最大心率的 60% 至 70% 估算，计算公式为“220 减去年龄”，该方法无法反映个体差异和运动能力变化。",
+    "priceText": "",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/d992c39d-1ead-4f4e-b3e3-dd7c9da98e7b.png?x-bce-process=image/format,f_auto",
+    "publishedAt": "2026-08-08T13:43:52.000Z",
+    "rawSignals": [
+      "首发",
+      "推出"
+    ],
+    "collectedAt": "2026-08-08T16:59:35.626Z"
+  },
+  "dossier": {
+    "originalTitle": "OPPO 首次推出 FatMax 超燃脂模式：自研算法计算专属燃脂心率区间，9 月随 Watch S2 首发上线",
+    "translatedTitle": "",
+    "productName": "OPPO",
+    "manufacturer": "",
+    "platform": "rss",
+    "productUrl": "",
+    "sourceUrl": "https://www.ithome.com/0/987/440.htm",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/d992c39d-1ead-4f4e-b3e3-dd7c9da98e7b.png?x-bce-process=image/format,f_auto",
+    "whatItDoes": "该功能基于 OPPO 自研健康算法，结合用户个人数据测算专属最优燃脂心率区间，还会随使用迭代优化，将于 9 月随 OPPO Watch S2 上线。#OPPO智能穿戴#\n\nIT之家 8 月 8 日消息，今天是我国第十八个全民健身日，OPPO 宣布将首次推出 FatMax 超燃脂模式。该功能将于 2026 年 9 月随 OPPO Watch S2 运动手表一同上线。IT之家届时将为大家带来详细报道。\n\nOPPO 健康产品业务负责人李胜介绍，与目前市面上多数运动手表提供的常规“有氧区间”功能不同，OPPO FatMax 超燃脂模式并非依赖固定的粗略计算公式，其核心在于基于自研的先进健康算法，结合用户的身高、体重、年龄、性别以及日常运动基础等个体数据，测算出适配用户自身的最优燃脂心率区间。这一模式还会随着用户佩戴时长的增加不断迭代优化，让测算结果更贴合用户的实际运动状态。\n据介绍，传统燃脂心率区",
+    "whyItIsNew": "",
+    "consumerUse": "",
+    "priceOriginal": null,
+    "currency": null,
+    "priceApproxUsd": null,
+    "availability": "",
+    "launchDate": "2026-09",
+    "market": "",
+    "prototypeOrSale": "",
+    "evidence": [],
+    "unknownFacts": [
+      "算法具体模型细节未公开",
+      "是否支持历史数据回溯优化未说明",
+      "是否开放第三方接入或开发者接口未知"
+    ],
+    "warningFlags": [
+      "尚未发布，具体功能表现与算法效果待实测验证",
+      "2026 年 9 月为计划上线时间，存在延期风险",
+      "未提及是否需配合特定 App 或软件版本更新"
+    ],
+    "recommended": false,
+    "sourceSuggestions": []
+  },
+  "draft": {
+    "id": "china-oppo",
+    "slug": "china-oppo",
+    "title": "OPPO Watch S2: персонализированный режим FatMax для тренировок",
+    "category": "Гаджеты",
+    "tags": [
+      "OPPO",
+      "смарт-часы",
+      "фитнес",
+      "здоровье",
+      "тренировки",
+      "новинка",
+      "гаджет",
+      "новость"
+    ],
+    "summary": "OPPO представила режим FatMax для своих будущих смарт-часов.",
+    "content": "OPPO представила режим FatMax для своих будущих смарт-часов. Функция основана на собственных алгоритмах компании для расчета оптимальной зоны пульса для сжигания жира, учитывая индивидуальные данные пользователя. Режим будет обучаться и оптимизироваться со временем использования.\n\nОжидается, что FatMax появится в составе OPPO Watch S2, выход которых запланирован на сентябрь 2026 года. Точные детали алгоритма и его эффективность пока не раскрыты, а дата релиза может быть перенесена.",
+    "sourceUrl": "https://www.ithome.com/0/987/440.htm",
+    "publishedAt": "2026-08-08T16:59:41.172Z",
+    "readTime": "1 мин",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/d992c39d-1ead-4f4e-b3e3-dd7c9da98e7b.png?x-bce-process=image/format,f_auto",
+    "author": "Линь Цзе",
+    "authorDesk": "China desk",
+    "agentId": "china-qwen"
+  }
+}

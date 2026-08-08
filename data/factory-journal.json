@@ -51,7 +51,8 @@
     "https://www.androidauthority.com/pixel-11-proactive-assistance-3696051/",
     "https://www.androidauthority.com/google-conversation-capture-3696029/",
     "https://www.engadget.com/2229315/ai-changing-cybersecurity-quick-terrifying-way/",
-    "https://techcrunch.com/2026/08/07/cloudflare-launches-kitesurf-a-browser-built-for-ai-agents/"
+    "https://techcrunch.com/2026/08/07/cloudflare-launches-kitesurf-a-browser-built-for-ai-agents/",
+    "https://www.ithome.com/0/987/440.htm"
   ],
   "processedIds": [
     "https://thegadgetflow.com/product/khadas-tea-pro-headphone-amp/",
@@ -105,7 +106,8 @@
     "https://www.androidauthority.com/pixel-11-proactive-assistance-3696051/",
     "https://www.androidauthority.com/google-conversation-capture-3696029/",
     "https://www.engadget.com/2229315/ai-changing-cybersecurity-quick-terrifying-way/",
-    "https://techcrunch.com/?p=3151175"
+    "https://techcrunch.com/?p=3151175",
+    "china-oppo"
   ],
   "entries": [
     {
@@ -655,6 +657,17 @@
       "status": "error",
       "reason": "401 User not found.",
       "channel": "rss"
+    },
+    {
+      "id": "china-oppo",
+      "url": "https://www.ithome.com/0/987/440.htm",
+      "title": "OPPO Watch S2: персонализированный режим FatMax для тренировок",
+      "processedAt": "2026-08-08T16:59:41.172Z",
+      "status": "published",
+      "reason": "editorial gadget bar (source-backed)",
+      "slug": "china-oppo",
+      "channel": "china-qwen",
+      "cycle": "news"
     }
   ]
 }
