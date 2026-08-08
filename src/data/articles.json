@@ -1,5 +1,29 @@
 [
   {
+    "id": "china-v6",
+    "slug": "china-v6",
+    "title": "Dongfeng Fengxing Xinghai V6: электро MPV с автопилотом",
+    "category": "Гаджеты",
+    "tags": [
+      "электромобиль",
+      "MPV",
+      "автопилот",
+      "Dongfeng Fengxing",
+      "новинка",
+      "гаджет",
+      "новость"
+    ],
+    "summary": "Начались предзаказы на новый шестиместный электро MPV Dongfeng Fengxing Xinghai V6.",
+    "content": "Начались предзаказы на новый шестиместный электро MPV Dongfeng Fengxing Xinghai V6. Автомобиль оснащен системой помощи водителю Huawei Kunlun ADS 5.0, чипом Qualcomm Snapdragon 8295 и поддерживает модель Baidu Wenxin. Предлагаются две версии с запасом хода 400 км и 510 км по циклу CLTC. Габариты автомобиля составляют 4835x1900x1755 мм при колесной базе 2900 мм. Максимальная мощность двигателя — 135 кВт. Производитель заявляет о наличии 25 датчиков и поддержке функций помощи водителю на трассах и в городе.",
+    "sourceUrl": "https://www.ithome.com/0/987/432.htm",
+    "publishedAt": "2026-08-08T20:15:38.084Z",
+    "readTime": "1 мин",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/db64bc62-4375-4010-ac1c-2f0556732973.png?x-bce-process=image/format,f_auto",
+    "author": "Линь Цзе",
+    "authorDesk": "China desk",
+    "agentId": "china-qwen"
+  },
+  {
     "id": "china-oppo",
     "slug": "china-oppo",
     "title": "OPPO Watch S2: персонализированный режим FatMax для тренировок",

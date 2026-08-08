@@ -1,0 +1,82 @@
+{
+  "generatedAt": "2026-08-08T20:15:38.084Z",
+  "channel": "china-qwen",
+  "cycle": "news",
+  "format": "news",
+  "source": {
+    "sourceId": "ithome-rss",
+    "sourceName": "IT之家",
+    "sourceUrl": "https://www.ithome.com/0/987/432.htm",
+    "platform": "rss",
+    "language": "zh",
+    "title": "东风风行星海 V6 乾崑版预售开启：10.49 万元起，定位大六座 MPV",
+    "summary": "IT之家 8 月 8 日消息，东风风行星海 V6 乾崑版今天开启预售，新车定位大六座 MPV，一共拥有两种配置，配备华为乾崑 ADS 5.0 辅助驾驶系统。\n\nIT之家附该车各版本预售价如下：\n400km 乾崑尊享型：10.49 万元\n\n510km 乾崑旗舰型：12.49 万元\n\n据介绍，风行星海 V6 乾崑采用分离式前大灯设计，搭配封闭式前格栅，使车辆的辨识度更强。侧面车窗拥有镀铬饰条装饰，尾部带有晨曦贯穿式尾灯，配合车顶扰流板。\n\n规格方面，该车的长宽高分别是 4835*1900*1755mm，轴距 2900mm。电机最大功率可达 135kW，峰值扭矩为 260 牛 · 米。匹配 45.5kWh/60.5kWh 电池包，CLTC 工况下续航为 400km/510km。\n内饰方面，该车采用环抱式设计，拥有 8.8 英寸液晶仪表 +15.6 英寸中控大屏，搭载高通骁龙 8295 芯片。内部座位采用 2+2+2 的六座布局，二三排采用纯平无地台设计，后备箱容积可达 1630L，车机支持百度文心大模型。\n此外，该车支持华为乾崑 ADS 5.0 辅助驾驶系统，拥有 25 个传感器，支持高速领航辅助 NCA、城区车道巡航辅助 LCC、智能泊车等，以及主动安全系统 CAS 5.0。",
+    "priceText": "",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/db64bc62-4375-4010-ac1c-2f0556732973.png?x-bce-process=image/format,f_auto",
+    "publishedAt": "2026-08-08T12:44:17.000Z",
+    "rawSignals": [
+      "预售"
+    ],
+    "collectedAt": "2026-08-08T20:15:21.187Z"
+  },
+  "dossier": {
+    "originalTitle": "东风风行星海 V6 乾崑版预售开启：10.49 万元起，定位大六座 MPV",
+    "translatedTitle": "",
+    "productName": "东风风行星海 V6 乾崑版",
+    "manufacturer": "",
+    "platform": "rss",
+    "productUrl": "",
+    "sourceUrl": "https://www.ithome.com/0/987/432.htm",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/db64bc62-4375-4010-ac1c-2f0556732973.png?x-bce-process=image/format,f_auto",
+    "whatItDoes": "新车定位大六座纯电 MPV，配备华为乾崑 ADS 5.0 辅助驾驶，搭载高通骁龙 8295 芯片，车机支持百度文心大模型，有两种续航版本可选。#东风风行星海V6乾崑版#\n\n感谢IT之家网友 肖战割割、風見暉一 的线索投递！\n\n IT之家 8 月 8 日消息，东风风行星海 V6 乾崑版今天开启预售，新车定位大六座 MPV，一共拥有两种配置，配备华为乾崑 ADS 5.0 辅助驾驶系统。\n\nIT之家附该车各版本预售价如下：\n400km 乾崑尊享型：10.49 万元\n\n510km 乾崑旗舰型：12.49 万元\n\n据介绍，风行星海 V6 乾崑采用分离式前大灯设计，搭配封闭式前格栅，使车辆的辨识度更强。侧面车窗拥有镀铬饰条装饰，尾部带有晨曦贯穿式尾灯，配合车顶扰流板。\n\n规格方面，该车的长宽高分别是 4835*1900*1755mm，轴距 2900mm。电机最大功率可达 135kW，峰值扭矩为 260",
+    "whyItIsNew": "",
+    "consumerUse": "",
+    "priceOriginal": null,
+    "currency": null,
+    "priceApproxUsd": null,
+    "availability": "",
+    "launchDate": null,
+    "market": "",
+    "prototypeOrSale": "",
+    "evidence": [],
+    "unknownFacts": [
+      "exact production start date",
+      "final on-sale price (vs pre-sale)",
+      "charging specs (DC fast charge power/time)",
+      "real-world range under mixed driving conditions",
+      "availability of L3-level autonomous driving certification"
+    ],
+    "warningFlags": [
+      "pre-sale stage — no delivery timeline or official sales launch date confirmed",
+      "motor power/torque figures relatively modest for a large MPV — may impact real-world performance",
+      "no official warranty or service network details disclosed",
+      "brand 'Dongfeng Fengxing' has limited recent traction in premium EV segment — verify post-sale support"
+    ],
+    "recommended": false,
+    "sourceSuggestions": []
+  },
+  "draft": {
+    "id": "china-v6",
+    "slug": "china-v6",
+    "title": "Dongfeng Fengxing Xinghai V6: электро MPV с автопилотом",
+    "category": "Гаджеты",
+    "tags": [
+      "электромобиль",
+      "MPV",
+      "автопилот",
+      "Dongfeng Fengxing",
+      "новинка",
+      "гаджет",
+      "новость"
+    ],
+    "summary": "Начались предзаказы на новый шестиместный электро MPV Dongfeng Fengxing Xinghai V6.",
+    "content": "Начались предзаказы на новый шестиместный электро MPV Dongfeng Fengxing Xinghai V6. Автомобиль оснащен системой помощи водителю Huawei Kunlun ADS 5.0, чипом Qualcomm Snapdragon 8295 и поддерживает модель Baidu Wenxin. Предлагаются две версии с запасом хода 400 км и 510 км по циклу CLTC. Габариты автомобиля составляют 4835x1900x1755 мм при колесной базе 2900 мм. Максимальная мощность двигателя — 135 кВт. Производитель заявляет о наличии 25 датчиков и поддержке функций помощи водителю на трассах и в городе.",
+    "sourceUrl": "https://www.ithome.com/0/987/432.htm",
+    "publishedAt": "2026-08-08T20:15:38.084Z",
+    "readTime": "1 мин",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/db64bc62-4375-4010-ac1c-2f0556732973.png?x-bce-process=image/format,f_auto",
+    "author": "Линь Цзе",
+    "authorDesk": "China desk",
+    "agentId": "china-qwen"
+  }
+}

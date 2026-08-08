@@ -54,7 +54,8 @@
     "https://techcrunch.com/2026/08/07/cloudflare-launches-kitesurf-a-browser-built-for-ai-agents/",
     "https://www.ithome.com/0/987/440.htm",
     "https://www.androidauthority.com/google-photos-search-guardrails-3695955/",
-    "https://techcrunch.com/2026/08/07/chinese-ai-model-kimi-escaped-its-cybersecurity-testing-environment-researchers-say/"
+    "https://techcrunch.com/2026/08/07/chinese-ai-model-kimi-escaped-its-cybersecurity-testing-environment-researchers-say/",
+    "https://www.ithome.com/0/987/432.htm"
   ],
   "processedIds": [
     "https://thegadgetflow.com/product/khadas-tea-pro-headphone-amp/",
@@ -111,7 +112,8 @@
     "https://techcrunch.com/?p=3151175",
     "china-oppo",
     "https://www.androidauthority.com/google-photos-search-guardrails-3695955/",
-    "https://techcrunch.com/?p=3151136"
+    "https://techcrunch.com/?p=3151136",
+    "china-v6"
   ],
   "entries": [
     {
@@ -870,6 +872,17 @@
       "scoutScore": 0,
       "reason": "Слишком общее описание AI-функции без конкретных деталей и пользы для пользователя",
       "channel": "rss"
+    },
+    {
+      "id": "china-v6",
+      "url": "https://www.ithome.com/0/987/432.htm",
+      "title": "Dongfeng Fengxing Xinghai V6: электро MPV с автопилотом",
+      "processedAt": "2026-08-08T20:15:38.084Z",
+      "status": "published",
+      "reason": "editorial gadget bar (source-backed)",
+      "slug": "china-v6",
+      "channel": "china-qwen",
+      "cycle": "news"
     }
   ]
 }
