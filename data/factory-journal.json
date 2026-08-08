@@ -35,7 +35,11 @@
     "https://www.yankodesign.com/2026/08/08/humanoid-robots-dont-fit-in-store-aisles-so-robbyant-fixed-that/?utm_source=rss&utm_medium=rss&utm_campaign=humanoid-robots-dont-fit-in-store-aisles-so-robbyant-fixed-that",
     "https://thegadgetflow.com/product/zenowell-luna-plus-nerve-stimulator/",
     "https://thegadgetflow.com/product/msi-crosshair-a16-hx-gaming-laptop/",
-    "https://thegadgetflow.com/blog/best-laptop-for-programming-and-gaming-for-computer-science-students/"
+    "https://thegadgetflow.com/blog/best-laptop-for-programming-and-gaming-for-computer-science-students/",
+    "https://newatlas.com/wearables/samsung-ai-eyewear-galaxy-glasses/",
+    "https://newatlas.com/ai-humanoids/chatgpt-ai-assistant-shut-up/",
+    "https://newatlas.com/medical-ai/ai-medical-scribe-consent-raises-patient-rights-concerns/",
+    "https://newatlas.com/aircraft/meet-halo-civilian-version-thunder-loyal-wingman/"
   ],
   "processedIds": [
     "https://thegadgetflow.com/product/khadas-tea-pro-headphone-amp/",
@@ -73,7 +77,11 @@
     "https://www.yankodesign.com/?p=639735",
     "https://thegadgetflow.com/product/zenowell-luna-plus-nerve-stimulator/",
     "https://thegadgetflow.com/product/msi-crosshair-a16-hx-gaming-laptop/",
-    "https://thegadgetflow.com/blog/best-laptop-for-programming-and-gaming-for-computer-science-students/"
+    "https://thegadgetflow.com/blog/best-laptop-for-programming-and-gaming-for-computer-science-students/",
+    "https://newatlas.com/wearables/samsung-ai-eyewear-galaxy-glasses/",
+    "https://newatlas.com/ai-humanoids/chatgpt-ai-assistant-shut-up/",
+    "https://newatlas.com/medical-ai/ai-medical-scribe-consent-raises-patient-rights-concerns/",
+    "https://newatlas.com/aircraft/meet-halo-civilian-version-thunder-loyal-wingman/"
   ],
   "entries": [
     {
@@ -476,6 +484,42 @@
       "url": "https://thegadgetflow.com/blog/best-laptop-for-programming-and-gaming-for-computer-science-students/",
       "title": "Best laptop for programming and gaming for computer science students: Coding all week, gaming all weekend",
       "processedAt": "2026-08-08T14:19:35.297Z",
+      "status": "error",
+      "reason": "401 User not found.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/wearables/samsung-ai-eyewear-galaxy-glasses/",
+      "url": "https://newatlas.com/wearables/samsung-ai-eyewear-galaxy-glasses/",
+      "title": "Samsung's new AI glasses work with Google's Gemini AI",
+      "processedAt": "2026-08-08T14:55:40.456Z",
+      "status": "error",
+      "reason": "401 User not found.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/ai-humanoids/chatgpt-ai-assistant-shut-up/",
+      "url": "https://newatlas.com/ai-humanoids/chatgpt-ai-assistant-shut-up/",
+      "title": "ChatGPT Voice shifts from chatbot to proper assistant",
+      "processedAt": "2026-08-08T14:55:40.479Z",
+      "status": "error",
+      "reason": "401 User not found.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/medical-ai/ai-medical-scribe-consent-raises-patient-rights-concerns/",
+      "url": "https://newatlas.com/medical-ai/ai-medical-scribe-consent-raises-patient-rights-concerns/",
+      "title": "AI medical scribe consent raises patient rights concerns",
+      "processedAt": "2026-08-08T14:55:40.499Z",
+      "status": "error",
+      "reason": "401 User not found.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/aircraft/meet-halo-civilian-version-thunder-loyal-wingman/",
+      "url": "https://newatlas.com/aircraft/meet-halo-civilian-version-thunder-loyal-wingman/",
+      "title": "Archer Aviation debuts Halo autonomous VTOL, Thunder's commercial twin",
+      "processedAt": "2026-08-08T14:55:40.524Z",
       "status": "error",
       "reason": "401 User not found.",
       "channel": "rss"
