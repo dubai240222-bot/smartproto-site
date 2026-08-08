@@ -6,8 +6,8 @@
  *   2) else RSS → hardReject → Scout → Reviewer → Editor
  *
  * Cycle types (independent supervisors / GHA jobs):
- *   news    — short format; interval floor 10m (not an obligation to publish junk)
- *   article — fuller + consumer scenario + Wow Score; interval floor 60m
+ *   news    — short format; interval floor ~25m / ~2–3/h (not an obligation to publish junk)
+ *   article — fuller + consumer scenario + Wow Score; interval floor 3h
  *
  * Git commit/push is left to the dual supervisor or GitHub Actions.
  */

@@ -2,8 +2,8 @@
  * SP-A-050 — Permanent dual factory mode.
  *
  * Two independent publisher cycles:
- *   NEWS    — max 1 every 10 minutes (interval = min pause, not obligation)
- *   ARTICLE — max 1 every 60 minutes (fuller + consumer scenario + Wow Score)
+ *   NEWS    — max 1 every 25 minutes (~2–3/h; interval = min pause, not obligation)
+ *   ARTICLE — max 1 every 3 hours (fuller + consumer scenario + Wow Score)
  *
  * One process + lock per cycle type. 3 consecutive errors → stop THAT cycle only.
  * Leaves SMARTPROTO_FACTORY_ENABLED alone (must stay true).
@@ -25,9 +25,9 @@ import dotenv from 'dotenv';
 import chalk from 'chalk';
 
 const ROOT = process.cwd();
-const NEWS_INTERVAL_MS = Number(process.env.SMARTPROTO_NEWS_INTERVAL_MS || String(10 * 60 * 1000));
+const NEWS_INTERVAL_MS = Number(process.env.SMARTPROTO_NEWS_INTERVAL_MS || String(25 * 60 * 1000));
 const ARTICLE_INTERVAL_MS = Number(
-  process.env.SMARTPROTO_ARTICLE_INTERVAL_MS || String(60 * 60 * 1000),
+  process.env.SMARTPROTO_ARTICLE_INTERVAL_MS || String(3 * 60 * 60 * 1000),
 );
 const MAX_CONSECUTIVE_ERRORS = 3;
 

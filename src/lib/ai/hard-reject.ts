@@ -292,11 +292,28 @@ const NON_BUYABLE_RESEARCH: RegExp[] = [
 const NOVELTY_RE =
   /предзаказ|pre-?order|kickstarter|indiegogo|анонс|\b(launched|launching|product launch|launches)\b|термоэлектри|sodium-?ion|натрий-?ион|живого перевода|live translat|новой систем|без интернета|offline|складывает одежд|измеряет показатель|поддерживает \d+\s*язык|патент|новая модель|new model|перв\w*\s+серийн|фабричн|debut|unveils?|announces?|представлен|推出|发布|发售|预热|上市|开售|首发|预售|众筹|新品|新款|搭载/i;
 const COSMETIC_RE =
-  /нов(ый|ая|ое|ым)?\s+цвет|new color|другой упаковк|new packaging|только (цвет|форма|упаковка|дизайн)/i;
+  /нов(ый|ая|ое|ым)?\s+цвет|new color|new colour|colorway|другой упаковк|new packaging|только (цвет|форма|упаковка|дизайн)|finish\s*refresh|цветов(ой|ая)\s*обновлен/i;
 const FAKE_NEW_RE =
   /продавец назвал|назвал[аи]?\s+новинк|\bстарые?\b.{0,40}(наушник|tws|товар)/i;
 const SATURATED_RE =
   /обычный\s+(мини-?)?вентилятор|мини-?вентилятор с новым цветом|power bank.{0,40}упаковк|\btws\b/i;
+
+/**
+ * SP-A-054 — worn-out / overplayed mass products people already hear constantly.
+ * Color refreshes, endless flagship rumor/leak churn, commodity phone accessories.
+ */
+const OVERPLAYED_MASS_PATTERNS: RegExp[] = [
+  /\biphone\b.{0,50}\b(new\s+)?(color|colour|colorway|finish|hue|оттенк|цвет)\b/i,
+  /\b(new\s+)?(color|colour|colorway|finish).{0,50}\biphone\b/i,
+  /\biphone\s*(1[5-9]|2\d)\b.{0,50}\b(rumor|rumour|leak|concept|render|слу[хх]|утечк)\b/i,
+  /\b(samsung\s+)?galaxy\s*s\s*2[4-9]\b.{0,50}\b(color|colour|colorway|rumor|rumour|leak)\b/i,
+  /\bpixel\s*(8|9|10|11)\b.{0,50}\b(color|colour|colorway|rumor|rumour|leak)\b/i,
+  /\bairpods?\b.{0,40}\b(new\s+)?(color|colour|case|чехол)\b/i,
+  /\b(same\s+(phone|device)|just\s+a\s+new\s+color|только\s+новый\s+цвет|ещё\s+один\s+цвет)\b/i,
+  /\b(magsafe|lightning)\s+(cable|charger|brick|cable\s*kit)\b/i,
+  /\b(generic|обычн\w*)\s+(usb[- ]?c\s*)?(charger|зарядк|кабел)/i,
+  /\b(flagship\s+)?(phone|smartphone)\s+(color|colour)\s+(refresh|update|option)\b/i,
+];
 
 /**
  * SP-A-049 / SP-A-050 — ordinary commodity / low-wow topics.
@@ -409,6 +426,13 @@ export function isCommodityLowWow(title: string, text = ''): boolean {
   if (isKeepWowException(title, text)) return false;
   const hay = `${title}\n${text}`;
   return COMMODITY_LOW_WOW_PATTERNS.some((re) => re.test(hay));
+}
+
+/** SP-A-054: worn-out mass-market topics (color refreshes, flagship rumor churn). */
+export function isOverplayedMassTopic(title: string, text = ''): boolean {
+  if (isKeepWowException(title, text)) return false;
+  const hay = `${title}\n${text}`;
+  return OVERPLAYED_MASS_PATTERNS.some((re) => re.test(hay));
 }
 
 export function assessNovelty(
@@ -557,6 +581,16 @@ export function hardRejectTopic(
     return { reject: false, reason: '', rejectCode: null, novelty };
   }
 
+  // SP-A-054: reject worn-out / overplayed mass products (iPhone color refresh, rumor churn…).
+  if (isOverplayedMassTopic(title, text)) {
+    return {
+      reject: true,
+      reason:
+        'Жёсткий reject: избитая/заезженная массовая тема (цвет флагмана, бесконечные слухи, commodity-аксессуар) — SP-A-054.',
+      rejectCode: 'OVERPLAYED_MASS',
+    };
+  }
+
   // SP-A-049 / SP-A-050: downrank ordinary monitors, power banks, merch, maker-tools.
   // Casio CRW-H001 / smart rings KEEP via isKeepWowException.
   if (isCommodityLowWow(title, text) && !hasStrongConsumerAngle(title, text)) {
@@ -617,12 +651,13 @@ export function evaluateTopicLocal(title: string, text = '') {
 export function looksBuyableGadget(title: string, text = '', sourceName = ''): boolean {
   const gate = hardRejectTopic(title, text, { sourceName, mode: 'gadget' });
   if (!gate.reject) return true;
-  // Never soften HARD_TOPIC / research / niche-PC / commodity rejects.
+  // Never soften HARD_TOPIC / research / niche-PC / commodity / overplayed rejects.
   if (
     gate.rejectCode === 'HARD_TOPIC' ||
     gate.rejectCode === 'NON_BUYABLE_RESEARCH' ||
     gate.rejectCode === 'NICHE_NO_CONSUMER_ANGLE' ||
-    gate.rejectCode === 'COMMODITY_LOW_WOW'
+    gate.rejectCode === 'COMMODITY_LOW_WOW' ||
+    gate.rejectCode === 'OVERPLAYED_MASS'
   ) {
     return false;
   }

@@ -1,5 +1,7 @@
-# SP-A-050 — FULL ARTICLE / REVIEW cycle (independent of news).
-# Max 1 publish / 60 minutes. Fuller piece + consumer scenario + Wow Score.
+# SP-A-054 — FULL ARTICLE / REVIEW cycle (independent of news).
+# Cadence: 1 article/review every 3 hours → cron 0 */3 * * *.
+# Max 1 publish per tick; skip if nothing worthy (interval ≠ obligation).
+# Fuller piece + consumer scenario + Wow Score.
 #
 # Required: OPENROUTER_API_KEY + SMARTPROTO_FACTORY_ENABLED=true
 
@@ -7,7 +9,7 @@ name: Factory Article Cycle
 
 on:
   schedule:
-    - cron: '0 * * * *'
+    - cron: '0 */3 * * *'
   workflow_dispatch:
 
 permissions:

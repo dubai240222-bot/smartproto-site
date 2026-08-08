@@ -1,5 +1,7 @@
-# SP-A-050 — SHORT NEWS cycle (independent).
-# Max 1 publish / 10 minutes. Interval = min pause, not obligation to publish junk.
+# SP-A-054 — SHORT NEWS cycle (independent).
+# Cadence target: ~2–3 news/hour → cron */25 (~2.4 ticks/h; GHA min ~5m).
+# Max 1 publish per tick; skip if nothing worthy (interval ≠ obligation).
+# Cap: ≤3/hour naturally (*/25 + max-1). Prefer interesting / non-overplayed.
 #
 # Required: OPENROUTER_API_KEY + SMARTPROTO_FACTORY_ENABLED=true
 
@@ -7,7 +9,7 @@ name: Factory News Cycle
 
 on:
   schedule:
-    - cron: '*/10 * * * *'
+    - cron: '*/25 * * * *'
   workflow_dispatch:
 
 permissions:

@@ -1,10 +1,10 @@
-# SP-A-050 — legacy single cron DISABLED.
-# Replaced by independent dual cycles:
-#   - newsroom-news-cron.yml     (*/10)  SHORT NEWS
-#   - newsroom-article-cron.yml  (0 * *) FULL ARTICLES
+# SP-A-054 — legacy single cron stays DISABLED (redundant with dual cycles).
+# Prefer:
+#   - newsroom-news-cron.yml     (*/25)     SHORT NEWS ~2–3/h
+#   - newsroom-article-cron.yml  (0 */3)    FULL ARTICLES 1/3h
 #
 # This file kept only so old schedule links do not surprise operators.
-# workflow_dispatch remains for emergency single news tick.
+# workflow_dispatch remains for emergency single news tick — leave disabled_manually.
 
 name: Newsroom Cron Tick (legacy — prefer dual cycles)
 
