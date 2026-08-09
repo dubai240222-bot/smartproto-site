@@ -211,19 +211,31 @@ async function main() {
       secondaryTitle: c.radarRole !== 'primary' ? c.rawTitle : undefined,
       secondaryText: c.radarRole !== 'primary' ? c.rawText : undefined,
     });
-    console.log(`\nScout ${c.key} raw+norm...`);
-    const raw = await scout(c.rawTitle, c.rawText);
-    const norm = await scout(c.primaryTitle || c.rawTitle, ev.summaryForScout);
+    // Economy: PRIMARY_ORIGIN raw≈official text — one Scout on EVENT RECORD.
+    // Discovery/unresolved: raw headline + normalized.
+    console.log(`\nScout ${c.key}...`);
+    let rawScore: number;
+    let norm;
+    if (c.primaryStatus === 'PRIMARY_ORIGIN') {
+      norm = await scout(c.primaryTitle || c.rawTitle, ev.summaryForScout);
+      rawScore = norm.score; // same factual base; no second call
+      console.log(`  (primary_origin single pass) norm=${norm.score}`);
+    } else {
+      const raw = await scout(c.rawTitle, c.rawText);
+      norm = await scout(c.primaryTitle || c.rawTitle, ev.summaryForScout);
+      rawScore = raw.score;
+      console.log(`  raw=${raw.score} norm=${norm.score}`);
+    }
     rows.push({
       key: c.key,
       primaryStatus: c.primaryStatus,
-      rawScore: raw.score,
+      rawScore,
       normScore: norm.score,
       decision: norm.pass ? 'PASS' : 'REJECT',
       reason: norm.reason,
     });
     console.log(
-      `  raw=${raw.score} norm=${norm.score} ${norm.pass ? 'PASS' : 'REJECT'} — ${norm.reason.slice(0, 90)}`,
+      `  → ${norm.pass ? 'PASS' : 'REJECT'} @${FLOOR} — ${norm.reason.slice(0, 90)}`,
     );
   }
 

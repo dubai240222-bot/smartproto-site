@@ -1,0 +1,110 @@
+{
+  "id": "SP-A-065D-R1",
+  "floor": 70,
+  "astra": {
+    "A_official": {
+      "score": 18,
+      "reason": "Публикация предварительных оценок безопасности без новой capability",
+      "pass": false
+    },
+    "B_verge": {
+      "score": 72,
+      "reason": "OpenAI приостанавливает разработку модели после критических оценок кибербезопасности, сигнализируя о новой реальной capability.",
+      "pass": true
+    },
+    "C_normalized": {
+      "score": 73,
+      "reason": "AI在关键网络安全领域达到了新水平，实验室加强防护证实了能力强度。",
+      "pass": true,
+      "event": {
+        "whatHappened": "Responding to the next frontier of critical cyber capabilities. OpenAI is sharing preliminary cybersecurity evaluations for Astra and the steps we are taking to strengthen safeguards and security controls.",
+        "whoWhat": "OpenAI / model Astra",
+        "capabilityChange": "NEW frontier capability: model Astra demonstrated critical cybersecurity-relevant abilities (agentic cyber work humans do). Lab response (stronger safeguards / paused further work) is EVIDENCE the capability crossed a material threshold — not the story itself.",
+        "whyUnusual": "CORE INSTINCT match: capability so strong the lab changes allowed boundaries. That is an early signal of the near future (AI doing high-stakes human cyber work), not a dry compliance bulletin.",
+        "consequence": "Readers learn early that autonomous cyber capability has arrived at a level that changes what AI systems can do and what labs will allow — freedom/automation signal for the near future. Score the capability arrival; treat restrictions as confirming evidence only.",
+        "status": "ANNOUNCED",
+        "primaryEvidence": "Responding to the next frontier of critical cyber capabilities | https://openai.com/index/responding-next-frontier-critical-cyber-capabilities — OpenAI is sharing preliminary cybersecurity evaluations for Astra and the steps we are taking to strengthen safeguards and security controls.",
+        "secondaryContext": "OpenAI on a new model because it's . OpenAI is pausing further development related to a model after critical cyber capability evaluations, according to reporting on Astra and preparedness controls.",
+        "summaryForScout": "NORMALIZED AI EVENT RECORD (score the EVENT, not headline drama)\nwhatHappened: Responding to the next frontier of critical cyber capabilities. OpenAI is sharing preliminary cybersecurity evaluations for Astra and the steps we are taking to strengthen safeguards and security controls.\nwhoWhat: OpenAI / model Astra\ncapabilityChange: NEW frontier capability: model Astra demonstrated critical cybersecurity-relevant abilities (agentic cyber work humans do). Lab response (stronger safeguards / paused further work) is EVIDENCE the capability crossed a material threshold — not the story itself.\nwhyUnusual: CORE INSTINCT match: capability so strong the lab changes allowed boundaries. That is an early signal of the near future (AI doing high-stakes human cyber work), not a dry compliance bulletin.\nconsequence: Readers learn early that autonomous cyber capability has arrived at a level that changes what AI systems can do and what labs will allow — freedom/automation signal for the near future. Score the capability arrival; treat restrictions as confirming evidence only.\nstatus: ANNOUNCED\nprimaryEvidence: Responding to the next frontier of critical cyber capabilities | https://openai.com/index/responding-next-frontier-critical-cyber-capabilities — OpenAI is sharing preliminary cybersecurity evaluations for Astra and the steps we are taking to strengthen safeguards and security controls.\nsecondaryContext (de-hyped, optional significance only): OpenAI on a new model because it's . OpenAI is pausing further development related to a model after critical cyber capability evaluations, according to reporting on Astra and preparedness controls.\nRULES: Do not raise score for words like brakes/too powerful/shocking/dangerous/game-changing.\nDo not raise score for brand names OpenAI/Google/Anthropic/Meta alone.\nCORE INSTINCT: «Узнать о новой свободе раньше других — и получить её первым».\nSafety/capability stories may score high without a consumer gadget if they mean: new real ability, new automation freedom, capability strong enough to change allowed boundaries, or a clear early signal of the future.\nCRITICAL SCORING: if capabilityChange describes a new frontier ability AND lab restrictions confirm its strength → score HIGH (72–88). Do NOT collapse to low because the official post is dry safety language. Do NOT need Verge drama. Restrictions support a high score; drama wording must not create one."
+      }
+    },
+    "mainDecision": "C_normalized",
+    "gapOfficialVsVerge": 54,
+    "gapNormalizedVsVerge": 1,
+    "gapNormalizedVsOfficial": 55
+  },
+  "controlSet": [
+    {
+      "key": "astra",
+      "primaryStatus": "DISCOVERY_WITH_PRIMARY",
+      "rawScore": 72,
+      "normScore": 73,
+      "decision": "PASS",
+      "reason": "AI在关键网络安全领域达到了新水平，实验室加强防护证实了能力强度。"
+    },
+    {
+      "key": "gemini_robotics",
+      "primaryStatus": "PRIMARY_ORIGIN",
+      "rawScore": 76,
+      "normScore": 76,
+      "decision": "PASS",
+      "reason": "Новая способность роботов к целостному управлению телом расширяет автоматизацию физических задач, приближая свободу от ручного труда."
+    },
+    {
+      "key": "weathernext",
+      "primaryStatus": "PRIMARY_ORIGIN",
+      "rawScore": 53,
+      "normScore": 53,
+      "decision": "REJECT",
+      "reason": "Исследовательский прорыв в прогнозировании циклонов, но не дает новой свободы для повседневной жизни."
+    },
+    {
+      "key": "gpt56_efficiency",
+      "primaryStatus": "PRIMARY_ORIGIN",
+      "rawScore": 15,
+      "normScore": 15,
+      "decision": "REJECT",
+      "reason": "Обычное обновление модели с улучшением эффективности, без новых возможностей"
+    },
+    {
+      "key": "enterprise_case",
+      "primaryStatus": "PRIMARY_ORIGIN",
+      "rawScore": 20,
+      "normScore": 20,
+      "decision": "REJECT",
+      "reason": "Рядовой кейс интеграции, без новой способности или свободы."
+    },
+    {
+      "key": "api_refresh_noise",
+      "primaryStatus": "PRIMARY_ORIGIN",
+      "rawScore": 20,
+      "normScore": 20,
+      "decision": "REJECT",
+      "reason": "Обычное обновление модели и расширение доступа, без новой реальной способности или свободы."
+    },
+    {
+      "key": "hype_open_weights",
+      "primaryStatus": "DISCOVERY_UNRESOLVED",
+      "rawScore": 15,
+      "normScore": 20,
+      "decision": "REJECT",
+      "reason": "Политический/отраслевой жест без новой capability, свободы или автоматизации — не событие для раннего предупреждения."
+    },
+    {
+      "key": "vibe_course",
+      "primaryStatus": "PRIMARY_ORIGIN",
+      "rawScore": 0,
+      "normScore": 0,
+      "decision": "REJECT",
+      "reason": "Жёсткий reject: политика/знаменитости/культура/природа/непокупаемая тема (\\bvibe coding\\b)."
+    }
+  ],
+  "primaryMetrics": {
+    "PRIMARY_ORIGIN": 6,
+    "DISCOVERY_WITH_PRIMARY": 1,
+    "DISCOVERY_UNRESOLVED": 1,
+    "note": "PRIMARY_ORIGIN is not counted as failed resolve"
+  },
+  "recommendation": "Normalized Astra stays strong on facts (not Verge drama). Do NOT merge PR #5 until 065D reviewed; AI radar not live yet.",
+  "statusHint": "DONE"
+}

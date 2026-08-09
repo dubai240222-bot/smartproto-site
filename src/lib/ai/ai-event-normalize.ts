@@ -125,7 +125,7 @@ export function normalizeAiEvent(input: {
   let capabilityChange = 'Not clearly stated in available evidence.';
   if (/\bcritical cyber capabilit|cybersecur(?:ity|e) evaluat|astra\b/i.test(allHay)) {
     capabilityChange =
-      'Model (Astra) showed critical cybersecurity-relevant capabilities in evaluations; lab is responding with stronger safeguards/controls.';
+      'NEW frontier capability: model Astra demonstrated critical cybersecurity-relevant abilities (agentic cyber work humans do). Lab response (stronger safeguards / paused further work) is EVIDENCE the capability crossed a material threshold — not the story itself.';
   } else if (/\bwhole body intelligence|gemini robotics\b/i.test(allHay)) {
     capabilityChange =
       'Robotics model gains whole-body / embodied control intelligence beyond narrow single-skill demos.';
@@ -142,7 +142,7 @@ export function normalizeAiEvent(input: {
   let whyUnusual = 'Requires Scout judgment from facts below — ignore brand and headline adjectives.';
   if (/\bcritical cyber|safeguard|preparedness|security control\b/i.test(primaryHay || allHay)) {
     whyUnusual =
-      'Lab publicly ties a model to critical cyber capability evaluations and describes strengthened controls — signal that capability crossed a meaningful threshold.';
+      'CORE INSTINCT match: capability so strong the lab changes allowed boundaries. That is an early signal of the near future (AI doing high-stakes human cyber work), not a dry compliance bulletin.';
   } else if (/\bwhole body|embodied\b/i.test(allHay)) {
     whyUnusual = 'Embodied/whole-body robot intelligence is a tangible physical capability shift.';
   } else if (/\bbreakthrough\b/i.test(allHay) && /\bforecast|weather\b/i.test(allHay)) {
@@ -154,7 +154,7 @@ export function normalizeAiEvent(input: {
   let consequence = 'Unclear from available text.';
   if (/\bsafeguard|security control|evaluat\b/i.test(primaryHay || allHay)) {
     consequence =
-      'Deployment/use boundaries may tighten; public signal that frontier cyber capability is being treated as material risk.';
+      'Readers learn early that autonomous cyber capability has arrived at a level that changes what AI systems can do and what labs will allow — freedom/automation signal for the near future. Score the capability arrival; treat restrictions as confirming evidence only.';
   } else if (/\brobot|embodied|whole body\b/i.test(allHay)) {
     consequence = 'Physical automation may expand into tasks needing coordinated whole-body motion.';
   } else if (status === 'CASE_STUDY / PR' || status === 'PRODUCT_UPDATE / NOISE') {
@@ -193,6 +193,7 @@ export function normalizeAiEvent(input: {
     'Do not raise score for brand names OpenAI/Google/Anthropic/Meta alone.',
     'CORE INSTINCT: «Узнать о новой свободе раньше других — и получить её первым».',
     'Safety/capability stories may score high without a consumer gadget if they mean: new real ability, new automation freedom, capability strong enough to change allowed boundaries, or a clear early signal of the future.',
+    'CRITICAL SCORING: if capabilityChange describes a new frontier ability AND lab restrictions confirm its strength → score HIGH (72–88). Do NOT collapse to low because the official post is dry safety language. Do NOT need Verge drama. Restrictions support a high score; drama wording must not create one.',
   ].join('\n');
 
   return {
