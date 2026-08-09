@@ -744,10 +744,16 @@ async function publishRssOnce(opts: {
 }): Promise<boolean> {
   console.log(chalk.bold(`— Channel B: RSS / editorial office (${opts.cycle}) —`));
   opts.metrics.collectorStarted = true;
-  const scoutFloor =
-    opts.cycle === 'article'
-      ? Math.max(SCOUT_SCORE_THRESHOLD, 75)
-      : Math.max(SCOUT_SCORE_THRESHOLD, 70);
+  // Production floors stay 70/75 when env unset. Explicit SCOUT_SCORE_THRESHOLD
+  // (test-auto=40, forced probe <40) must win — Math.max(...) was ignoring it.
+  const explicitScout = Boolean(process.env.SCOUT_SCORE_THRESHOLD?.trim());
+  const scoutFloor = explicitScout
+    ? SCOUT_SCORE_THRESHOLD
+    : opts.cycle === 'article'
+      ? 75
+      : 70;
+  // SP-A-063 forced/live probe: dig past deal/opinion tops that score 0 forever.
+  const probeMode = explicitScout && SCOUT_SCORE_THRESHOLD < 70;
 
   const candidates: RssItem[] = [];
   for (const [name, feedUrl] of SOURCES) {
@@ -797,7 +803,23 @@ async function publishRssOnce(opts: {
       title.trim(),
     ) ||
     /\b(how to fix|explained|problems with|partnership|marks breakthrough)\b/i.test(title);
+  const looksDealOrOpinion = (title: string) =>
+    /\b(on sale|deal|discount|% off|just \$\d+|here.?s why|might sound|i.?ve used|acquires?|acquisition)\b/i.test(
+      title,
+    );
   candidates.sort((a, b) => {
+    // Forced/test probe: prefer concrete gadget sources over AI-keyword clickbait tops.
+    if (probeMode) {
+      const ad = looksDealOrOpinion(a.title) ? 1 : 0;
+      const bd = looksDealOrOpinion(b.title) ? 1 : 0;
+      if (ad !== bd) return ad - bd;
+      const sr = sourceRank(a.sourceName) - sourceRank(b.sourceName);
+      if (sr !== 0) return sr;
+      const ae = looksExplainer(a.title) ? 1 : 0;
+      const be = looksExplainer(b.title) ? 1 : 0;
+      if (ae !== be) return ae - be;
+      return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+    }
     // SP-A-054: boost grounded AI capability / useful AI tool stories.
     const aAi = looksAiCapability(a.title, a.text || '') ? 0 : 1;
     const bAi = looksAiCapability(b.title, b.text || '') ? 0 : 1;
@@ -815,7 +837,9 @@ async function publishRssOnce(opts: {
 
   opts.metrics.candidatesCollected += candidates.length;
   console.log(`New gadget candidates after filters: ${candidates.length}`);
-  console.log(`Scout threshold: ${scoutFloor} (cycle=${opts.cycle})`);
+  console.log(
+    `Scout threshold: ${scoutFloor} (cycle=${opts.cycle}${probeMode ? ', probe dig-deep' : ''})`,
+  );
 
   if (candidates.length === 0) {
     console.log('No RSS candidate — tick idle exit 0.');
@@ -830,8 +854,8 @@ async function publishRssOnce(opts: {
     return true;
   }
 
-  // Max 1 publish / tick; cap attempts so one tick doesn't burn 10+ Scout calls.
-  const maxAttempts = Math.min(4, candidates.length);
+  // Max 1 publish / tick. Probe/forced: dig deeper past score-0 deal/opinion tops.
+  const maxAttempts = Math.min(probeMode ? 16 : 4, candidates.length);
   let lastSkip = 'no rss candidate';
 
   for (let i = 0; i < maxAttempts; i++) {
