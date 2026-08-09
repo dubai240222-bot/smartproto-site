@@ -317,6 +317,46 @@
       "status": "error",
       "reason": "Scout model (deepseek/deepseek-v4-flash:latest) returned an empty response. finish_reason: length, reasoning present: false",
       "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/ai-humanoids/chatgpt-ai-assistant-shut-up/",
+      "url": "https://newatlas.com/ai-humanoids/chatgpt-ai-assistant-shut-up/",
+      "title": "ChatGPT Voice shifts from chatbot to proper assistant",
+      "processedAt": "2026-08-09T07:42:12.699Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Эмоциональное описание, но нет конкретных новых функций или доказательств улучшения.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/ai-humanoids/fraunhofer-realorrender-deepfake-detection/",
+      "url": "https://newatlas.com/ai-humanoids/fraunhofer-realorrender-deepfake-detection/",
+      "title": "A deep take for detecting deepfakes",
+      "processedAt": "2026-08-09T07:42:42.881Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Нет конкретного устройства, приложения или AI-системы, только общий комментарий о дипфейках.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://www.theverge.com/?p=976422",
+      "url": "https://www.theverge.com/gadgets/976422/birdfy-feeder-rookie-nothing-headphones-deal-sale",
+      "title": "Birdfy’s smart bird feeder is on sale for just $60",
+      "processedAt": "2026-08-09T07:42:57.881Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Умная кормушка для птиц со скидкой — не новое изобретение, а рядовая распродажа уже существующего продукта без значимых инноваций.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://techcrunch.com/?p=3151377",
+      "url": "https://techcrunch.com/2026/08/08/openai-acquires-presentation-startup-nextslide/",
+      "title": "OpenAI acquires presentation startup NextSlide",
+      "processedAt": "2026-08-09T07:43:17.350Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Новость о поглощении без конкретного продукта или новой возможности, поэтому нет понятной пользы для читателя.",
+      "channel": "rss"
     }
   ]
 }
