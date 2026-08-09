@@ -66,7 +66,7 @@ async function main() {
     const key = c.title.toLowerCase().slice(0, 80);
     if (seen.has(key)) continue;
     seen.add(key);
-    if (scored.length >= 24) break;
+    if (scored.length >= 12) break;
     try {
       const scout = await scoutArticle(c.title, c.text);
       scored.push({
