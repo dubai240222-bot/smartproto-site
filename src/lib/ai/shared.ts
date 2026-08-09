@@ -53,8 +53,8 @@ export function parseJsonObject<T>(content: string): T {
 
   // Salvage truncated Scout/Reviewer JSON (finish_reason: length).
   let frag = normalized.slice(start);
-  frag = frag.replace(/,\s*"[^"]*$/s, '');
-  frag = frag.replace(/,\s*$/s, '');
+  frag = frag.replace(/,\s*"[^"]*$/, '');
+  frag = frag.replace(/,\s*$/, '');
   if (!frag.trimEnd().endsWith('}')) frag = `${frag}}`;
   try {
     return JSON.parse(frag) as T;
