@@ -76,7 +76,10 @@ export function extractPhotoEntityHeuristic(title: string, text: string): PhotoE
       };
     }
   }
-  const status: ProductStatus = /слух|rumor|leak|предположительно|ожидаем/i.test(blob)
+  // "тестирование" alone is not a rumor — China desks often cover lab/cooling tests of real SKUs.
+  const status: ProductStatus = /слух|rumor|leak|предположительно|ожидаем(?!\s+релиз)|unannounced|not yet announced/i.test(
+    blob,
+  )
     ? 'rumor'
     : brand
       ? 'product'

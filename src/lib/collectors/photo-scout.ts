@@ -103,13 +103,16 @@ async function fetchHtml(url: string, timeoutMs = 8000): Promise<string | null> 
 
 function resolveUrl(raw: string, baseUrl: string): string | null {
   try {
-    const cleaned = raw.trim().replace(/^\/\//, 'https://').replace(/&amp;/gi, '&');
+    let cleaned = raw.trim().replace(/^\/\//, 'https://').replace(/&amp;/gi, '&');
     if (!cleaned || cleaned.startsWith('data:')) return null;
     if (/\{width\}|\{height\}|PHN2Zy|image\/svg|\.svg(\?|$)/i.test(cleaned)) return null;
+    // ITHome CDN often appends @s_2,w_820,h_1066 — strip for full asset.
+    cleaned = cleaned.replace(/@[a-z0-9_,.]+$/i, '');
     const href = new URL(cleaned, baseUrl).href.split('#')[0];
     if (!/^https?:\/\//i.test(href)) return null;
     if (IGNORE_SRC_RE.test(href)) return null;
     if (/\.svg(\?|$)/i.test(href) || /\/svg\//i.test(href)) return null;
+    if (/\/images\/v2\/t\.png/i.test(href)) return null;
     return href;
   } catch {
     return null;
@@ -271,6 +274,26 @@ function softEntityContextOk(c: PhotoCandidate, entity: PhotoEntity): boolean {
   if (SCREENSHOT_MARKER_RE.test(c.context) || SCREENSHOT_MARKER_RE.test(c.url)) return false;
   if (/logo|symbol|typography|swatch/i.test(c.url + c.context)) return false;
   const pageHay = `${c.pageUrl} ${c.context} ${c.url}`.toLowerCase();
+
+  // Same-article China tech CDN uploads (ITHome / JD): the page is already about this
+  // entity, but lazy-load alts often lack brand text — allow raster product uploads.
+  // Still block unconfirmed rumors (no model) and obvious wrong-SKU tokens in URL.
+  if (
+    c.tier === 'source_article' &&
+    /newsuploadfiles|360buyimg\.com/i.test(c.url) &&
+    looksLikeRasterPhoto(c.url)
+  ) {
+    if (entity.status === 'rumor' && !entity.model) return false;
+    if (entity.model) {
+      const modelCompact = entity.model.toLowerCase().replace(/\s+/g, '');
+      // If URL itself names a different clear SKU (e.g. 15T vs T), reject.
+      const conflicting = /iqoo\s*15t|iqoo\s*13|redmi\s*k\d{2}/i.test(c.url + c.context);
+      if (conflicting && !pageHay.includes(modelCompact) && !c.context.includes(entity.model.toLowerCase())) {
+        return false;
+      }
+    }
+    return true;
+  }
 
   // When a specific model/product line is known, require it on official pages too
   // (otherwise manufacturer homepage banners falsely "match" the brand alone).
