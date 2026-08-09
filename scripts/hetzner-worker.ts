@@ -28,6 +28,12 @@ const ARTICLE_INTERVAL_MS = Number(process.env.SMARTPROTO_ARTICLE_INTERVAL_MS ||
 const TEST_AUTO_INTERVAL_MS = Number(process.env.SMARTPROTO_TEST_AUTO_INTERVAL_MS || 20 * 60 * 1000);
 /** SP-A-063 — auto-expire TEST-AUTO after this many ms (default 3h). */
 const TEST_AUTO_DURATION_MS = Number(process.env.SMARTPROTO_TEST_AUTO_DURATION_MS || 3 * 60 * 60 * 1000);
+/** SP-A-065B-LIVE — optional Scout floor for TEST-AUTO (default 40; live check uses 70). */
+const TEST_AUTO_SCOUT_THRESHOLD = (() => {
+  const raw = process.env.SMARTPROTO_TEST_AUTO_SCOUT_THRESHOLD?.trim();
+  const n = raw ? Number(raw) : 40;
+  return Number.isFinite(n) && n > 0 ? String(Math.round(n)) : '40';
+})();
 /** SP-A-063 — forced burst: stop after this many publishes (default 2). */
 const FORCED_TARGET = Number(process.env.SMARTPROTO_FORCED_TARGET || 2);
 /** SP-A-063 — forced burst deadline (default 10 minutes). */
@@ -104,11 +110,11 @@ function runTick(
           ...process.env,
           ARTICLES_STORE: 'sqlite',
           SMARTPROTO_FACTORY_ENABLED: 'true',
-          // TEST-AUTO only: scout=40. Forced burst: even lower, temporary.
+          // TEST-AUTO: default scout=40; SMARTPROTO_TEST_AUTO_SCOUT_THRESHOLD can raise to prod (70).
           ...(opts.forced
             ? { SCOUT_SCORE_THRESHOLD: FORCED_SCOUT_THRESHOLD }
             : opts.lenient
-              ? { SCOUT_SCORE_THRESHOLD: '40' }
+              ? { SCOUT_SCORE_THRESHOLD: TEST_AUTO_SCOUT_THRESHOLD }
               : {}),
         },
         stdio: ['ignore', 'pipe', 'pipe'],
@@ -213,7 +219,7 @@ async function loopOnce(): Promise<void> {
     const state = readState();
     if (isDue(state.lastRunAt, TEST_AUTO_INTERVAL_MS)) {
       log(
-        `Mode TEST-AUTO — running full editorial cycle (${Math.round(TEST_AUTO_INTERVAL_MS / 60000)} min interval, scout=40).`,
+        `Mode TEST-AUTO — running full editorial cycle (${Math.round(TEST_AUTO_INTERVAL_MS / 60000)} min interval, scout=${TEST_AUTO_SCOUT_THRESHOLD}).`,
       );
       const { ok } = await runTick('news', { lenient: true });
       writeState({
