@@ -66,7 +66,7 @@ function log(msg: string) {
   console.log(`[${new Date().toISOString()}] ${msg}`);
 }
 
-function runTick(cycle: 'news' | 'article'): Promise<boolean> {
+function runTick(cycle: 'news' | 'article', opts: { lenient?: boolean } = {}): Promise<boolean> {
   return new Promise((resolve) => {
     log(`Running ${cycle} tick (direct SQLite publish, no git/GitHub Actions/Vercel)...`);
     const child = spawn(
@@ -74,7 +74,15 @@ function runTick(cycle: 'news' | 'article'): Promise<boolean> {
       ['tsx', 'scripts/run-newsroom-tick.ts', `--cycle=${cycle}`, '--force'],
       {
         cwd: process.cwd(),
-        env: { ...process.env, ARTICLES_STORE: 'sqlite', SMARTPROTO_FACTORY_ENABLED: 'true' },
+        env: {
+          ...process.env,
+          ARTICLES_STORE: 'sqlite',
+          SMARTPROTO_FACTORY_ENABLED: 'true',
+          // TEST-AUTO only, owner-requested: temporarily accept less-worthy
+          // material so the test cycle actually publishes something to
+          // observe layout/images/pipeline — never used for single/auto.
+          ...(opts.lenient ? { SCOUT_SCORE_THRESHOLD: '40' } : {}),
+        },
         stdio: 'inherit',
       },
     );
@@ -113,8 +121,8 @@ async function loopOnce(): Promise<void> {
   if (mode === 'test-auto') {
     const state = readState();
     if (isDue(state.lastRunAt, TEST_AUTO_INTERVAL_MS)) {
-      log('Mode TEST-AUTO — running full editorial cycle (10 min interval, thresholds unchanged).');
-      const ok = await runTick('news');
+      log('Mode TEST-AUTO — running full editorial cycle (10 min interval, lenient threshold for observation).');
+      const ok = await runTick('news', { lenient: true });
       writeState({
         lastRunAt: new Date().toISOString(),
         lastRunStatus: ok ? 'ok' : 'error',
