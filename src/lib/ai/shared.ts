@@ -53,12 +53,39 @@ export function parseJsonObject<T>(content: string): T {
 
   // Salvage truncated Scout/Reviewer JSON (finish_reason: length).
   let frag = normalized.slice(start);
+  // Drop trailing incomplete key/value
   frag = frag.replace(/,\s*"[^"]*$/, '');
+  frag = frag.replace(/,\s*[^,}\]]*$/, '');
   frag = frag.replace(/,\s*$/, '');
-  if (!frag.trimEnd().endsWith('}')) frag = `${frag}}`;
+  // Close open braces/brackets
+  const opens = (frag.match(/\{/g) || []).length;
+  const closes = (frag.match(/\}/g) || []).length;
+  const openArr = (frag.match(/\[/g) || []).length;
+  const closeArr = (frag.match(/\]/g) || []).length;
+  frag += ']'.repeat(Math.max(0, openArr - closeArr));
+  frag += '}'.repeat(Math.max(0, opens - closes));
   try {
     return JSON.parse(frag) as T;
   } catch {
+    // Last resort: pull score/interesting/reason for Scout tables
+    const scoreM = frag.match(/"score"\s*:\s*(\d+)/);
+    const interestingM = frag.match(/"interesting"\s*:\s*(true|false)/);
+    const reasonM = frag.match(/"reason"\s*:\s*"((?:\\.|[^"\\])*)"/);
+    const statusM = frag.match(/"status"\s*:\s*"([A-Z_]+)"/);
+    if (scoreM) {
+      return {
+        interesting: interestingM ? interestingM[1] === 'true' : Number(scoreM[1]) >= 70,
+        score: Number(scoreM[1]),
+        reason: reasonM ? reasonM[1] : 'salvaged truncated JSON',
+        productType: 'salvaged',
+        status: statusM ? statusM[1] : undefined,
+        isActuallyNew: true,
+        noveltyEvidence: ['salvaged-truncated'],
+        functionalDifference: 'salvaged',
+        marketSaturation: 'low',
+        parts: undefined,
+      } as T;
+    }
     throw new Error(`Model response was not valid JSON: ${content}`);
   }
 }

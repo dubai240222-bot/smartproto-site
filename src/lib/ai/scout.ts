@@ -77,7 +77,7 @@ export async function scoutArticle(
     model: SCOUT_MODEL,
     temperature: 0.1,
     top_p: 0.9,
-    max_tokens: 900,
+    max_tokens: 1600,
     include_reasoning: false,
     reasoning: { max_tokens: 0 },
     extra_body: {
