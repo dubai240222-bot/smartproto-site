@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { Header } from '@/components/header';
+import { getAllArticles } from '@/data/articles';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -30,6 +31,7 @@ export default function RootLayout({
 }: Readonly<{
   children: ReactNode;
 }>) {
+  const articles = getAllArticles();
   return (
     <html lang="ru" className="h-full antialiased" suppressHydrationWarning>
       <head>
@@ -55,7 +57,7 @@ export default function RootLayout({
         />
       </head>
       <body className="flex min-h-screen flex-col bg-[var(--bg)] text-[var(--text)] transition-colors duration-150">
-        <Header />
+        <Header articles={articles} />
         <div className="flex-1">{children}</div>
         <footer className="mt-16 border-t border-[var(--border)] bg-[var(--surface)] py-8 text-xs text-[var(--muted)]">
           <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">

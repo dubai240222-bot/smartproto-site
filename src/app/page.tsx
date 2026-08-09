@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import articles, { type Article } from '@/data/articles';
+import { getAllArticles, type Article } from '@/data/articles';
 import { MediaPlaceholder } from '@/components/media-placeholder';
 import { ThematicNavigator } from '@/components/thematic-navigator';
 import { formatPublishedAt, sortArticlesByPublishedDate } from '@/lib/article-utils';
@@ -132,7 +132,7 @@ export default async function HomePage({
   const params = await searchParams;
   const activeCategory = params.category?.trim();
 
-  const sortedArticles = sortArticlesByPublishedDate(articles);
+  const sortedArticles = sortArticlesByPublishedDate(getAllArticles());
 
   // Articles for specific editorial slots
   const mainStory = sortedArticles[0];

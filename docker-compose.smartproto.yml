@@ -1,0 +1,60 @@
+# SP-A-056 — SmartProto Direct Publisher stack for Hetzner.
+#
+# factory (this worker) -> SQLite (bind-mounted, persistent) -> smartproto-web
+# No GitHub / Vercel in this path. GitHub stays only as source-code backup.
+#
+# Deployed at /opt/apps/smartproto/ — does NOT touch any other project's
+# containers, networks, or volumes on this shared host.
+#
+# Usage (from /opt/apps/smartproto/app):
+#   docker compose -f ../docker-compose.smartproto.yml -p smartproto up -d --build
+
+name: smartproto
+
+services:
+  smartproto-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ARTICLES_STORE: sqlite
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3100}
+    container_name: smartproto-web
+    restart: unless-stopped
+    environment:
+      ARTICLES_STORE: sqlite
+      SMARTPROTO_DB_PATH: /app/data/smartproto.db
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3100}
+    volumes:
+      - ../data:/app/data
+      - ../images:/app/public/media
+    ports:
+      - "127.0.0.1:3100:3000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  smartproto-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ARTICLES_STORE: sqlite
+    container_name: smartproto-worker
+    restart: unless-stopped
+    command: ["npx", "tsx", "scripts/hetzner-worker.ts"]
+    environment:
+      ARTICLES_STORE: sqlite
+      SMARTPROTO_DB_PATH: /app/data/smartproto.db
+      SMARTPROTO_DATA_DIR: /app/data
+      SMARTPROTO_FACTORY_ENABLED: "true"
+      CHINA_DEPARTMENT_ENABLED: "true"
+      CHINA_ALLOW_RECOMMEND: "true"
+      SCOUT_SCORE_THRESHOLD: "70"
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+    volumes:
+      - ../data:/app/data
+      - ../images:/app/public/media

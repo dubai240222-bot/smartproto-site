@@ -1,6 +1,6 @@
 ﻿import Link from 'next/link';
 import { ArrowRight, Newspaper, Sparkles } from 'lucide-react';
-import articles from '@/data/articles';
+import { getAllArticles } from '@/data/articles';
 import { ArticleCard } from '@/components/article-card';
 import { LiveFeedSection } from '@/components/live-feed-section';
 import { MediaPlaceholder } from '@/components/media-placeholder';
@@ -10,8 +10,12 @@ import {
   sortArticlesByPublishedDate,
 } from '@/lib/article-utils';
 
+// SP-A-056: render per request so a new SQLite-published article (Hetzner)
+// or refreshed JSON data appears without a rebuild.
+export const dynamic = 'force-dynamic';
+
 export default function AllArticlesPage() {
-  const sortedArticles = sortArticlesByPublishedDate(articles);
+  const sortedArticles = sortArticlesByPublishedDate(getAllArticles());
   const stats = getArticleStats(sortedArticles);
   const featuredArticle = stats.latestArticle ?? sortedArticles[0];
   const categoryHighlights = getCategoryHighlights(sortedArticles);

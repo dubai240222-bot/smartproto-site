@@ -1,12 +1,13 @@
 ﻿import type { MetadataRoute } from 'next';
-import articles from '@/data/articles';
+import { getAllArticles } from '@/data/articles';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
+  const articles = getAllArticles();
 
   return [
     {

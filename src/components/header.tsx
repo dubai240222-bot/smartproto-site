@@ -4,11 +4,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Calendar, Search, X } from 'lucide-react';
-import articles from '@/data/articles';
+import type { Article } from '@/data/articles';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { formatPublishedAt } from '@/lib/article-utils';
 
-export function Header() {
+export function Header({ articles }: { articles: Article[] }) {
   const [query, setQuery] = useState('');
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [isResultsOpen, setIsResultsOpen] = useState(false);

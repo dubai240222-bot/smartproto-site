@@ -3,14 +3,21 @@ import type { ReactElement } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Clock } from 'lucide-react';
-import articles, { getArticleBySlug, type Article } from '@/data/articles';
+import { getAllArticles, getArticleBySlug, type Article } from '@/data/articles';
 import { MediaPlaceholder } from '@/components/media-placeholder';
 import { InterestRating } from '@/components/interest-rating';
 import { formatPublishedAt, getRelatedArticles } from '@/lib/article-utils';
 import { formatAuthorCredit, resolveAuthorForArticle } from '@/lib/authors';
 
+// SP-A-056: render per request (both storage modes) so a newly published
+// article — from SQLite on Hetzner, or freshly rebuilt JSON on Vercel — is
+// always served without relying on a stale static prerender.
+export const dynamic = 'force-dynamic';
+const USE_SQLITE = process.env.ARTICLES_STORE === 'sqlite';
+
 export async function generateStaticParams() {
-  return articles.map((article) => ({ slug: article.slug }));
+  if (USE_SQLITE) return [];
+  return getAllArticles().map((article) => ({ slug: article.slug }));
 }
 
 export async function generateMetadata({
@@ -107,7 +114,7 @@ export default async function ArticlePage({
     notFound();
   }
 
-  const relatedArticles = getRelatedArticles(article.slug, 3, articles);
+  const relatedArticles = getRelatedArticles(article.slug, 3, getAllArticles());
   const headings = extractHeadings(article.content);
   const showToc = headings.length >= 3;
 

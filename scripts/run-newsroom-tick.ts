@@ -36,6 +36,17 @@ import {
   isNewsWarmupActive,
 } from '../src/lib/newsroom/cadence';
 
+/**
+ * SP-A-056 — on the Hetzner worker (ARTICLES_STORE=sqlite) also persist the
+ * freshly published article straight to SQLite so the site sees it without
+ * any git/Vercel step. No-op (and no better-sqlite3 import) everywhere else.
+ */
+async function maybeSyncToSqlite(article: Record<string, unknown>): Promise<void> {
+  if (process.env.ARTICLES_STORE !== 'sqlite') return;
+  const { upsertArticle } = await import('../src/lib/data-store/articles-repo');
+  upsertArticle(article as import('../src/lib/data-store/articles-repo').StoredArticle);
+}
+
 export type CycleType = 'news' | 'article';
 
 function loadEnvFiles(): void {
@@ -616,6 +627,7 @@ async function tryChinaPublishOnce(opts: {
       );
       deduped.unshift(article);
       await writeFile(opts.articlesPath, JSON.stringify(deduped, null, 2) + '\n', 'utf8');
+      await maybeSyncToSqlite(article);
 
       await mkdir(opts.draftsDir, { recursive: true });
       await writeFile(
@@ -969,6 +981,7 @@ async function publishRssOnce(opts: {
         );
         deduped.unshift(article);
         await writeFile(opts.articlesPath, JSON.stringify(deduped, null, 2) + '\n', 'utf8');
+        await maybeSyncToSqlite(article);
 
         await mkdir(opts.draftsDir, { recursive: true });
         await writeFile(

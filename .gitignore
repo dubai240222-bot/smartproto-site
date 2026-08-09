@@ -45,3 +45,9 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# SP-A-056 — Hetzner runtime data lives outside git in /opt/apps/smartproto/data
+data/*.db
+data/*.db-*
+data/worker-mode.json
+data/worker-state.json

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { ArrowRight, Layers3, Newspaper, PlayCircle, Sparkles } from 'lucide-react';
-import articles from '@/data/articles';
+import { getAllArticles } from '@/data/articles';
 import { ArticleCard } from '@/components/article-card';
 import { LiveFeedSection } from '@/components/live-feed-section';
 import { MediaPlaceholder } from '@/components/media-placeholder';
@@ -12,7 +12,10 @@ export const metadata = {
     'A second landing-page variant for SmartProto, focused on thematic blocks, media placeholders, and newsroom pacing.',
 };
 
+export const dynamic = 'force-dynamic';
+
 export default function EditorialPage() {
+  const articles = getAllArticles();
   const stats = getArticleStats(articles);
   const latestArticles = getLatestArticles(3, articles);
   const categoryHighlights = getCategoryHighlights(articles);

@@ -1,4 +1,4 @@
-import articles, { type Article } from '@/data/articles';
+import type { Article } from '@/data/articles';
 
 /**
  * Relative-friendly timestamps for test observation (~minute freshness).
@@ -62,34 +62,34 @@ export function parseReadTimeMinutes(value: string): number {
   return match ? Number(match[1]) : 0;
 }
 
-export function sortArticlesByPublishedDate(list: Article[] = articles): Article[] {
+export function sortArticlesByPublishedDate(list: Article[] = []): Article[] {
   return [...list].sort(
     (left, right) =>
       new Date(right.publishedAt).getTime() - new Date(left.publishedAt).getTime(),
   );
 }
 
-export function getLatestArticle(list: Article[] = articles): Article | undefined {
+export function getLatestArticle(list: Article[] = []): Article | undefined {
   return sortArticlesByPublishedDate(list)[0];
 }
 
-export function getLatestArticles(limit = 3, list: Article[] = articles): Article[] {
+export function getLatestArticles(limit = 3, list: Article[] = []): Article[] {
   return sortArticlesByPublishedDate(list).slice(0, limit);
 }
 
 export function getRelatedArticles(
   slug: string,
   limit = 3,
-  list: Article[] = articles,
+  list: Article[] = [],
 ): Article[] {
   return sortArticlesByPublishedDate(list).filter((article) => article.slug !== slug).slice(0, limit);
 }
 
-export function getUniqueCategories(list: Article[] = articles): string[] {
+export function getUniqueCategories(list: Article[] = []): string[] {
   return Array.from(new Set(list.map((article) => article.category)));
 }
 
-export function getCategoryHighlights(list: Article[] = articles): Array<{
+export function getCategoryHighlights(list: Article[] = []): Array<{
   category: string;
   count: number;
   latest: Article;
@@ -115,7 +115,7 @@ export function getCategoryHighlights(list: Article[] = articles): Array<{
     );
 }
 
-export function getArticleStats(list: Article[] = articles) {
+export function getArticleStats(list: Article[] = []) {
   const latestArticle = getLatestArticle(list);
   const categories = getUniqueCategories(list);
   const totalReadMinutes = list.reduce(
