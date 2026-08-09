@@ -14,7 +14,8 @@
     "https://www.ithome.com/0/987/531.htm",
     "https://newatlas.com/automotive/zoox-nhtsa-commercial-exemption-paid-robotaxi/",
     "https://newatlas.com/wearables/samsung-ai-eyewear-galaxy-glasses/",
-    "https://www.androidauthority.com/gemini-notebook-source-automation-3696153/"
+    "https://www.androidauthority.com/gemini-notebook-source-automation-3696153/",
+    "https://www.ithome.com/0/987/563.htm"
   ],
   "processedIds": [
     "https://www.yankodesign.com/?p=639735",
@@ -31,7 +32,8 @@
     "china-openfit-2-ai",
     "https://newatlas.com/automotive/zoox-nhtsa-commercial-exemption-paid-robotaxi/",
     "https://newatlas.com/wearables/samsung-ai-eyewear-galaxy-glasses/",
-    "https://www.androidauthority.com/gemini-notebook-source-automation-3696153/"
+    "https://www.androidauthority.com/gemini-notebook-source-automation-3696153/",
+    "china-insta360-ace-pro-3"
   ],
   "entries": [
     {
@@ -357,6 +359,17 @@
       "scoutScore": 0,
       "reason": "Новость о поглощении без конкретного продукта или новой возможности, поэтому нет понятной пользы для читателя.",
       "channel": "rss"
+    },
+    {
+      "id": "china-insta360-ace-pro-3",
+      "url": "https://www.ithome.com/0/987/563.htm",
+      "title": "Insta360 Ace Pro 3: улучшенная оптика и запись 8K",
+      "processedAt": "2026-08-09T08:25:38.962Z",
+      "status": "published",
+      "reason": "editorial gadget bar (source-backed)",
+      "slug": "china-insta360-ace-pro-3",
+      "channel": "china-qwen",
+      "cycle": "news"
     }
   ]
 }

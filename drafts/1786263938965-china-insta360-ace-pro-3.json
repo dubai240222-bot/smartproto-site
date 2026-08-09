@@ -1,0 +1,82 @@
+{
+  "generatedAt": "2026-08-09T08:25:38.962Z",
+  "channel": "china-qwen",
+  "cycle": "news",
+  "format": "news",
+  "source": {
+    "sourceId": "ithome-rss",
+    "sourceName": "IT之家",
+    "sourceUrl": "https://www.ithome.com/0/987/563.htm",
+    "platform": "rss",
+    "language": "zh",
+    "title": "影石 Insta360 Ace Pro 3 运动相机参数曝光：1 英寸 5000 万像素 CMOS，预计今年底上市",
+    "summary": "IT之家 8 月 9 日消息，消息源 Photo Rumors 昨日发布影石 Insta360 Ace Pro 3 运动相机的曝光参数，新机将搭载 1 英寸 5000 万像素 CMOS 传感器，预计今年底上市。\n\n据介绍，这款相机搭载 1 英寸 5000 万像素 CMOS，拥有徕卡认证，相比 Ace Pro 2 的 1/1.3 英寸传感器在动态范围和弱光范围有所提升。支持 14-bit RAW 照片拍摄，提供徕卡色彩配置文件，视频模式可能支持 10-bit 色彩。\n同时，这款相机将支持 8K 30FPS 录制，提供 HDR 和 HLG 模式，具备 10-bit 4K 120FPS、1080P 240FPS 拍摄。配备 FlowState 2.0 防抖系统，支持 AI 辅助的 360° 水平锁定功能。标准版预计采用 f/2.8 光圈镜头、Ultra 版本预计将采用双摄方案。\n此外，这款相机的重量预计为 185g，预计支持最长 200 分钟的 4K 视频录制，原生防水深度提升至 16 米。售价区间预计为 549 美元-599 美元（IT之家注：现汇率约合 3,714 元- 4,052 元人民币），有望 2026 年底或 2027 年上半年上市。",
+    "priceText": "",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/f8bd27d4-1515-40c4-bcd0-c4acaa5f44ee.jpg?x-bce-process=image/format,f_auto",
+    "publishedAt": "2026-08-09T08:02:03.000Z",
+    "rawSignals": [
+      "发布",
+      "上市"
+    ],
+    "collectedAt": "2026-08-09T08:25:30.799Z"
+  },
+  "dossier": {
+    "originalTitle": "影石 Insta360 Ace Pro 3 运动相机参数曝光：1 英寸 5000 万像素 CMOS，预计今年底上市",
+    "translatedTitle": "",
+    "productName": "Insta360 Ace Pro 3",
+    "manufacturer": "",
+    "platform": "rss",
+    "productUrl": "",
+    "sourceUrl": "https://www.ithome.com/0/987/563.htm",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/f8bd27d4-1515-40c4-bcd0-c4acaa5f44ee.jpg?x-bce-process=image/format,f_auto",
+    "whatItDoes": "影石下一代运动相机 Ace Pro 3 参数遭曝光，最大的亮点是搭载了 1 英寸 5000 万像素 CMOS，并拥有徕卡认证，影像能力相比上代大幅提升。支持 8K 30FPS 录制和 FlowState 2.0 防抖，预计年底或明年上市。#运动相机#\n\nIT之家 8 月 9 日消息，消息源 Photo Rumors 昨日发布影石 Insta360 Ace Pro 3 运动相机的曝光参数，新机将搭载 1 英寸 5000 万像素 CMOS 传感器，预计今年底上市。\n\n据介绍，这款相机搭载 1 英寸 5000 万像素 CMOS，拥有徕卡认证，相比 Ace Pro 2 的 1/1.3 英寸传感器在动态范围和弱光范围有所提升。支持 14-bit RAW 照片拍摄，提供徕卡色彩配置文件，视频模式可能支持 10-bit 色彩。\n同时，这款相机将支持 8K 30FPS 录制，提供 HDR 和 HLG 模式",
+    "whyItIsNew": "",
+    "consumerUse": "",
+    "priceOriginal": null,
+    "currency": null,
+    "priceApproxUsd": null,
+    "availability": "",
+    "launchDate": null,
+    "market": "",
+    "prototypeOrSale": "",
+    "evidence": [],
+    "unknownFacts": [
+      "徕卡认证具体范围（如仅色彩科学？还是光学/软件联合调校？）",
+      "AI 辅助 360° 水平锁定的具体实现方式（是否依赖 IMU+视觉融合？）",
+      "双摄 Ultra 版的传感器规格与功能差异",
+      "是否支持多机同步/360° 拼接等 Insta360 特色功能（文本未提）"
+    ],
+    "warningFlags": [
+      "上市时间表述存在明显时间错位（2026 年 8 月报道‘预计 2026 年底上市’，但当前系统时间若为 2026 年则属合理；若为 2024 年则属严重误标）",
+      "未提供任何官方链接或产品页面，依赖第三方爆料",
+      "‘Ultra 版’‘双摄方案’等变体尚未有官方确认"
+    ],
+    "recommended": false,
+    "sourceSuggestions": []
+  },
+  "draft": {
+    "id": "china-insta360-ace-pro-3",
+    "slug": "china-insta360-ace-pro-3",
+    "title": "Insta360 Ace Pro 3: улучшенная оптика и запись 8K",
+    "category": "Гаджеты",
+    "tags": [
+      "экшн-камера",
+      "Insta360",
+      "видеосъемка",
+      "Leica",
+      "8K",
+      "новинка",
+      "гаджет",
+      "новость"
+    ],
+    "summary": "Появились сведения о новой экшн-камере Insta360 Ace Pro 3.",
+    "content": "Появились сведения о новой экшн-камере Insta360 Ace Pro 3. Ожидается, что устройство получит 1-дюймовый CMOS-сенсор на 50 Мп с сертификацией Leica, что должно повысить качество съемки, особенно в условиях низкой освещенности. Камера сможет записывать видео в разрешении 8K при 30 кадрах в секунду и оснащена системой стабилизации FlowState 2.0 с функцией 360° горизонтальной блокировки. Производитель заявляет о поддержке 14-битной RAW-съемки и 10-битного цвета в видеорежиме. Ожидается, что камера будет доступна к концу года или в начале следующего.",
+    "sourceUrl": "https://www.ithome.com/0/987/563.htm",
+    "publishedAt": "2026-08-09T08:25:38.962Z",
+    "readTime": "1 мин",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/f8bd27d4-1515-40c4-bcd0-c4acaa5f44ee.jpg?x-bce-process=image/format,f_auto",
+    "author": "Линь Цзе",
+    "authorDesk": "China desk",
+    "agentId": "china-qwen"
+  }
+}
