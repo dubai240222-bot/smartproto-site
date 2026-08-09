@@ -1145,9 +1145,17 @@ async function publishRssOnce(opts: {
       const review = await reviewArticle(sourcePayload);
       if (/^REJECT\b/i.test(review.technicalVerdict)) {
         // Soft override: Scout already scored high on AI/invention alert — don't idle the tick.
-        // SP-A-065CD: ai_radar Scout already scored EVENT ≥ floor — Reviewer gadget lens must not kill it.
+        // SP-A-065CD: ai_radar — soft-pass only for strong EVENT already Scout-passed (≥floor) with normalized record / primary evidence.
+        // Not a blanket «if AI → PASS»; commodity without EVENT markers still rejected.
+        const aiRadarEventOk =
+          itemMode === 'ai_radar' &&
+          scout.score >= scoutFloor &&
+          (/NORMALIZED AI EVENT RECORD|capabilityChange:|primaryEvidence:/i.test(item.text || '') ||
+            /critical cyber|whole body|embodied|autonom|boundary|safeguard|preparedness/i.test(
+              `${item.title}\n${item.text || ''}`,
+            ));
         if (
-          (itemMode === 'ai_radar' && scout.score >= scoutFloor) ||
+          aiRadarEventOk ||
           (scout.score >= 80 && isAiOrInventionAlert(item.title, item.text || item.title))
         ) {
           console.log(

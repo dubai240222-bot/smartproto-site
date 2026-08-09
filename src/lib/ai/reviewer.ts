@@ -72,6 +72,15 @@ function fallbackReview(title: string, text: string): ReviewResult {
   };
 }
 
+/** SP-A-065CD — AI Early Warning desk: score EVENT, not gadget SKU. */
+const REVIEW_SYSTEM_PROMPT_AI_RADAR = [
+  'Ты Reviewer канала AI Early Warning (не gadget desk).',
+  'НЕ требуй consumer gadget / hardware / physical product.',
+  'PASS если есть сильный нормализованный EVENT: новая capability, автономия, AI берёт человеческую работу, boundary shift, primary evidence, явный сигнал будущего.',
+  'REJECT commodity/PR/noise: API bump, pricing, efficiency refresh, vibe course, brand fluff без capability, политика/celebrities.',
+  'Не путай dry official safety wording с отсутствием события: restriction после critical capability — сигнал силы capability.',
+].join(' ');
+
 function modeFromPayload(articleData: object): EditorialMode {
   const m = (articleData as { mode?: unknown }).mode;
   if (m === 'app') return 'app';
@@ -108,7 +117,12 @@ export async function reviewArticle(articleData: object): Promise<ReviewResult> 
       messages: [
         {
           role: 'system',
-          content: mode === 'app' ? REVIEW_SYSTEM_PROMPT_APP : REVIEW_SYSTEM_PROMPT_GADGET,
+          content:
+            mode === 'app'
+              ? REVIEW_SYSTEM_PROMPT_APP
+              : mode === 'ai_radar'
+                ? REVIEW_SYSTEM_PROMPT_AI_RADAR
+                : REVIEW_SYSTEM_PROMPT_GADGET,
         },
         {
           role: 'user',
@@ -117,7 +131,9 @@ export async function reviewArticle(articleData: object): Promise<ReviewResult> 
             'keyAspects ОБЯЗАТЕЛЬНО ровно 3 непустых строки (массив).',
             mode === 'app'
               ? 'Если нет конкретного полезного app/game или SEO/spam — technicalVerdict начинается с REJECT:.'
-              : 'PASS grounded AI/invention/gadget alerts с ясной пользой (покупка НЕ обязательна). REJECT только политика/celebrities/культура/commodity без смысла / price+buy link.',
+              : mode === 'ai_radar'
+                ? 'AI_RADAR: НЕ REJECT только из-за отсутствия gadget/hardware. PASS сильный EVENT (capability/autonomy/boundary/primary). REJECT commodity/API/pricing/brand fluff. Не правило «если AI → PASS».'
+                : 'PASS grounded AI/invention/gadget alerts с ясной пользой (покупка НЕ обязательна). REJECT только политика/celebrities/культура/commodity без смысла / price+buy link.',
             'Иначе подтверди техническую достоверность и перечисли ровно 3 ключевых аспекта.',
             '',
             clampText(JSON.stringify(articleData, null, 2), 10000),
