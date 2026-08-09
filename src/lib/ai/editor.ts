@@ -109,7 +109,11 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
       ? (articleData as { sourceName: string }).sourceName
       : '';
   const mode: EditorialMode =
-    (articleData as { mode?: unknown }).mode === 'app' ? 'app' : 'gadget';
+    (articleData as { mode?: unknown }).mode === 'app'
+      ? 'app'
+      : (articleData as { mode?: unknown }).mode === 'ai_radar'
+        ? 'ai_radar'
+        : 'gadget';
   const format: DraftFormat =
     (articleData as { format?: unknown }).format === 'news' ? 'news' : 'article';
   const gate = hardRejectTopic(sourceTitle, sourceText, { sourceName, mode });

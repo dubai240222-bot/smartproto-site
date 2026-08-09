@@ -74,7 +74,9 @@ function fallbackReview(title: string, text: string): ReviewResult {
 
 function modeFromPayload(articleData: object): EditorialMode {
   const m = (articleData as { mode?: unknown }).mode;
-  return m === 'app' ? 'app' : 'gadget';
+  if (m === 'app') return 'app';
+  if (m === 'ai_radar') return 'ai_radar';
+  return 'gadget';
 }
 
 export async function reviewArticle(articleData: object): Promise<ReviewResult> {

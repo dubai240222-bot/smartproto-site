@@ -105,6 +105,8 @@
     "DISCOVERY_UNRESOLVED": 1,
     "note": "PRIMARY_ORIGIN is not counted as failed resolve"
   },
-  "recommendation": "Normalized Astra stays strong on facts (not Verge drama). Do NOT merge PR #5 until 065D reviewed; AI radar not live yet.",
-  "statusHint": "DONE"
+  "recommendation": "Normalized Astra stays strong on facts (not Verge drama). Do NOT merge PR #5 until owner reviews 065C+065D together; AI radar not live yet. READY TO MERGE AI RADAR: NO (wait for explicit go).",
+  "statusHint": "DONE",
+  "pr5": "OPEN draft — do not merge alone",
+  "pr7": "MERGED into main @ 3fd359d2f4bf91f9575315cd3ff8c5988835ad7b"
 }

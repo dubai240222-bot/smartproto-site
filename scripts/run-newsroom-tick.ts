@@ -34,6 +34,11 @@ import { scoutArticle, SCOUT_SCORE_THRESHOLD } from '../src/lib/ai/scout';
 import { reviewArticle } from '../src/lib/ai/reviewer';
 import { writeDraft, type DraftFormat } from '../src/lib/ai/editor';
 import { hardRejectTopic, looksBuyableGadget, isAiOrInventionAlert } from '../src/lib/ai/hard-reject';
+import {
+  collectAiRadarCandidates,
+  normalizeAiRadarCandidates,
+} from '../src/lib/ai/ai-radar';
+import type { EditorialMode } from '../src/lib/ai/hard-reject';
 import { filterRemovedArticles, isRemovedSlug } from '../src/lib/removed-slugs';
 import { stampAuthorForPipeline } from '../src/lib/authors';
 import { toPublicCategory, toPublicTags } from '../src/lib/public-labels';
@@ -98,7 +103,7 @@ interface JournalEntry {
   scoutScore?: number;
   reason?: string;
   slug?: string;
-  channel?: 'china-qwen' | 'rss';
+  channel?: 'china-qwen' | 'rss' | 'ai-radar';
   /** SP-A-050 — which independent cycle published this */
   cycle?: CycleType;
 }
@@ -895,6 +900,89 @@ async function publishRssOnce(opts: {
     console.log(chalk.gray(`  pre-rank ${row.cheap}: [${row.sourceName}] ${row.title.slice(0, 70)}`));
   }
 
+  // SP-A-065C/065D — separate AI radar intake → shared Scout (normalized EVENT RECORD).
+  type PoolItem = RssItem & {
+    scoutMode?: EditorialMode;
+    primaryStatus?: string;
+    channelHint?: 'rss' | 'ai-radar';
+  };
+  let mergedPool: PoolItem[] = scoutPool.pool.map((p) => ({
+    ...p,
+    scoutMode: 'gadget' as EditorialMode,
+    channelHint: 'rss' as const,
+  }));
+  let aiRadarBest: string = '(none)';
+  const aiRadarEnabled = process.env.SMARTPROTO_AI_RADAR_ENABLED !== 'false';
+  if (aiRadarEnabled) {
+    try {
+      console.log(chalk.bold('— Channel C: AI Early Warning radar (separate intake) —'));
+      const {
+        candidates: aiCands,
+        primaryPool,
+        resolveStats,
+        perSource: aiPerSource,
+      } = await collectAiRadarCandidates({ limitPerSource: 12 });
+      const normalized = normalizeAiRadarCandidates(aiCands, primaryPool);
+      const strong = normalized
+        .filter((n) => n.priority === 'high' || n.priority === 'medium')
+        .slice(0, 4);
+      console.log(
+        chalk.gray(
+          `AI_RADAR raw=${aiCands.length} normalized=${normalized.length} strong=${strong.length} ` +
+            `PRIMARY_ORIGIN=${resolveStats.primaryOrigin} DISCOVERY_WITH_PRIMARY=${resolveStats.discoveryWithPrimary} DISCOVERY_UNRESOLVED=${resolveStats.discoveryUnresolved}`,
+        ),
+      );
+      console.log(chalk.gray(`AI_RADAR perSource: ${JSON.stringify(aiPerSource)}`));
+      if (strong[0]) {
+        aiRadarBest = `[${strong[0].primaryStatus}] ${strong[0].title.slice(0, 90)} (${strong[0].priority})`;
+        console.log(chalk.cyan(`AI_RADAR best: ${aiRadarBest}`));
+      } else {
+        console.log(chalk.gray('AI_RADAR best: (none this tick)'));
+      }
+      const gadgetUrls = new Set(mergedPool.map((p) => p.url));
+      const aiItems: PoolItem[] = strong
+        .filter((n) => n.url && !gadgetUrls.has(n.url))
+        .map((n) => ({
+          id: `ai-radar:${n.url}`,
+          title: n.title,
+          url: n.url,
+          text: n.event.summaryForScout,
+          publishedAt: new Date().toISOString(),
+          sourceName: n.sourceName.startsWith('AI_RADAR:')
+            ? n.sourceName
+            : `AI_RADAR:${n.sourceName}`,
+          scoutMode: 'ai_radar' as EditorialMode,
+          primaryStatus: n.primaryStatus,
+          channelHint: 'ai-radar' as const,
+        }));
+      // Separate channel seats at front of shared Scout queue (not a second publish path).
+      mergedPool = [...aiItems, ...mergedPool].slice(0, scoutLimit + Math.min(aiItems.length, 3));
+      opts.metrics.candidatesCollected += aiCands.length;
+      console.log(
+        chalk.gray(
+          `Shared Scout pool after AI radar merge: ${mergedPool.length} (ai seats=${aiItems.length})`,
+        ),
+      );
+    } catch (err) {
+      console.log(
+        chalk.yellow(
+          `AI_RADAR collect skipped: ${err instanceof Error ? err.message : String(err)}`,
+        ),
+      );
+    }
+  } else {
+    console.log(chalk.gray('AI_RADAR disabled (SMARTPROTO_AI_RADAR_ENABLED=false)'));
+  }
+
+  console.log(chalk.bold('TICK_TOP5:'));
+  for (const [idx, row] of mergedPool.slice(0, 5).entries()) {
+    console.log(
+      chalk.gray(
+        `  ${idx + 1}. [${row.channelHint || 'rss'}][${row.sourceName}] ${row.title.slice(0, 80)}`,
+      ),
+    );
+  }
+
   const recentArts = (await loadState(opts.journalPath, opts.articlesPath)).articles.slice(0, 10);
   const roboticsStreak = roboticsResearchStreak(recentArts, 2);
   if (roboticsStreak) {
@@ -904,7 +992,6 @@ async function publishRssOnce(opts: {
       ),
     );
   }
-  type PoolItem = (typeof scoutPool.pool)[number];
   const diversityPassers: (DiversityPasser<PoolItem> & {
     scout: Awaited<ReturnType<typeof scoutArticle>>;
   })[] = [];
@@ -916,19 +1003,25 @@ async function publishRssOnce(opts: {
       }
     | null = null;
 
-  const maxAttempts = scoutPool.pool.length;
+  const maxAttempts = mergedPool.length;
   let lastSkip = 'no rss candidate';
+  let diversityDecisionLog = roboticsStreak ? 'pending' : 'n/a (no robotics streak)';
 
   for (let i = 0; i < maxAttempts; i++) {
-    const item = scoutPool.pool[i];
-    console.log(chalk.cyan(`Pick (${i + 1}/${maxAttempts}): [${item.sourceName}] ${item.title}`));
+    const item = mergedPool[i];
+    const mode: EditorialMode = item.scoutMode === 'ai_radar' ? 'ai_radar' : 'gadget';
+    console.log(
+      chalk.cyan(
+        `Pick (${i + 1}/${maxAttempts}): [${item.channelHint || 'rss'}/${mode}][${item.sourceName}] ${item.title}`,
+      ),
+    );
     console.log(chalk.gray(item.url));
 
     try {
       console.log(chalk.gray('Scout...'));
       opts.metrics.aiStarted = true;
       opts.metrics.sentToGemini += 1;
-      const scout = await scoutArticle(item.title, item.text || item.title);
+      const scout = await scoutArticle(item.title, item.text || item.title, mode);
       console.log(`Scout: score=${scout.score} interesting=${scout.interesting} — ${scout.reason}`);
 
       if (!scout.interesting || scout.score < scoutFloor) {
@@ -997,6 +1090,7 @@ async function publishRssOnce(opts: {
       recent: recentArts,
     });
     console.log(chalk.cyan(`SP-A-065F diversity decision: ${decision.reason}`));
+    diversityDecisionLog = decision.reason;
     const full = decision.winner
       ? diversityPassers.find((p) => p.item.url === decision.winner!.item.url)
       : undefined;
@@ -1007,11 +1101,28 @@ async function publishRssOnce(opts: {
         diversityNote: decision.reason,
       };
     }
+  } else if (!roboticsStreak) {
+    diversityDecisionLog = 'n/a (no robotics streak)';
+  } else if (!diversityPassers.length) {
+    diversityDecisionLog = 'robotics streak but no Scout passers';
   }
 
   if (selectedScouted) {
     const item = selectedScouted.item;
     const scout = selectedScouted.scout;
+    const itemMode: EditorialMode = item.scoutMode === 'ai_radar' ? 'ai_radar' : 'gadget';
+    const itemChannel = item.channelHint === 'ai-radar' ? 'ai-radar' : 'rss';
+    const chosenFocus = inferEditorialFocus({
+      title: item.title,
+      text: item.text || item.title,
+      sourceName: item.sourceName,
+      sourceUrl: item.url,
+    });
+    console.log(
+      chalk.cyan(
+        `CHOSEN: focus=${chosenFocus} channel=${itemChannel} mode=${itemMode} score=${scout.score}`,
+      ),
+    );
     try {
       // Article cycle: require stronger wow (score) — interval is min pause, not obligation.
       if (opts.cycle === 'article' && scout.score < 75) {
@@ -1026,6 +1137,7 @@ async function publishRssOnce(opts: {
         url: item.url,
         sourceName: item.sourceName,
         format: opts.format,
+        mode: itemMode,
       };
 
       console.log(chalk.gray('Reviewer...'));
