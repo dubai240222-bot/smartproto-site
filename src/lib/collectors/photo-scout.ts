@@ -25,6 +25,10 @@ import {
   extractPhotoEntityHeuristic,
   type PhotoEntity,
 } from './photo-entity';
+import {
+  extractIthomeImageCandidates,
+  isIthomePageUrl,
+} from './ithome-image-adapter';
 import { getOpenRouterClient, parseJsonObject, clampText } from '../ai/shared';
 
 export interface ScoutImage {
@@ -103,16 +107,13 @@ async function fetchHtml(url: string, timeoutMs = 8000): Promise<string | null> 
 
 function resolveUrl(raw: string, baseUrl: string): string | null {
   try {
-    let cleaned = raw.trim().replace(/^\/\//, 'https://').replace(/&amp;/gi, '&');
+    const cleaned = raw.trim().replace(/^\/\//, 'https://').replace(/&amp;/gi, '&');
     if (!cleaned || cleaned.startsWith('data:')) return null;
     if (/\{width\}|\{height\}|PHN2Zy|image\/svg|\.svg(\?|$)/i.test(cleaned)) return null;
-    // ITHome CDN often appends @s_2,w_820,h_1066 — strip for full asset.
-    cleaned = cleaned.replace(/@[a-z0-9_,.]+$/i, '');
     const href = new URL(cleaned, baseUrl).href.split('#')[0];
     if (!/^https?:\/\//i.test(href)) return null;
     if (IGNORE_SRC_RE.test(href)) return null;
     if (/\.svg(\?|$)/i.test(href) || /\/svg\//i.test(href)) return null;
-    if (/\/images\/v2\/t\.png/i.test(href)) return null;
     return href;
   } catch {
     return null;
@@ -180,31 +181,28 @@ function mineImagesFromHtml(html: string, pageUrl: string, tier: CandidateTier):
   let match: RegExpExecArray | null;
   while ((match = imgRegex.exec(html)) !== null) {
     const attrs = match[1];
-    const fromOriginal = attrs.match(/data-original=(?:"([^"]+)"|'([^']+)')/i);
-    const fromDataSrc = attrs.match(/data-src=(?:"([^"]+)"|'([^']+)')/i);
-    const fromLazy = attrs.match(/data-lazy-src=(?:"([^"]+)"|'([^']+)')/i);
-    const fromSrcset = attrs.match(/srcset=(?:"([^"]+)"|'([^']+)')/i);
-    const fromSrc = attrs.match(/src=(?:"([^"]+)"|'([^']+)')/i);
-    const picked = fromOriginal || fromDataSrc || fromLazy || fromSrcset || fromSrc;
-    if (!picked) continue;
-    let rawSrc = (picked[1] || picked[2] || '').trim();
-    // Only split real srcset lists ("url 1x, url2 2x") — never ITHome "@s_2,w_820" suffixes.
-    if (fromSrcset && !fromOriginal && !fromDataSrc && !fromLazy && rawSrc.includes(',')) {
+    const srcMatch =
+      attrs.match(/data-original=(?:"([^"]+)"|'([^']+)')/i) ||
+      attrs.match(/data-src=(?:"([^"]+)"|'([^']+)')/i) ||
+      attrs.match(/data-lazy-src=(?:"([^"]+)"|'([^']+)')/i) ||
+      attrs.match(/srcset=(?:"([^"]+)"|'([^']+)')/i) ||
+      attrs.match(/src=(?:"([^"]+)"|'([^']+)')/i);
+    if (!srcMatch) continue;
+    let rawSrc = (srcMatch[1] || srcMatch[2] || '').trim();
+    // srcset → largest candidate (comma-separated list only)
+    if (rawSrc.includes(',') && /srcset=/i.test(attrs) && !/data-original=/i.test(attrs)) {
       const parts = rawSrc.split(',').map((p) => p.trim().split(/\s+/)[0]);
       rawSrc = parts[parts.length - 1] || rawSrc;
-    } else if (fromSrcset && !fromOriginal && !fromDataSrc && !fromLazy) {
-      // "url 2x" without comma
+    } else if (/\s+\d+[wx]$/i.test(rawSrc) || /\s+\d+(\.\d+)?x$/i.test(rawSrc)) {
       rawSrc = rawSrc.trim().split(/\s+/)[0];
     }
     const altMatch = attrs.match(/alt=(?:"([^"]*)"|'([^']*)')/i);
-    const titleMatch = attrs.match(/title=(?:"([^"]*)"|'([^']*)')/i);
     const alt = altMatch?.[1] || altMatch?.[2] || '';
-    const titleAttr = titleMatch?.[1] || titleMatch?.[2] || '';
     const before = stripTags(html.slice(Math.max(0, match.index - 280), match.index));
     const after = stripTags(
       html.slice(match.index + match[0].length, match.index + match[0].length + 160),
     );
-    push(rawSrc, `${alt} ${titleAttr} ${before} ${after}`);
+    push(rawSrc, `${alt} ${before} ${after}`);
   }
 
   return out;
@@ -374,7 +372,21 @@ export async function minePhotoCandidates(opts: {
     });
   }
   for (const p of pages) {
-    raw.push(...mineImagesFromHtml(p.html, p.url, p.tier));
+    if (isIthomePageUrl(p.url)) {
+      // ITHome-specific URL harvest — no product decisions here.
+      const adapted = extractIthomeImageCandidates(p.html, p.url);
+      notes.push(`ithome-adapter ${p.url}: ${adapted.length} normalized`);
+      for (const a of adapted) {
+        raw.push({
+          url: a.url,
+          context: a.context || opts.title,
+          pageUrl: p.url,
+          tier: p.tier,
+        });
+      }
+    } else {
+      raw.push(...mineImagesFromHtml(p.html, p.url, p.tier));
+    }
   }
 
   // Dedup + soft entity filter + quality gate
