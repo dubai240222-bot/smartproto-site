@@ -180,26 +180,31 @@ function mineImagesFromHtml(html: string, pageUrl: string, tier: CandidateTier):
   let match: RegExpExecArray | null;
   while ((match = imgRegex.exec(html)) !== null) {
     const attrs = match[1];
-    const srcMatch =
-      attrs.match(/data-original=(?:"([^"]+)"|'([^']+)')/i) ||
-      attrs.match(/data-src=(?:"([^"]+)"|'([^']+)')/i) ||
-      attrs.match(/data-lazy-src=(?:"([^"]+)"|'([^']+)')/i) ||
-      attrs.match(/srcset=(?:"([^"]+)"|'([^']+)')/i) ||
-      attrs.match(/src=(?:"([^"]+)"|'([^']+)')/i);
-    if (!srcMatch) continue;
-    let rawSrc = (srcMatch[1] || srcMatch[2] || '').trim();
-    // srcset → largest candidate
-    if (rawSrc.includes(',')) {
+    const fromOriginal = attrs.match(/data-original=(?:"([^"]+)"|'([^']+)')/i);
+    const fromDataSrc = attrs.match(/data-src=(?:"([^"]+)"|'([^']+)')/i);
+    const fromLazy = attrs.match(/data-lazy-src=(?:"([^"]+)"|'([^']+)')/i);
+    const fromSrcset = attrs.match(/srcset=(?:"([^"]+)"|'([^']+)')/i);
+    const fromSrc = attrs.match(/src=(?:"([^"]+)"|'([^']+)')/i);
+    const picked = fromOriginal || fromDataSrc || fromLazy || fromSrcset || fromSrc;
+    if (!picked) continue;
+    let rawSrc = (picked[1] || picked[2] || '').trim();
+    // Only split real srcset lists ("url 1x, url2 2x") — never ITHome "@s_2,w_820" suffixes.
+    if (fromSrcset && !fromOriginal && !fromDataSrc && !fromLazy && rawSrc.includes(',')) {
       const parts = rawSrc.split(',').map((p) => p.trim().split(/\s+/)[0]);
       rawSrc = parts[parts.length - 1] || rawSrc;
+    } else if (fromSrcset && !fromOriginal && !fromDataSrc && !fromLazy) {
+      // "url 2x" without comma
+      rawSrc = rawSrc.trim().split(/\s+/)[0];
     }
     const altMatch = attrs.match(/alt=(?:"([^"]*)"|'([^']*)')/i);
+    const titleMatch = attrs.match(/title=(?:"([^"]*)"|'([^']*)')/i);
     const alt = altMatch?.[1] || altMatch?.[2] || '';
+    const titleAttr = titleMatch?.[1] || titleMatch?.[2] || '';
     const before = stripTags(html.slice(Math.max(0, match.index - 280), match.index));
     const after = stripTags(
       html.slice(match.index + match[0].length, match.index + match[0].length + 160),
     );
-    push(rawSrc, `${alt} ${before} ${after}`);
+    push(rawSrc, `${alt} ${titleAttr} ${before} ${after}`);
   }
 
   return out;
