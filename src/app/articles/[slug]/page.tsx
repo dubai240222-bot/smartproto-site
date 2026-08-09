@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Clock } from 'lucide-react';
 import { getAllArticles, getArticleBySlug, type Article } from '@/data/articles';
-import { MediaPlaceholder } from '@/components/media-placeholder';
+import { MediaPlaceholder, MediaThumb } from '@/components/media-placeholder';
 import { InterestRating } from '@/components/interest-rating';
 import { formatPublishedAt, getRelatedArticles } from '@/lib/article-utils';
 import { formatAuthorCredit, resolveAuthorForArticle } from '@/lib/authors';
@@ -184,11 +184,15 @@ export default async function ArticlePage({
 
   const contentBlocks = article.content.split('\n\n').filter(Boolean);
 
+  // SP-A-060: desktop container widened from 680px to a modern editorial
+  // width; body copy still caps out at a comfortable reading measure inside
+  // the left column, right rail holds the visual/related column so wide
+  // screens don't just show empty gutters either side of a narrow strip.
   return (
     <main className="min-h-screen bg-[var(--bg)] text-[var(--text)] py-8 transition-colors">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Navigation back button */}
-        <div className="mb-6 max-w-[680px] mx-auto">
+        <div className="mb-6 max-w-5xl mx-auto">
           <Link
             href="/"
             className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--muted)] hover:text-[var(--text)] transition"
@@ -198,20 +202,20 @@ export default async function ArticlePage({
           </Link>
         </div>
 
-        {/* Quiet center column (max 680px) */}
-        <article className="max-w-[680px] mx-auto">
+        {/* Wide editorial column (was 680px) */}
+        <article className="max-w-5xl mx-auto">
           {/* 1. Category */}
           <div className="text-xs font-bold uppercase tracking-wider text-[var(--accent)]">
             {article.category}
           </div>
 
           {/* 2. Title */}
-          <h1 className="mt-3 font-serif text-3xl font-bold leading-tight text-[var(--text)] sm:text-4xl lg:text-5xl">
+          <h1 className="mt-3 max-w-3xl font-serif text-3xl font-bold leading-tight text-[var(--text)] sm:text-4xl lg:text-5xl">
             {article.title}
           </h1>
 
           {/* 3. Lead */}
-          <p className="mt-4 text-lg leading-relaxed text-[var(--muted)]">
+          <p className="mt-4 max-w-3xl text-lg leading-relaxed text-[var(--muted)]">
             {article.summary}
           </p>
 
@@ -225,104 +229,121 @@ export default async function ArticlePage({
             </span>
           </div>
 
-          {/* 5. Cover/Image placeholder */}
+          {/* 5. Hero image — full width of the wide column, or a clean
+              category placeholder when no image passed the quality gate
+              (no image beats a bad screenshot). */}
           <div className="my-8">
             <MediaPlaceholder
               category={article.category}
               title={article.title}
               imageUrl={article.imageUrl}
               description="Иллюстрация к материалу"
+              aspectRatio="aspect-[16/8]"
             />
           </div>
 
-          {/* 6. Table of Contents (TOC) - ONLY if at least 3 headings */}
-          {showToc && (
-            <div className="mb-8 rounded border border-[var(--border)] bg-[var(--surface)] p-4 text-xs">
-              <h2 className="font-serif text-sm font-bold text-[var(--text)] mb-2">
-                Содержание
-              </h2>
-              <ul className="space-y-1.5 pl-4 list-disc text-[var(--muted)]">
-                {headings.map((h) => (
-                  <li key={h.id}>
-                    <a
-                      href={`#${h.id}`}
-                      className="text-[var(--text)] hover:text-[var(--accent)] hover:underline"
-                    >
-                      {h.text}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          {/* Two-column body: text (~68%) + visual/related rail (~32%).
+              Collapses to a single column on mobile/tablet. */}
+          <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_336px]">
+            <div className="min-w-0 max-w-3xl">
+              {/* 6. Table of Contents (TOC) - ONLY if at least 3 headings */}
+              {showToc && (
+                <div className="mb-8 rounded border border-[var(--border)] bg-[var(--surface)] p-4 text-xs">
+                  <h2 className="font-serif text-sm font-bold text-[var(--text)] mb-2">
+                    Содержание
+                  </h2>
+                  <ul className="space-y-1.5 pl-4 list-disc text-[var(--muted)]">
+                    {headings.map((h) => (
+                      <li key={h.id}>
+                        <a
+                          href={`#${h.id}`}
+                          className="text-[var(--text)] hover:text-[var(--accent)] hover:underline"
+                        >
+                          {h.text}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
-          {/* 7. Article Body */}
-          <div className="article-body">
-            {contentBlocks.map((block, index) => renderBlock(block, index))}
-          </div>
+              {/* 7. Article Body */}
+              <div className="article-body">
+                {contentBlocks.map((block, index) => renderBlock(block, index))}
+              </div>
 
-          {/* Post-read reader feedback (SP-A-052) */}
-          <InterestRating
-            slug={article.slug}
-            title={article.title}
-            summary={article.summary}
-          />
+              {/* Post-read reader feedback (SP-A-052) */}
+              <InterestRating
+                slug={article.slug}
+                title={article.title}
+                summary={article.summary}
+              />
 
-          {/* 8. Tags / Topic */}
-          <div className="mt-8 pt-4 border-t border-[var(--border)] flex items-center justify-between text-xs text-[var(--muted)]">
-            <span>
-              Категория: <strong className="text-[var(--text)] font-semibold">{article.category}</strong>
-            </span>
-          </div>
-
-          {/* 9. Source Block */}
-          {article.sourceUrl && (
-            <div className="mt-8 rounded border border-[var(--border)] bg-[var(--surface)] p-5">
-              <h3 className="font-serif text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-                Первоисточник
-              </h3>
-              <div className="mt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <span className="text-sm font-medium text-[var(--text)]">
-                  {getDomain(article.sourceUrl)}
+              {/* 8. Tags / Topic */}
+              <div className="mt-8 pt-4 border-t border-[var(--border)] flex items-center justify-between text-xs text-[var(--muted)]">
+                <span>
+                  Категория: <strong className="text-[var(--text)] font-semibold">{article.category}</strong>
                 </span>
-                <a
-                  href={article.sourceUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent)] hover:underline"
-                >
-                  Открыть оригинал ↗
-                </a>
               </div>
-            </div>
-          )}
 
-          {/* 10. Related Articles */}
-          {relatedArticles.length > 0 && (
-            <section className="mt-12 pt-8 border-t border-[var(--border)]">
-              <h2 className="font-serif text-2xl font-bold text-[var(--text)] mb-6">
-                Читайте также
-              </h2>
-              <div className="space-y-6">
-                {relatedArticles.map((rel) => (
-                  <div key={rel.slug} className="pb-6 border-b border-[var(--border)] last:border-b-0">
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--accent)]">
-                      {rel.category}
-                    </div>
-                    <h3 className="mt-1 font-serif text-lg font-bold text-[var(--text)] hover:text-[var(--accent)]">
-                      <Link href={`/articles/${rel.slug}`}>{rel.title}</Link>
-                    </h3>
-                    <p className="mt-1 text-xs text-[var(--muted)] line-clamp-2">
-                      {rel.summary}
-                    </p>
-                    <div className="mt-2 text-[10px] text-[var(--muted)]">
-                      {resolveAuthorForArticle(rel).name} · {formatPublishedAt(rel.publishedAt)} • {rel.readTime}
-                    </div>
+              {/* 9. Source Block */}
+              {article.sourceUrl && (
+                <div className="mt-8 rounded border border-[var(--border)] bg-[var(--surface)] p-5">
+                  <h3 className="font-serif text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+                    Первоисточник
+                  </h3>
+                  <div className="mt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <span className="text-sm font-medium text-[var(--text)]">
+                      {getDomain(article.sourceUrl)}
+                    </span>
+                    <a
+                      href={article.sourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent)] hover:underline"
+                    >
+                      Открыть оригинал ↗
+                    </a>
                   </div>
-                ))}
-              </div>
-            </section>
-          )}
+                </div>
+              )}
+            </div>
+
+            {/* 10. Right rail — related articles (visual column). On mobile
+                this simply stacks below the body since the grid collapses
+                to one column; on desktop it sits alongside the text and
+                sticks while scrolling. Reserved for a 2nd/3rd product photo
+                slot once the image pipeline collects more than one shot. */}
+            {relatedArticles.length > 0 && (
+              <aside className="lg:sticky lg:top-20 lg:self-start">
+                <h2 className="font-serif text-lg font-bold text-[var(--text)] mb-4">
+                  Читайте также
+                </h2>
+                <div className="space-y-5">
+                  {relatedArticles.map((rel) => (
+                    <Link
+                      key={rel.slug}
+                      href={`/articles/${rel.slug}`}
+                      className="group flex gap-3 border-b border-[var(--border)] pb-5 last:border-b-0"
+                    >
+                      <MediaThumb imageUrl={rel.imageUrl} title={rel.title} className="h-16 w-16 aspect-square" />
+                      <div className="min-w-0">
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--accent)]">
+                          {rel.category}
+                        </div>
+                        <h3 className="mt-0.5 font-serif text-sm font-bold leading-snug text-[var(--text)] group-hover:text-[var(--accent)] line-clamp-2">
+                          {rel.title}
+                        </h3>
+                        <div className="mt-1 text-[10px] text-[var(--muted)]">
+                          {formatPublishedAt(rel.publishedAt)} • {rel.readTime}
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </aside>
+            )}
+          </div>
         </article>
       </div>
     </main>

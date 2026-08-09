@@ -11,6 +11,94 @@
  *    collaborative engineering for software). Avoid gloomy gray tech stock, empty dark rooms, muddy circuits.
  */
 
+/**
+ * SP-A-060 — Image quality gate.
+ *
+ * We have no vision model in this pipeline, so this is a heuristic gate based
+ * on real pixel dimensions (not just the URL/host):
+ *  - reject banner/strip aspect ratios (>2.3:1 or <0.42:1) — this is exactly
+ *    the shape of reposted Weibo/forum screenshots (a header bar + a long
+ *    caption, or a thin wide status-post capture), never a real product photo.
+ *  - reject anything too small to be a usable hero/rail image.
+ * A URL that fails or can't be measured in time is treated as PASS (fail-open)
+ * so a slow/odd host never silently kills a perfectly fine photo — better to
+ * occasionally let a border case through than to strip good photos.
+ */
+const BAD_IMAGE_HOST_RE =
+  /weibocdn\.com|weibo\.com|sinaimg\.cn|(^|\.)x\.com|twimg\.com|(^|\.)reddit\.com|redditmedia\.com|redd\.it|discourse-cdn|forumcdn|imgur\.com\/a\//i;
+
+function readUint16BE(buf: Buffer, offset: number): number {
+  return (buf[offset] << 8) | buf[offset + 1];
+}
+
+function readUint32BE(buf: Buffer, offset: number): number {
+  return buf.readUInt32BE(offset);
+}
+
+/** Minimal PNG (IHDR) / JPEG (SOFn) dimension sniffing — no extra dependency. */
+function sniffImageDimensions(buf: Buffer): { width: number; height: number } | null {
+  // PNG: 8-byte signature, then IHDR chunk with width/height at fixed offsets.
+  if (buf.length > 24 && buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) {
+    return { width: readUint32BE(buf, 16), height: readUint32BE(buf, 20) };
+  }
+  // JPEG: walk markers looking for a Start-Of-Frame segment.
+  if (buf.length > 4 && buf[0] === 0xff && buf[1] === 0xd8) {
+    let offset = 2;
+    while (offset + 9 < buf.length) {
+      if (buf[offset] !== 0xff) {
+        offset += 1;
+        continue;
+      }
+      const marker = buf[offset + 1];
+      if (marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc) {
+        const height = readUint16BE(buf, offset + 5);
+        const width = readUint16BE(buf, offset + 7);
+        if (width > 0 && height > 0) return { width, height };
+      }
+      const segmentLength = readUint16BE(buf, offset + 2);
+      offset += 2 + segmentLength;
+    }
+  }
+  return null;
+}
+
+/**
+ * Fetches only the first bytes of the image (enough for PNG/JPEG headers) and
+ * checks that its shape/size looks like a real product photo, not a reposted
+ * social-media screenshot or UI capture.
+ */
+export async function passesImageQualityGate(url: string): Promise<boolean> {
+  if (!url || !/^https?:\/\//i.test(url)) return true;
+  if (BAD_IMAGE_HOST_RE.test(url)) return false;
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        Range: 'bytes=0-65535',
+      },
+    });
+    clearTimeout(timeoutId);
+    if (!response.ok && response.status !== 206) return true; // fail-open
+
+    const buf = Buffer.from(await response.arrayBuffer());
+    const dims = sniffImageDimensions(buf);
+    if (!dims) return true; // couldn't measure (e.g. WebP/AVIF) — fail-open
+
+    const { width, height } = dims;
+    if (width < 240 || height < 240) return false; // too small to be a real hero/rail photo
+    const ratio = width / height;
+    if (ratio > 2.3 || ratio < 0.42) return false; // banner/strip shape == reposted screenshot
+
+    return true;
+  } catch {
+    return true; // network/timeout — fail-open, never block publish on a flaky fetch
+  }
+}
+
 function sanitizeUrl(urlStr: string): string {
   if (!urlStr || typeof urlStr !== 'string') return '';
   return urlStr

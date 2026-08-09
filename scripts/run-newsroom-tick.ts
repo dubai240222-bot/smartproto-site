@@ -17,7 +17,7 @@ import { existsSync, readFileSync, writeFileSync, unlinkSync } from 'node:fs';
 import dotenv from 'dotenv';
 import chalk from 'chalk';
 import { fetchRssFeed, type RssItem } from '../src/lib/collectors/rss';
-import { extractArticleImage } from '../src/lib/collectors/image-extractor';
+import { extractArticleImage, passesImageQualityGate } from '../src/lib/collectors/image-extractor';
 import { scoutArticle, SCOUT_SCORE_THRESHOLD } from '../src/lib/ai/scout';
 import { reviewArticle } from '../src/lib/ai/reviewer';
 import { writeDraft, type DraftFormat } from '../src/lib/ai/editor';
@@ -554,10 +554,16 @@ async function tryChinaPublishOnce(opts: {
       continue;
     }
 
-    const imageUrl = (dossier.imageUrl || pageImage || c.imageUrl || '').trim();
+    let imageUrl = (dossier.imageUrl || pageImage || c.imageUrl || '').trim();
     if (!imageUrl || /unsplash\.com/i.test(imageUrl)) {
       console.log(chalk.yellow('No authentic imageUrl — skip China candidate'));
       continue;
+    }
+    // SP-A-060: reject reposted-screenshot-shaped images (Weibo/forum banners),
+    // publish without an image rather than with a bad one.
+    if (!(await passesImageQualityGate(imageUrl))) {
+      console.log(chalk.yellow('Image failed quality gate (screenshot/banner shape) — publishing without image'));
+      imageUrl = '';
     }
 
     const productKey = normalizeProductIdentity(
@@ -616,7 +622,7 @@ async function tryChinaPublishOnce(opts: {
         sourceUrl: c.sourceUrl,
         publishedAt,
         readTime: `${Math.max(1, Math.ceil(wc / 150))} мин`,
-        imageUrl,
+        ...(imageUrl ? { imageUrl } : {}),
         ...stampAuthorForPipeline('china-qwen', { sourceUrl: c.sourceUrl, slug }),
       };
 
@@ -894,6 +900,11 @@ async function publishRssOnce(opts: {
         if (!imageUrl) imageUrl = (await extractArticleImage(item.url, draft.title)) || undefined;
       } catch {
         /* optional */
+      }
+      // SP-A-060: never ship a screenshot-shaped image — no image beats a bad one.
+      if (imageUrl && !(await passesImageQualityGate(imageUrl))) {
+        console.log(chalk.yellow('Image failed quality gate (screenshot/banner shape) — publishing without image'));
+        imageUrl = undefined;
       }
 
       const slug = slugify(item.title);
