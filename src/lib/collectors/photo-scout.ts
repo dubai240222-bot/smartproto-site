@@ -128,6 +128,13 @@ function resolveUrl(raw: string, baseUrl: string): string | null {
   }
 }
 
+/** Homepage marketing tiles / promo art — never claim as exact product. */
+function isMarketingHomepageArt(url: string): boolean {
+  return /\/v\/home\/|promo_|banner|masthead|hero_back|at_work|trade\.in|back-to-school/i.test(
+    url,
+  );
+}
+
 function looksLikeRasterPhoto(url: string): boolean {
   if (/\{width\}|\{height\}|\.svg(\?|$)|data:image\/svg|PHN2Zy|\/api\/media\//i.test(url)) return false;
   if (/logo|symbol|typography|swatch|favicon|sprite|icon[_-]|masthead|nav-|navigation|banner/i.test(url)) {
@@ -410,6 +417,10 @@ export async function minePhotoCandidates(opts: {
       rejected.push({ url: c.url, reason: 'non-raster / banner / svg template' });
       continue;
     }
+    if (isMarketingHomepageArt(c.url)) {
+      rejected.push({ url: c.url, reason: 'homepage/promo marketing art' });
+      continue;
+    }
     if (!softEntityContextOk(c, opts.entity)) {
       rejected.push({ url: c.url, reason: 'entity mismatch / screenshot markers' });
       continue;
@@ -541,10 +552,12 @@ export async function editPhotoSelection(opts: {
     console.log(
       `[photo-editor] AI failed, conservative heuristic: ${err instanceof Error ? err.message : String(err)}`,
     );
-    // Conservative: only top-tier raster URLs that look like product shots, max 2.
+    // Conservative: only top-tier product-looking URLs. NEVER fall back to "any raster"
+    // (that falsely claimed Apple homepage promos as exact). Empty = honest NO IMAGE.
     const safe = opts.candidates.filter(
       (c) =>
         looksLikeRasterPhoto(c.url) &&
+        !isMarketingHomepageArt(c.url) &&
         (c.tier === 'official' ||
           c.tier === 'newsroom' ||
           c.tier === 'trusted_media' ||
@@ -553,12 +566,20 @@ export async function editPhotoSelection(opts: {
           c.url + c.context,
         ),
     );
-    const picks = (safe.length ? safe : opts.candidates.filter((c) => looksLikeRasterPhoto(c.url)))
-      .slice(0, 2)
-      .map((c, i) => ({
-        url: c.url,
-        role: (['hero', 'secondary'] as ScoutImage['role'][])[i],
-      }));
+    if (!safe.length) {
+      return {
+        picks: [],
+        rejected: opts.candidates.map((c) => ({
+          url: c.url,
+          reason: 'heuristic: no safe exact product shot',
+        })),
+        reason: 'conservative heuristic after AI error — no safe exact',
+      };
+    }
+    const picks = safe.slice(0, 2).map((c, i) => ({
+      url: c.url,
+      role: (['hero', 'secondary'] as ScoutImage['role'][])[i],
+    }));
     return { picks, rejected: [], reason: 'conservative heuristic after AI error' };
   }
 }
@@ -660,13 +681,31 @@ export async function resolveArticlePhotos(opts: {
   });
 
   const notes: string[] = [];
+  const looksRoundup = /анонс|обзор новинок|this week|round.?up|лучшие|подборк|смартфоны:\s*анонс/i.test(
+    `${opts.title}\n${opts.text.slice(0, 400)}`,
+  );
+  // Exact requires a concrete model/object — brand-only (e.g. "Apple") is not enough.
+  const hasConcreteProduct = Boolean(
+    entity.model ||
+      (entity.object &&
+        entity.objectType &&
+        !/^(apple|google|samsung|huawei|xiaomi|vivo|oppo|honor|meta)$/i.test(entity.object.trim())),
+  );
   const canAttemptExact = Boolean(entity.brand || entity.company || entity.matchTokens.length);
-  // Rumors without a confirmed model: skip EXACT, allow brand/category only.
-  const allowExact = canAttemptExact && !(entity.status === 'rumor' && !entity.model);
+  // Rumors without a confirmed model / roundups: skip EXACT (never fake exactness).
+  const allowExact =
+    canAttemptExact &&
+    hasConcreteProduct &&
+    !looksRoundup &&
+    !(entity.status === 'rumor' && !entity.model);
 
   let selected: ScoutImage[] = [];
   let candidatesFound = 0;
   let candidatesRejected: { url: string; reason: string }[] = [];
+
+  if (looksRoundup) {
+    notes.push('roundup/multi-topic — skip EXACT (never fake exactness)');
+  }
 
   if (allowExact) {
     const mined = await minePhotoCandidates({
@@ -697,19 +736,18 @@ export async function resolveArticlePhotos(opts: {
       selected = downloaded.map((s) => ({ ...s, matchLevel: 'exact', label: undefined }));
       notes.push(`exact downloaded=${selected.length}`);
     }
-  } else {
+  } else if (!looksRoundup) {
     notes.push(
       entity.status === 'rumor' && !entity.model
         ? 'rumor without confirmed model — skip EXACT'
-        : 'weak entity — skip EXACT',
+        : !hasConcreteProduct
+          ? 'brand-only entity — skip EXACT'
+          : 'weak entity — skip EXACT',
     );
   }
 
   // Brand / series fallback — same page & official sources, NEVER labeled exact.
   if (!selected.length && (entity.brand || entity.company)) {
-    const looksRoundup = /анонс|обзор новинок|this week|round.?up|лучшие|подборк/i.test(
-      `${opts.title}\n${opts.text.slice(0, 400)}`,
-    );
     if (looksRoundup) {
       notes.push('roundup/multi-topic — skip brand/series, prefer category');
     } else {
@@ -740,7 +778,7 @@ export async function resolveArticlePhotos(opts: {
     const brandSafe = mined.candidates.filter((c) => {
       if (!looksLikeRasterPhoto(c.url)) return false;
       // Homepage marketing tiles are not safe brand product illustrations.
-      if (/\/v\/home\/|promo_|banner|masthead|hero_back|at_work|trade.in/i.test(c.url)) return false;
+      if (isMarketingHomepageArt(c.url)) return false;
       if (!['official', 'newsroom', 'presskit', 'lab', 'source_article', 'trusted_media'].includes(c.tier)) {
         return false;
       }
