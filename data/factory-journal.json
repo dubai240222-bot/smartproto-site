@@ -9,7 +9,8 @@
     "https://newatlas.com/medical-ai/ai-medical-scribe-consent-raises-patient-rights-concerns/",
     "https://newatlas.com/wearables/tecno-ai-glasses-smart-camera/",
     "https://newatlas.com/aircraft/meet-halo-civilian-version-thunder-loyal-wingman/",
-    "https://www.ithome.com/0/987/491.htm"
+    "https://www.ithome.com/0/987/491.htm",
+    "https://www.ithome.com/0/987/489.htm"
   ],
   "processedIds": [
     "https://www.yankodesign.com/?p=639735",
@@ -21,7 +22,8 @@
     "https://newatlas.com/medical-ai/ai-medical-scribe-consent-raises-patient-rights-concerns/",
     "https://newatlas.com/wearables/tecno-ai-glasses-smart-camera/",
     "https://newatlas.com/aircraft/meet-halo-civilian-version-thunder-loyal-wingman/",
-    "china-mini"
+    "china-mini",
+    "china-nvme"
   ],
   "entries": [
     {
@@ -168,6 +170,17 @@
       "slug": "china-mini",
       "channel": "china-qwen",
       "cycle": "article"
+    },
+    {
+      "id": "china-nvme",
+      "url": "https://www.ithome.com/0/987/489.htm",
+      "title": "Внешний корпус NVMe с дисплеем и защитой от сбоев питания",
+      "processedAt": "2026-08-09T02:53:28.933Z",
+      "status": "published",
+      "reason": "editorial gadget bar (source-backed)",
+      "slug": "china-nvme",
+      "channel": "china-qwen",
+      "cycle": "news"
     }
   ]
 }
