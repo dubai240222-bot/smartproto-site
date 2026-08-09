@@ -24,6 +24,12 @@ import {
 } from '../src/lib/collectors/source-registry';
 import { buildScoutPool } from '../src/lib/ai/candidate-prerank';
 import { resolveArticlePhotos } from '../src/lib/collectors/photo-scout';
+import {
+  inferEditorialFocus,
+  pickDiversityWinner,
+  roboticsResearchStreak,
+  type DiversityPasser,
+} from '../src/lib/newsroom/diversity-guard';
 import { scoutArticle, SCOUT_SCORE_THRESHOLD } from '../src/lib/ai/scout';
 import { reviewArticle } from '../src/lib/ai/reviewer';
 import { writeDraft, type DraftFormat } from '../src/lib/ai/editor';
@@ -51,6 +57,23 @@ async function maybeSyncToSqlite(article: Record<string, unknown>): Promise<void
   if (process.env.ARTICLES_STORE !== 'sqlite') return;
   const { upsertArticle } = await import('../src/lib/data-store/articles-repo');
   upsertArticle(article as import('../src/lib/data-store/articles-repo').StoredArticle);
+  // Existing live columns (no schema change) — best-effort match labels.
+  if (article.imageMatchLevel || article.imageLabel) {
+    try {
+      const { getDb } = await import('../src/lib/data-store/db');
+      getDb()
+        .prepare(
+          'UPDATE articles SET imageMatchLevel = coalesce(?, imageMatchLevel), imageLabel = coalesce(?, imageLabel) WHERE slug = ?',
+        )
+        .run(
+          (article.imageMatchLevel as string) || null,
+          (article.imageLabel as string) || null,
+          String(article.slug || ''),
+        );
+    } catch {
+      /* columns may be absent outside Hetzner */
+    }
+  }
 }
 
 export type CycleType = 'news' | 'article';
@@ -621,10 +644,17 @@ async function tryChinaPublishOnce(opts: {
           chalk.gray(
             `[photo-v2] entity=${report.entity.brand || report.entity.company || '?'} ` +
               `object=${report.entity.object || '?'} candidates=${report.candidatesFound} ` +
-              `selected=${report.selected.length} notes=${report.notes.join('; ')}`,
+              `selected=${report.selected.length} match=${report.imageMatchLevel || 'n/a'} ` +
+              `notes=${report.notes.join('; ')}`,
           ),
         );
         images = report.selected;
+        if (report.imageMatchLevel) {
+          (opts as any)._lastPhotoMeta = {
+            imageMatchLevel: report.imageMatchLevel,
+            imageLabel: report.imageLabel,
+          };
+        }
       } catch (err) {
         console.log(
           chalk.yellow(
@@ -865,6 +895,27 @@ async function publishRssOnce(opts: {
     console.log(chalk.gray(`  pre-rank ${row.cheap}: [${row.sourceName}] ${row.title.slice(0, 70)}`));
   }
 
+  const recentArts = (await loadState(opts.journalPath, opts.articlesPath)).articles.slice(0, 10);
+  const roboticsStreak = roboticsResearchStreak(recentArts, 2);
+  if (roboticsStreak) {
+    console.log(
+      chalk.yellow(
+        'SP-A-065F diversity: last 2 publishes are robotics/research — prefer other focus unless robotics leads by ≥10',
+      ),
+    );
+  }
+  type PoolItem = (typeof scoutPool.pool)[number];
+  const diversityPassers: (DiversityPasser<PoolItem> & {
+    scout: Awaited<ReturnType<typeof scoutArticle>>;
+  })[] = [];
+  let selectedScouted:
+    | {
+        item: PoolItem;
+        scout: Awaited<ReturnType<typeof scoutArticle>>;
+        diversityNote?: string;
+      }
+    | null = null;
+
   const maxAttempts = scoutPool.pool.length;
   let lastSkip = 'no rss candidate';
 
@@ -890,11 +941,83 @@ async function publishRssOnce(opts: {
         continue;
       }
 
+      // SP-A-065F: on robotics streak, collect Scout passers first; publish after selection.
+      if (roboticsStreak) {
+        const focus = inferEditorialFocus({
+          title: item.title,
+          text: item.text || item.title,
+          sourceName: item.sourceName,
+          sourceUrl: item.url,
+        });
+        diversityPassers.push({ item, score: scout.score, focus, scout });
+        console.log(chalk.gray(`diversity passer: focus=${focus} score=${scout.score}`));
+        const hasOther = diversityPassers.some((p) => p.focus !== 'robotics_research');
+        const hasRobot = diversityPassers.some((p) => p.focus === 'robotics_research');
+        if (hasOther && hasRobot) {
+          console.log(chalk.gray('diversity: robotics + other focus passers ready'));
+          break;
+        }
+        continue;
+      }
+
+      // Non-streak: hand off to unified publish path below.
+      selectedScouted = { item, scout };
+      break;
+
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(chalk.red(`RSS candidate error: ${msg}`));
+      if (!opts.journal.processedUrls.includes(item.url)) {
+        opts.journal.processedUrls.push(item.url);
+      }
+      if (!opts.journal.processedIds.includes(item.id)) {
+        opts.journal.processedIds.push(item.id);
+      }
+      opts.urls.add(item.url);
+      opts.journal.entries.push({
+        id: item.id,
+        url: item.url,
+        title: item.title,
+        processedAt: new Date().toISOString(),
+        status: 'error',
+        reason: msg,
+        channel: 'rss',
+      });
+      await writeFile(opts.journalPath, JSON.stringify(opts.journal, null, 2) + '\n', 'utf8');
+      lastSkip = `rss error: ${msg}`;
+      // Try next candidate in this tick (still max 1 publish).
+      continue;
+    }
+  }
+
+  // SP-A-065F: diversity only selects the winner; publish uses one shared path.
+  if (!selectedScouted && roboticsStreak && diversityPassers.length) {
+    const decision = pickDiversityWinner({
+      passers: diversityPassers.map((p) => ({ item: p.item, score: p.score, focus: p.focus })),
+      recent: recentArts,
+    });
+    console.log(chalk.cyan(`SP-A-065F diversity decision: ${decision.reason}`));
+    const full = decision.winner
+      ? diversityPassers.find((p) => p.item.url === decision.winner!.item.url)
+      : undefined;
+    if (full) {
+      selectedScouted = {
+        item: full.item,
+        scout: full.scout,
+        diversityNote: decision.reason,
+      };
+    }
+  }
+
+  if (selectedScouted) {
+    const item = selectedScouted.item;
+    const scout = selectedScouted.scout;
+    try {
       // Article cycle: require stronger wow (score) — interval is min pause, not obligation.
       if (opts.cycle === 'article' && scout.score < 75) {
         console.log(chalk.yellow(`Article cycle: not worthy enough (wow ${scout.score} < 75)`));
         lastSkip = 'not worthy for article cycle';
-        continue;
+        return false;
       }
 
       const sourcePayload = {
@@ -928,7 +1051,7 @@ async function publishRssOnce(opts: {
           );
           opts.urls.add(item.url);
           lastSkip = 'reviewer reject';
-          continue;
+          return false;
         }
       }
 
@@ -945,7 +1068,7 @@ async function publishRssOnce(opts: {
         await markRejected(opts.journal, opts.journalPath, item, 'editor hard-reject', scout.score);
         opts.urls.add(item.url);
         lastSkip = 'editor hard-reject';
-        continue;
+        return false;
       }
 
       const wc = wordCount(draft.text);
@@ -953,7 +1076,7 @@ async function publishRssOnce(opts: {
       if (wc < minWords) {
         console.log(chalk.yellow(`Draft too short for ${opts.format} (${wc} < ${minWords})`));
         lastSkip = 'draft too short';
-        continue;
+        return false;
       }
 
       let imageUrl = item.imageUrl;
@@ -974,7 +1097,7 @@ async function publishRssOnce(opts: {
         await markRejected(opts.journal, opts.journalPath, item, `slug blocked: ${slug}`, scout.score);
         opts.urls.add(item.url);
         lastSkip = `slug blocked: ${slug}`;
-        continue;
+        return false;
       }
       const draftProductKey = normalizeProductIdentity(draft.title);
       const sourceProductKey = normalizeProductIdentity(item.title);
@@ -996,7 +1119,7 @@ async function publishRssOnce(opts: {
         );
         opts.urls.add(item.url);
         lastSkip = 'product-identity duplicate';
-        continue;
+        return false;
       }
 
       if (!acquirePublishLock()) {
@@ -1023,7 +1146,7 @@ async function publishRssOnce(opts: {
           );
           opts.urls.add(item.url);
           lastSkip = 'cross-cycle product-identity';
-          continue;
+          return false;
         }
 
         const publishedAt = new Date().toISOString();
@@ -1042,10 +1165,17 @@ async function publishRssOnce(opts: {
             chalk.gray(
               `[photo-v2] entity=${report.entity.brand || report.entity.company || '?'} ` +
                 `object=${report.entity.object || '?'} candidates=${report.candidatesFound} ` +
-                `selected=${report.selected.length} notes=${report.notes.join('; ')}`,
+                `selected=${report.selected.length} match=${report.imageMatchLevel || 'n/a'} ` +
+                `notes=${report.notes.join('; ')}`,
             ),
           );
           images = report.selected;
+          if (report.imageMatchLevel) {
+            (opts as any)._lastPhotoMeta = {
+              imageMatchLevel: report.imageMatchLevel,
+              imageLabel: report.imageLabel,
+            };
+          }
         } catch (err) {
           console.log(
             chalk.yellow(
@@ -1054,6 +1184,9 @@ async function publishRssOnce(opts: {
           );
         }
 
+        const photoMeta = (opts as any)._lastPhotoMeta as
+          | { imageMatchLevel?: string; imageLabel?: string }
+          | undefined;
         const article: Article = {
           id: slug,
           slug,
@@ -1069,8 +1202,14 @@ async function publishRssOnce(opts: {
           publishedAt,
           readTime: estimateReadTime(draft.text),
           ...(images.length ? { imageUrl: images[0].url, images } : {}),
+          ...(photoMeta?.imageMatchLevel
+            ? {
+                imageMatchLevel: photoMeta.imageMatchLevel,
+                imageLabel: photoMeta.imageLabel,
+              }
+            : {}),
           ...stampAuthorForPipeline('newsroom-scout', { sourceUrl: item.url, slug }),
-        };
+        } as Article;
 
         const deduped = filterRemovedArticles(
           fresh.articles.filter(
@@ -1116,7 +1255,9 @@ async function publishRssOnce(opts: {
           processedAt: publishedAt,
           status: 'published',
           scoutScore: scout.score,
-          reason: scout.reason,
+          reason: selectedScouted.diversityNote
+            ? `${scout.reason} [diversity: ${selectedScouted.diversityNote}]`
+            : scout.reason,
           slug,
           channel: 'rss',
           cycle: opts.cycle,
@@ -1166,8 +1307,6 @@ async function publishRssOnce(opts: {
       });
       await writeFile(opts.journalPath, JSON.stringify(opts.journal, null, 2) + '\n', 'utf8');
       lastSkip = `rss error: ${msg}`;
-      // Try next candidate in this tick (still max 1 publish).
-      continue;
     }
   }
 
