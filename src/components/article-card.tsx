@@ -77,6 +77,8 @@ export function ArticleCard({ article, variant = 'default', eyebrow, className }
           <MediaPlaceholder
             category={article.category}
             title={article.title}
+            tags={article.tags}
+            summary={article.summary}
             imageUrl={hero}
             aspectRatio="aspect-[16/9]"
             className="mb-4"
@@ -118,9 +120,14 @@ export function ArticleCard({ article, variant = 'default', eyebrow, className }
             <span>{article.readTime}</span>
           </div>
         </div>
-        {hero && (
-          <MediaThumb imageUrl={hero} title={article.title} className="w-20 h-16" />
-        )}
+        <MediaThumb
+          imageUrl={hero}
+          title={article.title}
+          category={article.category}
+          tags={article.tags}
+          summary={article.summary}
+          className="w-20 h-16"
+        />
       </article>
     );
   }
@@ -135,6 +142,8 @@ export function ArticleCard({ article, variant = 'default', eyebrow, className }
         <MediaPlaceholder
           category={article.category}
           title={article.title}
+          tags={article.tags}
+          summary={article.summary}
           imageUrl={hero}
           aspectRatio="aspect-[16/9]"
           className="mb-3"
@@ -184,13 +193,14 @@ export function VergeNumberedItem({
           <span>{article.readTime}</span>
         </div>
       </div>
-      {hero && (
-        <MediaThumb
-          imageUrl={hero}
-          title={article.title}
-          className="w-16 h-16 sm:w-20 sm:h-16"
-        />
-      )}
+      <MediaThumb
+        imageUrl={hero}
+        title={article.title}
+        category={article.category}
+        tags={article.tags}
+        summary={article.summary}
+        className="w-16 h-16 sm:w-20 sm:h-16"
+      />
     </article>
   );
 }
@@ -207,6 +217,8 @@ export function ArsTechnicaCard({ article }: { article: Article }) {
           <MediaPlaceholder
             category={article.category}
             title={article.title}
+            tags={article.tags}
+            summary={article.summary}
             imageUrl={hero}
             aspectRatio="aspect-[16/10]"
           />
@@ -259,15 +271,16 @@ export function QuickUpdateItem({ article }: { article: Article }) {
           {article.summary}
         </p>
       </div>
-      {hero && (
-        <Link href={`/articles/${article.slug}`} className="shrink-0" aria-label={article.title}>
-          <MediaThumb
-            imageUrl={hero}
-            title={article.title}
-            className="w-[112px] h-[84px] sm:w-[180px] sm:h-[120px] md:w-[200px] md:h-[132px]"
-          />
-        </Link>
-      )}
+      <Link href={`/articles/${article.slug}`} className="shrink-0" aria-label={article.title}>
+        <MediaThumb
+          imageUrl={hero}
+          title={article.title}
+          category={article.category}
+          tags={article.tags}
+          summary={article.summary}
+          className="w-[112px] h-[84px] sm:w-[180px] sm:h-[120px] md:w-[200px] md:h-[132px]"
+        />
+      </Link>
     </article>
   );
 }
@@ -294,15 +307,15 @@ export function StratecheryDeepDive({ article }: { article: Article }) {
           <Link href={`/articles/${article.slug}`}>{article.title}</Link>
         </h2>
 
-        {hero && (
-          <MediaPlaceholder
-            category={article.category}
-            title={article.title}
-            imageUrl={hero}
-            aspectRatio="aspect-[21/9]"
-            className="rounded-lg my-4"
-          />
-        )}
+        <MediaPlaceholder
+          category={article.category}
+          title={article.title}
+          tags={article.tags}
+          summary={article.summary}
+          imageUrl={hero}
+          aspectRatio="aspect-[21/9]"
+          className="rounded-lg my-4"
+        />
 
         <div className="border-l-2 border-[var(--accent)] pl-4 py-1 my-3 bg-[var(--bg)] rounded-r">
           <p className="font-serif italic text-sm sm:text-base text-[var(--text)] leading-relaxed">

@@ -229,25 +229,24 @@ export default async function ArticlePage({
             </span>
           </div>
 
-          {/* 5. Hero image — only when a real entity-confirmed photo exists. */}
+          {/* 5. Hero image — real photo when present; compact editorial fallback when not. */}
           {(() => {
             const hero = article.images?.find((i) => i.role === 'hero')?.url || article.imageUrl;
             const extras = (article.images || []).filter((i) => i.role !== 'hero');
             return (
               <>
-                {hero ? (
-                  <div className="my-8">
-                    <MediaPlaceholder
-                      category={article.category}
-                      title={article.title}
-                      imageUrl={hero}
-                      description="Иллюстрация к материалу"
-                      aspectRatio="aspect-[16/8]"
-                    />
-                  </div>
-                ) : (
-                  <div className="my-6" />
-                )}
+                <div className={hero ? 'my-8' : 'my-5'}>
+                  <MediaPlaceholder
+                    category={article.category}
+                    title={article.title}
+                    tags={article.tags}
+                    summary={article.summary}
+                    imageUrl={hero}
+                    description={hero ? 'Иллюстрация к материалу' : undefined}
+                    aspectRatio={hero ? 'aspect-[16/8]' : 'aspect-[16/7]'}
+                    compactFallback={!hero}
+                  />
+                </div>
                 {/* Mobile: secondary/detail sequentially under hero (desktop uses right rail). */}
                 {extras.length > 0 && (
                   <div className="mb-8 space-y-4 lg:hidden">
@@ -366,6 +365,9 @@ export default async function ArticlePage({
                             <MediaThumb
                               imageUrl={rel.images?.find((i) => i.role === 'hero')?.url || rel.imageUrl}
                               title={rel.title}
+                              category={rel.category}
+                              tags={rel.tags}
+                              summary={rel.summary}
                               className="h-16 w-16 aspect-square"
                             />
                             <div className="min-w-0">
