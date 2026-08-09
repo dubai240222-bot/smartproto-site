@@ -25,12 +25,24 @@ import {
   extractPhotoEntityHeuristic,
   type PhotoEntity,
 } from './photo-entity';
+import {
+  extractIthomeImageCandidates,
+  isIthomePageUrl,
+} from './ithome-image-adapter';
+import {
+  categoryIllustrationUrl,
+  labelForMatchLevel,
+  resolveCategoryKey,
+  type ImageMatchLevel,
+} from './image-match';
 import { getOpenRouterClient, parseJsonObject, clampText } from '../ai/shared';
 
 export interface ScoutImage {
   url: string;
   role: 'hero' | 'secondary' | 'detail';
   sourceUrl: string;
+  matchLevel?: ImageMatchLevel;
+  label?: string;
 }
 
 export type CandidateTier =
@@ -116,6 +128,13 @@ function resolveUrl(raw: string, baseUrl: string): string | null {
   }
 }
 
+/** Homepage marketing tiles / promo art — never claim as exact product. */
+function isMarketingHomepageArt(url: string): boolean {
+  return /\/v\/home\/|promo_|banner|masthead|hero_back|at_work|trade\.in|back-to-school/i.test(
+    url,
+  );
+}
+
 function looksLikeRasterPhoto(url: string): boolean {
   if (/\{width\}|\{height\}|\.svg(\?|$)|data:image\/svg|PHN2Zy|\/api\/media\//i.test(url)) return false;
   if (/logo|symbol|typography|swatch|favicon|sprite|icon[_-]|masthead|nav-|navigation|banner/i.test(url)) {
@@ -185,10 +204,12 @@ function mineImagesFromHtml(html: string, pageUrl: string, tier: CandidateTier):
       attrs.match(/src=(?:"([^"]+)"|'([^']+)')/i);
     if (!srcMatch) continue;
     let rawSrc = (srcMatch[1] || srcMatch[2] || '').trim();
-    // srcset → largest candidate
-    if (rawSrc.includes(',')) {
+    // srcset → largest candidate (comma-separated list only)
+    if (rawSrc.includes(',') && /srcset=/i.test(attrs) && !/data-original=/i.test(attrs)) {
       const parts = rawSrc.split(',').map((p) => p.trim().split(/\s+/)[0]);
       rawSrc = parts[parts.length - 1] || rawSrc;
+    } else if (/\s+\d+[wx]$/i.test(rawSrc) || /\s+\d+(\.\d+)?x$/i.test(rawSrc)) {
+      rawSrc = rawSrc.trim().split(/\s+/)[0];
     }
     const altMatch = attrs.match(/alt=(?:"([^"]*)"|'([^']*)')/i);
     const alt = altMatch?.[1] || altMatch?.[2] || '';
@@ -272,6 +293,26 @@ function softEntityContextOk(c: PhotoCandidate, entity: PhotoEntity): boolean {
   if (/logo|symbol|typography|swatch/i.test(c.url + c.context)) return false;
   const pageHay = `${c.pageUrl} ${c.context} ${c.url}`.toLowerCase();
 
+  // Same-article China tech CDN uploads (ITHome / JD): the page is already about this
+  // entity, but lazy-load alts often lack brand text — allow raster product uploads.
+  // Still block unconfirmed rumors (no model) and obvious wrong-SKU tokens in URL.
+  if (
+    c.tier === 'source_article' &&
+    /newsuploadfiles|360buyimg\.com/i.test(c.url) &&
+    looksLikeRasterPhoto(c.url)
+  ) {
+    if (entity.status === 'rumor' && !entity.model) return false;
+    if (entity.model) {
+      const modelCompact = entity.model.toLowerCase().replace(/\s+/g, '');
+      // If URL itself names a different clear SKU (e.g. 15T vs T), reject.
+      const conflicting = /iqoo\s*15t|iqoo\s*13|redmi\s*k\d{2}/i.test(c.url + c.context);
+      if (conflicting && !pageHay.includes(modelCompact) && !c.context.includes(entity.model.toLowerCase())) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   // When a specific model/product line is known, require it on official pages too
   // (otherwise manufacturer homepage banners falsely "match" the brand alone).
   if (entity.model) {
@@ -346,7 +387,21 @@ export async function minePhotoCandidates(opts: {
     });
   }
   for (const p of pages) {
-    raw.push(...mineImagesFromHtml(p.html, p.url, p.tier));
+    if (isIthomePageUrl(p.url)) {
+      // ITHome-specific URL harvest — no product decisions here.
+      const adapted = extractIthomeImageCandidates(p.html, p.url);
+      notes.push(`ithome-adapter ${p.url}: ${adapted.length} normalized`);
+      for (const a of adapted) {
+        raw.push({
+          url: a.url,
+          context: a.context || opts.title,
+          pageUrl: p.url,
+          tier: p.tier,
+        });
+      }
+    } else {
+      raw.push(...mineImagesFromHtml(p.html, p.url, p.tier));
+    }
   }
 
   // Dedup + soft entity filter + quality gate
@@ -360,6 +415,10 @@ export async function minePhotoCandidates(opts: {
     seen.add(key);
     if (!looksLikeRasterPhoto(c.url)) {
       rejected.push({ url: c.url, reason: 'non-raster / banner / svg template' });
+      continue;
+    }
+    if (isMarketingHomepageArt(c.url)) {
+      rejected.push({ url: c.url, reason: 'homepage/promo marketing art' });
       continue;
     }
     if (!softEntityContextOk(c, opts.entity)) {
@@ -493,10 +552,12 @@ export async function editPhotoSelection(opts: {
     console.log(
       `[photo-editor] AI failed, conservative heuristic: ${err instanceof Error ? err.message : String(err)}`,
     );
-    // Conservative: only top-tier raster URLs that look like product shots, max 2.
+    // Conservative: only top-tier product-looking URLs. NEVER fall back to "any raster"
+    // (that falsely claimed Apple homepage promos as exact). Empty = honest NO IMAGE.
     const safe = opts.candidates.filter(
       (c) =>
         looksLikeRasterPhoto(c.url) &&
+        !isMarketingHomepageArt(c.url) &&
         (c.tier === 'official' ||
           c.tier === 'newsroom' ||
           c.tier === 'trusted_media' ||
@@ -505,12 +566,20 @@ export async function editPhotoSelection(opts: {
           c.url + c.context,
         ),
     );
-    const picks = (safe.length ? safe : opts.candidates.filter((c) => looksLikeRasterPhoto(c.url)))
-      .slice(0, 2)
-      .map((c, i) => ({
-        url: c.url,
-        role: (['hero', 'secondary'] as ScoutImage['role'][])[i],
-      }));
+    if (!safe.length) {
+      return {
+        picks: [],
+        rejected: opts.candidates.map((c) => ({
+          url: c.url,
+          reason: 'heuristic: no safe exact product shot',
+        })),
+        reason: 'conservative heuristic after AI error — no safe exact',
+      };
+    }
+    const picks = safe.slice(0, 2).map((c, i) => ({
+      url: c.url,
+      role: (['hero', 'secondary'] as ScoutImage['role'][])[i],
+    }));
     return { picks, rejected: [], reason: 'conservative heuristic after AI error' };
   }
 }
@@ -523,13 +592,33 @@ function maybeDownscaleNote(buf: Buffer): { buf: Buffer; ext: string } {
 
 export async function downloadImagesLocally(
   slug: string,
-  candidates: { url: string; role: ScoutImage['role'] }[],
+  candidates: { url: string; role: ScoutImage['role']; matchLevel?: ImageMatchLevel; label?: string }[],
   mediaRoot = process.env.SMARTPROTO_MEDIA_DIR || path.resolve(process.cwd(), 'public', 'media'),
 ): Promise<ScoutImage[]> {
   const dir = path.join(mediaRoot, slug);
   const out: ScoutImage[] = [];
   for (const c of candidates) {
     try {
+      // Local category illustrations — copy/reference without remote fetch.
+      if (c.url.startsWith('/api/media/_category/')) {
+        const file = c.url.replace(/^\/api\/media\//, '');
+        const srcPath = path.join(mediaRoot, file);
+        const ext = path.extname(srcPath) || '.svg';
+        await mkdir(dir, { recursive: true });
+        const filename = `${c.role}${ext}`;
+        const { copyFile, access } = await import('node:fs/promises');
+        await access(srcPath);
+        await copyFile(srcPath, path.join(dir, filename));
+        out.push({
+          url: `/api/media/${slug}/${filename}`,
+          role: c.role,
+          sourceUrl: c.url,
+          matchLevel: c.matchLevel || 'category',
+          label: c.label || labelForMatchLevel('category') || undefined,
+        });
+        continue;
+      }
+
       const res = await fetch(c.url, {
         signal: AbortSignal.timeout(12000),
         headers: { 'User-Agent': UA },
@@ -539,7 +628,7 @@ export async function downloadImagesLocally(
       // Soft size budget: skip tiny/huge; prefer ≤ 2.5MB for web.
       if (buf.length < 2500) continue;
       if (buf.length > 8 * 1024 * 1024) continue;
-      // Reject SVG / HTML mistaken as images
+      // Reject SVG / HTML mistaken as remote product images (category SVGs handled above)
       const head = buf.slice(0, 256).toString('utf8');
       if (/^\s*<svg|^\s*<!DOCTYPE|^\s*<html|^\s*<\?xml/i.test(head)) continue;
       const isJpeg = buf[0] === 0xff && buf[1] === 0xd8;
@@ -556,7 +645,14 @@ export async function downloadImagesLocally(
       const filename = `${c.role}.${ext}`;
       // eslint-disable-next-line no-await-in-loop
       await writeFile(path.join(dir, filename), buf);
-      out.push({ url: `/api/media/${slug}/${filename}`, role: c.role, sourceUrl: c.url });
+      const level = c.matchLevel || 'exact';
+      out.push({
+        url: `/api/media/${slug}/${filename}`,
+        role: c.role,
+        sourceUrl: c.url,
+        matchLevel: level,
+        label: c.label || labelForMatchLevel(level) || undefined,
+      });
     } catch {
       continue;
     }
@@ -566,6 +662,8 @@ export async function downloadImagesLocally(
 
 /**
  * Full V2 entry — used by newsroom tick and backfill.
+ * Policy: exact → series/brand (honest label) → category illustration → none.
+ * Never labels a non-exact photo as exact.
  */
 export async function resolveArticlePhotos(opts: {
   slug: string;
@@ -574,6 +672,7 @@ export async function resolveArticlePhotos(opts: {
   sourceUrl: string;
   fallbackUrl?: string;
   html?: string;
+  category?: string;
 }): Promise<PhotoPipelineReport> {
   const entity = await extractPhotoEntity({
     title: opts.title,
@@ -581,51 +680,146 @@ export async function resolveArticlePhotos(opts: {
     sourceUrl: opts.sourceUrl,
   });
 
-  // Absolute hard rule: cannot confirm subject → NO IMAGE
-  if (!entity.brand && !entity.company && entity.matchTokens.length === 0) {
-    return {
-      entity,
-      candidatesFound: 0,
-      candidatesRejected: [],
-      selected: [],
-      notes: ['no extractable visual entity — NO IMAGE'],
-    };
+  const notes: string[] = [];
+  const looksRoundup = /анонс|обзор новинок|this week|round.?up|лучшие|подборк|смартфоны:\s*анонс/i.test(
+    `${opts.title}\n${opts.text.slice(0, 400)}`,
+  );
+  // Exact requires a concrete model/object — brand-only (e.g. "Apple") is not enough.
+  const hasConcreteProduct = Boolean(
+    entity.model ||
+      (entity.object &&
+        entity.objectType &&
+        !/^(apple|google|samsung|huawei|xiaomi|vivo|oppo|honor|meta)$/i.test(entity.object.trim())),
+  );
+  const canAttemptExact = Boolean(entity.brand || entity.company || entity.matchTokens.length);
+  // Rumors without a confirmed model / roundups: skip EXACT (never fake exactness).
+  const allowExact =
+    canAttemptExact &&
+    hasConcreteProduct &&
+    !looksRoundup &&
+    !(entity.status === 'rumor' && !entity.model);
+
+  let selected: ScoutImage[] = [];
+  let candidatesFound = 0;
+  let candidatesRejected: { url: string; reason: string }[] = [];
+
+  if (looksRoundup) {
+    notes.push('roundup/multi-topic — skip EXACT (never fake exactness)');
   }
-  if (entity.status === 'rumor' && !entity.model) {
-    return {
+
+  if (allowExact) {
+    const mined = await minePhotoCandidates({
+      sourceUrl: opts.sourceUrl,
+      title: opts.title,
+      text: opts.text,
       entity,
-      candidatesFound: 0,
-      candidatesRejected: [],
-      selected: [],
-      notes: ['rumor without confirmed model — NO IMAGE'],
-    };
+      fallbackUrl: opts.fallbackUrl,
+      html: opts.html,
+    });
+    candidatesFound = mined.candidates.length;
+    candidatesRejected = mined.rejected;
+    notes.push(...mined.notes);
+
+    const edited = await editPhotoSelection({
+      entity,
+      title: opts.title,
+      candidates: mined.candidates,
+    });
+    notes.push(edited.reason);
+    candidatesRejected = [...candidatesRejected, ...edited.rejected].slice(0, 40);
+
+    if (edited.picks.length) {
+      const downloaded = await downloadImagesLocally(
+        opts.slug,
+        edited.picks.map((p) => ({ ...p, matchLevel: 'exact' as const, label: undefined })),
+      );
+      selected = downloaded.map((s) => ({ ...s, matchLevel: 'exact', label: undefined }));
+      notes.push(`exact downloaded=${selected.length}`);
+    }
+  } else if (!looksRoundup) {
+    notes.push(
+      entity.status === 'rumor' && !entity.model
+        ? 'rumor without confirmed model — skip EXACT'
+        : !hasConcreteProduct
+          ? 'brand-only entity — skip EXACT'
+          : 'weak entity — skip EXACT',
+    );
   }
 
-  const mined = await minePhotoCandidates({
-    sourceUrl: opts.sourceUrl,
-    title: opts.title,
-    text: opts.text,
-    entity,
-    fallbackUrl: opts.fallbackUrl,
-    html: opts.html,
-  });
+  // SERIES / BRAND — narrow only. Never use another concrete product as stand-in.
+  // Rumors, roundups, brand-only → skip to category (safer than fake exactness).
+  if (!selected.length && (entity.brand || entity.company)) {
+    const rumorOrUnconfirmed = entity.status === 'rumor' || !entity.model;
+    if (looksRoundup || rumorOrUnconfirmed || !hasConcreteProduct) {
+      notes.push(
+        looksRoundup
+          ? 'roundup — skip series/brand product art → category'
+          : 'unconfirmed/rumor/brand-only — skip product stand-in → category',
+      );
+    } else {
+      // At most one extra mine for series (time budget: exact already tried once).
+      const mined = await minePhotoCandidates({
+        sourceUrl: opts.sourceUrl,
+        title: opts.title,
+        text: opts.text,
+        entity,
+        fallbackUrl: opts.fallbackUrl,
+        html: opts.html,
+      });
+      candidatesFound = Math.max(candidatesFound, mined.candidates.length);
+      const brand = (entity.brand || entity.company || '').toLowerCase();
+      const model = (entity.model || '').toLowerCase();
+      // SERIES only: same brand + confirmed series token in URL/context; no marketing tiles.
+      const seriesSafe = mined.candidates.filter((c) => {
+        if (!looksLikeRasterPhoto(c.url) || isMarketingHomepageArt(c.url)) return false;
+        if (!['official', 'newsroom', 'presskit', 'lab'].includes(c.tier)) return false;
+        const hay = `${c.url} ${c.context}`.toLowerCase();
+        if (!brand || !hay.includes(brand.split(/\s+/)[0])) return false;
+        if (!model || !hay.includes(model.split(/\s+/)[0])) return false;
+        return true;
+      });
+      if (seriesSafe.length) {
+        const level: ImageMatchLevel = 'series';
+        const label = labelForMatchLevel(level) || undefined;
+        selected = await downloadImagesLocally(
+          opts.slug,
+          seriesSafe.slice(0, 2).map((c, i) => ({
+            url: c.url,
+            role: (['hero', 'secondary'] as ScoutImage['role'][])[i],
+            matchLevel: level,
+            label,
+          })),
+        );
+        notes.push(`series downloaded=${selected.length}`);
+      } else {
+        // BRAND: do not use another concrete product of the brand. Prefer category.
+        notes.push('no safe series — skip brand product stand-in → category');
+      }
+    }
+  }
 
-  const edited = await editPhotoSelection({
-    entity,
-    title: opts.title,
-    candidates: mined.candidates,
-  });
-
-  const selected = edited.picks.length
-    ? await downloadImagesLocally(opts.slug, edited.picks)
-    : [];
+  // Category thematic illustration — honest abstract art, never a fake product.
+  if (!selected.length) {
+    const key = resolveCategoryKey({
+      category: opts.category,
+      objectType: entity.objectType,
+      object: entity.object,
+      title: opts.title,
+    });
+    const catUrl = categoryIllustrationUrl(key);
+    const label = labelForMatchLevel('category') || undefined;
+    selected = await downloadImagesLocally(opts.slug, [
+      { url: catUrl, role: 'hero', matchLevel: 'category', label },
+    ]);
+    notes.push(selected.length ? `category=${key}` : `category missing asset=${key}`);
+  }
 
   return {
     entity,
-    candidatesFound: mined.candidates.length,
-    candidatesRejected: [...mined.rejected, ...edited.rejected].slice(0, 40),
+    candidatesFound,
+    candidatesRejected: candidatesRejected.slice(0, 40),
     selected,
-    notes: [...mined.notes, edited.reason, `downloaded=${selected.length}`],
+    notes: [...notes, `finalLevel=${selected[0]?.matchLevel || 'none'}`],
   };
 }
 

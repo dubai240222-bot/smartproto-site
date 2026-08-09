@@ -11,6 +11,7 @@ const MIME: Record<string, string> = {
   '.jpeg': 'image/jpeg',
   '.png': 'image/png',
   '.webp': 'image/webp',
+  '.svg': 'image/svg+xml',
 };
 
 /**

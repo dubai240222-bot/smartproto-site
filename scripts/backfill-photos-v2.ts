@@ -62,6 +62,7 @@ async function main() {
       text: `${article.summary}\n\n${article.content}`,
       sourceUrl: article.sourceUrl,
       fallbackUrl: article.imageUrl,
+      category: article.category,
     });
 
     console.log('entity:', JSON.stringify(report.entity, null, 2));
@@ -72,30 +73,33 @@ async function main() {
     );
     console.log(
       'selected:',
-      report.selected.map((s) => `${s.role} local=${s.url} src=${s.sourceUrl}`),
+      report.selected.map(
+        (s) => `${s.role} level=${s.matchLevel || '?'} local=${s.url} src=${s.sourceUrl}`,
+      ),
     );
     console.log('notes:', report.notes.join(' | '));
 
     if (!report.selected.length) {
-      console.log('RESULT: NO IMAGE (left unchanged or cleared hotlink-only)');
-      // Clear unconfirmed hotlink if present, keep text.
-      if (article.imageUrl && !article.imageUrl.startsWith('/api/media/')) {
-        upsertArticle({
-          ...article,
-          imageUrl: undefined,
-          images: [],
-        });
-        console.log('cleared unconfirmed hotlink imageUrl');
-      }
+      console.log('RESULT: NO IMAGE (none)');
+      upsertArticle({
+        ...article,
+        imageUrl: undefined,
+        images: [],
+        imageMatchLevel: 'none',
+        imageLabel: undefined,
+      });
       continue;
     }
 
+    const level = report.selected[0].matchLevel || 'exact';
     upsertArticle({
       ...article,
       imageUrl: report.selected[0].url,
       images: report.selected,
+      imageMatchLevel: level,
+      imageLabel: report.selected[0].label,
     });
-    console.log('RESULT: updated SQLite images');
+    console.log(`RESULT: updated SQLite images level=${level}`);
   }
 }
 

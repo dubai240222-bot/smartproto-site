@@ -4,7 +4,10 @@ import type { Article } from '@/data/articles';
 import { formatPublishedAt } from '@/lib/article-utils';
 import { formatAuthorByline, resolveAuthorForArticle } from '@/lib/authors';
 import { MediaPlaceholder, MediaThumb } from '@/components/media-placeholder';
+import { ImageMatchCaption } from '@/components/image-match-caption';
 import { toPublicCategory } from '@/lib/public-labels';
+import type { ImageMatchLevel } from '@/lib/collectors/image-match';
+import { labelForMatchLevel } from '@/lib/collectors/image-match';
 
 export function CategoryTags({
   category,
@@ -61,6 +64,22 @@ interface ArticleCardProps {
 
 function articleHeroUrl(article: { imageUrl?: string; images?: { url: string; role: string }[] }): string | undefined {
   return article.images?.find((i) => i.role === 'hero')?.url || article.imageUrl;
+}
+
+function articleImageMeta(article: {
+  imageMatchLevel?: ImageMatchLevel;
+  imageLabel?: string;
+  images?: { role: string; matchLevel?: ImageMatchLevel; label?: string }[];
+}): { level?: ImageMatchLevel; label?: string | null } {
+  const level =
+    article.imageMatchLevel ||
+    article.images?.find((i) => i.role === 'hero')?.matchLevel ||
+    article.images?.[0]?.matchLevel;
+  const label =
+    article.imageLabel ||
+    article.images?.find((i) => i.role === 'hero')?.label ||
+    labelForMatchLevel(level);
+  return { level, label };
 }
 
 export function ArticleCard({ article, variant = 'default', eyebrow, className }: ArticleCardProps) {
@@ -240,6 +259,7 @@ export function ArsTechnicaCard({ article }: { article: Article }) {
 /* -------------------------------------------------------------------------- */
 export function QuickUpdateItem({ article }: { article: Article }) {
   const hero = articleHeroUrl(article);
+  const meta = articleImageMeta(article);
   return (
     <article className="group py-3.5 border-b border-[var(--border)] last:border-b-0 flex items-start gap-3 sm:gap-5">
       <div className="flex-1 space-y-1.5 min-w-0">
@@ -266,6 +286,7 @@ export function QuickUpdateItem({ article }: { article: Article }) {
             title={article.title}
             className="w-[112px] h-[84px] sm:w-[180px] sm:h-[120px] md:w-[200px] md:h-[132px]"
           />
+          <ImageMatchCaption level={meta.level} label={meta.label} className="max-w-[200px]" />
         </Link>
       )}
     </article>

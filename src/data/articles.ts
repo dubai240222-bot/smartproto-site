@@ -1,6 +1,8 @@
 import jsonArticles from './articles.json';
 import { filterRemovedArticles } from '@/lib/removed-slugs';
 
+import type { ImageMatchLevel } from '@/lib/collectors/image-match';
+
 export interface Article {
   id: string;
   slug: string;
@@ -13,7 +15,17 @@ export interface Article {
   publishedAt: string;
   readTime: string;
   imageUrl?: string;
-  images?: { url: string; role: 'hero' | 'secondary' | 'detail'; sourceUrl?: string }[];
+  /** Overall illustration honesty level for the article hero. */
+  imageMatchLevel?: ImageMatchLevel;
+  /** UI caption when not exact (Russian). */
+  imageLabel?: string;
+  images?: {
+    url: string;
+    role: 'hero' | 'secondary' | 'detail';
+    sourceUrl?: string;
+    matchLevel?: ImageMatchLevel;
+    label?: string;
+  }[];
   author?: string;
   authorDesk?: string;
   agentId?: string;
