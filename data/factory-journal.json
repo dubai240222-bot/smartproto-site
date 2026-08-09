@@ -10,7 +10,8 @@
     "https://newatlas.com/wearables/tecno-ai-glasses-smart-camera/",
     "https://newatlas.com/aircraft/meet-halo-civilian-version-thunder-loyal-wingman/",
     "https://www.ithome.com/0/987/491.htm",
-    "https://www.ithome.com/0/987/489.htm"
+    "https://www.ithome.com/0/987/489.htm",
+    "https://www.ithome.com/0/987/531.htm"
   ],
   "processedIds": [
     "https://www.yankodesign.com/?p=639735",
@@ -23,7 +24,8 @@
     "https://newatlas.com/wearables/tecno-ai-glasses-smart-camera/",
     "https://newatlas.com/aircraft/meet-halo-civilian-version-thunder-loyal-wingman/",
     "china-mini",
-    "china-nvme"
+    "china-nvme",
+    "china-openfit-2-ai"
   ],
   "entries": [
     {
@@ -179,6 +181,17 @@
       "status": "published",
       "reason": "editorial gadget bar (source-backed)",
       "slug": "china-nvme",
+      "channel": "china-qwen",
+      "cycle": "news"
+    },
+    {
+      "id": "china-openfit-2-ai",
+      "url": "https://www.ithome.com/0/987/531.htm",
+      "title": "Наушники OpenFit 2 AI с поддержкой ИИ",
+      "processedAt": "2026-08-09T04:19:54.784Z",
+      "status": "published",
+      "reason": "editorial gadget bar (source-backed)",
+      "slug": "china-openfit-2-ai",
       "channel": "china-qwen",
       "cycle": "news"
     }

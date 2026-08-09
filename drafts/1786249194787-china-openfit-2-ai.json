@@ -1,0 +1,81 @@
+{
+  "generatedAt": "2026-08-09T04:19:54.784Z",
+  "channel": "china-qwen",
+  "cycle": "news",
+  "format": "news",
+  "source": {
+    "sourceId": "ithome-rss",
+    "sourceName": "IT之家",
+    "sourceUrl": "https://www.ithome.com/0/987/531.htm",
+    "platform": "rss",
+    "language": "zh",
+    "title": "韶音推出“OpenFit 2 AI”开放式耳机：升级千问大模型，1698 元",
+    "summary": "IT之家 8 月 9 日消息，韶音现已在天猫上架“OpenFit 2 AI”开放式耳机，相对于标准款 OpenFit 2/2+ 主要升级 AI 功能，定价为 1698 元，将于 8 月 17 日发售。\n\n这款耳机采用左右分体挂耳式海豚弧耳挂设计，贴耳处采用双层硅胶包裹，内层硅胶使用为 Shokz Ultra-Soft Silicone 2.0 超零度硅胶，耳挂内嵌极细柔性钛合金丝，号称“即使用户进行大幅度运动，耳机都不会掉落或位移”。\n\n该耳机升级支持 AI 千问大模型，支持 AI 总结、思维导图、多语种转写、会议洞察等功能，耳机左右内置存储芯片，可分别存储约 4GB（合计 8GB）现场录音或通话录音。",
+    "priceText": "",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/8b10e280-96ba-44e6-b702-692daf9789f1.png?x-bce-process=image/format,f_auto",
+    "publishedAt": "2026-08-09T03:48:31.000Z",
+    "rawSignals": [
+      "推出",
+      "发售",
+      "上架"
+    ],
+    "collectedAt": "2026-08-09T04:19:43.907Z"
+  },
+  "dossier": {
+    "originalTitle": "韶音推出“OpenFit 2 AI”开放式耳机：升级千问大模型，1698 元",
+    "translatedTitle": "",
+    "productName": "OpenFit 2 AI",
+    "manufacturer": "",
+    "platform": "rss",
+    "productUrl": "",
+    "sourceUrl": "https://www.ithome.com/0/987/531.htm",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/8b10e280-96ba-44e6-b702-692daf9789f1.png?x-bce-process=image/format,f_auto",
+    "whatItDoes": "该款耳机为标准 OpenFit 2 的 AI 升级款，定价 1698 元，新增 AI 千问大模型支持，可实现 AI 总结、录音存储等功能。#韶音 OpenFit 2 AI#\n\nIT之家 8 月 9 日消息，韶音现已在天猫上架“OpenFit 2 AI”开放式耳机，相对于标准款 OpenFit 2/2+ 主要升级 AI 功能，定价为 1698 元，将于 8 月 17 日发售。\n\n这款耳机采用左右分体挂耳式海豚弧耳挂设计，贴耳处采用双层硅胶包裹，内层硅胶使用为 Shokz Ultra-Soft Silicone 2.0 超零度硅胶，耳挂内嵌极细柔性钛合金丝，号称“即使用户进行大幅度运动，耳机都不会掉落或位移”。\n\n该耳机升级支持 AI 千问大模型，支持 AI 总结、思维导图、多语种转写、会议洞察等功能，耳机左右内置存储芯片，可分别存储约 4GB（合计 8GB）现场录音或通话录音。",
+    "whyItIsNew": "",
+    "consumerUse": "",
+    "priceOriginal": null,
+    "currency": null,
+    "priceApproxUsd": null,
+    "availability": "",
+    "launchDate": null,
+    "market": "",
+    "prototypeOrSale": "",
+    "evidence": [],
+    "unknownFacts": [
+      "AI 功能是否需联网/订阅服务未明确说明",
+      "录音功能是否需配合 App 使用未详述",
+      "续航时间、充电方式、蓝牙版本等核心参数缺失"
+    ],
+    "warningFlags": [
+      "发布日期为 2026 年（未来时间），需核实是否为笔误或测试数据",
+      "“千问大模型”未说明是否为通义千问定制版或仅调用 API",
+      "未提及是否支持第三方语音助手或独立 AI 模式"
+    ],
+    "recommended": false,
+    "sourceSuggestions": []
+  },
+  "draft": {
+    "id": "china-openfit-2-ai",
+    "slug": "china-openfit-2-ai",
+    "title": "Наушники OpenFit 2 AI с поддержкой ИИ",
+    "category": "Гаджеты",
+    "tags": [
+      "наушники",
+      "аудио",
+      "ИИ",
+      "Shokz",
+      "новинка",
+      "гаджет",
+      "новость"
+    ],
+    "summary": "Компания Shokz представила обновлённую модель наушников OpenFit 2 AI.",
+    "content": "Компания Shokz представила обновлённую модель наушников OpenFit 2 AI. Устройство оснащено поддержкой больших языковых моделей, что позволяет использовать функции ИИ-суммирования, создания ментальных карт и транскрипции речи. Встроенная память объёмом 8 ГБ предназначена для записи аудио во время разговоров или мероприятий. Производитель заявляет о надёжной фиксации наушников даже при активных движениях. Детали о работе ИИ-функций и необходимости подписки не уточняются.",
+    "sourceUrl": "https://www.ithome.com/0/987/531.htm",
+    "publishedAt": "2026-08-09T04:19:54.784Z",
+    "readTime": "1 мин",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/8b10e280-96ba-44e6-b702-692daf9789f1.png?x-bce-process=image/format,f_auto",
+    "author": "Линь Цзе",
+    "authorDesk": "China desk",
+    "agentId": "china-qwen"
+  }
+}
