@@ -11,7 +11,8 @@
     "https://newatlas.com/aircraft/meet-halo-civilian-version-thunder-loyal-wingman/",
     "https://www.ithome.com/0/987/491.htm",
     "https://www.ithome.com/0/987/489.htm",
-    "https://www.ithome.com/0/987/531.htm"
+    "https://www.ithome.com/0/987/531.htm",
+    "https://newatlas.com/automotive/zoox-nhtsa-commercial-exemption-paid-robotaxi/"
   ],
   "processedIds": [
     "https://www.yankodesign.com/?p=639735",
@@ -25,7 +26,8 @@
     "https://newatlas.com/aircraft/meet-halo-civilian-version-thunder-loyal-wingman/",
     "china-mini",
     "china-nvme",
-    "china-openfit-2-ai"
+    "china-openfit-2-ai",
+    "https://newatlas.com/automotive/zoox-nhtsa-commercial-exemption-paid-robotaxi/"
   ],
   "entries": [
     {
@@ -194,6 +196,45 @@
       "slug": "china-openfit-2-ai",
       "channel": "china-qwen",
       "cycle": "news"
+    },
+    {
+      "id": "https://newatlas.com/wearables/samsung-ai-eyewear-galaxy-glasses/",
+      "url": "https://newatlas.com/wearables/samsung-ai-eyewear-galaxy-glasses/",
+      "title": "Samsung's new AI glasses work with Google's Gemini AI",
+      "processedAt": "2026-08-09T05:28:45.435Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Generic announcement lacking concrete product details, capabilities, or evidence of novelty; no functional differentiation from existing AI glasses.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/ai-humanoids/chatgpt-ai-assistant-shut-up/",
+      "url": "https://newatlas.com/ai-humanoids/chatgpt-ai-assistant-shut-up/",
+      "title": "ChatGPT Voice shifts from chatbot to proper assistant",
+      "processedAt": "2026-08-09T05:28:50.767Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Отсутствует конкретное устройство, приложение или изобретение — только общее впечатление без новых фактов.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/automotive/zoox-nhtsa-commercial-exemption-paid-robotaxi/",
+      "url": "https://newatlas.com/automotive/zoox-nhtsa-commercial-exemption-paid-robotaxi/",
+      "title": "Purpose-built robotaxis get official nod for paid operation in the US",
+      "processedAt": "2026-08-09T05:28:59.309Z",
+      "status": "error",
+      "reason": "Scout model (deepseek/deepseek-v4-flash:latest) returned an empty response. finish_reason: length, reasoning present: false",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/wearables/samsung-ai-eyewear-galaxy-glasses/",
+      "url": "https://newatlas.com/wearables/samsung-ai-eyewear-galaxy-glasses/",
+      "title": "Samsung's new AI glasses work with Google's Gemini AI",
+      "processedAt": "2026-08-09T05:29:19.049Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Отсутствуют конкретные детали о продукте, его возможностях и пользе; только общее заявление.",
+      "channel": "rss"
     }
   ]
 }
