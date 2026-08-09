@@ -941,7 +941,7 @@ async function publishRssOnce(opts: {
       }
       const gadgetUrls = new Set(mergedPool.map((p) => p.url));
       const aiItems: PoolItem[] = strong
-        .filter((n) => n.url && !gadgetUrls.has(n.url))
+        .filter((n) => n.url && !gadgetUrls.has(n.url) && !opts.urls.has(n.url) && !opts.ids.has(`ai-radar:${n.url}`))
         .map((n) => ({
           id: `ai-radar:${n.url}`,
           title: n.title,
@@ -1145,13 +1145,20 @@ async function publishRssOnce(opts: {
       const review = await reviewArticle(sourcePayload);
       if (/^REJECT\b/i.test(review.technicalVerdict)) {
         // Soft override: Scout already scored high on AI/invention alert — don't idle the tick.
-        if (scout.score >= 80 && isAiOrInventionAlert(item.title, item.text || item.title)) {
+        // SP-A-065CD: ai_radar Scout already scored EVENT ≥ floor — Reviewer gadget lens must not kill it.
+        if (
+          (itemMode === 'ai_radar' && scout.score >= scoutFloor) ||
+          (scout.score >= 80 && isAiOrInventionAlert(item.title, item.text || item.title))
+        ) {
           console.log(
             chalk.yellow(
-              `Reviewer reject soft-pass (AI/invention alert, scout=${scout.score}): ${review.technicalVerdict}`,
+              `Reviewer reject soft-pass (${itemMode}, scout=${scout.score}): ${review.technicalVerdict}`,
             ),
           );
-          review.technicalVerdict = `PASS: AI/invention alert (scout ${scout.score})`;
+          review.technicalVerdict =
+            itemMode === 'ai_radar'
+              ? `PASS: AI radar EVENT (scout ${scout.score})`
+              : `PASS: AI/invention alert (scout ${scout.score})`;
         } else {
           console.log(chalk.yellow(`Reviewer reject: ${review.technicalVerdict}`));
           await markRejected(
