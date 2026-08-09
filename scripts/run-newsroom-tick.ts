@@ -18,6 +18,10 @@ import dotenv from 'dotenv';
 import chalk from 'chalk';
 import { fetchRssFeed, type RssItem } from '../src/lib/collectors/rss';
 import { extractArticleImage, passesImageQualityGate } from '../src/lib/collectors/image-extractor';
+import {
+  discoveryRankFor,
+  enabledRssSources,
+} from '../src/lib/collectors/source-registry';
 import { resolveArticlePhotos } from '../src/lib/collectors/photo-scout';
 import { scoutArticle, SCOUT_SCORE_THRESHOLD } from '../src/lib/ai/scout';
 import { reviewArticle } from '../src/lib/ai/reviewer';
@@ -56,20 +60,8 @@ function loadEnvFiles(): void {
   dotenv.config({ path: path.resolve(root, '.env'), quiet: true });
 }
 
-const SOURCES: [string, string][] = [
-  ['Yanko Design', 'https://www.yankodesign.com/feed/'],
-  ['New Atlas', 'https://newatlas.com/index.rss'],
-  ['New Atlas Electronics', 'https://newatlas.com/electronics/index.rss'],
-  ['New Atlas Wearables', 'https://newatlas.com/wearables/index.rss'],
-  ['Gadget Flow', 'https://thegadgetflow.com/feed/'],
-  ['Hackaday', 'https://hackaday.com/blog/feed/'],
-  ['TechCrunch', 'https://techcrunch.com/feed/'],
-  ['The Verge', 'https://www.theverge.com/rss/index.xml'],
-  ['The Verge Gadgets', 'https://www.theverge.com/rss/gadgets/index.xml'],
-  ['Engadget', 'https://www.engadget.com/rss.xml'],
-  ['9to5Google', 'https://9to5google.com/feed/'],
-  ['Android Authority', 'https://www.androidauthority.com/feed'],
-];
+// Live RSS list: src/lib/collectors/source-registry.ts (SP-A-065).
+const SOURCES = enabledRssSources();
 
 const CHINA_MAX_QWEN = 3;
 
@@ -759,10 +751,19 @@ async function publishRssOnce(opts: {
   const probeMode = explicitScout && SCOUT_SCORE_THRESHOLD < 70;
 
   const candidates: RssItem[] = [];
-  for (const [name, feedUrl] of SOURCES) {
+  const perSource: Record<string, number> = {};
+  for (const src of SOURCES) {
+    const name = src.name;
+    const feedUrl = src.feedUrl;
     try {
-      // Permanent mode: dig deep enough that 10m/60m ticks still find fresh worthy items.
-      const items = await fetchRssFeed(feedUrl, { limit: 50, sourceName: name });
+      const items = await fetchRssFeed(feedUrl, {
+        limit: src.limit ?? 50,
+        sourceName: name,
+        maxRawBytes: src.maxRawBytes,
+        // Discovery feeds: skip page image crawl to keep tick economical.
+        skipPageImageFetch: src.tier === 'A_DISCOVERY' || src.tier === 'B' || src.tier === 'C',
+      });
+      let kept = 0;
       for (const item of items) {
         if (!item.url || !item.title) continue;
         if (opts.urls.has(item.url) || opts.ids.has(item.id)) continue;
@@ -777,26 +778,19 @@ async function publishRssOnce(opts: {
           continue;
         }
         candidates.push(item);
+        kept += 1;
       }
-      console.log(chalk.gray(`  ${name}: ok`));
+      perSource[name] = kept;
+      console.log(chalk.gray(`  ${name}: ok (${items.length} raw → ${kept} candidates) [tier=${src.tier}]`));
     } catch (err) {
       console.log(
         chalk.yellow(`  ${name}: ${err instanceof Error ? err.message : String(err)}`),
       );
     }
   }
+  console.log(chalk.gray(`Per-source candidates: ${JSON.stringify(perSource)}`));
 
-  const sourceRank = (name: string) => {
-    const n = (name || '').toLowerCase();
-    if (n.includes('yanko')) return 0;
-    if (n.includes('gadget flow')) return 1;
-    if (n.includes('wearables')) return 2;
-    if (n.includes('electronics')) return 3;
-    if (n.includes('new atlas')) return 4;
-    if (n.includes('verge gadgets')) return 5;
-    if (n.includes('hackaday')) return 6;
-    return 8;
-  };
+  const sourceRank = (name: string) => discoveryRankFor(name);
   const looksAiCapability = (title: string, text: string) =>
     /\b(ai|a\.i\.|artificial intelligence|chatgpt|gemini|claude|llm|gpt|agentic|autonom(?:y|ous)|superintelligence|agi|copilot|reasoning model|foundation model)\b|искусственн\w*\s+интеллект|\bии\b|нейросет/i.test(
       `${title}\n${text}`,

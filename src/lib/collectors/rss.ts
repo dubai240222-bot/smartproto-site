@@ -17,6 +17,10 @@ export type RssFeedItem = RssItem;
 export interface FetchRssOptions {
   limit?: number;
   sourceName?: string;
+  /** Truncate oversized feeds before parse (e.g. TechNode ~11MB). */
+  maxRawBytes?: number;
+  /** Skip per-item page image crawl (faster discovery polls). */
+  skipPageImageFetch?: boolean;
 }
 
 interface CustomItem {
@@ -153,6 +157,20 @@ function extractImageUrl(item: Record<string, any>): string | undefined {
  * Fetches and parses an RSS or Atom feed, mapping feed items to standard RssItem shape.
  * Accepts limit & sourceName via options object or positional arguments.
  */
+/** Cut XML at last complete item/entry within maxBytes so huge feeds stay parseable. */
+function truncateFeedXml(xml: string, maxBytes: number): string {
+  if (xml.length <= maxBytes) return xml;
+  const slice = xml.slice(0, maxBytes);
+  const itemClose = Math.max(slice.lastIndexOf('</item>'), slice.lastIndexOf('</entry>'));
+  if (itemClose > 0) {
+    const head = slice.slice(0, itemClose + (slice[itemClose + 2] === 'i' ? 7 : 8));
+    if (/<rss[\s>]/i.test(head)) return `${head}</channel></rss>`;
+    if (/<feed[\s>]/i.test(head)) return `${head}</feed>`;
+    return head;
+  }
+  return slice;
+}
+
 export async function fetchRssFeed(
   feedUrl: string,
   optionsOrLimit?: FetchRssOptions | number,
@@ -160,6 +178,8 @@ export async function fetchRssFeed(
 ): Promise<RssItem[]> {
   let limit = 10;
   let sourceName = sourceNameArg;
+  let maxRawBytes: number | undefined;
+  let skipPageImageFetch = false;
 
   if (typeof optionsOrLimit === 'number') {
     limit = optionsOrLimit;
@@ -170,6 +190,10 @@ export async function fetchRssFeed(
     if (optionsOrLimit.sourceName) {
       sourceName = optionsOrLimit.sourceName;
     }
+    if (typeof optionsOrLimit.maxRawBytes === 'number' && optionsOrLimit.maxRawBytes > 0) {
+      maxRawBytes = Math.floor(optionsOrLimit.maxRawBytes);
+    }
+    if (optionsOrLimit.skipPageImageFetch) skipPageImageFetch = true;
   }
 
   const safeLimit = Number.isFinite(limit) ? Math.max(0, Math.floor(limit)) : 10;
@@ -179,7 +203,7 @@ export async function fetchRssFeed(
 
   try {
     const parser: Parser<Record<string, unknown>, CustomItem> = new Parser({
-      timeout: 10000,
+      timeout: 15000,
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) SmartProtoNewsroom/1.0',
         'Accept': 'application/rss+xml, application/atom+xml, application/xml, text/xml, */*',
@@ -189,7 +213,21 @@ export async function fetchRssFeed(
       },
     });
 
-    const feed = await parser.parseURL(feedUrl);
+    let feed: Parser.Output<CustomItem>;
+    if (maxRawBytes) {
+      const res = await fetch(feedUrl, {
+        signal: AbortSignal.timeout(20000),
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) SmartProtoNewsroom/1.0',
+          Accept: 'application/rss+xml, application/atom+xml, application/xml, text/xml, */*',
+        },
+      });
+      if (!res.ok) return [];
+      const raw = truncateFeedXml(await res.text(), maxRawBytes);
+      feed = await parser.parseString(raw);
+    } else {
+      feed = await parser.parseURL(feedUrl);
+    }
     if (!feed || !Array.isArray(feed.items) || feed.items.length === 0) {
       return [];
     }
@@ -229,7 +267,7 @@ export async function fetchRssFeed(
       const publishedAt = toIsoDate(item.pubDate, item.isoDate);
       let imageUrl = extractImageUrl(item as Record<string, any>);
 
-      if (!imageUrl && url && /^https?:\/\//i.test(url)) {
+      if (!skipPageImageFetch && !imageUrl && url && /^https?:\/\//i.test(url)) {
         try {
           const extracted = await extractArticleImage(url);
           if (extracted) {
