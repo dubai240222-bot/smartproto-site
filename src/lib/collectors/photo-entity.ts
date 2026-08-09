@@ -81,17 +81,43 @@ export function extractPhotoEntityHeuristic(title: string, text: string): PhotoE
     : brand
       ? 'product'
       : 'unknown';
-  const matchTokens = [brand, model].filter(Boolean).map((s) => String(s));
+  let object: string | null = brand ? `${brand}${model ? ' ' + model : ''}`.trim() : null;
+  let objectType: string | null = null;
+  if (/браслет|wristband|bracelet/i.test(blob)) {
+    object = 'neural gesture wristband';
+    objectType = 'wearable/interface';
+  } else if (/клавиатур|keyboard/i.test(blob)) {
+    object = 'mechanical keyboard';
+    objectType = 'keyboard';
+  } else if (/люльк|bassinet/i.test(blob)) {
+    object = 'smart bassinet';
+    objectType = 'bassinet';
+  } else if (/полив|irrigation|watering/i.test(blob)) {
+    object = 'smart irrigation system';
+    objectType = 'irrigation';
+  }
+  const matchTokens = [brand, model, object].filter(Boolean).map((s) => String(s));
+  // Prefer short distinctive tokens
+  const tokens = [
+    brand,
+    model,
+    ...(/браслет|wristband/i.test(blob) ? ['wristband', 'neuromotor', 'sEMG'] : []),
+    ...(/altar/i.test(blob) ? ['Altar', 'Altar II'] : []),
+    ...(/aero|bassinet|люльк/i.test(blob) ? ['Aero', 'bassinet'] : []),
+    ...(/rainpoint|полив/i.test(blob) ? ['RainPoint', 'irrigation'] : []),
+  ]
+    .filter(Boolean)
+    .map(String);
   return {
     company,
     brand,
     model,
-    object: brand ? `${brand}${model ? ' ' + model : ''}`.trim() : null,
-    objectType: null,
-    aliases: matchTokens,
+    object,
+    objectType,
+    aliases: [...new Set(tokens)],
     lab: null,
     status,
-    matchTokens,
+    matchTokens: [...new Set(tokens.filter((t) => t.length >= 2))],
   };
 }
 

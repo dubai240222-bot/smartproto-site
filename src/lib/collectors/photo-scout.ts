@@ -105,13 +105,25 @@ function resolveUrl(raw: string, baseUrl: string): string | null {
   try {
     const cleaned = raw.trim().replace(/^\/\//, 'https://').replace(/&amp;/gi, '&');
     if (!cleaned || cleaned.startsWith('data:')) return null;
+    if (/\{width\}|\{height\}|PHN2Zy|image\/svg|\.svg(\?|$)/i.test(cleaned)) return null;
     const href = new URL(cleaned, baseUrl).href.split('#')[0];
     if (!/^https?:\/\//i.test(href)) return null;
     if (IGNORE_SRC_RE.test(href)) return null;
+    if (/\.svg(\?|$)/i.test(href) || /\/svg\//i.test(href)) return null;
     return href;
   } catch {
     return null;
   }
+}
+
+function looksLikeRasterPhoto(url: string): boolean {
+  if (/\{width\}|\{height\}|\.svg(\?|$)|data:image\/svg|PHN2Zy/i.test(url)) return false;
+  // Prefer known raster; allow CDN URLs without extension.
+  if (/\.(jpe?g|png|webp|gif)(\?|$)/i.test(url)) return true;
+  if (/\/cdn\/|cloudfront|brightspot|wp-content\/uploads|newsupload|dims4|images\./i.test(url)) {
+    return !/banner|nav-|navigation|masthead|logo|sprite|icon/i.test(url);
+  }
+  return !/banner|nav-|navigation|masthead|logo|sprite|icon|placeholder/i.test(url);
 }
 
 /** Collect <img>, og/twitter images, and JSON-LD image fields from a page. */
@@ -323,6 +335,10 @@ export async function minePhotoCandidates(opts: {
     const key = c.url.split('?')[0];
     if (seen.has(key)) continue;
     seen.add(key);
+    if (!looksLikeRasterPhoto(c.url)) {
+      rejected.push({ url: c.url, reason: 'non-raster / banner / svg template' });
+      continue;
+    }
     if (!softEntityContextOk(c, opts.entity)) {
       rejected.push({ url: c.url, reason: 'entity mismatch / screenshot markers' });
       continue;
@@ -380,19 +396,19 @@ export async function editPhotoSelection(opts: {
     const client = getOpenRouterClient();
     const completion = await client.chat.completions.create({
       model: PHOTO_EDITOR_MODEL,
-      temperature: 0.1,
-      max_tokens: 700,
+      temperature: 0,
+      max_tokens: 1200,
       messages: [
         {
           role: 'system',
           content: [
             'You are the SmartProto Photo Editor. Pick at most 3 product photos.',
-            'WRONG IMAGE is worse than NO IMAGE. If unsure the photo shows THIS exact product, reject it.',
-            'Return ONLY JSON: { hero: url|null, secondary: url|null, detail: url|null, rejected: [{url, reason}], reason }',
-            'hero = best clear full view of the object; secondary = other angle/use; detail = meaningful close-up only.',
-            'Reject: UI/social screenshots, price tables, big overlays, watermarks, wrong generation/model, near-duplicates.',
-            'Prefer official/newsroom/lab tiers over random media when quality is equal.',
-            'URLs MUST be copied exactly from the candidate list. Do not invent URLs.',
+            'WRONG IMAGE is worse than NO IMAGE. If unsure the photo shows THIS exact product, reject all (hero/secondary/detail = null).',
+            'Return ONLY compact JSON: {"hero":url|null,"secondary":url|null,"detail":url|null,"rejected":[{"url":"...","reason":"..."}],"reason":"..."}',
+            'hero = best clear full view; secondary = other angle/use; detail = meaningful close-up only.',
+            'Reject: UI/social screenshots, SVG, banners, price tables, overlays, watermarks, wrong generation/model, near-duplicates.',
+            'Prefer official/newsroom/lab tiers. URLs MUST be copied exactly from candidates. Do not invent URLs.',
+            'Keep rejected list short (max 6 items) to avoid truncation.',
           ].join(' '),
         },
         {
@@ -400,10 +416,23 @@ export async function editPhotoSelection(opts: {
           content: clampText(
             JSON.stringify({
               articleTitle: opts.title,
-              entity: opts.entity,
-              candidates: catalog,
+              entity: {
+                company: opts.entity.company,
+                brand: opts.entity.brand,
+                model: opts.entity.model,
+                object: opts.entity.object,
+                objectType: opts.entity.objectType,
+                status: opts.entity.status,
+                matchTokens: opts.entity.matchTokens,
+              },
+              candidates: catalog.map((c) => ({
+                id: c.id,
+                url: c.url,
+                tier: c.tier,
+                context: c.context.slice(0, 100),
+              })),
             }),
-            9000,
+            7000,
           ),
         },
       ],
@@ -415,24 +444,51 @@ export async function editPhotoSelection(opts: {
     const picks: { url: string; role: ScoutImage['role'] }[] = [];
     for (const role of roles) {
       const u = parsed[role];
-      if (typeof u === 'string' && allowed.has(u) && !picks.some((p) => p.url === u)) {
+      if (typeof u === 'string' && allowed.has(u) && looksLikeRasterPhoto(u) && !picks.some((p) => p.url === u)) {
         picks.push({ url: u, role });
       }
     }
     const rejected = Array.isArray(parsed.rejected)
-      ? parsed.rejected.map((r) => ({ url: String(r.url || ''), reason: String(r.reason || 'rejected') }))
+      ? parsed.rejected
+          .map((r) => ({ url: String(r.url || ''), reason: String(r.reason || 'rejected') }))
+          .filter((r) => r.url)
+          .slice(0, 10)
       : [];
+    // Explicit AI NO IMAGE (all null) must win — do not heuristic-fill.
+    if (!picks.length) {
+      return {
+        picks: [],
+        rejected:
+          rejected.length > 0
+            ? rejected
+            : opts.candidates.map((c) => ({ url: c.url, reason: parsed.reason || 'ai editor: no safe pick' })),
+        reason: parsed.reason || 'ai editor returned no safe images',
+      };
+    }
     return { picks, rejected, reason: parsed.reason || 'ai editor' };
   } catch (err) {
-    // Deterministic fallback: top-tier unique URLs, max 3 — still entity-filtered.
     console.log(
-      `[photo-editor] AI failed, heuristic pick: ${err instanceof Error ? err.message : String(err)}`,
+      `[photo-editor] AI failed, conservative heuristic: ${err instanceof Error ? err.message : String(err)}`,
     );
-    const picks = opts.candidates.slice(0, 3).map((c, i) => ({
-      url: c.url,
-      role: (['hero', 'secondary', 'detail'] as ScoutImage['role'][])[i],
-    }));
-    return { picks, rejected: [], reason: 'heuristic fallback after AI error' };
+    // Conservative: only top-tier raster URLs that look like product shots, max 2.
+    const safe = opts.candidates.filter(
+      (c) =>
+        looksLikeRasterPhoto(c.url) &&
+        (c.tier === 'official' ||
+          c.tier === 'newsroom' ||
+          c.tier === 'trusted_media' ||
+          c.tier === 'source_article') &&
+        /product|upload|wp-content|brightspot|neuromotor|wristband|keyboard|bassinet|irrigation|rainpoint|altar|aero/i.test(
+          c.url + c.context,
+        ),
+    );
+    const picks = (safe.length ? safe : opts.candidates.filter((c) => looksLikeRasterPhoto(c.url)))
+      .slice(0, 2)
+      .map((c, i) => ({
+        url: c.url,
+        role: (['hero', 'secondary'] as ScoutImage['role'][])[i],
+      }));
+    return { picks, rejected: [], reason: 'conservative heuristic after AI error' };
   }
 }
 
@@ -460,15 +516,18 @@ export async function downloadImagesLocally(
       // Soft size budget: skip tiny/huge; prefer ≤ 2.5MB for web.
       if (buf.length < 2500) continue;
       if (buf.length > 8 * 1024 * 1024) continue;
+      // Reject SVG / HTML mistaken as images
+      const head = buf.slice(0, 256).toString('utf8');
+      if (/^\s*<svg|^\s*<!DOCTYPE|^\s*<html|^\s*<\?xml/i.test(head)) continue;
+      const isJpeg = buf[0] === 0xff && buf[1] === 0xd8;
+      const isPng = buf[0] === 0x89 && buf[1] === 0x50;
+      const isWebp = buf.slice(0, 4).toString() === 'RIFF' && buf.slice(8, 12).toString() === 'WEBP';
+      const isGif = buf.slice(0, 3).toString() === 'GIF';
+      if (!isJpeg && !isPng && !isWebp && !isGif) continue;
       if (buf.length > 2.5 * 1024 * 1024) {
-        // Keep as-is (quality > size on first pass); note only.
         maybeDownscaleNote(buf);
       }
-      const ct = res.headers.get('content-type') || '';
-      let ext = 'jpg';
-      if (/png/i.test(ct) || /\.png(\?|$)/i.test(c.url)) ext = 'png';
-      else if (/webp/i.test(ct) || /\.webp(\?|$)/i.test(c.url)) ext = 'webp';
-      else if (/jpeg|jpg/i.test(ct) || /\.jpe?g(\?|$)/i.test(c.url)) ext = 'jpg';
+      let ext = isPng ? 'png' : isWebp ? 'webp' : isGif ? 'gif' : 'jpg';
       // eslint-disable-next-line no-await-in-loop
       await mkdir(dir, { recursive: true });
       const filename = `${c.role}.${ext}`;
