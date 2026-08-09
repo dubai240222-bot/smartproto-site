@@ -6,7 +6,9 @@
     "https://www.yankodesign.com/2026/08/07/a-69-pen-shaped-electric-screwdriver-just-might-save-your-laptops-1000-repair-bill/?utm_source=rss&utm_medium=rss&utm_campaign=a-69-pen-shaped-electric-screwdriver-just-might-save-your-laptops-1000-repair-bill",
     "https://thegadgetflow.com/product/ascentiz-h-pro-hip-exoskeleton/",
     "https://thegadgetflow.com/blog/best-us-made-robots-to-add-to-your-life/",
-    "https://newatlas.com/medical-ai/ai-medical-scribe-consent-raises-patient-rights-concerns/"
+    "https://newatlas.com/medical-ai/ai-medical-scribe-consent-raises-patient-rights-concerns/",
+    "https://newatlas.com/wearables/tecno-ai-glasses-smart-camera/",
+    "https://newatlas.com/aircraft/meet-halo-civilian-version-thunder-loyal-wingman/"
   ],
   "processedIds": [
     "https://www.yankodesign.com/?p=639735",
@@ -15,7 +17,9 @@
     "https://www.yankodesign.com/?p=640502",
     "https://thegadgetflow.com/product/ascentiz-h-pro-hip-exoskeleton/",
     "https://thegadgetflow.com/blog/best-us-made-robots-to-add-to-your-life/",
-    "https://newatlas.com/medical-ai/ai-medical-scribe-consent-raises-patient-rights-concerns/"
+    "https://newatlas.com/medical-ai/ai-medical-scribe-consent-raises-patient-rights-concerns/",
+    "https://newatlas.com/wearables/tecno-ai-glasses-smart-camera/",
+    "https://newatlas.com/aircraft/meet-halo-civilian-version-thunder-loyal-wingman/"
   ],
   "entries": [
     {
@@ -112,6 +116,44 @@
       "processedAt": "2026-08-08T23:32:07.344Z",
       "status": "error",
       "reason": "Scout model (deepseek/deepseek-v4-flash:latest) returned an empty response. finish_reason: length, reasoning present: false",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/wearables/samsung-ai-eyewear-galaxy-glasses/",
+      "url": "https://newatlas.com/wearables/samsung-ai-eyewear-galaxy-glasses/",
+      "title": "Samsung's new AI glasses work with Google's Gemini AI",
+      "processedAt": "2026-08-09T00:37:19.034Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Announcement lacks specifics about the glasses; no concrete product details, novelty, or functional differences provided.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/wearables/tecno-ai-glasses-smart-camera/",
+      "url": "https://newatlas.com/wearables/tecno-ai-glasses-smart-camera/",
+      "title": "Smart AI-driven AR glasses to compete with Meta Ray-Bans",
+      "processedAt": "2026-08-09T00:37:29.056Z",
+      "status": "error",
+      "reason": "Model response was not valid JSON: {\n  \"interesting\": false,\n  \"score\": 69,\n  \"reason\": \"Очередные AI-очки, похожие на Meta Ray-Ban, без явных уникальных отличи",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/ai-humanoids/chatgpt-ai-assistant-shut-up/",
+      "url": "https://newatlas.com/ai-humanoids/chatgpt-ai-assistant-shut-up/",
+      "title": "ChatGPT Voice shifts from chatbot to proper assistant",
+      "processedAt": "2026-08-09T00:37:36.212Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Нет конкретных деталей о новом функционале, только субъективное впечатление",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/aircraft/meet-halo-civilian-version-thunder-loyal-wingman/",
+      "url": "https://newatlas.com/aircraft/meet-halo-civilian-version-thunder-loyal-wingman/",
+      "title": "Archer Aviation debuts Halo autonomous VTOL, Thunder's commercial twin",
+      "processedAt": "2026-08-09T00:37:45.303Z",
+      "status": "error",
+      "reason": "Model response was not valid JSON: {\n  \"interesting\": true,\n  \"score\": 79,\n  \"reason\": \"Гражданский автономный VTOL от Archer Aviation — конкретный аппарат для аэротакси, анонсирован",
       "channel": "rss"
     }
   ]
