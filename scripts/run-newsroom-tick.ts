@@ -908,6 +908,13 @@ async function publishRssOnce(opts: {
   const diversityPassers: (DiversityPasser<PoolItem> & {
     scout: Awaited<ReturnType<typeof scoutArticle>>;
   })[] = [];
+  let selectedScouted:
+    | {
+        item: PoolItem;
+        scout: Awaited<ReturnType<typeof scoutArticle>>;
+        diversityNote?: string;
+      }
+    | null = null;
 
   const maxAttempts = scoutPool.pool.length;
   let lastSkip = 'no rss candidate';
@@ -953,11 +960,64 @@ async function publishRssOnce(opts: {
         continue;
       }
 
+      // Non-streak: hand off to unified publish path below.
+      selectedScouted = { item, scout };
+      break;
+
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(chalk.red(`RSS candidate error: ${msg}`));
+      if (!opts.journal.processedUrls.includes(item.url)) {
+        opts.journal.processedUrls.push(item.url);
+      }
+      if (!opts.journal.processedIds.includes(item.id)) {
+        opts.journal.processedIds.push(item.id);
+      }
+      opts.urls.add(item.url);
+      opts.journal.entries.push({
+        id: item.id,
+        url: item.url,
+        title: item.title,
+        processedAt: new Date().toISOString(),
+        status: 'error',
+        reason: msg,
+        channel: 'rss',
+      });
+      await writeFile(opts.journalPath, JSON.stringify(opts.journal, null, 2) + '\n', 'utf8');
+      lastSkip = `rss error: ${msg}`;
+      // Try next candidate in this tick (still max 1 publish).
+      continue;
+    }
+  }
+
+  // SP-A-065F: diversity only selects the winner; publish uses one shared path.
+  if (!selectedScouted && roboticsStreak && diversityPassers.length) {
+    const decision = pickDiversityWinner({
+      passers: diversityPassers.map((p) => ({ item: p.item, score: p.score, focus: p.focus })),
+      recent: recentArts,
+    });
+    console.log(chalk.cyan(`SP-A-065F diversity decision: ${decision.reason}`));
+    const full = decision.winner
+      ? diversityPassers.find((p) => p.item.url === decision.winner!.item.url)
+      : undefined;
+    if (full) {
+      selectedScouted = {
+        item: full.item,
+        scout: full.scout,
+        diversityNote: decision.reason,
+      };
+    }
+  }
+
+  if (selectedScouted) {
+    const item = selectedScouted.item;
+    const scout = selectedScouted.scout;
+    try {
       // Article cycle: require stronger wow (score) — interval is min pause, not obligation.
       if (opts.cycle === 'article' && scout.score < 75) {
         console.log(chalk.yellow(`Article cycle: not worthy enough (wow ${scout.score} < 75)`));
         lastSkip = 'not worthy for article cycle';
-        continue;
+        return false;
       }
 
       const sourcePayload = {
@@ -991,7 +1051,7 @@ async function publishRssOnce(opts: {
           );
           opts.urls.add(item.url);
           lastSkip = 'reviewer reject';
-          continue;
+          return false;
         }
       }
 
@@ -1008,7 +1068,7 @@ async function publishRssOnce(opts: {
         await markRejected(opts.journal, opts.journalPath, item, 'editor hard-reject', scout.score);
         opts.urls.add(item.url);
         lastSkip = 'editor hard-reject';
-        continue;
+        return false;
       }
 
       const wc = wordCount(draft.text);
@@ -1016,7 +1076,7 @@ async function publishRssOnce(opts: {
       if (wc < minWords) {
         console.log(chalk.yellow(`Draft too short for ${opts.format} (${wc} < ${minWords})`));
         lastSkip = 'draft too short';
-        continue;
+        return false;
       }
 
       let imageUrl = item.imageUrl;
@@ -1037,7 +1097,7 @@ async function publishRssOnce(opts: {
         await markRejected(opts.journal, opts.journalPath, item, `slug blocked: ${slug}`, scout.score);
         opts.urls.add(item.url);
         lastSkip = `slug blocked: ${slug}`;
-        continue;
+        return false;
       }
       const draftProductKey = normalizeProductIdentity(draft.title);
       const sourceProductKey = normalizeProductIdentity(item.title);
@@ -1059,7 +1119,7 @@ async function publishRssOnce(opts: {
         );
         opts.urls.add(item.url);
         lastSkip = 'product-identity duplicate';
-        continue;
+        return false;
       }
 
       if (!acquirePublishLock()) {
@@ -1086,7 +1146,7 @@ async function publishRssOnce(opts: {
           );
           opts.urls.add(item.url);
           lastSkip = 'cross-cycle product-identity';
-          continue;
+          return false;
         }
 
         const publishedAt = new Date().toISOString();
@@ -1195,7 +1255,9 @@ async function publishRssOnce(opts: {
           processedAt: publishedAt,
           status: 'published',
           scoutScore: scout.score,
-          reason: scout.reason,
+          reason: selectedScouted.diversityNote
+            ? `${scout.reason} [diversity: ${selectedScouted.diversityNote}]`
+            : scout.reason,
           slug,
           channel: 'rss',
           cycle: opts.cycle,
@@ -1245,205 +1307,6 @@ async function publishRssOnce(opts: {
       });
       await writeFile(opts.journalPath, JSON.stringify(opts.journal, null, 2) + '\n', 'utf8');
       lastSkip = `rss error: ${msg}`;
-      // Try next candidate in this tick (still max 1 publish).
-      continue;
-    }
-  }
-
-  // SP-A-065F — after streak scout pass, pick one winner and publish via non-streak path.
-  if (roboticsStreak && diversityPassers.length && opts.metrics.articlesPublished === 0) {
-    const decision = pickDiversityWinner({
-      passers: diversityPassers.map((p) => ({ item: p.item, score: p.score, focus: p.focus })),
-      recent: recentArts,
-    });
-    console.log(chalk.cyan(`SP-A-065F diversity decision: ${decision.reason}`));
-    const full = decision.winner
-      ? diversityPassers.find((p) => p.item.url === decision.winner!.item.url)
-      : undefined;
-    if (full) {
-      const item = full.item;
-      const scout = full.scout;
-      try {
-        if (opts.cycle === 'article' && scout.score < 75) {
-          lastSkip = 'not worthy for article cycle';
-        } else {
-          const sourcePayload = {
-            title: item.title,
-            text: item.text || item.title,
-            url: item.url,
-            sourceName: item.sourceName,
-            format: opts.format,
-          };
-          console.log(chalk.gray('Reviewer (diversity winner)...'));
-          opts.metrics.sentToGemini += 1;
-          const review = await reviewArticle(sourcePayload);
-          if (/^REJECT\b/i.test(review.technicalVerdict)) {
-            if (scout.score >= 80 && isAiOrInventionAlert(item.title, item.text || item.title)) {
-              review.technicalVerdict = `PASS: AI/invention alert (scout ${scout.score})`;
-            } else {
-              console.log(chalk.yellow(`Reviewer reject: ${review.technicalVerdict}`));
-              await markRejected(opts.journal, opts.journalPath, item, review.technicalVerdict, scout.score);
-              opts.urls.add(item.url);
-              lastSkip = 'reviewer reject';
-              opts.metrics.skipReason = lastSkip;
-              return false;
-            }
-          }
-          console.log(chalk.gray(`Editor (${opts.format})...`));
-          opts.metrics.sentToGemini += 1;
-          const draft = await writeDraft(sourcePayload, review);
-          opts.metrics.draftsCreated += 1;
-          if (
-            draft.title.trim().toUpperCase() === 'REJECT' ||
-            draft.tags.some((t) => t.toLowerCase() === '#reject') ||
-            draft.text.trim().toLowerCase() === 'off-topic'
-          ) {
-            await markRejected(opts.journal, opts.journalPath, item, 'editor hard-reject', scout.score);
-            opts.urls.add(item.url);
-            lastSkip = 'editor hard-reject';
-            opts.metrics.skipReason = lastSkip;
-            return false;
-          }
-          const wc = wordCount(draft.text);
-          const minWords = opts.format === 'news' ? 40 : 120;
-          if (wc < minWords) {
-            lastSkip = 'draft too short';
-            opts.metrics.skipReason = lastSkip;
-            return false;
-          }
-          let imageUrl = item.imageUrl;
-          try {
-            if (!imageUrl) imageUrl = (await extractArticleImage(item.url, draft.title)) || undefined;
-          } catch { /* optional */ }
-          if (imageUrl && !(await passesImageQualityGate(imageUrl))) imageUrl = undefined;
-
-          const sourceProductKey = productIdentityKey(item.title, item.text || '');
-          const draftProductKey = productIdentityKey(draft.title, draft.text);
-          if (
-            (sourceProductKey && opts.productIds.has(sourceProductKey)) ||
-            (draftProductKey && opts.productIds.has(draftProductKey))
-          ) {
-            lastSkip = 'product-identity duplicate';
-            opts.metrics.skipReason = lastSkip;
-            return false;
-          }
-          const slug = slugify(draft.title);
-          if (isRemovedSlug(slug) || opts.urls.has(item.url) || opts.ids.has(slug)) {
-            lastSkip = 'slug/url blocked';
-            opts.metrics.skipReason = lastSkip;
-            return false;
-          }
-          if (!acquirePublishLock()) {
-            opts.metrics.skipReason = 'cross-cycle publish lock';
-            return false;
-          }
-          try {
-            const fresh = await loadState(opts.journalPath, opts.articlesPath);
-            const publishedAt = new Date().toISOString();
-            let images: import('../src/lib/collectors/photo-scout').ScoutImage[] = [];
-            try {
-              const report = await resolveArticlePhotos({
-                slug,
-                title: draft.title,
-                text: draft.text,
-                sourceUrl: item.url,
-                fallbackUrl: imageUrl,
-              });
-              console.log(
-                chalk.gray(
-                  `[photo-v2] entity=${report.entity.brand || report.entity.company || '?'} ` +
-                    `object=${report.entity.object || '?'} candidates=${report.candidatesFound} ` +
-                    `selected=${report.selected.length} match=${report.imageMatchLevel || 'n/a'} ` +
-                    `notes=${report.notes.join('; ')}`,
-                ),
-              );
-              images = report.selected;
-              if (report.imageMatchLevel) {
-                (opts as any)._lastPhotoMeta = {
-                  imageMatchLevel: report.imageMatchLevel,
-                  imageLabel: report.imageLabel,
-                };
-              }
-            } catch (err) {
-              console.log(
-                chalk.yellow(
-                  `[photo-v2] failed: ${err instanceof Error ? err.message : String(err)} — publishing NO IMAGE`,
-                ),
-              );
-            }
-            const photoMeta = (opts as any)._lastPhotoMeta as
-              | { imageMatchLevel?: string; imageLabel?: string }
-              | undefined;
-            const article: Article = {
-              id: slug,
-              slug,
-              title: draft.title,
-              category: toPublicCategory('Гаджеты'),
-              tags: toPublicTags([
-                ...draft.tags.map((t) => t.replace(/^#/, '')),
-                opts.cycle === 'news' ? 'новость' : 'обзор',
-              ]),
-              summary: summaryOf(draft.text),
-              content: draft.text,
-              sourceUrl: item.url,
-              publishedAt,
-              readTime: estimateReadTime(draft.text),
-              ...(images.length ? { imageUrl: images[0].url, images } : {}),
-              ...(photoMeta?.imageMatchLevel
-                ? { imageMatchLevel: photoMeta.imageMatchLevel, imageLabel: photoMeta.imageLabel }
-                : {}),
-              ...stampAuthorForPipeline('newsroom-scout', { sourceUrl: item.url, slug }),
-            } as Article;
-            const deduped = filterRemovedArticles(
-              fresh.articles.filter(
-                (a) => a.id !== article.id && a.slug !== article.slug && a.sourceUrl !== article.sourceUrl,
-              ),
-            );
-            deduped.unshift(article);
-            await writeFile(opts.articlesPath, JSON.stringify(deduped, null, 2) + '
-', 'utf8');
-            await maybeSyncToSqlite(article as unknown as Record<string, unknown>);
-            if (!fresh.journal.processedUrls.includes(item.url)) fresh.journal.processedUrls.push(item.url);
-            if (!fresh.journal.processedIds.includes(item.id)) fresh.journal.processedIds.push(item.id);
-            fresh.journal.entries.push({
-              id: item.id,
-              url: item.url,
-              title: draft.title,
-              processedAt: publishedAt,
-              status: 'published',
-              scoutScore: scout.score,
-              reason: `${scout.reason} [diversity: ${decision.reason}]`,
-              slug,
-              channel: 'rss',
-              cycle: opts.cycle,
-            });
-            await writeFile(opts.journalPath, JSON.stringify(fresh.journal, null, 2) + '
-', 'utf8');
-            opts.ids.add(slug);
-            opts.urls.add(item.url);
-            if (draftProductKey) opts.productIds.add(draftProductKey);
-            if (sourceProductKey) opts.productIds.add(sourceProductKey);
-            if (opts.lastPublish) {
-              opts.lastPublish.title = draft.title;
-              opts.lastPublish.slug = slug;
-              opts.lastPublish.wowScore = scout.score;
-            }
-            opts.metrics.publisherStarted = true;
-            opts.metrics.articlesPublished += 1;
-            opts.metrics.reason = `published rss/${opts.cycle}`;
-            opts.metrics.skipReason = 'none';
-            console.log(
-              chalk.green.bold(`Published (RSS/${opts.cycle}): "${draft.title}" (slug: ${slug})`),
-            );
-            return true;
-          } finally {
-            releasePublishLock();
-          }
-        }
-      } catch (err) {
-        console.error(chalk.red(`diversity publish error: ${err instanceof Error ? err.message : err}`));
-        lastSkip = 'diversity publish error';
-      }
     }
   }
 
