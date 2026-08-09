@@ -269,12 +269,32 @@ function tierForPage(pageUrl: string, sourceUrl: string): CandidateTier {
 
 function softEntityContextOk(c: PhotoCandidate, entity: PhotoEntity): boolean {
   if (SCREENSHOT_MARKER_RE.test(c.context) || SCREENSHOT_MARKER_RE.test(c.url)) return false;
-  // Official / newsroom pages: allow if page itself is brand-aligned even when alt is empty.
+  if (/logo|symbol|typography|swatch/i.test(c.url + c.context)) return false;
+  const pageHay = `${c.pageUrl} ${c.context} ${c.url}`.toLowerCase();
+
+  // When a specific model/product line is known, require it on official pages too
+  // (otherwise manufacturer homepage banners falsely "match" the brand alone).
+  if (entity.model) {
+    const model = entity.model.toLowerCase();
+    if (model.length >= 2 && !new RegExp(`\\b${model.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(pageHay)) {
+      // Also accept distinctive object tokens (e.g. bassinet) with brand
+      const objectTok = (entity.objectType || entity.object || '').toLowerCase();
+      const brand = (entity.brand || entity.company || '').toLowerCase();
+      const hasBrand = brand && pageHay.includes(brand.split(/\s+/)[0]);
+      const hasObject =
+        objectTok &&
+        objectTok.split(/[\s/]+/).some((t) => t.length >= 5 && pageHay.includes(t));
+      if (!(hasBrand && hasObject)) return false;
+    }
+  }
+
   if (c.tier === 'official' || c.tier === 'newsroom' || c.tier === 'lab' || c.tier === 'presskit') {
-    const pageHay = `${c.pageUrl} ${c.context}`.toLowerCase();
     const tokens = entity.matchTokens.map((t) => t.toLowerCase());
     if (tokens.some((t) => t.length >= 3 && pageHay.includes(t.toLowerCase()))) return true;
-    if (entity.brand && pageHay.includes(entity.brand.toLowerCase())) return true;
+    if (entity.brand && pageHay.includes(entity.brand.toLowerCase())) {
+      // Brand alone on official homepage is not enough when model exists.
+      return !entity.model;
+    }
   }
   return contextConfirmsEntity(`${c.context} ${c.pageUrl}`, entity);
 }
