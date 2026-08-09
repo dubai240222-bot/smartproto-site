@@ -229,18 +229,25 @@ export default async function ArticlePage({
             </span>
           </div>
 
-          {/* 5. Hero image — full width of the wide column, or a clean
-              category placeholder when no image passed the quality gate
-              (no image beats a bad screenshot). */}
-          <div className="my-8">
-            <MediaPlaceholder
-              category={article.category}
-              title={article.title}
-              imageUrl={article.imageUrl}
-              description="Иллюстрация к материалу"
-              aspectRatio="aspect-[16/8]"
-            />
-          </div>
+          {/* 5. Hero image — SP-A-061: only rendered when a real,
+              entity-confirmed photo exists. No giant empty placeholder when
+              there isn't one (no image beats a wrong/unconfirmed one). */}
+          {(() => {
+            const hero = article.images?.find((i) => i.role === 'hero')?.url || article.imageUrl;
+            return hero ? (
+              <div className="my-8">
+                <MediaPlaceholder
+                  category={article.category}
+                  title={article.title}
+                  imageUrl={hero}
+                  description="Иллюстрация к материалу"
+                  aspectRatio="aspect-[16/8]"
+                />
+              </div>
+            ) : (
+              <div className="my-6" />
+            );
+          })()}
 
           {/* Two-column body: text (~68%) + visual/related rail (~32%).
               Collapses to a single column on mobile/tablet. */}
@@ -314,35 +321,52 @@ export default async function ArticlePage({
                 to one column; on desktop it sits alongside the text and
                 sticks while scrolling. Reserved for a 2nd/3rd product photo
                 slot once the image pipeline collects more than one shot. */}
-            {relatedArticles.length > 0 && (
-              <aside className="lg:sticky lg:top-20 lg:self-start">
-                <h2 className="font-serif text-lg font-bold text-[var(--text)] mb-4">
-                  Читайте также
-                </h2>
-                <div className="space-y-5">
-                  {relatedArticles.map((rel) => (
-                    <Link
-                      key={rel.slug}
-                      href={`/articles/${rel.slug}`}
-                      className="group flex gap-3 border-b border-[var(--border)] pb-5 last:border-b-0"
-                    >
-                      <MediaThumb imageUrl={rel.imageUrl} title={rel.title} className="h-16 w-16 aspect-square" />
-                      <div className="min-w-0">
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--accent)]">
-                          {rel.category}
+            {(() => {
+              const extraImages = (article.images || []).filter((i) => i.role !== 'hero');
+              if (!extraImages.length && relatedArticles.length === 0) return null;
+              return (
+                <aside className="lg:sticky lg:top-20 lg:self-start">
+                  {extraImages.length > 0 && (
+                    <div className="mb-8 space-y-4">
+                      {extraImages.map((img) => (
+                        <div key={img.url} className="overflow-hidden rounded border border-[var(--border)] bg-[var(--surface)]">
+                          <img src={img.url} alt={article.title} className="h-full w-full object-cover" />
                         </div>
-                        <h3 className="mt-0.5 font-serif text-sm font-bold leading-snug text-[var(--text)] group-hover:text-[var(--accent)] line-clamp-2">
-                          {rel.title}
-                        </h3>
-                        <div className="mt-1 text-[10px] text-[var(--muted)]">
-                          {formatPublishedAt(rel.publishedAt)} • {rel.readTime}
-                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {relatedArticles.length > 0 && (
+                    <>
+                      <h2 className="font-serif text-lg font-bold text-[var(--text)] mb-4">
+                        Читайте также
+                      </h2>
+                      <div className="space-y-5">
+                        {relatedArticles.map((rel) => (
+                          <Link
+                            key={rel.slug}
+                            href={`/articles/${rel.slug}`}
+                            className="group flex gap-3 border-b border-[var(--border)] pb-5 last:border-b-0"
+                          >
+                            <MediaThumb imageUrl={rel.imageUrl} title={rel.title} className="h-16 w-16 aspect-square" />
+                            <div className="min-w-0">
+                              <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--accent)]">
+                                {rel.category}
+                              </div>
+                              <h3 className="mt-0.5 font-serif text-sm font-bold leading-snug text-[var(--text)] group-hover:text-[var(--accent)] line-clamp-2">
+                                {rel.title}
+                              </h3>
+                              <div className="mt-1 text-[10px] text-[var(--muted)]">
+                                {formatPublishedAt(rel.publishedAt)} • {rel.readTime}
+                              </div>
+                            </div>
+                          </Link>
+                        ))}
                       </div>
-                    </Link>
-                  ))}
-                </div>
-              </aside>
-            )}
+                    </>
+                  )}
+                </aside>
+              );
+            })()}
           </div>
         </article>
       </div>

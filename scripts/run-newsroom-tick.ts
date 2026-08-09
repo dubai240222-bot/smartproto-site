@@ -18,6 +18,7 @@ import dotenv from 'dotenv';
 import chalk from 'chalk';
 import { fetchRssFeed, type RssItem } from '../src/lib/collectors/rss';
 import { extractArticleImage, passesImageQualityGate } from '../src/lib/collectors/image-extractor';
+import { scoutImages, downloadImagesLocally } from '../src/lib/collectors/photo-scout';
 import { scoutArticle, SCOUT_SCORE_THRESHOLD } from '../src/lib/ai/scout';
 import { reviewArticle } from '../src/lib/ai/reviewer';
 import { writeDraft, type DraftFormat } from '../src/lib/ai/editor';
@@ -611,6 +612,32 @@ async function tryChinaPublishOnce(opts: {
         dossier.manufacturer || '',
         opts.cycle === 'news' ? 'новость' : 'обзор',
       ]);
+
+      // SP-A-061 Photo Intelligence V1: only accept photos that textually
+      // confirm the article's brand/model; wrong-product photo is worse than
+      // no photo, so an unmatched/rumored candidate yields no images at all.
+      let images: import('../src/lib/collectors/photo-scout').ScoutImage[] = [];
+      try {
+        const htmlRes = await fetch(c.sourceUrl, {
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+          signal: AbortSignal.timeout(6000),
+        });
+        if (htmlRes.ok) {
+          const html = await htmlRes.text();
+          const scouted = await scoutImages({
+            html,
+            pageUrl: c.sourceUrl,
+            title: draft.title,
+            text: draft.text,
+            fallbackUrl: imageUrl || undefined,
+          });
+          if (scouted.length) images = await downloadImagesLocally(slug, scouted);
+        }
+      } catch {
+        /* no confirmed photo — publish without one */
+      }
+      if (!images.length) imageUrl = ''; // never fall back to an unconfirmed hotlink
+
       const article: Article = {
         id: slug,
         slug,
@@ -622,7 +649,7 @@ async function tryChinaPublishOnce(opts: {
         sourceUrl: c.sourceUrl,
         publishedAt,
         readTime: `${Math.max(1, Math.ceil(wc / 150))} мин`,
-        ...(imageUrl ? { imageUrl } : {}),
+        ...(images.length ? { imageUrl: images[0].url, images } : {}),
         ...stampAuthorForPipeline('china-qwen', { sourceUrl: c.sourceUrl, slug }),
       };
 
@@ -966,6 +993,30 @@ async function publishRssOnce(opts: {
         }
 
         const publishedAt = new Date().toISOString();
+
+        // SP-A-061 Photo Intelligence V1 (see China branch for full rationale):
+        // no confirmed brand/model match in the source page -> no image.
+        let images: import('../src/lib/collectors/photo-scout').ScoutImage[] = [];
+        try {
+          const htmlRes = await fetch(item.url, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+            signal: AbortSignal.timeout(6000),
+          });
+          if (htmlRes.ok) {
+            const html = await htmlRes.text();
+            const scouted = await scoutImages({
+              html,
+              pageUrl: item.url,
+              title: draft.title,
+              text: draft.text,
+              fallbackUrl: imageUrl,
+            });
+            if (scouted.length) images = await downloadImagesLocally(slug, scouted);
+          }
+        } catch {
+          /* no confirmed photo — publish without one */
+        }
+
         const article: Article = {
           id: slug,
           slug,
@@ -980,7 +1031,7 @@ async function publishRssOnce(opts: {
           sourceUrl: item.url,
           publishedAt,
           readTime: estimateReadTime(draft.text),
-          ...(imageUrl ? { imageUrl } : {}),
+          ...(images.length ? { imageUrl: images[0].url, images } : {}),
           ...stampAuthorForPipeline('newsroom-scout', { sourceUrl: item.url, slug }),
         };
 

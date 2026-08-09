@@ -14,7 +14,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 
-type Mode = 'off' | 'single' | 'auto';
+type Mode = 'off' | 'single' | 'auto' | 'test-auto';
 
 const DATA_DIR = process.env.SMARTPROTO_DATA_DIR || path.resolve(process.cwd(), 'data');
 const MODE_FILE = path.join(DATA_DIR, 'worker-mode.json');
@@ -22,6 +22,8 @@ const STATE_FILE = path.join(DATA_DIR, 'worker-state.json');
 
 const NEWS_INTERVAL_MS = Number(process.env.SMARTPROTO_NEWS_INTERVAL_MS || 25 * 60 * 1000);
 const ARTICLE_INTERVAL_MS = Number(process.env.SMARTPROTO_ARTICLE_INTERVAL_MS || 3 * 60 * 60 * 1000);
+/** SP-A-062 — active testing phase: full cycle every 10 minutes, thresholds unchanged. */
+const TEST_AUTO_INTERVAL_MS = 10 * 60 * 1000;
 const POLL_MS = 15_000;
 
 mkdirSync(DATA_DIR, { recursive: true });
@@ -29,7 +31,7 @@ mkdirSync(DATA_DIR, { recursive: true });
 function readMode(): Mode {
   try {
     const raw = JSON.parse(readFileSync(MODE_FILE, 'utf8'));
-    if (raw.mode === 'off' || raw.mode === 'single' || raw.mode === 'auto') return raw.mode;
+    if (['off', 'single', 'auto', 'test-auto'].includes(raw.mode)) return raw.mode;
   } catch {
     /* default below */
   }
@@ -106,6 +108,20 @@ async function loopOnce(): Promise<void> {
     writeMode('off');
     log('Single cycle done — mode set back to OFF.');
     return;
+  }
+
+  if (mode === 'test-auto') {
+    const state = readState();
+    if (isDue(state.lastRunAt, TEST_AUTO_INTERVAL_MS)) {
+      log('Mode TEST-AUTO — running full editorial cycle (10 min interval, thresholds unchanged).');
+      const ok = await runTick('news');
+      writeState({
+        lastRunAt: new Date().toISOString(),
+        lastRunStatus: ok ? 'ok' : 'error',
+        ...(ok ? { lastNewsAt: new Date().toISOString() } : {}),
+      });
+    }
+    return; // stays in TEST-AUTO — owner must run `smartproto off` to stop
   }
 
   // AUTO

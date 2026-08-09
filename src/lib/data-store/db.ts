@@ -34,9 +34,16 @@ export function getDb(): Database.Database {
       author TEXT,
       authorDesk TEXT,
       agentId TEXT,
+      images TEXT NOT NULL DEFAULT '[]',
       updatedAt TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
     );
     CREATE INDEX IF NOT EXISTS idx_articles_publishedAt ON articles(publishedAt DESC);
   `);
+  // SP-A-061: safe migration for the 141 pre-existing rows — add column if an
+  // older DB file is reused, never touches existing content.
+  const cols = db.prepare('PRAGMA table_info(articles)').all() as { name: string }[];
+  if (!cols.some((c) => c.name === 'images')) {
+    db.exec("ALTER TABLE articles ADD COLUMN images TEXT NOT NULL DEFAULT '[]'");
+  }
   return db;
 }

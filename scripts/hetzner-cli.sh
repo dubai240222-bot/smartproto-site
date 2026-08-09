@@ -10,7 +10,7 @@ STATE_FILE="$DATA_DIR/worker-state.json"
 mkdir -p "$DATA_DIR"
 
 case "${1:-}" in
-  off|single|auto)
+  off|single|auto|test-auto)
     printf '{"mode":"%s","setAt":"%s"}\n' "$1" "$(date -u +%FT%TZ)" > "$MODE_FILE"
     echo "SmartProto worker mode set to: $1"
     ;;
@@ -25,7 +25,7 @@ case "${1:-}" in
     curl -fsS http://127.0.0.1:3100/api/health 2>&1 || echo "web not responding"
     ;;
   *)
-    echo "usage: smartproto {off|single|auto|status}"
+    echo "usage: smartproto {off|single|auto|test-auto|status}"
     exit 1
     ;;
 esac

@@ -5,6 +5,12 @@
  */
 import { getDb } from './db';
 
+export interface ArticleImage {
+  url: string;
+  role: 'hero' | 'secondary' | 'detail';
+  sourceUrl?: string;
+}
+
 export interface StoredArticle {
   id: string;
   slug: string;
@@ -17,6 +23,7 @@ export interface StoredArticle {
   publishedAt: string;
   readTime: string;
   imageUrl?: string;
+  images?: ArticleImage[];
   author?: string;
   authorDesk?: string;
   agentId?: string;
@@ -34,9 +41,19 @@ interface Row {
   publishedAt: string;
   readTime: string;
   imageUrl: string | null;
+  images: string | null;
   author: string | null;
   authorDesk: string | null;
   agentId: string | null;
+}
+
+function safeParseImages(raw: string): ArticleImage[] | undefined {
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function rowToArticle(row: Row): StoredArticle {
@@ -58,6 +75,7 @@ function rowToArticle(row: Row): StoredArticle {
     publishedAt: row.publishedAt,
     readTime: row.readTime,
     imageUrl: row.imageUrl ?? undefined,
+    images: row.images ? safeParseImages(row.images) : undefined,
     author: row.author ?? undefined,
     authorDesk: row.authorDesk ?? undefined,
     agentId: row.agentId ?? undefined,
@@ -87,13 +105,14 @@ export function getArticleBySlugFromDb(slug: string): StoredArticle | undefined 
 export function upsertArticle(article: StoredArticle): void {
   const stmt = getDb().prepare(`
     INSERT INTO articles
-      (slug, id, title, category, tags, summary, content, sourceUrl, publishedAt, readTime, imageUrl, author, authorDesk, agentId, updatedAt)
+      (slug, id, title, category, tags, summary, content, sourceUrl, publishedAt, readTime, imageUrl, images, author, authorDesk, agentId, updatedAt)
     VALUES
-      (@slug, @id, @title, @category, @tags, @summary, @content, @sourceUrl, @publishedAt, @readTime, @imageUrl, @author, @authorDesk, @agentId, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+      (@slug, @id, @title, @category, @tags, @summary, @content, @sourceUrl, @publishedAt, @readTime, @imageUrl, @images, @author, @authorDesk, @agentId, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
     ON CONFLICT(slug) DO UPDATE SET
       id=excluded.id, title=excluded.title, category=excluded.category, tags=excluded.tags,
       summary=excluded.summary, content=excluded.content, sourceUrl=excluded.sourceUrl,
       publishedAt=excluded.publishedAt, readTime=excluded.readTime, imageUrl=excluded.imageUrl,
+      images=excluded.images,
       author=excluded.author, authorDesk=excluded.authorDesk, agentId=excluded.agentId,
       updatedAt=strftime('%Y-%m-%dT%H:%M:%fZ','now')
   `);
@@ -110,6 +129,7 @@ export function upsertArticle(article: StoredArticle): void {
       publishedAt: a.publishedAt,
       readTime: a.readTime,
       imageUrl: a.imageUrl ?? null,
+      images: JSON.stringify(a.images ?? []),
       author: a.author ?? null,
       authorDesk: a.authorDesk ?? null,
       agentId: a.agentId ?? null,

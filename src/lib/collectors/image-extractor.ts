@@ -93,6 +93,13 @@ export async function passesImageQualityGate(url: string): Promise<boolean> {
     const ratio = width / height;
     if (ratio > 2.3 || ratio < 0.42) return false; // banner/strip shape == reposted screenshot
 
+    // SP-A-061: a bare mobile-share "Exif Standard: [TIFF ...]" marker (no
+    // camera/lens data, just the generic APP1 stub phone apps stamp on
+    // re-shared screenshots) is a weak-but-useful screenshot signal on this
+    // pipeline's sources — official press renders/photos in our observed
+    // samples don't carry it.
+    if (buf.slice(0, 65535).includes('Exif')) return false;
+
     return true;
   } catch {
     return true; // network/timeout — fail-open, never block publish on a flaky fetch
