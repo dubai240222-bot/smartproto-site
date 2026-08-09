@@ -12,7 +12,8 @@
     "https://www.ithome.com/0/987/491.htm",
     "https://www.ithome.com/0/987/489.htm",
     "https://www.ithome.com/0/987/531.htm",
-    "https://newatlas.com/automotive/zoox-nhtsa-commercial-exemption-paid-robotaxi/"
+    "https://newatlas.com/automotive/zoox-nhtsa-commercial-exemption-paid-robotaxi/",
+    "https://newatlas.com/wearables/samsung-ai-eyewear-galaxy-glasses/"
   ],
   "processedIds": [
     "https://www.yankodesign.com/?p=639735",
@@ -27,7 +28,8 @@
     "china-mini",
     "china-nvme",
     "china-openfit-2-ai",
-    "https://newatlas.com/automotive/zoox-nhtsa-commercial-exemption-paid-robotaxi/"
+    "https://newatlas.com/automotive/zoox-nhtsa-commercial-exemption-paid-robotaxi/",
+    "https://newatlas.com/wearables/samsung-ai-eyewear-galaxy-glasses/"
   ],
   "entries": [
     {
@@ -234,6 +236,45 @@
       "status": "rejected",
       "scoutScore": 0,
       "reason": "Отсутствуют конкретные детали о продукте, его возможностях и пользе; только общее заявление.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/wearables/samsung-ai-eyewear-galaxy-glasses/",
+      "url": "https://newatlas.com/wearables/samsung-ai-eyewear-galaxy-glasses/",
+      "title": "Samsung's new AI glasses work with Google's Gemini AI",
+      "processedAt": "2026-08-09T06:32:14.587Z",
+      "status": "error",
+      "reason": "Scout model (deepseek/deepseek-v4-flash:latest) returned an empty response. finish_reason: length, reasoning present: false",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/ai-humanoids/chatgpt-ai-assistant-shut-up/",
+      "url": "https://newatlas.com/ai-humanoids/chatgpt-ai-assistant-shut-up/",
+      "title": "ChatGPT Voice shifts from chatbot to proper assistant",
+      "processedAt": "2026-08-09T06:32:34.568Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Недостаточно конкретики: нет фактов о новых возможностях, только субъективное впечатление.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/wearables/samsung-ai-eyewear-galaxy-glasses/",
+      "url": "https://newatlas.com/wearables/samsung-ai-eyewear-galaxy-glasses/",
+      "title": "Samsung's new AI glasses work with Google's Gemini AI",
+      "processedAt": "2026-08-09T06:33:05.905Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Недостаточно конкретной информации о продукте и его пользе; анонс без деталей, не является изобретением или достижением с ясной ценностью.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/ai-humanoids/fraunhofer-realorrender-deepfake-detection/",
+      "url": "https://newatlas.com/ai-humanoids/fraunhofer-realorrender-deepfake-detection/",
+      "title": "A deep take for detecting deepfakes",
+      "processedAt": "2026-08-09T06:33:10.673Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Общий обзор проблемы дипфейков и упоминание Fraunhofer без конкретного детектора/достижения, поэтому нет предмета интереса.",
       "channel": "rss"
     }
   ]
