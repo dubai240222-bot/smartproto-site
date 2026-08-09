@@ -13,7 +13,8 @@
     "https://www.ithome.com/0/987/489.htm",
     "https://www.ithome.com/0/987/531.htm",
     "https://newatlas.com/automotive/zoox-nhtsa-commercial-exemption-paid-robotaxi/",
-    "https://newatlas.com/wearables/samsung-ai-eyewear-galaxy-glasses/"
+    "https://newatlas.com/wearables/samsung-ai-eyewear-galaxy-glasses/",
+    "https://www.androidauthority.com/gemini-notebook-source-automation-3696153/"
   ],
   "processedIds": [
     "https://www.yankodesign.com/?p=639735",
@@ -29,7 +30,8 @@
     "china-nvme",
     "china-openfit-2-ai",
     "https://newatlas.com/automotive/zoox-nhtsa-commercial-exemption-paid-robotaxi/",
-    "https://newatlas.com/wearables/samsung-ai-eyewear-galaxy-glasses/"
+    "https://newatlas.com/wearables/samsung-ai-eyewear-galaxy-glasses/",
+    "https://www.androidauthority.com/gemini-notebook-source-automation-3696153/"
   ],
   "entries": [
     {
@@ -275,6 +277,45 @@
       "status": "rejected",
       "scoutScore": 0,
       "reason": "Общий обзор проблемы дипфейков и упоминание Fraunhofer без конкретного детектора/достижения, поэтому нет предмета интереса.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/ai-humanoids/chatgpt-ai-assistant-shut-up/",
+      "url": "https://newatlas.com/ai-humanoids/chatgpt-ai-assistant-shut-up/",
+      "title": "ChatGPT Voice shifts from chatbot to proper assistant",
+      "processedAt": "2026-08-09T06:58:20.749Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "No concrete evidence of new capabilities; purely subjective impression",
+      "channel": "rss"
+    },
+    {
+      "id": "https://newatlas.com/ai-humanoids/fraunhofer-realorrender-deepfake-detection/",
+      "url": "https://newatlas.com/ai-humanoids/fraunhofer-realorrender-deepfake-detection/",
+      "title": "A deep take for detecting deepfakes",
+      "processedAt": "2026-08-09T06:58:29.390Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Нет конкретного устройства, приложения или изобретения — только общие слова о deepfakes и упоминание Fraunhofer без описания технологии.",
+      "channel": "rss"
+    },
+    {
+      "id": "https://www.theverge.com/?p=976422",
+      "url": "https://www.theverge.com/gadgets/976422/birdfy-feeder-rookie-nothing-headphones-deal-sale",
+      "title": "Birdfy’s smart bird feeder is on sale for just $60",
+      "processedAt": "2026-08-09T06:58:47.783Z",
+      "status": "rejected",
+      "scoutScore": 0,
+      "reason": "Обычная скидочная акция на уже существующую умную кормушку без новой функциональности",
+      "channel": "rss"
+    },
+    {
+      "id": "https://www.androidauthority.com/gemini-notebook-source-automation-3696153/",
+      "url": "https://www.androidauthority.com/gemini-notebook-source-automation-3696153/",
+      "title": "Google is making it easier to add new sources to Gemini Notebook",
+      "processedAt": "2026-08-09T06:59:09.802Z",
+      "status": "error",
+      "reason": "Scout model (deepseek/deepseek-v4-flash:latest) returned an empty response. finish_reason: length, reasoning present: false",
       "channel": "rss"
     }
   ]
