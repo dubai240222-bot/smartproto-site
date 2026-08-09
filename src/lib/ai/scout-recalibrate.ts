@@ -101,22 +101,84 @@ export function applyAntiCommodityPenalty(
   text = '',
 ): { score: number; penalty: number; reason?: string } {
   if (looksCommodityRoutine(title, text)) {
-    const penalty = rawScore >= 70 ? 35 : 25;
+    // Routine phones/lineups/leaks → land in ~0–25 band.
+    const targetCap = 25;
+    const penalty = Math.max(0, rawScore - targetCap);
     return {
-      score: Math.max(0, rawScore - penalty),
+      score: Math.min(rawScore, targetCap),
       penalty,
-      reason: 'anti-commodity penalty (routine product / lineup / specs refresh)',
+      reason: 'anti-commodity (routine product / lineup / specs refresh)',
     };
   }
-  if (looksSmartHomeRoutine(title, text) && rawScore >= 70) {
-    const penalty = 25;
+  if (looksSmartHomeRoutine(title, text)) {
+    // RainPoint-class → ~0–35.
+    const targetCap = 35;
+    const penalty = Math.max(0, rawScore - targetCap);
     return {
-      score: Math.max(0, rawScore - penalty),
+      score: Math.min(rawScore, targetCap),
       penalty,
-      reason: 'smart-home routine penalty (not enough surprise for 80+)',
+      reason: 'smart-home routine (not enough surprise)',
     };
   }
   return { score: rawScore, penalty: 0 };
+}
+
+/**
+ * SP-A-065B — soft novelty: do NOT zero score for "not a brand-new category".
+ * Unusual improvements (ultra-thin keyboard, cry-response bassinet) may sit at 40–69.
+ * 70+ still requires strong parts / actual newness.
+ */
+export function applySoftNoveltyAdjust(
+  rawScore: number,
+  opts: {
+    isActuallyNew: boolean;
+    noProduct: boolean;
+    title: string;
+    text?: string;
+    parts?: ScoutScorePartsV2;
+  },
+): { score: number; penalty: number; capped: boolean; reason?: string } {
+  if (opts.noProduct) {
+    return { score: 0, penalty: rawScore, capped: false, reason: 'no product' };
+  }
+  if (looksCommodityRoutine(opts.title, opts.text) || looksSmartHomeRoutine(opts.title, opts.text)) {
+    // Commodity path already handled by applyAntiCommodityPenalty.
+    return { score: rawScore, penalty: 0, capped: false };
+  }
+  if (opts.isActuallyNew) {
+    return { score: rawScore, penalty: 0, capped: false };
+  }
+
+  const surprise = opts.parts?.humanSurprise ?? 0;
+  const novelty = opts.parts?.novelty ?? 0;
+  const share = opts.parts?.shareability ?? 0;
+  const strongWow = surprise >= 22 && (novelty >= 10 || share >= 7);
+
+  // Soft mid-band: keep unusual category improvements visible (Altar/Delta class).
+  let score = rawScore;
+  let penalty = 0;
+  if (score > 55) {
+    penalty = Math.min(20, score - 55);
+    score -= penalty;
+  }
+  let capped = false;
+  if (!strongWow && score > 69) {
+    capped = true;
+    penalty += score - 69;
+    score = 69;
+  }
+  // Floor mid interest so we don't collapse to 0.
+  if (score > 0 && score < 40 && rawScore >= 50) {
+    score = 40;
+  }
+  return {
+    score: Math.max(0, Math.min(100, score)),
+    penalty,
+    capped,
+    reason: capped
+      ? 'soft novelty: capped below 70 without strong surprise'
+      : 'soft novelty: mid-band for category improvement',
+  };
 }
 
 export const SCOUT_SYSTEM_PROMPT_GADGET_V2 = [
@@ -133,15 +195,18 @@ export const SCOUT_SYSTEM_PROMPT_GADGET_V2 = [
   'shareability 0–10 — захочет ли человек отправить знакомому',
   'credibility 0–10 — реальный продукт / prototype / primary research',
   '',
-  'ANTI-COMMODITY: низкие части, если история про очередной смартфон/ноутбук/монитор/клавиатуру/powerbank,',
-  'линейку «представят в сентябре», утечку характеристик без необычной идеи.',
-  'Такое проходит ТОЛЬКО при настоящем необычном элементе (7 дней без зарядки, жест-браслет вместо мыши и т.п.).',
+  'ANTI-COMMODITY: низкие части (итог ориентир 0–35), если история про очередной смартфон/ноутбук/монитор/клавиатуру/powerbank,',
+  'линейку «представят в сентябре», утечку характеристик без необычной идеи, обычный smart-watering kit.',
   '',
-  'ЭТАЛОНЫ: Meta gesture wristband → высокий; Delta Aero (автоотклик на плач) → средний/высокий;',
-  'Altar II → средний; RainPoint smart watering → НЕ 80+ только за «smart device»;',
-  'обычный iQOO/Huawei release/rumor → низкий без сильной уникальной особенности.',
+  'SOFT NOVELTY (SP-A-065B): не ставь score=0 только потому что категория уже существует.',
+  'Необычное улучшение существующей категории (ультратонкая клавиатура, люлька с автооткликом на плач) → ориентир 40–69.',
+  '70+ только при высоком humanSurprise / shareability / настоящей новизне способа.',
+  '',
+  'ЭТАЛОНЫ: Meta gesture wristband → 80–90; humanoid laundry robot → 80–90; ETH drones → 70–85;',
+  'Delta Aero (cry-response) → ~50–70; Altar II (extreme thinness) → ~40–65; RainPoint watering → 0–35;',
+  'обычный iQOO/OPPO/iPhone rumor/lineup → 0–25.',
   '',
   'status: AVAILABLE | ANNOUNCED | PROTOTYPE | RESEARCH | CONCEPT | CROWDFUNDING.',
   'Не маскируй concept/crowdfunding под AVAILABLE.',
-  'REJECT: политика, celebrities, SEO listicles, commodity без wow, Docker/DevOps без consumer-смысла.',
+  'REJECT только мусор/политику/SEO — не обнуляй mid-band необычные улучшения.',
 ].join('\n');

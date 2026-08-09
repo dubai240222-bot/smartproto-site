@@ -1,5 +1,6 @@
 ﻿import {
   applyAntiCommodityPenalty,
+  applySoftNoveltyAdjust,
   inferProductStatus,
   SCOUT_SYSTEM_PROMPT_GADGET_V2,
   sumPartsV2,
@@ -214,11 +215,27 @@ export async function scoutArticle(
     parsed.isActuallyNew !== false &&
     modelEvidence.length > 0 &&
     !(marketSaturation === 'high' && !functionalDifference);
-  const interesting =
-    parsed.interesting === false || noProduct || !isActuallyNew
-      ? false
-      : score >= SCOUT_SCORE_THRESHOLD;
-  if (!interesting && (noProduct || !isActuallyNew) && score > 0) score = 0;
+
+  // SP-A-065B: soft novelty — never binary-zero Altar/Delta-class improvements.
+  let noveltyPenalty = 0;
+  let noveltyNote = '';
+  if (mode === 'gadget') {
+    const soft = applySoftNoveltyAdjust(score, {
+      isActuallyNew,
+      noProduct,
+      title,
+      text,
+      parts: partsV2,
+    });
+    score = soft.score;
+    noveltyPenalty = soft.penalty;
+    if (soft.reason) noveltyNote = soft.reason;
+  } else if (noProduct) {
+    score = 0;
+  }
+
+  // Publish interest = score gate only (threshold unchanged at env/70). Soft mid-band stays visible.
+  const interesting = !noProduct && score >= SCOUT_SCORE_THRESHOLD;
 
   const reasonBase =
     typeof parsed.reason === 'string'
@@ -226,14 +243,18 @@ export async function scoutArticle(
       : noProduct
         ? 'Нет явного покупаемого продукта/устройства.'
         : !isActuallyNew
-          ? 'Нет доказательства новизны (NOT_ACTUALLY_NEW).'
+          ? 'Категория знакома — mid-band / soft novelty.'
           : 'No reason provided by scout model.';
+
+  const tags: string[] = [];
+  if (commodityPenalty > 0) tags.push(`commodity −${commodityPenalty}`);
+  if (noveltyPenalty > 0) tags.push(`novelty −${noveltyPenalty}`);
+  if (noveltyNote && !isActuallyNew && !noProduct) tags.push(noveltyNote);
 
   return {
     interesting,
-    score: interesting ? score : Math.min(score, SCOUT_SCORE_THRESHOLD - 1),
-    reason:
-      commodityPenalty > 0 ? `${reasonBase} [commodity −${commodityPenalty}]` : reasonBase,
+    score: Math.max(0, Math.min(100, Math.round(score))),
+    reason: tags.length ? `${reasonBase} [${tags.join('; ')}]` : reasonBase,
     productType: productType || 'none',
     status,
     partsV2,
@@ -246,7 +267,7 @@ export async function scoutArticle(
         : n.existingAlternatives,
     functionalDifference,
     marketSaturation,
-    rejectCode: interesting ? null : isActuallyNew ? null : 'NOT_ACTUALLY_NEW',
+    rejectCode: interesting ? null : noProduct ? 'NO_PRODUCT' : isActuallyNew ? null : 'NOT_ACTUALLY_NEW',
   };
 }
 

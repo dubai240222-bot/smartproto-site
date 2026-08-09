@@ -22,6 +22,7 @@ import {
   discoveryRankFor,
   enabledRssSources,
 } from '../src/lib/collectors/source-registry';
+import { buildScoutPool } from '../src/lib/ai/candidate-prerank';
 import { resolveArticlePhotos } from '../src/lib/collectors/photo-scout';
 import { scoutArticle, SCOUT_SCORE_THRESHOLD } from '../src/lib/ai/scout';
 import { reviewArticle } from '../src/lib/ai/reviewer';
@@ -851,12 +852,24 @@ async function publishRssOnce(opts: {
     return true;
   }
 
-  // Max 1 publish / tick. Probe/forced: dig deeper past score-0 deal/opinion tops.
-  const maxAttempts = Math.min(probeMode ? 16 : 4, candidates.length);
+  // SP-A-065B: cheap pre-rank + topic dedupe → Scout TOP 12–16 (not only first 4).
+  // Probe/forced already digs deep; production now uses the same wider Scout window.
+  const scoutLimit = probeMode ? 16 : 14;
+  const scoutPool = buildScoutPool(candidates, { limit: scoutLimit, maxPerSource: 3 });
+  console.log(
+    chalk.gray(
+      `Scout pool: raw=${scoutPool.rawCount} afterDedupe=${scoutPool.afterDedupe} scout=${scoutPool.pool.length} (limit=${scoutLimit})`,
+    ),
+  );
+  for (const row of scoutPool.rankedPreview.slice(0, 8)) {
+    console.log(chalk.gray(`  pre-rank ${row.cheap}: [${row.sourceName}] ${row.title.slice(0, 70)}`));
+  }
+
+  const maxAttempts = scoutPool.pool.length;
   let lastSkip = 'no rss candidate';
 
   for (let i = 0; i < maxAttempts; i++) {
-    const item = candidates[i];
+    const item = scoutPool.pool[i];
     console.log(chalk.cyan(`Pick (${i + 1}/${maxAttempts}): [${item.sourceName}] ${item.title}`));
     console.log(chalk.gray(item.url));
 
