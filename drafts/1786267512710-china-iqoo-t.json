@@ -1,0 +1,83 @@
+{
+  "generatedAt": "2026-08-09T09:25:12.707Z",
+  "channel": "china-qwen",
+  "cycle": "news",
+  "format": "news",
+  "source": {
+    "sourceId": "ithome-rss",
+    "sourceName": "IT之家",
+    "sourceUrl": "https://www.ithome.com/0/987/572.htm",
+    "platform": "rss",
+    "language": "zh",
+    "title": "消息称 iQOO T 系列手机继续迭代：新品测试液冷 + 风冷，搭载 200MP 主摄、无潜望",
+    "summary": "IT之家 8 月 9 日消息，博主 @智慧皮卡丘 今日透露， iQOO T 系列手机继续迭代，新品（预计为 iQOO 16T）测试液冷 + 风冷，搭载 200MP 主摄、无潜望。\n\n据IT之家此前报道，iQOO 15T 手机发布于 5 月 20 日，搭载天玑 9500 Monster 版芯片，首销优惠价 3799 元起。\n\n作为参考，iQOO 15T 手机同样搭载 2 亿像素主摄，支持蓝厂旗舰同款 CIPA 4.5 专业级防抖，还支持 4 倍无损变焦、全焦段人像。该机还搭载 5000 万像素高清超广角镜头，支持微距。\n\n性能方面，iQOO 15T 手机搭载天玑 9500 Monster 版芯片和自研电竞芯片 Q3，支持 2K 原画超分 +144FPS 超帧并发；采用 LPDDR5X Ultra 内存搭配 UFS 4.1 闪存；拥有 8000mm2 冰穹 VC，8000mAh 蓝海电池支持 100W 闪充。",
+    "priceText": "",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/1894e9cc-44e7-428b-a5f7-88e6f9ff323a.jpg",
+    "publishedAt": "2026-08-09T08:51:39.000Z",
+    "rawSignals": [
+      "新品",
+      "发布"
+    ],
+    "collectedAt": "2026-08-09T09:24:55.072Z"
+  },
+  "dossier": {
+    "originalTitle": "消息称 iQOO T 系列手机继续迭代：新品测试液冷 + 风冷，搭载 200MP 主摄、无潜望",
+    "translatedTitle": "",
+    "productName": "iQOO T",
+    "manufacturer": "",
+    "platform": "rss",
+    "productUrl": "",
+    "sourceUrl": "https://www.ithome.com/0/987/572.htm",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/1894e9cc-44e7-428b-a5f7-88e6f9ff323a.jpg",
+    "whatItDoes": "博主 @智慧皮卡丘 今日透露， iQOO T 系列手机继续迭代，新品（预计为 iQOO 16T）测试液冷 + 风冷，搭载 200MP 主摄、无潜望。\n\nIT之家 8 月 9 日消息，博主 @智慧皮卡丘 今日透露， iQOO T 系列手机继续迭代，新品（预计为 iQOO 16T）测试液冷 + 风冷，搭载 200MP 主摄、无潜望。\n\n据IT之家此前报道，iQOO 15T 手机发布于 5 月 20 日，搭载天玑 9500 Monster 版芯片，首销优惠价 3799 元起。\n\n作为参考，iQOO 15T 手机同样搭载 2 亿像素主摄，支持蓝厂旗舰同款 CIPA 4.5 专业级防抖，还支持 4 倍无损变焦、全焦段人像。该机还搭载 5000 万像素高清超广角镜头，支持微距。\n\n性能方面，iQOO 15T 手机搭载天玑 9500 Monster 版芯片和自研电竞芯片 Q3，支持 2K 原画超分 +1",
+    "whyItIsNew": "",
+    "consumerUse": "",
+    "priceOriginal": null,
+    "currency": null,
+    "priceApproxUsd": null,
+    "availability": "",
+    "launchDate": null,
+    "market": "",
+    "prototypeOrSale": "",
+    "evidence": [],
+    "unknownFacts": [
+      "是否保留天玑 9500 Monster 版芯片（未确认）",
+      "是否升级至更高性能平台（如天玑 9400 系列）",
+      "是否保留 8000mAh 电池容量",
+      "是否取消潜望式长焦镜头（仅确认‘无潜望’，但未说明主摄是否为直立式 200MP）",
+      "是否支持 2K 超分 + 144FPS 超帧并发（仅 iQOO 15T 明确支持）"
+    ],
+    "warningFlags": [
+      "信息源为第三方博主爆料，非官方确认",
+      "型号为‘预计为 iQOO 16T’，尚未官宣命名",
+      "‘测试液冷 + 风冷’表明仍处于工程验证阶段，设计可能变更",
+      "200MP 主摄若无潜望结构，可能为直立式长焦或仅主摄支持高倍变焦（需后续验证）"
+    ],
+    "recommended": false,
+    "sourceSuggestions": []
+  },
+  "draft": {
+    "id": "china-iqoo-t",
+    "slug": "china-iqoo-t",
+    "title": "iQOO T: тестирование системы охлаждения и 200 МП камеры",
+    "category": "Гаджеты",
+    "tags": [
+      "смартфон",
+      "iQOO",
+      "мобильная фотография",
+      "система охлаждения",
+      "новинка",
+      "гаджет",
+      "новость"
+    ],
+    "summary": "Появилась информация о тестировании нового смартфона iQOO, предположительно iQOO 16T.",
+    "content": "Появилась информация о тестировании нового смартфона iQOO, предположительно iQOO 16T. Устройство проходит испытания с комбинированной системой жидкостного и воздушного охлаждения. Ожидается оснащение основной камерой с разрешением 200 мегапикселей. Отмечается отсутствие перископического модуля для оптического зума. Детали о процессоре и других характеристиках пока не уточнены.",
+    "sourceUrl": "https://www.ithome.com/0/987/572.htm",
+    "publishedAt": "2026-08-09T09:25:12.707Z",
+    "readTime": "1 мин",
+    "imageUrl": "https://img.ithome.com/newsuploadfiles/2026/8/1894e9cc-44e7-428b-a5f7-88e6f9ff323a.jpg",
+    "author": "Линь Цзе",
+    "authorDesk": "China desk",
+    "agentId": "china-qwen"
+  }
+}

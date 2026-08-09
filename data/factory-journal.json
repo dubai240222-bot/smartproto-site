@@ -15,7 +15,8 @@
     "https://newatlas.com/automotive/zoox-nhtsa-commercial-exemption-paid-robotaxi/",
     "https://newatlas.com/wearables/samsung-ai-eyewear-galaxy-glasses/",
     "https://www.androidauthority.com/gemini-notebook-source-automation-3696153/",
-    "https://www.ithome.com/0/987/563.htm"
+    "https://www.ithome.com/0/987/563.htm",
+    "https://www.ithome.com/0/987/572.htm"
   ],
   "processedIds": [
     "https://www.yankodesign.com/?p=639735",
@@ -33,7 +34,8 @@
     "https://newatlas.com/automotive/zoox-nhtsa-commercial-exemption-paid-robotaxi/",
     "https://newatlas.com/wearables/samsung-ai-eyewear-galaxy-glasses/",
     "https://www.androidauthority.com/gemini-notebook-source-automation-3696153/",
-    "china-insta360-ace-pro-3"
+    "china-insta360-ace-pro-3",
+    "china-iqoo-t"
   ],
   "entries": [
     {
@@ -368,6 +370,17 @@
       "status": "published",
       "reason": "editorial gadget bar (source-backed)",
       "slug": "china-insta360-ace-pro-3",
+      "channel": "china-qwen",
+      "cycle": "news"
+    },
+    {
+      "id": "china-iqoo-t",
+      "url": "https://www.ithome.com/0/987/572.htm",
+      "title": "iQOO T: тестирование системы охлаждения и 200 МП камеры",
+      "processedAt": "2026-08-09T09:25:12.707Z",
+      "status": "published",
+      "reason": "editorial gadget bar (source-backed)",
+      "slug": "china-iqoo-t",
       "channel": "china-qwen",
       "cycle": "news"
     }
