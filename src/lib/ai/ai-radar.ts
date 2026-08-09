@@ -1,9 +1,9 @@
 /**
- * SP-A-065C — AI Early Warning channel (collect → event filter → resolve primary).
+ * SP-A-065C/065D — AI Early Warning channel (collect → filter → resolve → normalize).
  * Does NOT publish. Does NOT rewrite gadget/robotics pipeline.
  *
  * CORE INSTINCT: «Узнать о новой свободе раньше других — и получить её первым».
- * Brand names alone never raise priority.
+ * Brand names alone never raise priority. Scout scores EVENT RECORD (065D), not headline drama.
  */
 
 import { fetchRssFeed, type RssItem } from '../collectors/rss';
@@ -14,6 +14,12 @@ import {
   type AiRadarSource,
 } from '../collectors/ai-radar-sources';
 import { buildScoutPool, topicKey } from './candidate-prerank';
+import {
+  buildNormalizedCandidate,
+  primaryStatusFor,
+  type AiNormalizedCandidate,
+  type AiPrimaryStatus,
+} from './ai-event-normalize';
 
 export type AiEventPriority = 'high' | 'medium' | 'low' | 'drop';
 
@@ -29,6 +35,7 @@ export interface AiRadarCandidate {
   primaryTitle?: string;
   primaryResolved: boolean;
   needsPrimaryResolve: boolean;
+  primaryStatus: AiPrimaryStatus;
 }
 
 const AI_TOPIC_RE =
@@ -125,7 +132,6 @@ export function resolveToPrimary(
         overlap += 3;
       }
     }
-    // Shared lab/vendor + event noun
     if (
       /\bopenai\b/i.test(hay) &&
       /\bopenai\.com\b/i.test(p.url) &&
@@ -149,6 +155,12 @@ export async function collectAiRadarCandidates(opts?: {
   primaryPool: RssItem[];
   perSource: Record<string, { raw: number; kept: number; role: string }>;
   skipped: { name: string; reason: string }[];
+  resolveStats: {
+    neededPrimary: number;
+    discoveryWithPrimary: number;
+    discoveryUnresolved: number;
+    primaryOrigin: number;
+  };
 }> {
   const sources = enabledAiRadarSources();
   const perSource: Record<string, { raw: number; kept: number; role: string }> = {};
@@ -175,6 +187,13 @@ export async function collectAiRadarCandidates(opts?: {
 
   const candidates: AiRadarCandidate[] = [];
   const seen = new Set<string>();
+  const resolveStats = {
+    neededPrimary: 0,
+    discoveryWithPrimary: 0,
+    discoveryUnresolved: 0,
+    primaryOrigin: 0,
+  };
+
   for (const { item, src } of rawItems) {
     const title = decodeBasicEntities(item.title);
     const text = decodeBasicEntities(item.text || item.title);
@@ -199,6 +218,18 @@ export async function collectAiRadarCandidates(opts?: {
       primaryTitle = resolved.title;
     }
 
+    const primaryStatus = primaryStatusFor({
+      radarRole: src.radarRole,
+      needsResolve: need,
+      primaryResolved,
+    });
+    if (primaryStatus === 'PRIMARY_ORIGIN') resolveStats.primaryOrigin += 1;
+    if (need) {
+      resolveStats.neededPrimary += 1;
+      if (primaryStatus === 'DISCOVERY_WITH_PRIMARY') resolveStats.discoveryWithPrimary += 1;
+      if (primaryStatus === 'DISCOVERY_UNRESOLVED') resolveStats.discoveryUnresolved += 1;
+    }
+
     candidates.push({
       title,
       text,
@@ -211,10 +242,10 @@ export async function collectAiRadarCandidates(opts?: {
       primaryTitle,
       primaryResolved,
       needsPrimaryResolve: need,
+      primaryStatus,
     });
   }
 
-  // Prefer high event priority in ordering (not brand).
   candidates.sort((a, b) => {
     const rank = { high: 0, medium: 1, low: 2, drop: 3 } as const;
     const d = rank[a.priority] - rank[b.priority];
@@ -228,6 +259,7 @@ export async function collectAiRadarCandidates(opts?: {
     primaryPool,
     perSource,
     skipped: [...AI_RADAR_SKIPPED],
+    resolveStats,
   };
 }
 
@@ -243,3 +275,58 @@ export function buildAiScoutPool(candidates: AiRadarCandidate[], limit = 15) {
     }));
   return buildScoutPool(asItems, { limit, maxPerSource: 4 });
 }
+
+/**
+ * Collapse primary + discovery duplicates of the same event into normalized records.
+ */
+export function normalizeAiRadarCandidates(
+  candidates: AiRadarCandidate[],
+  primaryPool: RssItem[],
+): AiNormalizedCandidate[] {
+  const byPrimaryUrl = new Map<string, AiRadarCandidate[]>();
+  const alone: AiRadarCandidate[] = [];
+
+  for (const c of candidates) {
+    const key = c.primaryUrl || '';
+    if (
+      key &&
+      (c.primaryStatus === 'PRIMARY_ORIGIN' || c.primaryStatus === 'DISCOVERY_WITH_PRIMARY')
+    ) {
+      const list = byPrimaryUrl.get(key) || [];
+      list.push(c);
+      byPrimaryUrl.set(key, list);
+    } else {
+      alone.push(c);
+    }
+  }
+
+  const out: AiNormalizedCandidate[] = [];
+
+  for (const [, group] of byPrimaryUrl) {
+    const primary = group.find((g) => g.primaryStatus === 'PRIMARY_ORIGIN');
+    const discovery = group.find((g) => g.primaryStatus === 'DISCOVERY_WITH_PRIMARY');
+    const base = primary || discovery || group[0];
+    if (!base) continue;
+    out.push(
+      buildNormalizedCandidate(
+        base,
+        primaryPool,
+        discovery
+          ? { title: discovery.title, text: discovery.text, sourceName: discovery.sourceName }
+          : undefined,
+      ),
+    );
+  }
+
+  for (const c of alone) {
+    out.push(buildNormalizedCandidate(c, primaryPool));
+  }
+
+  out.sort((a, b) => {
+    const rank = { high: 0, medium: 1, low: 2, drop: 3 } as const;
+    return rank[a.priority] - rank[b.priority];
+  });
+  return out;
+}
+
+export type { AiNormalizedCandidate, AiPrimaryStatus };
