@@ -1388,12 +1388,19 @@ async function publishRssOnce(opts: {
 
         opts.metrics.publisherStarted = true;
         opts.metrics.articlesPublished += 1;
-        opts.metrics.reason = `published rss/${opts.cycle}`;
+        opts.metrics.reason = `published ${itemChannel}/${opts.cycle}`;
         opts.metrics.skipReason = 'none';
         console.log(
-          chalk.green.bold(`Published (RSS/${opts.cycle}): "${draft.title}" (slug: ${slug})`),
+          chalk.green.bold(
+            `Published (${itemChannel}/${opts.cycle}): "${draft.title}" (slug: ${slug})`,
+          ),
         );
         console.log(`Live path: /articles/${slug}`);
+        console.log(
+          chalk.bold(
+            `TICK_REPORT published=1 focus=${chosenFocus} channel=${itemChannel} diversity=${diversityDecisionLog} aiRadar=${aiRadarBest}`,
+          ),
+        );
         return true;
       } finally {
         releasePublishLock();
@@ -1423,6 +1430,11 @@ async function publishRssOnce(opts: {
   }
 
   opts.metrics.skipReason = lastSkip;
+  console.log(
+    chalk.bold(
+      `TICK_REPORT published=0 skip=${lastSkip} diversity=${diversityDecisionLog} aiRadar=${aiRadarBest}`,
+    ),
+  );
   // Soft AI/candidate exhaustion should not hard-fail the process for the supervisor.
   return false;
 }
