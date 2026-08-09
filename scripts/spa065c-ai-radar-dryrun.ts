@@ -103,7 +103,19 @@ async function main() {
 
   for (const item of toScout) {
     try {
-      const scout = await scoutArticle(item.title, item.text);
+      const scoutTitle = item.primaryTitle || item.title;
+      const scoutText = [
+        item.text,
+        item.primaryTitle && item.primaryTitle !== item.title
+          ? `Primary source title: ${item.primaryTitle}`
+          : '',
+        item.priority === 'high'
+          ? `Event priority: HIGH. Signals: ${item.eventSignals.join('; ') || 'event/wow/freedom'}. Brand alone is not a reason to score high.`
+          : '',
+      ]
+        .filter(Boolean)
+        .join('\n');
+      const scout = await scoutArticle(scoutTitle, scoutText, 'ai_radar');
       const row = {
         title: item.title,
         source: item.sourceName,
@@ -205,11 +217,16 @@ async function main() {
   const astraOk = report.astraFound && astraBest && astraBest.score >= 55;
   const enoughSignal = scored.filter((s) => s.score >= 60).length >= 3;
   const lowHypeBleed = scored.filter((s) => s.priority === 'low' && s.score >= FLOOR).length === 0;
-  report.recommendationLiveTestAuto =
-    astraOk && enoughSignal && lowHypeBleed
-      ? 'CONDITIONAL — dry-run looks usable for gated TEST-AUTO on AI channel only; keep gadget pipeline separate; do NOT enable normal AUTO yet.'
-      : 'NOT READY — keep AI radar dry-run / fix signal quality before TEST-AUTO.';
-
+  if (astraOk && enoughSignal && lowHypeBleed) {
+    report.recommendationLiveTestAuto =
+      'CONDITIONAL — dry-run looks usable for gated TEST-AUTO on AI channel only; keep gadget pipeline separate; do NOT enable normal AUTO yet.';
+  } else if (astraOk && lowHypeBleed) {
+    report.recommendationLiveTestAuto =
+      'NOT READY for live TEST-AUTO — Astra control works, but signal density / Scout calibration still thin (need more ≥60 events, stronger primary resolve). Stay dry-run.';
+  } else {
+    report.recommendationLiveTestAuto =
+      'NOT READY — keep AI radar dry-run / fix signal quality before TEST-AUTO.';
+  }
   fs.mkdirSync(OUT_DIR, { recursive: true });
   const outPath = path.join(OUT_DIR, 'spa065c-r1.json');
   fs.writeFileSync(outPath, JSON.stringify(report, null, 2));
