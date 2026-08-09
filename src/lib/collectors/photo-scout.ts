@@ -117,7 +117,10 @@ function resolveUrl(raw: string, baseUrl: string): string | null {
 }
 
 function looksLikeRasterPhoto(url: string): boolean {
-  if (/\{width\}|\{height\}|\.svg(\?|$)|data:image\/svg|PHN2Zy/i.test(url)) return false;
+  if (/\{width\}|\{height\}|\.svg(\?|$)|data:image\/svg|PHN2Zy|\/api\/media\//i.test(url)) return false;
+  if (/logo|symbol|typography|swatch|favicon|sprite|icon[_-]|masthead|nav-|navigation|banner/i.test(url)) {
+    return false;
+  }
   // Prefer known raster; allow CDN URLs without extension.
   if (/\.(jpe?g|png|webp|gif)(\?|$)/i.test(url)) return true;
   if (/\/cdn\/|cloudfront|brightspot|wp-content\/uploads|newsupload|dims4|images\./i.test(url)) {
