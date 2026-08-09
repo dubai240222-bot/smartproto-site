@@ -3,14 +3,20 @@
 # During SMARTPROTO_NEWS_WARMUP_UNTIL, tick enforces ~95m floor (4× slower).
 # Max 1 publish per tick; skip if nothing worthy / cadence floor.
 #
+# SP-A-059 — production cut over to the Hetzner Direct Publisher on
+# 2026-08-09. This git/Vercel path is now a dormant rollback: schedule
+# disabled so it can no longer run a second parallel editorial process.
+# workflow_dispatch is kept for an emergency manual publish to the Vercel
+# fallback only. Re-enable the `schedule:` block below to resume this path.
+#
 # Required: OPENROUTER_API_KEY + SMARTPROTO_FACTORY_ENABLED=true
 # Optional var: SMARTPROTO_NEWS_WARMUP_UNTIL (ISO) — auto-expires to normal 25m.
 
 name: Factory News Cycle
 
 on:
-  schedule:
-    - cron: '*/25 * * * *'
+  # schedule:
+  #   - cron: '*/25 * * * *'
   workflow_dispatch:
 
 permissions:
