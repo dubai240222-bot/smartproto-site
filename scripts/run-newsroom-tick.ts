@@ -18,7 +18,7 @@ import dotenv from 'dotenv';
 import chalk from 'chalk';
 import { fetchRssFeed, type RssItem } from '../src/lib/collectors/rss';
 import { extractArticleImage, passesImageQualityGate } from '../src/lib/collectors/image-extractor';
-import { scoutImages, downloadImagesLocally } from '../src/lib/collectors/photo-scout';
+import { resolveArticlePhotos } from '../src/lib/collectors/photo-scout';
 import { scoutArticle, SCOUT_SCORE_THRESHOLD } from '../src/lib/ai/scout';
 import { reviewArticle } from '../src/lib/ai/reviewer';
 import { writeDraft, type DraftFormat } from '../src/lib/ai/editor';
@@ -613,28 +613,31 @@ async function tryChinaPublishOnce(opts: {
         opts.cycle === 'news' ? 'новость' : 'обзор',
       ]);
 
-      // SP-A-061 Photo Intelligence V1: only accept photos that textually
-      // confirm the article's brand/model; wrong-product photo is worse than
-      // no photo, so an unmatched/rumored candidate yields no images at all.
+      // SP-A-064 Photo Intelligence V2: entity → multi-source mine → AI editor → local files.
+      // Wrong-product photo is worse than no photo.
       let images: import('../src/lib/collectors/photo-scout').ScoutImage[] = [];
       try {
-        const htmlRes = await fetch(c.sourceUrl, {
-          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-          signal: AbortSignal.timeout(6000),
+        const report = await resolveArticlePhotos({
+          slug,
+          title: draft.title,
+          text: draft.text,
+          sourceUrl: c.sourceUrl,
+          fallbackUrl: imageUrl || undefined,
         });
-        if (htmlRes.ok) {
-          const html = await htmlRes.text();
-          const scouted = await scoutImages({
-            html,
-            pageUrl: c.sourceUrl,
-            title: draft.title,
-            text: draft.text,
-            fallbackUrl: imageUrl || undefined,
-          });
-          if (scouted.length) images = await downloadImagesLocally(slug, scouted);
-        }
-      } catch {
-        /* no confirmed photo — publish without one */
+        console.log(
+          chalk.gray(
+            `[photo-v2] entity=${report.entity.brand || report.entity.company || '?'} ` +
+              `object=${report.entity.object || '?'} candidates=${report.candidatesFound} ` +
+              `selected=${report.selected.length} notes=${report.notes.join('; ')}`,
+          ),
+        );
+        images = report.selected;
+      } catch (err) {
+        console.log(
+          chalk.yellow(
+            `[photo-v2] failed: ${err instanceof Error ? err.message : String(err)} — publishing NO IMAGE`,
+          ),
+        );
       }
       if (!images.length) imageUrl = ''; // never fall back to an unconfirmed hotlink
 
@@ -1018,27 +1021,30 @@ async function publishRssOnce(opts: {
 
         const publishedAt = new Date().toISOString();
 
-        // SP-A-061 Photo Intelligence V1 (see China branch for full rationale):
-        // no confirmed brand/model match in the source page -> no image.
+        // SP-A-064 Photo Intelligence V2: entity → multi-source mine → AI editor → local files.
         let images: import('../src/lib/collectors/photo-scout').ScoutImage[] = [];
         try {
-          const htmlRes = await fetch(item.url, {
-            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-            signal: AbortSignal.timeout(6000),
+          const report = await resolveArticlePhotos({
+            slug,
+            title: draft.title,
+            text: draft.text,
+            sourceUrl: item.url,
+            fallbackUrl: imageUrl,
           });
-          if (htmlRes.ok) {
-            const html = await htmlRes.text();
-            const scouted = await scoutImages({
-              html,
-              pageUrl: item.url,
-              title: draft.title,
-              text: draft.text,
-              fallbackUrl: imageUrl,
-            });
-            if (scouted.length) images = await downloadImagesLocally(slug, scouted);
-          }
-        } catch {
-          /* no confirmed photo — publish without one */
+          console.log(
+            chalk.gray(
+              `[photo-v2] entity=${report.entity.brand || report.entity.company || '?'} ` +
+                `object=${report.entity.object || '?'} candidates=${report.candidatesFound} ` +
+                `selected=${report.selected.length} notes=${report.notes.join('; ')}`,
+            ),
+          );
+          images = report.selected;
+        } catch (err) {
+          console.log(
+            chalk.yellow(
+              `[photo-v2] failed: ${err instanceof Error ? err.message : String(err)} — publishing NO IMAGE`,
+            ),
+          );
         }
 
         const article: Article = {
