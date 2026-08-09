@@ -178,7 +178,7 @@ export async function downloadImagesLocally(
       const filename = `${c.role}.${ext}`;
       // eslint-disable-next-line no-await-in-loop
       await writeFile(path.join(dir, filename), buf);
-      out.push({ url: `/media/${slug}/${filename}`, role: c.role, sourceUrl: c.url });
+      out.push({ url: `/api/media/${slug}/${filename}`, role: c.role, sourceUrl: c.url });
     } catch {
       continue; // move on to the next candidate
     }
