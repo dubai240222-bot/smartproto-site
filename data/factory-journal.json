@@ -8,7 +8,8 @@
     "https://thegadgetflow.com/blog/best-us-made-robots-to-add-to-your-life/",
     "https://newatlas.com/medical-ai/ai-medical-scribe-consent-raises-patient-rights-concerns/",
     "https://newatlas.com/wearables/tecno-ai-glasses-smart-camera/",
-    "https://newatlas.com/aircraft/meet-halo-civilian-version-thunder-loyal-wingman/"
+    "https://newatlas.com/aircraft/meet-halo-civilian-version-thunder-loyal-wingman/",
+    "https://www.ithome.com/0/987/491.htm"
   ],
   "processedIds": [
     "https://www.yankodesign.com/?p=639735",
@@ -19,7 +20,8 @@
     "https://thegadgetflow.com/blog/best-us-made-robots-to-add-to-your-life/",
     "https://newatlas.com/medical-ai/ai-medical-scribe-consent-raises-patient-rights-concerns/",
     "https://newatlas.com/wearables/tecno-ai-glasses-smart-camera/",
-    "https://newatlas.com/aircraft/meet-halo-civilian-version-thunder-loyal-wingman/"
+    "https://newatlas.com/aircraft/meet-halo-civilian-version-thunder-loyal-wingman/",
+    "china-mini"
   ],
   "entries": [
     {
@@ -155,6 +157,17 @@
       "status": "error",
       "reason": "Model response was not valid JSON: {\n  \"interesting\": true,\n  \"score\": 79,\n  \"reason\": \"Гражданский автономный VTOL от Archer Aviation — конкретный аппарат для аэротакси, анонсирован",
       "channel": "rss"
+    },
+    {
+      "id": "china-mini",
+      "url": "https://www.ithome.com/0/987/491.htm",
+      "title": "Lenovo LaVie Mini: компактный планшет с 4G",
+      "processedAt": "2026-08-09T01:48:00.680Z",
+      "status": "published",
+      "reason": "editorial gadget bar (source-backed)",
+      "slug": "china-mini",
+      "channel": "china-qwen",
+      "cycle": "article"
     }
   ]
 }
