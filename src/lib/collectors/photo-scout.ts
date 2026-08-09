@@ -277,7 +277,13 @@ function tierForPage(pageUrl: string, sourceUrl: string): CandidateTier {
 function softEntityContextOk(c: PhotoCandidate, entity: PhotoEntity): boolean {
   if (SCREENSHOT_MARKER_RE.test(c.context) || SCREENSHOT_MARKER_RE.test(c.url)) return false;
   if (/logo|symbol|typography|swatch/i.test(c.url + c.context)) return false;
+  if (/screenshot|screen%20shot|screen_shot/i.test(c.url + c.context)) return false;
   const pageHay = `${c.pageUrl} ${c.context} ${c.url}`.toLowerCase();
+
+  // SP-A-065F: research/lab article images from the source page itself.
+  if (entity.objectType === 'research_prototype' && c.tier === 'source_article') {
+    return looksLikeRasterPhoto(c.url) && !IGNORE_SRC_RE.test(c.url);
+  }
 
   // When a specific model/product line is known, require it on official pages too
   // (otherwise manufacturer homepage banners falsely "match" the brand alone).
@@ -631,10 +637,16 @@ function researchTokenMatchedPicks(
 ): { url: string; role: ScoutImage['role'] }[] {
   const tokens = entity.matchTokens
     .map((t) => t.toLowerCase())
-    .filter((t) => t.length >= 4 && !/research|system|prototype|robotics|demo/.test(t));
+    .filter((t) => t.length >= 4 && !/research|system|prototype|robotics|demo|manipulat/.test(t));
   const soft = entity.matchTokens.map((t) => t.toLowerCase()).filter((t) => t.length >= 3);
   const scored = candidates
-    .filter((c) => looksLikeRasterPhoto(c.url) && !IGNORE_SRC_RE.test(c.url) && !/banner|728x90|ad[-_]/i.test(c.url))
+    .filter(
+      (c) =>
+        looksLikeRasterPhoto(c.url) &&
+        !IGNORE_SRC_RE.test(c.url) &&
+        !/banner|728x90|ad[-_]/i.test(c.url) &&
+        !/screenshot|screen%20shot|screen_shot|ui.?capture|comments?/i.test(c.url + c.context),
+    )
     .map((c) => {
       const hay = `${c.url} ${c.context}`.toLowerCase();
       let score = 0;
@@ -764,14 +776,19 @@ export async function resolveArticlePhotos(opts: {
       notes.push(edited.reason);
       researchMode = true;
     } else if (researchMode) {
-      // Trusted source og:image as category/research illustration when context soft-ok
-      const og = mined.candidates.find(
-        (c) =>
-          (/^og |\bog /.test(c.context) || c.context.includes('og ')) &&
-          looksLikeRasterPhoto(c.url) &&
-          !IGNORE_SRC_RE.test(c.url) &&
-          softEntityContextOk(c, entity),
-      );
+      // Trusted source og:image as category/research illustration (topic-relevant, not screenshot).
+      const og = mined.candidates.find((c) => {
+        const isOg = /^og |\bog /.test(c.context) || c.context.includes('og ');
+        if (!isOg) return false;
+        if (!looksLikeRasterPhoto(c.url) || IGNORE_SRC_RE.test(c.url)) return false;
+        if (/screenshot|screen%20shot|screen_shot|ui.?capture/i.test(c.url + c.context)) return false;
+        // Same-host source article og:image is OK for research stories.
+        try {
+          return new URL(c.pageUrl).hostname === new URL(opts.sourceUrl).hostname;
+        } catch {
+          return softEntityContextOk(c, entity);
+        }
+      });
       if (og) {
         edited = {
           picks: [{ url: og.url, role: 'hero' }],
@@ -781,6 +798,17 @@ export async function resolveArticlePhotos(opts: {
         notes.push(edited.reason);
       }
     }
+  }
+
+  // Drop screenshot / UI leftovers even if an editor picked them.
+  edited = {
+    ...edited,
+    picks: edited.picks.filter(
+      (p) => !/screenshot|screen%20shot|screen_shot|ui.?capture|comments?/i.test(p.url),
+    ),
+  };
+  if (!edited.picks.length && mined.candidates.length && researchMode) {
+    notes.push('post-filter removed screenshot/UI picks — NO IMAGE');
   }
 
   const selected = edited.picks.length
