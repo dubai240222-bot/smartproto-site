@@ -31,6 +31,9 @@ export interface ScoutImage {
   url: string;
   role: 'hero' | 'secondary' | 'detail';
   sourceUrl: string;
+  /** SP-A-065F */
+  matchLevel?: 'exact' | 'safe_series' | 'safe_brand' | 'category' | 'research' | 'none';
+  label?: string;
 }
 
 export type CandidateTier =
@@ -55,6 +58,10 @@ export interface PhotoPipelineReport {
   candidatesRejected: { url: string; reason: string }[];
   selected: ScoutImage[];
   notes: string[];
+  /** SP-A-065F */
+  imageMatchLevel?: ScoutImage['matchLevel'];
+  imageLabel?: string;
+  researchMode?: boolean;
 }
 
 const IGNORE_SRC_RE =
@@ -309,6 +316,8 @@ export async function minePhotoCandidates(opts: {
   entity: PhotoEntity;
   fallbackUrl?: string;
   html?: string;
+  /** SP-A-065F — cap outbound page follows (research budget). */
+  maxFollowPages?: number;
 }): Promise<{ candidates: PhotoCandidate[]; rejected: { url: string; reason: string }[]; notes: string[] }> {
   const rejected: { url: string; reason: string }[] = [];
   const notes: string[] = [];
@@ -323,9 +332,10 @@ export async function minePhotoCandidates(opts: {
   ];
 
   const follow = extractFollowLinks(sourceHtml, opts.sourceUrl, opts.entity);
-  notes.push(`follow links: ${follow.length}`);
+  const maxPages = Math.max(1, Math.min(opts.maxFollowPages ?? 5, 6));
+  notes.push(`follow links: ${follow.length} (maxPages=${maxPages})`);
   for (const url of follow) {
-    if (pages.length >= 6) break;
+    if (pages.length >= maxPages) break;
     if (pages.some((p) => p.url === url)) continue;
     // eslint-disable-next-line no-await-in-loop
     const html = await fetchHtml(url, 7000);
@@ -565,7 +575,87 @@ export async function downloadImagesLocally(
 }
 
 /**
+ * SP-A-065F — narrow research/lab/robotics visual subject when SKU entity is empty.
+ */
+export function looksResearchPhotoStory(title: string, text: string, sourceUrl = ''): boolean {
+  const hay = `${title}\n${text}\n${sourceUrl}`;
+  return /\b(research|lab|prototype|robotics?|manipulat|optical|demonstration|experimental|csail|ieee|university|scientists?)\b|исследован|робот|прототип|лаборатор/i.test(
+    hay,
+  );
+}
+
+export function inferResearchPhotoEntity(title: string, text: string, sourceUrl = ''): PhotoEntity | null {
+  if (!looksResearchPhotoStory(title, text, sourceUrl)) return null;
+  const hay = `${title}\n${text}`;
+  const named =
+    title.match(/\b(TactaBot|Tacta|Astro|Gemini Robotics|WeatherNext|Astra)\b/i) ||
+    hay.match(/\b([A-Z][A-Za-z0-9+]{2,24}(?:Bot|Hand|Glove|Robot)?)\b/);
+  const lab =
+    hay.match(/\b(MIT CSAIL|CSAIL|IEEE|OpenAI|DeepMind|ETH Zurich|Wyss|Stanford|Berkeley)\b/i)?.[1] ||
+    null;
+  const brand = named?.[1] || lab || 'research';
+  const object = /optical/i.test(hay)
+    ? 'optical research system'
+    : /manipulat|foam|deformable|liquid/i.test(hay)
+      ? 'robot manipulation lab demo'
+      : /robot|hand|glove|tactile/i.test(hay)
+        ? 'robotics prototype demo'
+        : 'research system / lab prototype';
+  const tokens = [
+    brand,
+    named?.[1],
+    lab,
+    ...(/tacta/i.test(hay) ? ['Tacta', 'TactaBot', 'tactahand', 'tactaglove', 'tactile'] : []),
+    ...(/optical/i.test(hay) ? ['optical', 'receiver', 'robotics'] : []),
+    ...(/manipulat|csail/i.test(hay) ? ['CSAIL', 'manipulation', 'robot'] : []),
+  ]
+    .filter(Boolean)
+    .map(String);
+  return {
+    company: lab || brand,
+    brand,
+    model: named?.[1] || null,
+    object,
+    objectType: 'research_prototype',
+    aliases: [...new Set(tokens)],
+    lab,
+    status: 'prototype',
+    matchTokens: [...new Set(tokens.filter((t) => t.length >= 2))],
+  };
+}
+
+/** Prefer candidates whose URL/context clearly matches research entity tokens (e.g. tactahand). */
+function researchTokenMatchedPicks(
+  entity: PhotoEntity,
+  candidates: PhotoCandidate[],
+): { url: string; role: ScoutImage['role'] }[] {
+  const tokens = entity.matchTokens
+    .map((t) => t.toLowerCase())
+    .filter((t) => t.length >= 4 && !/research|system|prototype|robotics|demo/.test(t));
+  const soft = entity.matchTokens.map((t) => t.toLowerCase()).filter((t) => t.length >= 3);
+  const scored = candidates
+    .filter((c) => looksLikeRasterPhoto(c.url) && !IGNORE_SRC_RE.test(c.url) && !/banner|728x90|ad[-_]/i.test(c.url))
+    .map((c) => {
+      const hay = `${c.url} ${c.context}`.toLowerCase();
+      let score = 0;
+      for (const t of tokens) if (hay.includes(t.toLowerCase())) score += 3;
+      for (const t of soft) if (hay.includes(t)) score += 1;
+      if (/og /.test(c.context) || c.context.startsWith('og')) score += 2;
+      if (c.tier === 'lab' || c.tier === 'source_article' || c.tier === 'trusted_media') score += 1;
+      return { c, score };
+    })
+    .filter((x) => x.score >= 3)
+    .sort((a, b) => b.score - a.score);
+  return scored.slice(0, 2).map((x, i) => ({
+    url: x.c.url,
+    role: (['hero', 'secondary'] as ScoutImage['role'][])[i],
+  }));
+}
+
+/**
  * Full V2 entry — used by newsroom tick and backfill.
+ * SP-A-065F: research/lab fallback when SKU entity is missing; token-matched picks
+ * if AI editor zeros real product/demo frames (e.g. tactahand).
  */
 export async function resolveArticlePhotos(opts: {
   slug: string;
@@ -574,23 +664,60 @@ export async function resolveArticlePhotos(opts: {
   sourceUrl: string;
   fallbackUrl?: string;
   html?: string;
+  /** Cap follow-up page fetches for research mode (default 2). */
+  maxResearchPages?: number;
 }): Promise<PhotoPipelineReport> {
-  const entity = await extractPhotoEntity({
+  let entity = await extractPhotoEntity({
     title: opts.title,
     text: opts.text,
     sourceUrl: opts.sourceUrl,
   });
+  let researchMode = false;
+  const notes: string[] = [];
 
-  // Absolute hard rule: cannot confirm subject → NO IMAGE
   if (!entity.brand && !entity.company && entity.matchTokens.length === 0) {
-    return {
-      entity,
-      candidatesFound: 0,
-      candidatesRejected: [],
-      selected: [],
-      notes: ['no extractable visual entity — NO IMAGE'],
-    };
+    const research = inferResearchPhotoEntity(opts.title, opts.text, opts.sourceUrl);
+    if (research) {
+      entity = research;
+      researchMode = true;
+      notes.push('research photo entity fallback');
+    } else {
+      return {
+        entity,
+        candidatesFound: 0,
+        candidatesRejected: [],
+        selected: [],
+        notes: ['no extractable visual entity — NO IMAGE'],
+        imageMatchLevel: 'none',
+      };
+    }
+  } else if (
+    entity.objectType === 'research_prototype' ||
+    entity.status === 'prototype' ||
+    looksResearchPhotoStory(opts.title, opts.text, opts.sourceUrl)
+  ) {
+    researchMode = true;
+    // Enrich tokens for named robotics products (TactaBot → tactahand filenames)
+    if (/tacta/i.test(`${entity.brand} ${entity.model} ${opts.title}`)) {
+      entity = {
+        ...entity,
+        matchTokens: [
+          ...new Set([
+            ...entity.matchTokens,
+            'Tacta',
+            'TactaBot',
+            'tactahand',
+            'tactaglove',
+            'tactile',
+          ]),
+        ],
+        status: entity.status === 'unknown' ? 'prototype' : entity.status,
+      };
+      researchMode = true;
+      notes.push('tacta robotics token enrich');
+    }
   }
+
   if (entity.status === 'rumor' && !entity.model) {
     return {
       entity,
@@ -598,6 +725,7 @@ export async function resolveArticlePhotos(opts: {
       candidatesRejected: [],
       selected: [],
       notes: ['rumor without confirmed model — NO IMAGE'],
+      imageMatchLevel: 'none',
     };
   }
 
@@ -608,24 +736,85 @@ export async function resolveArticlePhotos(opts: {
     entity,
     fallbackUrl: opts.fallbackUrl,
     html: opts.html,
+    maxFollowPages: researchMode ? opts.maxResearchPages ?? 2 : 5,
   });
+  notes.push(...mined.notes);
 
-  const edited = await editPhotoSelection({
+  // Soft cap note for research budget.
+  if (researchMode) {
+    notes.push(`research budget: maxPages≈${opts.maxResearchPages ?? 2}`);
+  }
+
+  let edited = await editPhotoSelection({
     entity,
     title: opts.title,
     candidates: mined.candidates,
   });
+  notes.push(edited.reason);
+
+  // SP-A-065F: if AI editor rejected everything but URL tokens clearly match (tactahand…), recover.
+  if (!edited.picks.length && mined.candidates.length) {
+    const recovered = researchTokenMatchedPicks(entity, mined.candidates);
+    if (recovered.length) {
+      edited = {
+        picks: recovered,
+        rejected: edited.rejected,
+        reason: 'research token-match fallback after AI empty',
+      };
+      notes.push(edited.reason);
+      researchMode = true;
+    } else if (researchMode) {
+      // Trusted source og:image as category/research illustration when context soft-ok
+      const og = mined.candidates.find(
+        (c) =>
+          (/^og |\bog /.test(c.context) || c.context.includes('og ')) &&
+          looksLikeRasterPhoto(c.url) &&
+          !IGNORE_SRC_RE.test(c.url) &&
+          softEntityContextOk(c, entity),
+      );
+      if (og) {
+        edited = {
+          picks: [{ url: og.url, role: 'hero' }],
+          rejected: edited.rejected,
+          reason: 'research og:image fallback',
+        };
+        notes.push(edited.reason);
+      }
+    }
+  }
 
   const selected = edited.picks.length
     ? await downloadImagesLocally(opts.slug, edited.picks)
     : [];
+  notes.push(`downloaded=${selected.length}`);
+
+  let imageMatchLevel: ScoutImage['matchLevel'] = selected.length
+    ? researchMode
+      ? 'research'
+      : 'exact'
+    : 'none';
+  let imageLabel: string | undefined;
+  if (selected.length && researchMode) {
+    imageMatchLevel = entity.model || /tacta|bot/i.test(entity.brand || '') ? 'category' : 'research';
+    imageLabel =
+      imageMatchLevel === 'research'
+        ? 'Иллюстрация исследования'
+        : 'Фото прототипа / демонстрации';
+    for (const s of selected) {
+      s.matchLevel = imageMatchLevel;
+      s.label = imageLabel;
+    }
+  }
 
   return {
     entity,
     candidatesFound: mined.candidates.length,
     candidatesRejected: [...mined.rejected, ...edited.rejected].slice(0, 40),
     selected,
-    notes: [...mined.notes, edited.reason, `downloaded=${selected.length}`],
+    notes,
+    imageMatchLevel,
+    imageLabel,
+    researchMode,
   };
 }
 

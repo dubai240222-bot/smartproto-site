@@ -24,6 +24,12 @@ import {
 } from '../src/lib/collectors/source-registry';
 import { buildScoutPool } from '../src/lib/ai/candidate-prerank';
 import { resolveArticlePhotos } from '../src/lib/collectors/photo-scout';
+import {
+  inferEditorialFocus,
+  pickDiversityWinner,
+  roboticsResearchStreak,
+  type DiversityPasser,
+} from '../src/lib/newsroom/diversity-guard';
 import { scoutArticle, SCOUT_SCORE_THRESHOLD } from '../src/lib/ai/scout';
 import { reviewArticle } from '../src/lib/ai/reviewer';
 import { writeDraft, type DraftFormat } from '../src/lib/ai/editor';
@@ -51,6 +57,23 @@ async function maybeSyncToSqlite(article: Record<string, unknown>): Promise<void
   if (process.env.ARTICLES_STORE !== 'sqlite') return;
   const { upsertArticle } = await import('../src/lib/data-store/articles-repo');
   upsertArticle(article as import('../src/lib/data-store/articles-repo').StoredArticle);
+  // Existing live columns (no schema change) — best-effort match labels.
+  if (article.imageMatchLevel || article.imageLabel) {
+    try {
+      const { getDb } = await import('../src/lib/data-store/db');
+      getDb()
+        .prepare(
+          'UPDATE articles SET imageMatchLevel = coalesce(?, imageMatchLevel), imageLabel = coalesce(?, imageLabel) WHERE slug = ?',
+        )
+        .run(
+          (article.imageMatchLevel as string) || null,
+          (article.imageLabel as string) || null,
+          String(article.slug || ''),
+        );
+    } catch {
+      /* columns may be absent outside Hetzner */
+    }
+  }
 }
 
 export type CycleType = 'news' | 'article';
@@ -621,10 +644,17 @@ async function tryChinaPublishOnce(opts: {
           chalk.gray(
             `[photo-v2] entity=${report.entity.brand || report.entity.company || '?'} ` +
               `object=${report.entity.object || '?'} candidates=${report.candidatesFound} ` +
-              `selected=${report.selected.length} notes=${report.notes.join('; ')}`,
+              `selected=${report.selected.length} match=${report.imageMatchLevel || 'n/a'} ` +
+              `notes=${report.notes.join('; ')}`,
           ),
         );
         images = report.selected;
+        if (report.imageMatchLevel) {
+          (opts as any)._lastPhotoMeta = {
+            imageMatchLevel: report.imageMatchLevel,
+            imageLabel: report.imageLabel,
+          };
+        }
       } catch (err) {
         console.log(
           chalk.yellow(
@@ -865,6 +895,20 @@ async function publishRssOnce(opts: {
     console.log(chalk.gray(`  pre-rank ${row.cheap}: [${row.sourceName}] ${row.title.slice(0, 70)}`));
   }
 
+  const recentArts = (await loadState(opts.journalPath, opts.articlesPath)).articles.slice(0, 10);
+  const roboticsStreak = roboticsResearchStreak(recentArts, 2);
+  if (roboticsStreak) {
+    console.log(
+      chalk.yellow(
+        'SP-A-065F diversity: last 2 publishes are robotics/research — prefer other focus unless robotics leads by ≥10',
+      ),
+    );
+  }
+  type PoolItem = (typeof scoutPool.pool)[number];
+  const diversityPassers: (DiversityPasser<PoolItem> & {
+    scout: Awaited<ReturnType<typeof scoutArticle>>;
+  })[] = [];
+
   const maxAttempts = scoutPool.pool.length;
   let lastSkip = 'no rss candidate';
 
@@ -887,6 +931,25 @@ async function publishRssOnce(opts: {
         });
         // Do not burn URL in opts.urls — news/article ticks may retry later.
         lastSkip = 'scout reject';
+        continue;
+      }
+
+      // SP-A-065F: on robotics streak, collect Scout passers first; publish after selection.
+      if (roboticsStreak) {
+        const focus = inferEditorialFocus({
+          title: item.title,
+          text: item.text || item.title,
+          sourceName: item.sourceName,
+          sourceUrl: item.url,
+        });
+        diversityPassers.push({ item, score: scout.score, focus, scout });
+        console.log(chalk.gray(`diversity passer: focus=${focus} score=${scout.score}`));
+        const hasOther = diversityPassers.some((p) => p.focus !== 'robotics_research');
+        const hasRobot = diversityPassers.some((p) => p.focus === 'robotics_research');
+        if (hasOther && hasRobot) {
+          console.log(chalk.gray('diversity: robotics + other focus passers ready'));
+          break;
+        }
         continue;
       }
 
@@ -1042,10 +1105,17 @@ async function publishRssOnce(opts: {
             chalk.gray(
               `[photo-v2] entity=${report.entity.brand || report.entity.company || '?'} ` +
                 `object=${report.entity.object || '?'} candidates=${report.candidatesFound} ` +
-                `selected=${report.selected.length} notes=${report.notes.join('; ')}`,
+                `selected=${report.selected.length} match=${report.imageMatchLevel || 'n/a'} ` +
+                `notes=${report.notes.join('; ')}`,
             ),
           );
           images = report.selected;
+          if (report.imageMatchLevel) {
+            (opts as any)._lastPhotoMeta = {
+              imageMatchLevel: report.imageMatchLevel,
+              imageLabel: report.imageLabel,
+            };
+          }
         } catch (err) {
           console.log(
             chalk.yellow(
@@ -1054,6 +1124,9 @@ async function publishRssOnce(opts: {
           );
         }
 
+        const photoMeta = (opts as any)._lastPhotoMeta as
+          | { imageMatchLevel?: string; imageLabel?: string }
+          | undefined;
         const article: Article = {
           id: slug,
           slug,
@@ -1069,8 +1142,14 @@ async function publishRssOnce(opts: {
           publishedAt,
           readTime: estimateReadTime(draft.text),
           ...(images.length ? { imageUrl: images[0].url, images } : {}),
+          ...(photoMeta?.imageMatchLevel
+            ? {
+                imageMatchLevel: photoMeta.imageMatchLevel,
+                imageLabel: photoMeta.imageLabel,
+              }
+            : {}),
           ...stampAuthorForPipeline('newsroom-scout', { sourceUrl: item.url, slug }),
-        };
+        } as Article;
 
         const deduped = filterRemovedArticles(
           fresh.articles.filter(
@@ -1168,6 +1247,203 @@ async function publishRssOnce(opts: {
       lastSkip = `rss error: ${msg}`;
       // Try next candidate in this tick (still max 1 publish).
       continue;
+    }
+  }
+
+  // SP-A-065F — after streak scout pass, pick one winner and publish via non-streak path.
+  if (roboticsStreak && diversityPassers.length && opts.metrics.articlesPublished === 0) {
+    const decision = pickDiversityWinner({
+      passers: diversityPassers.map((p) => ({ item: p.item, score: p.score, focus: p.focus })),
+      recent: recentArts,
+    });
+    console.log(chalk.cyan(`SP-A-065F diversity decision: ${decision.reason}`));
+    const full = decision.winner
+      ? diversityPassers.find((p) => p.item.url === decision.winner!.item.url)
+      : undefined;
+    if (full) {
+      const item = full.item;
+      const scout = full.scout;
+      try {
+        if (opts.cycle === 'article' && scout.score < 75) {
+          lastSkip = 'not worthy for article cycle';
+        } else {
+          const sourcePayload = {
+            title: item.title,
+            text: item.text || item.title,
+            url: item.url,
+            sourceName: item.sourceName,
+            format: opts.format,
+          };
+          console.log(chalk.gray('Reviewer (diversity winner)...'));
+          opts.metrics.sentToGemini += 1;
+          const review = await reviewArticle(sourcePayload);
+          if (/^REJECT\b/i.test(review.technicalVerdict)) {
+            if (scout.score >= 80 && isAiOrInventionAlert(item.title, item.text || item.title)) {
+              review.technicalVerdict = `PASS: AI/invention alert (scout ${scout.score})`;
+            } else {
+              console.log(chalk.yellow(`Reviewer reject: ${review.technicalVerdict}`));
+              await markRejected(opts.journal, opts.journalPath, item, review.technicalVerdict, scout.score);
+              opts.urls.add(item.url);
+              lastSkip = 'reviewer reject';
+              opts.metrics.skipReason = lastSkip;
+              return false;
+            }
+          }
+          console.log(chalk.gray(`Editor (${opts.format})...`));
+          opts.metrics.sentToGemini += 1;
+          const draft = await writeDraft(sourcePayload, review);
+          opts.metrics.draftsCreated += 1;
+          if (
+            draft.title.trim().toUpperCase() === 'REJECT' ||
+            draft.tags.some((t) => t.toLowerCase() === '#reject') ||
+            draft.text.trim().toLowerCase() === 'off-topic'
+          ) {
+            await markRejected(opts.journal, opts.journalPath, item, 'editor hard-reject', scout.score);
+            opts.urls.add(item.url);
+            lastSkip = 'editor hard-reject';
+            opts.metrics.skipReason = lastSkip;
+            return false;
+          }
+          const wc = wordCount(draft.text);
+          const minWords = opts.format === 'news' ? 40 : 120;
+          if (wc < minWords) {
+            lastSkip = 'draft too short';
+            opts.metrics.skipReason = lastSkip;
+            return false;
+          }
+          let imageUrl = item.imageUrl;
+          try {
+            if (!imageUrl) imageUrl = (await extractArticleImage(item.url, draft.title)) || undefined;
+          } catch { /* optional */ }
+          if (imageUrl && !(await passesImageQualityGate(imageUrl))) imageUrl = undefined;
+
+          const sourceProductKey = productIdentityKey(item.title, item.text || '');
+          const draftProductKey = productIdentityKey(draft.title, draft.text);
+          if (
+            (sourceProductKey && opts.productIds.has(sourceProductKey)) ||
+            (draftProductKey && opts.productIds.has(draftProductKey))
+          ) {
+            lastSkip = 'product-identity duplicate';
+            opts.metrics.skipReason = lastSkip;
+            return false;
+          }
+          const slug = slugify(draft.title);
+          if (isRemovedSlug(slug) || opts.urls.has(item.url) || opts.ids.has(slug)) {
+            lastSkip = 'slug/url blocked';
+            opts.metrics.skipReason = lastSkip;
+            return false;
+          }
+          if (!acquirePublishLock()) {
+            opts.metrics.skipReason = 'cross-cycle publish lock';
+            return false;
+          }
+          try {
+            const fresh = await loadState(opts.journalPath, opts.articlesPath);
+            const publishedAt = new Date().toISOString();
+            let images: import('../src/lib/collectors/photo-scout').ScoutImage[] = [];
+            try {
+              const report = await resolveArticlePhotos({
+                slug,
+                title: draft.title,
+                text: draft.text,
+                sourceUrl: item.url,
+                fallbackUrl: imageUrl,
+              });
+              console.log(
+                chalk.gray(
+                  `[photo-v2] entity=${report.entity.brand || report.entity.company || '?'} ` +
+                    `object=${report.entity.object || '?'} candidates=${report.candidatesFound} ` +
+                    `selected=${report.selected.length} match=${report.imageMatchLevel || 'n/a'} ` +
+                    `notes=${report.notes.join('; ')}`,
+                ),
+              );
+              images = report.selected;
+              if (report.imageMatchLevel) {
+                (opts as any)._lastPhotoMeta = {
+                  imageMatchLevel: report.imageMatchLevel,
+                  imageLabel: report.imageLabel,
+                };
+              }
+            } catch (err) {
+              console.log(
+                chalk.yellow(
+                  `[photo-v2] failed: ${err instanceof Error ? err.message : String(err)} — publishing NO IMAGE`,
+                ),
+              );
+            }
+            const photoMeta = (opts as any)._lastPhotoMeta as
+              | { imageMatchLevel?: string; imageLabel?: string }
+              | undefined;
+            const article: Article = {
+              id: slug,
+              slug,
+              title: draft.title,
+              category: toPublicCategory('Гаджеты'),
+              tags: toPublicTags([
+                ...draft.tags.map((t) => t.replace(/^#/, '')),
+                opts.cycle === 'news' ? 'новость' : 'обзор',
+              ]),
+              summary: summaryOf(draft.text),
+              content: draft.text,
+              sourceUrl: item.url,
+              publishedAt,
+              readTime: estimateReadTime(draft.text),
+              ...(images.length ? { imageUrl: images[0].url, images } : {}),
+              ...(photoMeta?.imageMatchLevel
+                ? { imageMatchLevel: photoMeta.imageMatchLevel, imageLabel: photoMeta.imageLabel }
+                : {}),
+              ...stampAuthorForPipeline('newsroom-scout', { sourceUrl: item.url, slug }),
+            } as Article;
+            const deduped = filterRemovedArticles(
+              fresh.articles.filter(
+                (a) => a.id !== article.id && a.slug !== article.slug && a.sourceUrl !== article.sourceUrl,
+              ),
+            );
+            deduped.unshift(article);
+            await writeFile(opts.articlesPath, JSON.stringify(deduped, null, 2) + '
+', 'utf8');
+            await maybeSyncToSqlite(article as unknown as Record<string, unknown>);
+            if (!fresh.journal.processedUrls.includes(item.url)) fresh.journal.processedUrls.push(item.url);
+            if (!fresh.journal.processedIds.includes(item.id)) fresh.journal.processedIds.push(item.id);
+            fresh.journal.entries.push({
+              id: item.id,
+              url: item.url,
+              title: draft.title,
+              processedAt: publishedAt,
+              status: 'published',
+              scoutScore: scout.score,
+              reason: `${scout.reason} [diversity: ${decision.reason}]`,
+              slug,
+              channel: 'rss',
+              cycle: opts.cycle,
+            });
+            await writeFile(opts.journalPath, JSON.stringify(fresh.journal, null, 2) + '
+', 'utf8');
+            opts.ids.add(slug);
+            opts.urls.add(item.url);
+            if (draftProductKey) opts.productIds.add(draftProductKey);
+            if (sourceProductKey) opts.productIds.add(sourceProductKey);
+            if (opts.lastPublish) {
+              opts.lastPublish.title = draft.title;
+              opts.lastPublish.slug = slug;
+              opts.lastPublish.wowScore = scout.score;
+            }
+            opts.metrics.publisherStarted = true;
+            opts.metrics.articlesPublished += 1;
+            opts.metrics.reason = `published rss/${opts.cycle}`;
+            opts.metrics.skipReason = 'none';
+            console.log(
+              chalk.green.bold(`Published (RSS/${opts.cycle}): "${draft.title}" (slug: ${slug})`),
+            );
+            return true;
+          } finally {
+            releasePublishLock();
+          }
+        }
+      } catch (err) {
+        console.error(chalk.red(`diversity publish error: ${err instanceof Error ? err.message : err}`));
+        lastSkip = 'diversity publish error';
+      }
     }
   }
 
