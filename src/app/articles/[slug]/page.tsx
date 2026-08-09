@@ -229,23 +229,43 @@ export default async function ArticlePage({
             </span>
           </div>
 
-          {/* 5. Hero image — SP-A-061: only rendered when a real,
-              entity-confirmed photo exists. No giant empty placeholder when
-              there isn't one (no image beats a wrong/unconfirmed one). */}
+          {/* 5. Hero image — only when a real entity-confirmed photo exists. */}
           {(() => {
             const hero = article.images?.find((i) => i.role === 'hero')?.url || article.imageUrl;
-            return hero ? (
-              <div className="my-8">
-                <MediaPlaceholder
-                  category={article.category}
-                  title={article.title}
-                  imageUrl={hero}
-                  description="Иллюстрация к материалу"
-                  aspectRatio="aspect-[16/8]"
-                />
-              </div>
-            ) : (
-              <div className="my-6" />
+            const extras = (article.images || []).filter((i) => i.role !== 'hero');
+            return (
+              <>
+                {hero ? (
+                  <div className="my-8">
+                    <MediaPlaceholder
+                      category={article.category}
+                      title={article.title}
+                      imageUrl={hero}
+                      description="Иллюстрация к материалу"
+                      aspectRatio="aspect-[16/8]"
+                    />
+                  </div>
+                ) : (
+                  <div className="my-6" />
+                )}
+                {/* Mobile: secondary/detail sequentially under hero (desktop uses right rail). */}
+                {extras.length > 0 && (
+                  <div className="mb-8 space-y-4 lg:hidden">
+                    {extras.map((img) => (
+                      <div
+                        key={img.url}
+                        className="overflow-hidden rounded border border-[var(--border)] bg-[var(--surface)]"
+                      >
+                        <img
+                          src={img.url}
+                          alt={article.title}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
             );
           })()}
 
@@ -316,18 +336,14 @@ export default async function ArticlePage({
               )}
             </div>
 
-            {/* 10. Right rail — related articles (visual column). On mobile
-                this simply stacks below the body since the grid collapses
-                to one column; on desktop it sits alongside the text and
-                sticks while scrolling. Reserved for a 2nd/3rd product photo
-                slot once the image pipeline collects more than one shot. */}
+            {/* 10. Right rail — secondary/detail on desktop + related. */}
             {(() => {
               const extraImages = (article.images || []).filter((i) => i.role !== 'hero');
               if (!extraImages.length && relatedArticles.length === 0) return null;
               return (
                 <aside className="lg:sticky lg:top-20 lg:self-start">
                   {extraImages.length > 0 && (
-                    <div className="mb-8 space-y-4">
+                    <div className="mb-8 hidden space-y-4 lg:block">
                       {extraImages.map((img) => (
                         <div key={img.url} className="overflow-hidden rounded border border-[var(--border)] bg-[var(--surface)]">
                           <img src={img.url} alt={article.title} className="h-full w-full object-cover" />
@@ -347,7 +363,11 @@ export default async function ArticlePage({
                             href={`/articles/${rel.slug}`}
                             className="group flex gap-3 border-b border-[var(--border)] pb-5 last:border-b-0"
                           >
-                            <MediaThumb imageUrl={rel.imageUrl} title={rel.title} className="h-16 w-16 aspect-square" />
+                            <MediaThumb
+                              imageUrl={rel.images?.find((i) => i.role === 'hero')?.url || rel.imageUrl}
+                              title={rel.title}
+                              className="h-16 w-16 aspect-square"
+                            />
                             <div className="min-w-0">
                               <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--accent)]">
                                 {rel.category}

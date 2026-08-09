@@ -18,7 +18,7 @@ import dotenv from 'dotenv';
 import chalk from 'chalk';
 import { fetchRssFeed, type RssItem } from '../src/lib/collectors/rss';
 import { extractArticleImage, passesImageQualityGate } from '../src/lib/collectors/image-extractor';
-import { scoutImages, downloadImagesLocally } from '../src/lib/collectors/photo-scout';
+import { resolveArticlePhotos } from '../src/lib/collectors/photo-scout';
 import { scoutArticle, SCOUT_SCORE_THRESHOLD } from '../src/lib/ai/scout';
 import { reviewArticle } from '../src/lib/ai/reviewer';
 import { writeDraft, type DraftFormat } from '../src/lib/ai/editor';
@@ -613,28 +613,31 @@ async function tryChinaPublishOnce(opts: {
         opts.cycle === 'news' ? 'новость' : 'обзор',
       ]);
 
-      // SP-A-061 Photo Intelligence V1: only accept photos that textually
-      // confirm the article's brand/model; wrong-product photo is worse than
-      // no photo, so an unmatched/rumored candidate yields no images at all.
+      // SP-A-064 Photo Intelligence V2: entity → multi-source mine → AI editor → local files.
+      // Wrong-product photo is worse than no photo.
       let images: import('../src/lib/collectors/photo-scout').ScoutImage[] = [];
       try {
-        const htmlRes = await fetch(c.sourceUrl, {
-          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-          signal: AbortSignal.timeout(6000),
+        const report = await resolveArticlePhotos({
+          slug,
+          title: draft.title,
+          text: draft.text,
+          sourceUrl: c.sourceUrl,
+          fallbackUrl: imageUrl || undefined,
         });
-        if (htmlRes.ok) {
-          const html = await htmlRes.text();
-          const scouted = await scoutImages({
-            html,
-            pageUrl: c.sourceUrl,
-            title: draft.title,
-            text: draft.text,
-            fallbackUrl: imageUrl || undefined,
-          });
-          if (scouted.length) images = await downloadImagesLocally(slug, scouted);
-        }
-      } catch {
-        /* no confirmed photo — publish without one */
+        console.log(
+          chalk.gray(
+            `[photo-v2] entity=${report.entity.brand || report.entity.company || '?'} ` +
+              `object=${report.entity.object || '?'} candidates=${report.candidatesFound} ` +
+              `selected=${report.selected.length} notes=${report.notes.join('; ')}`,
+          ),
+        );
+        images = report.selected;
+      } catch (err) {
+        console.log(
+          chalk.yellow(
+            `[photo-v2] failed: ${err instanceof Error ? err.message : String(err)} — publishing NO IMAGE`,
+          ),
+        );
       }
       if (!images.length) imageUrl = ''; // never fall back to an unconfirmed hotlink
 
@@ -744,10 +747,16 @@ async function publishRssOnce(opts: {
 }): Promise<boolean> {
   console.log(chalk.bold(`— Channel B: RSS / editorial office (${opts.cycle}) —`));
   opts.metrics.collectorStarted = true;
-  const scoutFloor =
-    opts.cycle === 'article'
-      ? Math.max(SCOUT_SCORE_THRESHOLD, 75)
-      : Math.max(SCOUT_SCORE_THRESHOLD, 70);
+  // Production floors stay 70/75 when env unset. Explicit SCOUT_SCORE_THRESHOLD
+  // (test-auto=40, forced probe <40) must win — Math.max(...) was ignoring it.
+  const explicitScout = Boolean(process.env.SCOUT_SCORE_THRESHOLD?.trim());
+  const scoutFloor = explicitScout
+    ? SCOUT_SCORE_THRESHOLD
+    : opts.cycle === 'article'
+      ? 75
+      : 70;
+  // SP-A-063 forced/live probe: dig past deal/opinion tops that score 0 forever.
+  const probeMode = explicitScout && SCOUT_SCORE_THRESHOLD < 70;
 
   const candidates: RssItem[] = [];
   for (const [name, feedUrl] of SOURCES) {
@@ -797,7 +806,23 @@ async function publishRssOnce(opts: {
       title.trim(),
     ) ||
     /\b(how to fix|explained|problems with|partnership|marks breakthrough)\b/i.test(title);
+  const looksDealOrOpinion = (title: string) =>
+    /\b(on sale|deal|discount|% off|just \$\d+|here.?s why|might sound|i.?ve used|acquires?|acquisition)\b/i.test(
+      title,
+    );
   candidates.sort((a, b) => {
+    // Forced/test probe: prefer concrete gadget sources over AI-keyword clickbait tops.
+    if (probeMode) {
+      const ad = looksDealOrOpinion(a.title) ? 1 : 0;
+      const bd = looksDealOrOpinion(b.title) ? 1 : 0;
+      if (ad !== bd) return ad - bd;
+      const sr = sourceRank(a.sourceName) - sourceRank(b.sourceName);
+      if (sr !== 0) return sr;
+      const ae = looksExplainer(a.title) ? 1 : 0;
+      const be = looksExplainer(b.title) ? 1 : 0;
+      if (ae !== be) return ae - be;
+      return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+    }
     // SP-A-054: boost grounded AI capability / useful AI tool stories.
     const aAi = looksAiCapability(a.title, a.text || '') ? 0 : 1;
     const bAi = looksAiCapability(b.title, b.text || '') ? 0 : 1;
@@ -815,7 +840,9 @@ async function publishRssOnce(opts: {
 
   opts.metrics.candidatesCollected += candidates.length;
   console.log(`New gadget candidates after filters: ${candidates.length}`);
-  console.log(`Scout threshold: ${scoutFloor} (cycle=${opts.cycle})`);
+  console.log(
+    `Scout threshold: ${scoutFloor} (cycle=${opts.cycle}${probeMode ? ', probe dig-deep' : ''})`,
+  );
 
   if (candidates.length === 0) {
     console.log('No RSS candidate — tick idle exit 0.');
@@ -830,8 +857,8 @@ async function publishRssOnce(opts: {
     return true;
   }
 
-  // Max 1 publish / tick; cap attempts so one tick doesn't burn 10+ Scout calls.
-  const maxAttempts = Math.min(4, candidates.length);
+  // Max 1 publish / tick. Probe/forced: dig deeper past score-0 deal/opinion tops.
+  const maxAttempts = Math.min(probeMode ? 16 : 4, candidates.length);
   let lastSkip = 'no rss candidate';
 
   for (let i = 0; i < maxAttempts; i++) {
@@ -994,27 +1021,30 @@ async function publishRssOnce(opts: {
 
         const publishedAt = new Date().toISOString();
 
-        // SP-A-061 Photo Intelligence V1 (see China branch for full rationale):
-        // no confirmed brand/model match in the source page -> no image.
+        // SP-A-064 Photo Intelligence V2: entity → multi-source mine → AI editor → local files.
         let images: import('../src/lib/collectors/photo-scout').ScoutImage[] = [];
         try {
-          const htmlRes = await fetch(item.url, {
-            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-            signal: AbortSignal.timeout(6000),
+          const report = await resolveArticlePhotos({
+            slug,
+            title: draft.title,
+            text: draft.text,
+            sourceUrl: item.url,
+            fallbackUrl: imageUrl,
           });
-          if (htmlRes.ok) {
-            const html = await htmlRes.text();
-            const scouted = await scoutImages({
-              html,
-              pageUrl: item.url,
-              title: draft.title,
-              text: draft.text,
-              fallbackUrl: imageUrl,
-            });
-            if (scouted.length) images = await downloadImagesLocally(slug, scouted);
-          }
-        } catch {
-          /* no confirmed photo — publish without one */
+          console.log(
+            chalk.gray(
+              `[photo-v2] entity=${report.entity.brand || report.entity.company || '?'} ` +
+                `object=${report.entity.object || '?'} candidates=${report.candidatesFound} ` +
+                `selected=${report.selected.length} notes=${report.notes.join('; ')}`,
+            ),
+          );
+          images = report.selected;
+        } catch (err) {
+          console.log(
+            chalk.yellow(
+              `[photo-v2] failed: ${err instanceof Error ? err.message : String(err)} — publishing NO IMAGE`,
+            ),
+          );
         }
 
         const article: Article = {

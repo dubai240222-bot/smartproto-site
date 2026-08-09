@@ -59,8 +59,13 @@ interface ArticleCardProps {
   className?: string;
 }
 
+function articleHeroUrl(article: { imageUrl?: string; images?: { url: string; role: string }[] }): string | undefined {
+  return article.images?.find((i) => i.role === 'hero')?.url || article.imageUrl;
+}
+
 export function ArticleCard({ article, variant = 'default', eyebrow, className }: ArticleCardProps) {
   const badgeLabel = eyebrow ?? formatPublishedAt(article.publishedAt);
+  const hero = articleHeroUrl(article);
   if (variant === 'featured') {
     return (
       <article
@@ -72,7 +77,7 @@ export function ArticleCard({ article, variant = 'default', eyebrow, className }
           <MediaPlaceholder
             category={article.category}
             title={article.title}
-            imageUrl={article.imageUrl}
+            imageUrl={hero}
             aspectRatio="aspect-[16/9]"
             className="mb-4"
           />
@@ -113,8 +118,8 @@ export function ArticleCard({ article, variant = 'default', eyebrow, className }
             <span>{article.readTime}</span>
           </div>
         </div>
-        {article.imageUrl && (
-          <MediaThumb imageUrl={article.imageUrl} title={article.title} className="w-20 h-16" />
+        {hero && (
+          <MediaThumb imageUrl={hero} title={article.title} className="w-20 h-16" />
         )}
       </article>
     );
@@ -130,7 +135,7 @@ export function ArticleCard({ article, variant = 'default', eyebrow, className }
         <MediaPlaceholder
           category={article.category}
           title={article.title}
-          imageUrl={article.imageUrl}
+          imageUrl={hero}
           aspectRatio="aspect-[16/9]"
           className="mb-3"
         />
@@ -161,6 +166,7 @@ export function VergeNumberedItem({
   article: Article;
 }) {
   const formattedIndex = String(index).padStart(2, '0');
+  const hero = articleHeroUrl(article);
 
   return (
     <article className="group flex items-center gap-3 sm:gap-4 py-3.5 border-b border-[var(--border)] last:border-b-0">
@@ -178,9 +184,9 @@ export function VergeNumberedItem({
           <span>{article.readTime}</span>
         </div>
       </div>
-      {article.imageUrl && (
+      {hero && (
         <MediaThumb
-          imageUrl={article.imageUrl}
+          imageUrl={hero}
           title={article.title}
           className="w-16 h-16 sm:w-20 sm:h-16"
         />
@@ -193,6 +199,7 @@ export function VergeNumberedItem({
 /* 3. Ars Technica Style: Visual Feature Block                                */
 /* -------------------------------------------------------------------------- */
 export function ArsTechnicaCard({ article }: { article: Article }) {
+  const hero = articleHeroUrl(article);
   return (
     <article className="group flex flex-col justify-between rounded-lg border border-[var(--border)] bg-[var(--surface)] overflow-hidden transition-all duration-200 hover:border-[var(--accent)] hover:shadow-md">
       <div>
@@ -200,7 +207,7 @@ export function ArsTechnicaCard({ article }: { article: Article }) {
           <MediaPlaceholder
             category={article.category}
             title={article.title}
-            imageUrl={article.imageUrl}
+            imageUrl={hero}
             aspectRatio="aspect-[16/10]"
           />
         </div>
@@ -232,8 +239,9 @@ export function ArsTechnicaCard({ article }: { article: Article }) {
 /* 4. Quick Update Item: Minimal Chronological Feed Row (No heavy card)       */
 /* -------------------------------------------------------------------------- */
 export function QuickUpdateItem({ article }: { article: Article }) {
+  const hero = articleHeroUrl(article);
   return (
-    <article className="group py-3.5 border-b border-[var(--border)] last:border-b-0 flex items-start gap-4">
+    <article className="group py-3.5 border-b border-[var(--border)] last:border-b-0 flex items-start gap-3 sm:gap-5">
       <div className="flex-1 space-y-1.5 min-w-0">
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="text-[11px] font-mono font-semibold text-[var(--muted)]">
@@ -251,12 +259,14 @@ export function QuickUpdateItem({ article }: { article: Article }) {
           {article.summary}
         </p>
       </div>
-      {article.imageUrl && (
-        <MediaThumb
-          imageUrl={article.imageUrl}
-          title={article.title}
-          className="w-24 h-20 sm:w-32 sm:h-24"
-        />
+      {hero && (
+        <Link href={`/articles/${article.slug}`} className="shrink-0" aria-label={article.title}>
+          <MediaThumb
+            imageUrl={hero}
+            title={article.title}
+            className="w-[112px] h-[84px] sm:w-[180px] sm:h-[120px] md:w-[200px] md:h-[132px]"
+          />
+        </Link>
       )}
     </article>
   );
@@ -266,6 +276,7 @@ export function QuickUpdateItem({ article }: { article: Article }) {
 /* 5. Stratechery Style: Calm Deep Dive Reading Column                        */
 /* -------------------------------------------------------------------------- */
 export function StratecheryDeepDive({ article }: { article: Article }) {
+  const hero = articleHeroUrl(article);
   return (
     <article className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-10 shadow-sm space-y-6">
       <div className="flex items-center justify-between border-b border-[var(--border)] pb-4">
@@ -283,11 +294,11 @@ export function StratecheryDeepDive({ article }: { article: Article }) {
           <Link href={`/articles/${article.slug}`}>{article.title}</Link>
         </h2>
 
-        {article.imageUrl && (
+        {hero && (
           <MediaPlaceholder
             category={article.category}
             title={article.title}
-            imageUrl={article.imageUrl}
+            imageUrl={hero}
             aspectRatio="aspect-[21/9]"
             className="rounded-lg my-4"
           />
