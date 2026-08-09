@@ -190,6 +190,12 @@ const BUYABLE_PRODUCT_PATTERNS: RegExp[] = [
   /\bgadget\b/i,
   /\bdevice\b/i,
   /\bwearable\b/i,
+  /\bbracelet\b/i,
+  /\bbassinet\b/i,
+  /\bcry\b/i,
+  /\bsandal/i,
+  /\bwatering\b/i,
+  /\birrigation\b/i,
   /\bprojector\b/i,
   /\bkeyboard\b/i,
   /\bheadphone/i,
@@ -263,9 +269,9 @@ const BUYABLE_PRODUCT_PATTERNS: RegExp[] = [
   /\btemu\b/i,
   /\btaobao\b/i,
   /\baliexpress\b/i,
-  /\bгаджет/i,
-  /\bустройств/i,
-  /\bможно купить/i,
+  /гаджет/i,
+  /устройств/i,
+  /можно купить/i,
   /\bпредзаказ/i,
   /наушник/i,
   /\bпроектор/i,
@@ -337,7 +343,7 @@ const COMMODITY_LOW_WOW_PATTERNS: RegExp[] = [
  * may pass without a buyable SKU (no prices/links in public copy).
  */
 const AI_OR_INVENTION_ALERT_RE =
-  /\b(ai|a\.i\.|artificial intelligence|chatgpt|gemini|claude|llm|gpt|machine learning|neural|copilot|agentic|autonom(?:y|ous)|superintelligence|agi|on[- ]device ai|foundation model|reasoning model|deepfake|robotaxi|vtol|invention|prototype that|breakthrough|milestone)\b|искусственн\w*\s+интеллект|\bии\b|нейросет|автономн|изобретен|достижен\w*\s+(в\s+)?(ии|ai)|суперразум/i;
+  /\b(ai|a\.i\.|artificial intelligence|chatgpt|gemini|claude|llm|gpt|machine learning|neural|copilot|agentic|autonom(?:y|ous)|superintelligence|agi|on[- ]device ai|foundation model|reasoning model|deepfake|robotaxi|vtol|invention|prototype that|breakthrough|milestone|robotics?|humanoid|exoskeleton)\b|искусственн\w*\s+интеллект|\bии\b|нейросет|автономн|изобретен|достижен\w*\s+(в\s+)?(ии|ai)|суперразум|робот/i;
 
 export function isAiOrInventionAlert(title: string, text = ''): boolean {
   return AI_OR_INVENTION_ALERT_RE.test(`${title}\n${text}`);
@@ -470,7 +476,11 @@ export function assessNovelty(
     source.includes('ithome') ||
     source.includes('it之家') ||
     source.includes('36kr') ||
-    source.includes('anker');
+    source.includes('anker') ||
+    source.includes('technode') ||
+    source.includes('ieee') ||
+    source.includes('robot report') ||
+    source.includes('tech xplore');
   const appFeed =
     source.includes('macstories') ||
     source.includes('cult of mac') ||
@@ -672,6 +682,29 @@ export function evaluateTopicLocal(title: string, text = '') {
 export function looksBuyableGadget(title: string, text = '', sourceName = ''): boolean {
   const gate = hardRejectTopic(title, text, { sourceName, mode: 'gadget' });
   if (!gate.reject) return true;
+
+  const source = sourceName.toLowerCase();
+  const hay = `${title} ${text}`.toLowerCase();
+  const discoveryResearch =
+    source.includes('ieee') ||
+    source.includes('robot report') ||
+    source.includes('mit news') ||
+    source.includes('mit csail') ||
+    source.includes('csail') ||
+    source.includes('wyss') ||
+    source.includes('eth zurich') ||
+    source.includes('tech xplore') ||
+    source.includes('technode');
+
+  // SP-A-065: research/robotics discovery feeds may reach Scout (status=RESEARCH), not auto-publish.
+  if (
+    gate.rejectCode === 'NON_BUYABLE_RESEARCH' &&
+    discoveryResearch &&
+    (isAiOrInventionAlert(title, text) || /\brobot|\bai\b|нейро|робот/i.test(hay))
+  ) {
+    return true;
+  }
+
   // Never soften HARD_TOPIC / research / niche-PC / commodity / overplayed rejects.
   if (
     gate.rejectCode === 'HARD_TOPIC' ||
@@ -683,8 +716,6 @@ export function looksBuyableGadget(title: string, text = '', sourceName = ''): b
     return false;
   }
 
-  const source = sourceName.toLowerCase();
-  const hay = `${title} ${text}`.toLowerCase();
   if (
     /\b(tower|museum|building|architecture|wildlife|nature|author|memoir|singer|album|film|movie|trump|politic|graphic novel|advisory council|launcher|app deals|freebies|podcast|indie games?)\b/.test(
       hay,
@@ -698,7 +729,8 @@ export function looksBuyableGadget(title: string, text = '', sourceName = ''): b
     source.includes('yanko') ||
     source.includes('new atlas') ||
     source.includes('gadget flow') ||
-    source.includes('verge gadgets')
+    source.includes('verge gadgets') ||
+    discoveryResearch
   ) {
     return true;
   }
