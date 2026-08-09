@@ -565,6 +565,14 @@ export function hardRejectTopic(
 
   for (const re of hardPatterns) {
     if (re.test(hay)) {
+      // SP-A-065C: AI cyber/preparedness stories often say "deployment" — not infra news.
+      if (
+        /\bdeployment\b/i.test(re.source) &&
+        isAiOrInventionAlert(title, text) &&
+        /\b(cyber|preparedness|frontier|capability|safety\s+incident|model\s+risk)\b/i.test(hay)
+      ) {
+        continue;
+      }
       return {
         reject: true,
         reason: `Жёсткий reject: политика/знаменитости/культура/природа/непокупаемая тема (${re.source}).`,
