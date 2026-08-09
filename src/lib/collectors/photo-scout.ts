@@ -746,70 +746,55 @@ export async function resolveArticlePhotos(opts: {
     );
   }
 
-  // Brand / series fallback — same page & official sources, NEVER labeled exact.
+  // SERIES / BRAND — narrow only. Never use another concrete product as stand-in.
+  // Rumors, roundups, brand-only → skip to category (safer than fake exactness).
   if (!selected.length && (entity.brand || entity.company)) {
-    if (looksRoundup) {
-      notes.push('roundup/multi-topic — skip brand/series, prefer category');
+    const rumorOrUnconfirmed = entity.status === 'rumor' || !entity.model;
+    if (looksRoundup || rumorOrUnconfirmed || !hasConcreteProduct) {
+      notes.push(
+        looksRoundup
+          ? 'roundup — skip series/brand product art → category'
+          : 'unconfirmed/rumor/brand-only — skip product stand-in → category',
+      );
     } else {
-    const brandEntity = {
-      ...entity,
-      status: 'product' as const,
-      // Loosen model requirement for brand-level harvest only
-      model: entity.status === 'rumor' ? null : entity.model,
-    };
-    const mined = await minePhotoCandidates({
-      sourceUrl: opts.sourceUrl,
-      title: opts.title,
-      text: opts.text,
-      entity: brandEntity,
-      fallbackUrl: opts.fallbackUrl,
-      html: opts.html,
-    });
-    candidatesFound = Math.max(candidatesFound, mined.candidates.length);
-    notes.push(`brand-fallback candidates=${mined.candidates.length}`);
-
-    // Prefer official/newsroom; require brand token in URL/context; forbid claiming exact model.
-    const brand = (entity.brand || entity.company || '').toLowerCase();
-    const seriesHints = entity.aliases
-      .concat(entity.matchTokens)
-      .map((t) => t.toLowerCase())
-      .filter((t) => t.length >= 3 && t !== brand && !/^(pro|max|plus|ai|5g|4g)$/i.test(t));
-
-    const brandSafe = mined.candidates.filter((c) => {
-      if (!looksLikeRasterPhoto(c.url)) return false;
-      // Homepage marketing tiles are not safe brand product illustrations.
-      if (isMarketingHomepageArt(c.url)) return false;
-      if (!['official', 'newsroom', 'presskit', 'lab', 'source_article', 'trusted_media'].includes(c.tier)) {
-        return false;
+      // At most one extra mine for series (time budget: exact already tried once).
+      const mined = await minePhotoCandidates({
+        sourceUrl: opts.sourceUrl,
+        title: opts.title,
+        text: opts.text,
+        entity,
+        fallbackUrl: opts.fallbackUrl,
+        html: opts.html,
+      });
+      candidatesFound = Math.max(candidatesFound, mined.candidates.length);
+      const brand = (entity.brand || entity.company || '').toLowerCase();
+      const model = (entity.model || '').toLowerCase();
+      // SERIES only: same brand + confirmed series token in URL/context; no marketing tiles.
+      const seriesSafe = mined.candidates.filter((c) => {
+        if (!looksLikeRasterPhoto(c.url) || isMarketingHomepageArt(c.url)) return false;
+        if (!['official', 'newsroom', 'presskit', 'lab'].includes(c.tier)) return false;
+        const hay = `${c.url} ${c.context}`.toLowerCase();
+        if (!brand || !hay.includes(brand.split(/\s+/)[0])) return false;
+        if (!model || !hay.includes(model.split(/\s+/)[0])) return false;
+        return true;
+      });
+      if (seriesSafe.length) {
+        const level: ImageMatchLevel = 'series';
+        const label = labelForMatchLevel(level) || undefined;
+        selected = await downloadImagesLocally(
+          opts.slug,
+          seriesSafe.slice(0, 2).map((c, i) => ({
+            url: c.url,
+            role: (['hero', 'secondary'] as ScoutImage['role'][])[i],
+            matchLevel: level,
+            label,
+          })),
+        );
+        notes.push(`series downloaded=${selected.length}`);
+      } else {
+        // BRAND: do not use another concrete product of the brand. Prefer category.
+        notes.push('no safe series — skip brand product stand-in → category');
       }
-      const hay = `${c.url} ${c.context} ${c.pageUrl}`.toLowerCase();
-      if (!brand || !hay.includes(brand.split(/\s+/)[0])) return false;
-      // Reject clear other-model conflict markers when we have a known model
-      if (entity.model && /15t|14t|13t|k90|k80/i.test(hay) && !hay.includes(entity.model.toLowerCase())) {
-        return false;
-      }
-      return true;
-    });
-
-    let level: ImageMatchLevel = 'brand';
-    if (
-      seriesHints.some((h) =>
-        brandSafe.some((c) => `${c.url} ${c.context}`.toLowerCase().includes(h)),
-      )
-    ) {
-      level = 'series';
-    }
-    const label = labelForMatchLevel(level) || undefined;
-    const picks = brandSafe.slice(0, 2).map((c, i) => ({
-      url: c.url,
-      role: (['hero', 'secondary'] as ScoutImage['role'][])[i],
-      matchLevel: level,
-      label,
-    }));
-    if (picks.length) {
-      selected = await downloadImagesLocally(opts.slug, picks);
-      notes.push(`${level} downloaded=${selected.length}`);
-    }
     }
   }
 
