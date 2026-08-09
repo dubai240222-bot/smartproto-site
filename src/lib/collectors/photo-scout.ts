@@ -707,6 +707,12 @@ export async function resolveArticlePhotos(opts: {
 
   // Brand / series fallback — same page & official sources, NEVER labeled exact.
   if (!selected.length && (entity.brand || entity.company)) {
+    const looksRoundup = /анонс|обзор новинок|this week|round.?up|лучшие|подборк/i.test(
+      `${opts.title}\n${opts.text.slice(0, 400)}`,
+    );
+    if (looksRoundup) {
+      notes.push('roundup/multi-topic — skip brand/series, prefer category');
+    } else {
     const brandEntity = {
       ...entity,
       status: 'product' as const,
@@ -729,10 +735,15 @@ export async function resolveArticlePhotos(opts: {
     const seriesHints = entity.aliases
       .concat(entity.matchTokens)
       .map((t) => t.toLowerCase())
-      .filter((t) => t.length >= 3 && t !== brand);
+      .filter((t) => t.length >= 3 && t !== brand && !/^(pro|max|plus|ai|5g|4g)$/i.test(t));
 
     const brandSafe = mined.candidates.filter((c) => {
       if (!looksLikeRasterPhoto(c.url)) return false;
+      // Homepage marketing tiles are not safe brand product illustrations.
+      if (/\/v\/home\/|promo_|banner|masthead|hero_back|at_work|trade.in/i.test(c.url)) return false;
+      if (!['official', 'newsroom', 'presskit', 'lab', 'source_article', 'trusted_media'].includes(c.tier)) {
+        return false;
+      }
       const hay = `${c.url} ${c.context} ${c.pageUrl}`.toLowerCase();
       if (!brand || !hay.includes(brand.split(/\s+/)[0])) return false;
       // Reject clear other-model conflict markers when we have a known model
@@ -743,7 +754,11 @@ export async function resolveArticlePhotos(opts: {
     });
 
     let level: ImageMatchLevel = 'brand';
-    if (seriesHints.some((h) => brandSafe.some((c) => `${c.url} ${c.context}`.toLowerCase().includes(h)))) {
+    if (
+      seriesHints.some((h) =>
+        brandSafe.some((c) => `${c.url} ${c.context}`.toLowerCase().includes(h)),
+      )
+    ) {
       level = 'series';
     }
     const label = labelForMatchLevel(level) || undefined;
@@ -756,6 +771,7 @@ export async function resolveArticlePhotos(opts: {
     if (picks.length) {
       selected = await downloadImagesLocally(opts.slug, picks);
       notes.push(`${level} downloaded=${selected.length}`);
+    }
     }
   }
 
