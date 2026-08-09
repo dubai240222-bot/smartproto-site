@@ -23,6 +23,8 @@ export const OFFICIAL_DOMAIN_REGISTRY: OfficialDomainEntry[] = [
   { domain: 'www.altar.computer', brandKeys: ['altar'], kind: 'manufacturer' },
   { domain: 'www.deltachildren.com', brandKeys: ['delta children', 'delta', 'aero'], kind: 'manufacturer' },
   { domain: 'deltachildren.com', brandKeys: ['delta children', 'delta'], kind: 'manufacturer' },
+  { domain: 'www.rainpoint.de', brandKeys: ['rainpoint'], kind: 'manufacturer' },
+  { domain: 'rainpoint.de', brandKeys: ['rainpoint'], kind: 'manufacturer' },
   { domain: 'www.rainpointonline.com', brandKeys: ['rainpoint'], kind: 'manufacturer' },
   { domain: 'rainpointonline.com', brandKeys: ['rainpoint'], kind: 'manufacturer' },
   { domain: 'www.myrainpoint.com', brandKeys: ['rainpoint'], kind: 'manufacturer' },
