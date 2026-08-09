@@ -132,6 +132,7 @@ async function main() {
     {
       key: 'noise_refresh',
       n:
+        findNorm(normalized, NOISE_RE) ||
         findNorm(normalized, /vibe coding|benchmark|api version|pricing tier/i) ||
         findNorm(normalized, GPT_EFF_RE),
     },
