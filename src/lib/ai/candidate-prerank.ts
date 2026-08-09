@@ -18,7 +18,7 @@ export interface PreRankItem {
 }
 
 const DEAL_OPINION_RE =
-  /\b(on sale|deal|discount|% off|just \$\d+|here.?s why|i.?ve used|acquires?|acquisition|best \d+|roundup|gift guide)\b/i;
+  /\b(on sale|deal|discount|% off|just \$\d+|here.?s why|i.?ve used|acquires?|acquisition|best \d+|roundup|gift guide|video friday|week in review)\b/i;
 const UNUSUAL_SIGNAL_RE =
   /\b(humanoid|robot|drone|swarm|exoskeleton|wristband|gesture|neuromuscular|cry|bassinet|ultra-?thin|haptic|translator|on-device ai|prototype|breakthrough|foldable|hover|gimbal)\b|робот|браслет|люльк|рой\s+дрон/i;
 const RESEARCH_SIGNAL_RE =
