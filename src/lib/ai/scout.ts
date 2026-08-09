@@ -50,6 +50,32 @@ const SCOUT_SYSTEM_PROMPT_APP = [
   'productType = "app" | "game" | "none". Не выдумывай цену/рейтинг если нет в тексте.',
 ].join('\n');
 
+/** SP-A-065C — AI Early Warning Scout (separate channel; brand alone ≠ high score). */
+const SCOUT_SYSTEM_PROMPT_AI_RADAR = [
+  'Ты разведчик SmartProto — канал AI Early Warning (не gadget-SKU desk).',
+  'ГЛАВНЫЙ СТЕРЖЕНЬ: «Узнать о новой свободе раньше других — и получить её первым».',
+  'Нужен настоящий EVENT / WOW / FREEDOM SIGNAL, не бренд.',
+  '',
+  'Высокий score (70–95), если читатель чувствует:',
+  '«неужели AI уже это умеет?»; компания сама нажала на тормоз из-за слишком сильной capability;',
+  'AI начал выполнять реальную работу вместо человека; технология уменьшает зависимость от офиса/места/рутины;',
+  'embodied AI / robot получил новую реальную способность; это может быстро изменить обычную жизнь.',
+  '',
+  'Эталон HIGH: OpenAI Astra / critical cyber capabilities pause → 75–90 (сам факт тормоза из-за силы модели).',
+  'Эталон HIGH: Gemini Robotics whole-body / реальный physical capability → 75–90.',
+  'НЕ повышай score только из-за слов OpenAI / Google / Anthropic / Meta.',
+  '',
+  'LOW (0–35): API version bump, pricing tier, benchmark без реального значения, обычный model refresh,',
+  'vibe-coding course, enterprise case-study без нового capability event, брендовый PR без события.',
+  '',
+  'Оценка 0–100 суммой частей:',
+  'humanSurprise 0–30, visualDemonstrability 0–20, everydayRelevance 0–15,',
+  'novelty 0–15, shareability 0–10, credibility 0–10.',
+  'productType = "ai_event" | "robotics" | "research" | "none".',
+  'status: ANNOUNCED | RESEARCH | PROTOTYPE | AVAILABLE | CONCEPT.',
+  'Покупка сегодня НЕ обязательна. Публичный текст без цен и ссылок.',
+].join('\n');
+
 export async function scoutArticle(
   title: string,
   text: string,
@@ -67,11 +93,18 @@ export async function scoutArticle(
     };
   }
 
-  const systemPrompt = mode === 'app' ? SCOUT_SYSTEM_PROMPT_APP : SCOUT_SYSTEM_PROMPT_GADGET;
+  const systemPrompt =
+    mode === 'app'
+      ? SCOUT_SYSTEM_PROMPT_APP
+      : mode === 'ai_radar'
+        ? SCOUT_SYSTEM_PROMPT_AI_RADAR
+        : SCOUT_SYSTEM_PROMPT_GADGET;
   const passHint =
     mode === 'app'
       ? 'interesting=true только если score>=75, конкретное НОВОЕ полезное app/game, isActuallyNew, noveltyEvidence не пуст.'
-      : 'interesting=true если score>=75 и есть конкретный гаджет/app/AI-достижение/изобретение с пользой (покупка НЕ обязательна), isActuallyNew, noveltyEvidence не пуст.';
+      : mode === 'ai_radar'
+        ? 'interesting=true если score>=70 и есть EVENT/WOW/FREEDOM signal (capability/pause/embodied/real work), не бренд-only.'
+        : 'interesting=true если score>=75 и есть конкретный гаджет/app/AI-достижение/изобретение с пользой (покупка НЕ обязательна), isActuallyNew, noveltyEvidence не пуст.';
 
   const client = getOpenRouterClient();
   const completion = await client.chat.completions.create({
@@ -180,9 +213,11 @@ export async function scoutArticle(
   const productType =
     typeof parsed.productType === 'string' ? parsed.productType.trim() : undefined;
   const noProduct =
-    !productType ||
-    productType.toLowerCase() === 'none' ||
-    productType.toLowerCase() === 'n/a';
+    mode === 'ai_radar'
+      ? false
+      : !productType ||
+        productType.toLowerCase() === 'none' ||
+        productType.toLowerCase() === 'n/a';
 
   const statusRaw = typeof parsed.status === 'string' ? parsed.status.toUpperCase() : '';
   const statusAllowed: ProductStatus[] = [
@@ -212,9 +247,11 @@ export async function scoutArticle(
       ? parsed.marketSaturation
       : n.marketSaturation;
   const isActuallyNew =
-    parsed.isActuallyNew !== false &&
-    modelEvidence.length > 0 &&
-    !(marketSaturation === 'high' && !functionalDifference);
+    mode === 'ai_radar'
+      ? parsed.isActuallyNew !== false
+      : parsed.isActuallyNew !== false &&
+        modelEvidence.length > 0 &&
+        !(marketSaturation === 'high' && !functionalDifference);
 
   // SP-A-065B: soft novelty — never binary-zero Altar/Delta-class improvements.
   let noveltyPenalty = 0;
@@ -230,12 +267,15 @@ export async function scoutArticle(
     score = soft.score;
     noveltyPenalty = soft.penalty;
     if (soft.reason) noveltyNote = soft.reason;
-  } else if (noProduct) {
+  } else if (mode !== 'ai_radar' && noProduct) {
     score = 0;
   }
 
   // Publish interest = score gate only (threshold unchanged at env/70). Soft mid-band stays visible.
-  const interesting = !noProduct && score >= SCOUT_SCORE_THRESHOLD;
+  const interesting =
+    mode === 'ai_radar'
+      ? score >= SCOUT_SCORE_THRESHOLD
+      : !noProduct && score >= SCOUT_SCORE_THRESHOLD;
 
   const reasonBase =
     typeof parsed.reason === 'string'
@@ -255,7 +295,7 @@ export async function scoutArticle(
     interesting,
     score: Math.max(0, Math.min(100, Math.round(score))),
     reason: tags.length ? `${reasonBase} [${tags.join('; ')}]` : reasonBase,
-    productType: productType || 'none',
+    productType: productType || (mode === 'ai_radar' ? 'ai_event' : 'none'),
     status,
     partsV2,
     commodityPenalty: commodityPenalty || undefined,
