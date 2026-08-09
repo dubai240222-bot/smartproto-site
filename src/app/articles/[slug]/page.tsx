@@ -6,8 +6,10 @@ import { ArrowLeft, Clock } from 'lucide-react';
 import { getAllArticles, getArticleBySlug, type Article } from '@/data/articles';
 import { MediaPlaceholder, MediaThumb } from '@/components/media-placeholder';
 import { InterestRating } from '@/components/interest-rating';
+import { ImageMatchCaption } from '@/components/image-match-caption';
 import { formatPublishedAt, getRelatedArticles } from '@/lib/article-utils';
 import { formatAuthorCredit, resolveAuthorForArticle } from '@/lib/authors';
+import { labelForMatchLevel } from '@/lib/collectors/image-match';
 
 // SP-A-056: render per request (both storage modes) so a newly published
 // article — from SQLite on Hetzner, or freshly rebuilt JSON on Vercel — is
@@ -229,10 +231,17 @@ export default async function ArticlePage({
             </span>
           </div>
 
-          {/* 5. Hero image — only when a real entity-confirmed photo exists. */}
           {(() => {
             const hero = article.images?.find((i) => i.role === 'hero')?.url || article.imageUrl;
             const extras = (article.images || []).filter((i) => i.role !== 'hero');
+            const level =
+              article.imageMatchLevel ||
+              article.images?.find((i) => i.role === 'hero')?.matchLevel ||
+              article.images?.[0]?.matchLevel;
+            const label =
+              article.imageLabel ||
+              article.images?.find((i) => i.role === 'hero')?.label ||
+              labelForMatchLevel(level);
             return (
               <>
                 {hero ? (
@@ -244,6 +253,7 @@ export default async function ArticlePage({
                       description="Иллюстрация к материалу"
                       aspectRatio="aspect-[16/8]"
                     />
+                    <ImageMatchCaption level={level} label={label} />
                   </div>
                 ) : (
                   <div className="my-6" />
@@ -252,15 +262,15 @@ export default async function ArticlePage({
                 {extras.length > 0 && (
                   <div className="mb-8 space-y-4 lg:hidden">
                     {extras.map((img) => (
-                      <div
-                        key={img.url}
-                        className="overflow-hidden rounded border border-[var(--border)] bg-[var(--surface)]"
-                      >
-                        <img
-                          src={img.url}
-                          alt={article.title}
-                          className="h-full w-full object-cover"
-                        />
+                      <div key={img.url}>
+                        <div className="overflow-hidden rounded border border-[var(--border)] bg-[var(--surface)]">
+                          <img
+                            src={img.url}
+                            alt={article.title}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                        <ImageMatchCaption level={img.matchLevel} label={img.label} />
                       </div>
                     ))}
                   </div>
@@ -345,8 +355,11 @@ export default async function ArticlePage({
                   {extraImages.length > 0 && (
                     <div className="mb-8 hidden space-y-4 lg:block">
                       {extraImages.map((img) => (
-                        <div key={img.url} className="overflow-hidden rounded border border-[var(--border)] bg-[var(--surface)]">
-                          <img src={img.url} alt={article.title} className="h-full w-full object-cover" />
+                        <div key={img.url}>
+                          <div className="overflow-hidden rounded border border-[var(--border)] bg-[var(--surface)]">
+                            <img src={img.url} alt={article.title} className="h-full w-full object-cover" />
+                          </div>
+                          <ImageMatchCaption level={img.matchLevel} label={img.label} />
                         </div>
                       ))}
                     </div>

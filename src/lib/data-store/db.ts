@@ -45,5 +45,11 @@ export function getDb(): Database.Database {
   if (!cols.some((c) => c.name === 'images')) {
     db.exec("ALTER TABLE articles ADD COLUMN images TEXT NOT NULL DEFAULT '[]'");
   }
+  if (!cols.some((c) => c.name === 'imageMatchLevel')) {
+    db.exec('ALTER TABLE articles ADD COLUMN imageMatchLevel TEXT');
+  }
+  if (!cols.some((c) => c.name === 'imageLabel')) {
+    db.exec('ALTER TABLE articles ADD COLUMN imageLabel TEXT');
+  }
   return db;
 }

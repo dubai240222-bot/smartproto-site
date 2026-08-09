@@ -5,10 +5,14 @@
  */
 import { getDb } from './db';
 
+import type { ImageMatchLevel } from '../collectors/image-match';
+
 export interface ArticleImage {
   url: string;
   role: 'hero' | 'secondary' | 'detail';
   sourceUrl?: string;
+  matchLevel?: ImageMatchLevel;
+  label?: string;
 }
 
 export interface StoredArticle {
@@ -23,6 +27,8 @@ export interface StoredArticle {
   publishedAt: string;
   readTime: string;
   imageUrl?: string;
+  imageMatchLevel?: ImageMatchLevel;
+  imageLabel?: string;
   images?: ArticleImage[];
   author?: string;
   authorDesk?: string;
@@ -42,6 +48,8 @@ interface Row {
   readTime: string;
   imageUrl: string | null;
   images: string | null;
+  imageMatchLevel: string | null;
+  imageLabel: string | null;
   author: string | null;
   authorDesk: string | null;
   agentId: string | null;
@@ -76,6 +84,10 @@ function rowToArticle(row: Row): StoredArticle {
     readTime: row.readTime,
     imageUrl: row.imageUrl ?? undefined,
     images: row.images ? safeParseImages(row.images) : undefined,
+    imageMatchLevel: ((row as { imageMatchLevel?: string }).imageMatchLevel as
+      | import('../collectors/image-match').ImageMatchLevel
+      | undefined) || undefined,
+    imageLabel: (row as { imageLabel?: string | null }).imageLabel ?? undefined,
     author: row.author ?? undefined,
     authorDesk: row.authorDesk ?? undefined,
     agentId: row.agentId ?? undefined,
@@ -105,18 +117,26 @@ export function getArticleBySlugFromDb(slug: string): StoredArticle | undefined 
 export function upsertArticle(article: StoredArticle): void {
   const stmt = getDb().prepare(`
     INSERT INTO articles
-      (slug, id, title, category, tags, summary, content, sourceUrl, publishedAt, readTime, imageUrl, images, author, authorDesk, agentId, updatedAt)
+      (slug, id, title, category, tags, summary, content, sourceUrl, publishedAt, readTime, imageUrl, images, imageMatchLevel, imageLabel, author, authorDesk, agentId, updatedAt)
     VALUES
-      (@slug, @id, @title, @category, @tags, @summary, @content, @sourceUrl, @publishedAt, @readTime, @imageUrl, @images, @author, @authorDesk, @agentId, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+      (@slug, @id, @title, @category, @tags, @summary, @content, @sourceUrl, @publishedAt, @readTime, @imageUrl, @images, @imageMatchLevel, @imageLabel, @author, @authorDesk, @agentId, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
     ON CONFLICT(slug) DO UPDATE SET
       id=excluded.id, title=excluded.title, category=excluded.category, tags=excluded.tags,
       summary=excluded.summary, content=excluded.content, sourceUrl=excluded.sourceUrl,
       publishedAt=excluded.publishedAt, readTime=excluded.readTime, imageUrl=excluded.imageUrl,
-      images=excluded.images,
+      images=excluded.images, imageMatchLevel=excluded.imageMatchLevel, imageLabel=excluded.imageLabel,
       author=excluded.author, authorDesk=excluded.authorDesk, agentId=excluded.agentId,
       updatedAt=strftime('%Y-%m-%dT%H:%M:%fZ','now')
   `);
   const tx = getDb().transaction((a: StoredArticle) => {
+    const heroLevel =
+      a.imageMatchLevel ||
+      a.images?.find((i) => i.role === 'hero')?.matchLevel ||
+      a.images?.[0]?.matchLevel;
+    const heroLabel =
+      a.imageLabel ||
+      a.images?.find((i) => i.role === 'hero')?.label ||
+      undefined;
     stmt.run({
       slug: a.slug,
       id: a.id,
@@ -130,6 +150,8 @@ export function upsertArticle(article: StoredArticle): void {
       readTime: a.readTime,
       imageUrl: a.imageUrl ?? null,
       images: JSON.stringify(a.images ?? []),
+      imageMatchLevel: heroLevel ?? null,
+      imageLabel: heroLabel ?? null,
       author: a.author ?? null,
       authorDesk: a.authorDesk ?? null,
       agentId: a.agentId ?? null,

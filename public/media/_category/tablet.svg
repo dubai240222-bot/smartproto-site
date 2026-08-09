@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 120 90">
+  <rect width="120" height="90" fill="#1a2332"/>
+  <path d="M28 18h64v74a4 4 0 0 1-4 4H32a4 4 0 0 1-4-4V18zm30 68a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" fill="none" stroke="#5a8f7b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="60" y="84" text-anchor="middle" fill="#8a93a0" font-family="Georgia, serif" font-size="4">тематическая иллюстрация</text>
+</svg>

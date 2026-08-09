@@ -623,12 +623,14 @@ async function tryChinaPublishOnce(opts: {
           text: draft.text,
           sourceUrl: c.sourceUrl,
           fallbackUrl: imageUrl || undefined,
+          category: toPublicCategory(CHINA_CATEGORY),
         });
         console.log(
           chalk.gray(
             `[photo-v2] entity=${report.entity.brand || report.entity.company || '?'} ` +
               `object=${report.entity.object || '?'} candidates=${report.candidatesFound} ` +
-              `selected=${report.selected.length} notes=${report.notes.join('; ')}`,
+              `selected=${report.selected.length} level=${report.selected[0]?.matchLevel || 'none'} ` +
+              `notes=${report.notes.join('; ')}`,
           ),
         );
         images = report.selected;
@@ -652,7 +654,14 @@ async function tryChinaPublishOnce(opts: {
         sourceUrl: c.sourceUrl,
         publishedAt,
         readTime: `${Math.max(1, Math.ceil(wc / 150))} мин`,
-        ...(images.length ? { imageUrl: images[0].url, images } : {}),
+        ...(images.length
+          ? {
+              imageUrl: images[0].url,
+              images,
+              imageMatchLevel: images[0].matchLevel,
+              imageLabel: images[0].label,
+            }
+          : {}),
         ...stampAuthorForPipeline('china-qwen', { sourceUrl: c.sourceUrl, slug }),
       };
 
@@ -1030,12 +1039,14 @@ async function publishRssOnce(opts: {
             text: draft.text,
             sourceUrl: item.url,
             fallbackUrl: imageUrl,
+            category: toPublicCategory('Гаджеты'),
           });
           console.log(
             chalk.gray(
               `[photo-v2] entity=${report.entity.brand || report.entity.company || '?'} ` +
                 `object=${report.entity.object || '?'} candidates=${report.candidatesFound} ` +
-                `selected=${report.selected.length} notes=${report.notes.join('; ')}`,
+                `selected=${report.selected.length} level=${report.selected[0]?.matchLevel || 'none'} ` +
+                `notes=${report.notes.join('; ')}`,
             ),
           );
           images = report.selected;
@@ -1061,7 +1072,14 @@ async function publishRssOnce(opts: {
           sourceUrl: item.url,
           publishedAt,
           readTime: estimateReadTime(draft.text),
-          ...(images.length ? { imageUrl: images[0].url, images } : {}),
+          ...(images.length
+            ? {
+                imageUrl: images[0].url,
+                images,
+                imageMatchLevel: images[0].matchLevel,
+                imageLabel: images[0].label,
+              }
+            : {}),
           ...stampAuthorForPipeline('newsroom-scout', { sourceUrl: item.url, slug }),
         };
 
