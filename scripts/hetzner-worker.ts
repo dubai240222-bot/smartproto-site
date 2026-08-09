@@ -28,6 +28,11 @@ const ARTICLE_INTERVAL_MS = Number(process.env.SMARTPROTO_ARTICLE_INTERVAL_MS ||
 const TEST_AUTO_INTERVAL_MS = Number(process.env.SMARTPROTO_TEST_AUTO_INTERVAL_MS || 20 * 60 * 1000);
 /** SP-A-063 — auto-expire TEST-AUTO after this many ms (default 3h). */
 const TEST_AUTO_DURATION_MS = Number(process.env.SMARTPROTO_TEST_AUTO_DURATION_MS || 3 * 60 * 60 * 1000);
+/** SP-A-065CD — optional hard cap on TEST-AUTO ticks (0 = duration-only). */
+const TEST_AUTO_MAX_TICKS = (() => {
+  const n = Number(process.env.SMARTPROTO_TEST_AUTO_MAX_TICKS || 0);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+})();
 /** SP-A-065B-LIVE — optional Scout floor for TEST-AUTO (default 40; live check uses 70). */
 const TEST_AUTO_SCOUT_THRESHOLD = (() => {
   const raw = process.env.SMARTPROTO_TEST_AUTO_SCOUT_THRESHOLD?.trim();
@@ -75,6 +80,8 @@ interface WorkerState {
   lastRunStatus?: string;
   lastRunAt?: string;
   forcedPublished?: number;
+  testAutoTicks?: number;
+  testAutoSetAt?: string;
 }
 
 function readState(): WorkerState {
@@ -213,20 +220,35 @@ async function loopOnce(): Promise<void> {
         writeMode('off');
         return;
       }
+      const state0 = readState();
+      if (TEST_AUTO_MAX_TICKS > 0 && String(raw.setAt || '') !== String(state0.testAutoSetAt || '')) {
+        writeState({ testAutoTicks: 0, testAutoSetAt: String(raw.setAt || '') });
+      }
+      if (TEST_AUTO_MAX_TICKS > 0 && Number(readState().testAutoTicks || 0) >= TEST_AUTO_MAX_TICKS) {
+        log(`TEST-AUTO max ticks ${TEST_AUTO_MAX_TICKS} reached — switching to OFF.`);
+        writeMode('off');
+        return;
+      }
     } catch {
       /* ignore */
     }
     const state = readState();
     if (isDue(state.lastRunAt, TEST_AUTO_INTERVAL_MS)) {
+      const tickNo = Number(state.testAutoTicks || 0) + 1;
       log(
-        `Mode TEST-AUTO — running full editorial cycle (${Math.round(TEST_AUTO_INTERVAL_MS / 60000)} min interval, scout=${TEST_AUTO_SCOUT_THRESHOLD}).`,
+        `Mode TEST-AUTO — tick ${tickNo}${TEST_AUTO_MAX_TICKS ? `/${TEST_AUTO_MAX_TICKS}` : ''} (${Math.round(TEST_AUTO_INTERVAL_MS / 60000)} min interval, scout=${TEST_AUTO_SCOUT_THRESHOLD}).`,
       );
       const { ok } = await runTick('news', { lenient: true });
       writeState({
         lastRunAt: new Date().toISOString(),
         lastRunStatus: ok ? 'ok' : 'error',
+        testAutoTicks: tickNo,
         ...(ok ? { lastNewsAt: new Date().toISOString() } : {}),
       });
+      if (TEST_AUTO_MAX_TICKS > 0 && tickNo >= TEST_AUTO_MAX_TICKS) {
+        log(`TEST-AUTO max ticks ${TEST_AUTO_MAX_TICKS} reached after this tick — switching to OFF.`);
+        writeMode('off');
+      }
     }
     return;
   }

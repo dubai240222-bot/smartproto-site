@@ -50,6 +50,39 @@ const SCOUT_SYSTEM_PROMPT_APP = [
   'productType = "app" | "game" | "none". Не выдумывай цену/рейтинг если нет в тексте.',
 ].join('\n');
 
+/** SP-A-065C/065D — AI Early Warning Scout (EVENT RECORD; brand alone ≠ high score). */
+const SCOUT_SYSTEM_PROMPT_AI_RADAR = [
+  'Ты разведчик SmartProto — канал AI Early Warning (не gadget-SKU desk).',
+  'ГЛАВНЫЙ СТЕРЖЕНЬ (CORE INSTINCT): «Узнать о новой свободе раньше других — и получить её первым».',
+  'Цепочка: УЗНАТЬ ПЕРВЫМ → ПОНЯТЬ, КАКУЮ СВОБОДУ ЭТО ДАЁТ → ЗАХОТЕТЬ ПОЛУЧИТЬ ЕЁ ПЕРВЫМ.',
+  'Оценивай СОБЫТИЕ (EVENT RECORD), а не драматичность заголовка secondary source.',
+  '',
+  'Вход часто содержит NORMALIZED AI EVENT RECORD:',
+  'whatHappened / whoWhat / capabilityChange / whyUnusual / consequence / status / primaryEvidence / secondaryContext.',
+  'Secondary context может пояснять significance, но НЕ создаёт WOW из слов:',
+  'brakes, too powerful, shocking, dangerous, game-changing.',
+  'НЕ повышай score за бренд OpenAI / Google / Anthropic / Meta / Gemini / Claude.',
+  '',
+  'Высокий score (70–95), если факты события означают:',
+  'новая реальная capability; AI начинает выполнять человеческую работу; новая степень автономности;',
+  'новая свобода от труда/офиса/рутины; capability настолько сильная, что компания ограничивает её;',
+  'явный сигнал того, каким станет ближайшее будущее; embodied AI / robot получил новую реальную способность.',
+  'Safety/capability stories могут быть сильными БЕЗ consumer gadget, если выполнен один из пунктов выше.',
+  'ВАЖНО: если lab усиливает safeguards / паузит работу ПОСЛЕ critical capability eval — это HIGH signal самой capability, а НЕ low «PR про контроль». Ограничение подтверждает силу; сухой official tone не обнуляет событие; drama secondary не создаёт score.',
+  '',
+  'Эталон: OpenAI Astra critical-cyber evaluations + strengthened safeguards → 72–88 (по фактам capability/controls, не по слову brakes).',
+  'Эталон: Gemini Robotics whole-body intelligence → 75–90 если capability реально необычная.',
+  'LOW (0–35): API bump, pricing, benchmark без значения, model refresh/efficiency PR, vibe course, enterprise case-study без нового capability event.',
+  'НЕ путай LOW safety-PR с Astra-class: critical cyber capability + lab boundary change = HIGH эталон выше, даже если official wording сухой.',
+  '',
+  'Оценка 0–100 суммой частей:',
+  'humanSurprise 0–30, visualDemonstrability 0–20, everydayRelevance 0–15,',
+  'novelty 0–15, shareability 0–10, credibility 0–10.',
+  'productType = "ai_event" | "robotics" | "research" | "none".',
+  'status: ANNOUNCED | RESEARCH | PROTOTYPE | AVAILABLE | CONCEPT.',
+  'Покупка сегодня НЕ обязательна. Публичный текст без цен и ссылок.',
+].join('\n');
+
 export async function scoutArticle(
   title: string,
   text: string,
@@ -67,11 +100,18 @@ export async function scoutArticle(
     };
   }
 
-  const systemPrompt = mode === 'app' ? SCOUT_SYSTEM_PROMPT_APP : SCOUT_SYSTEM_PROMPT_GADGET;
+  const systemPrompt =
+    mode === 'app'
+      ? SCOUT_SYSTEM_PROMPT_APP
+      : mode === 'ai_radar'
+        ? SCOUT_SYSTEM_PROMPT_AI_RADAR
+        : SCOUT_SYSTEM_PROMPT_GADGET;
   const passHint =
     mode === 'app'
       ? 'interesting=true только если score>=75, конкретное НОВОЕ полезное app/game, isActuallyNew, noveltyEvidence не пуст.'
-      : 'interesting=true если score>=75 и есть конкретный гаджет/app/AI-достижение/изобретение с пользой (покупка НЕ обязательна), isActuallyNew, noveltyEvidence не пуст.';
+      : mode === 'ai_radar'
+        ? 'interesting=true если score>=70 по ФАКТАМ EVENT RECORD (capability/controls/embodied/freedom), не из-за brakes/too powerful/бренда.'
+        : 'interesting=true если score>=75 и есть конкретный гаджет/app/AI-достижение/изобретение с пользой (покупка НЕ обязательна), isActuallyNew, noveltyEvidence не пуст.';
 
   const client = getOpenRouterClient();
   const completion = await client.chat.completions.create({
@@ -180,9 +220,11 @@ export async function scoutArticle(
   const productType =
     typeof parsed.productType === 'string' ? parsed.productType.trim() : undefined;
   const noProduct =
-    !productType ||
-    productType.toLowerCase() === 'none' ||
-    productType.toLowerCase() === 'n/a';
+    mode === 'ai_radar'
+      ? false
+      : !productType ||
+        productType.toLowerCase() === 'none' ||
+        productType.toLowerCase() === 'n/a';
 
   const statusRaw = typeof parsed.status === 'string' ? parsed.status.toUpperCase() : '';
   const statusAllowed: ProductStatus[] = [
@@ -212,9 +254,11 @@ export async function scoutArticle(
       ? parsed.marketSaturation
       : n.marketSaturation;
   const isActuallyNew =
-    parsed.isActuallyNew !== false &&
-    modelEvidence.length > 0 &&
-    !(marketSaturation === 'high' && !functionalDifference);
+    mode === 'ai_radar'
+      ? parsed.isActuallyNew !== false
+      : parsed.isActuallyNew !== false &&
+        modelEvidence.length > 0 &&
+        !(marketSaturation === 'high' && !functionalDifference);
 
   // SP-A-065B: soft novelty — never binary-zero Altar/Delta-class improvements.
   let noveltyPenalty = 0;
@@ -230,12 +274,15 @@ export async function scoutArticle(
     score = soft.score;
     noveltyPenalty = soft.penalty;
     if (soft.reason) noveltyNote = soft.reason;
-  } else if (noProduct) {
+  } else if (mode !== 'ai_radar' && noProduct) {
     score = 0;
   }
 
   // Publish interest = score gate only (threshold unchanged at env/70). Soft mid-band stays visible.
-  const interesting = !noProduct && score >= SCOUT_SCORE_THRESHOLD;
+  const interesting =
+    mode === 'ai_radar'
+      ? score >= SCOUT_SCORE_THRESHOLD
+      : !noProduct && score >= SCOUT_SCORE_THRESHOLD;
 
   const reasonBase =
     typeof parsed.reason === 'string'
@@ -255,7 +302,7 @@ export async function scoutArticle(
     interesting,
     score: Math.max(0, Math.min(100, Math.round(score))),
     reason: tags.length ? `${reasonBase} [${tags.join('; ')}]` : reasonBase,
-    productType: productType || 'none',
+    productType: productType || (mode === 'ai_radar' ? 'ai_event' : 'none'),
     status,
     partsV2,
     commodityPenalty: commodityPenalty || undefined,

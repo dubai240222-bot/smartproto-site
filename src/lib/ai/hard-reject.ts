@@ -8,7 +8,7 @@
  */
 
 export type MarketSaturation = 'low' | 'medium' | 'high';
-export type EditorialMode = 'gadget' | 'app';
+export type EditorialMode = 'gadget' | 'app' | 'ai_radar';
 
 export interface HardRejectOpts {
   sourceName?: string;
@@ -343,7 +343,7 @@ const COMMODITY_LOW_WOW_PATTERNS: RegExp[] = [
  * may pass without a buyable SKU (no prices/links in public copy).
  */
 const AI_OR_INVENTION_ALERT_RE =
-  /\b(ai|a\.i\.|artificial intelligence|chatgpt|gemini|claude|llm|gpt|machine learning|neural|copilot|agentic|autonom(?:y|ous)|superintelligence|agi|on[- ]device ai|foundation model|reasoning model|deepfake|robotaxi|vtol|invention|prototype that|breakthrough|milestone|robotics?|humanoid|exoskeleton)\b|искусственн\w*\s+интеллект|\bии\b|нейросет|автономн|изобретен|достижен\w*\s+(в\s+)?(ии|ai)|суперразум|робот/i;
+  /\b(ai|a\.i\.|artificial intelligence|chatgpt|gemini|claude|llm|gpt(?:-\d)?|openai|anthropic|deepmind|astra|machine learning|neural|copilot|agentic|autonom(?:y|ous)|superintelligence|agi|on[- ]device ai|foundation model|reasoning model|deepfake|robotaxi|vtol|invention|prototype that|breakthrough|milestone|robotics?|humanoid|exoskeleton|critical cyber|cybersecur(?:ity|e)|preparedness framework)\b|искусственн\w*\s+интеллект|\bии\b|нейросет|автономн|изобретен|достижен\w*\s+(в\s+)?(ии|ai)|суперразум|робот/i;
 
 export function isAiOrInventionAlert(title: string, text = ''): boolean {
   return AI_OR_INVENTION_ALERT_RE.test(`${title}\n${text}`);
@@ -565,6 +565,14 @@ export function hardRejectTopic(
 
   for (const re of hardPatterns) {
     if (re.test(hay)) {
+      // SP-A-065C: AI cyber/preparedness stories often say "deployment" — not infra news.
+      if (
+        /\bdeployment\b/i.test(re.source) &&
+        isAiOrInventionAlert(title, text) &&
+        /\b(cyber|preparedness|frontier|capability|safety\s+incident|model\s+risk)\b/i.test(hay)
+      ) {
+        continue;
+      }
       return {
         reject: true,
         reason: `Жёсткий reject: политика/знаменитости/культура/природа/непокупаемая тема (${re.source}).`,
@@ -603,6 +611,19 @@ export function hardRejectTopic(
         novelty,
       };
     }
+    return { reject: false, reason: '', rejectCode: null, novelty };
+  }
+
+  // SP-A-065C — AI Early Warning desk: event/WOW/freedom signals, not SKU gate.
+  if (mode === 'ai_radar') {
+    if (!isAiOrInventionAlert(title, text) && !/\b(robot|model|agent|cyber|frontier)\b/i.test(hay)) {
+      return {
+        reject: true,
+        reason: 'Жёсткий reject: нет AI/frontier event сигнала.',
+        rejectCode: 'NO_PRODUCT',
+      };
+    }
+    const novelty = assessNovelty(title, text, { sourceName, mode: 'gadget' });
     return { reject: false, reason: '', rejectCode: null, novelty };
   }
 
