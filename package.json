@@ -30,7 +30,10 @@
     "inspect:articles": "tsx scripts/inspect-polish-articles.ts",
     "db:migrate": "tsx scripts/migrate-json-to-sqlite.ts",
     "direct-publish": "tsx scripts/direct-publish.ts",
-    "hetzner-worker": "tsx scripts/hetzner-worker.ts"
+    "hetzner-worker": "tsx scripts/hetzner-worker.ts",
+    "retention:dry-run": "tsx scripts/run-retention-cleanup.ts --dry-run",
+    "retention:run": "tsx scripts/run-retention-cleanup.ts --execute",
+    "test:retention": "tsx scripts/test-spa074-retention.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
