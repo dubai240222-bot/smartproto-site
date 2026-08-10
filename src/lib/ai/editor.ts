@@ -57,6 +57,9 @@ const EDITOR_SYSTEM_PROMPT = [
   'если в материале есть большая батарея/автономность; иначе другой честный hook).',
   'Не выдумывай спеки, даты, автономность, отзывы. Нет данных — опусти или «не уточнено».',
   'Без эмодзи. Без Docker/DevOps/HN-жаргона. Без публичных меток Китай/Qwen/Gemini.',
+  'КИТАЙСКИЕ ИЕРОГЛИФЫ ЗАПРЕЩЕНЫ в title/text/tags: имя модели всегда переводи на латиницу',
+  '(投影仪 → Projector → «Redmi Projector 5 Pro», никогда «REDMI 投影仪 5 Pro»).',
+  'Модель пиши полностью: «Redmi 17 5G», не просто «Redmi»; «Redmi Projector 5 Pro», не просто «Redmi».',
   '',
   'Жёсткий reject (title="REJECT", text="off-topic", tags=["#reject"], toneCheck: limitationsIncluded=true, остальные false):',
   'Trump/политика, celebrities, singers, writers/книги, кино/сериалы, природа/wildlife, музеи,',
@@ -74,6 +77,25 @@ const PUBLIC_PRICE_OR_LINK_RE =
 
 function containsPublicPriceOrLink(title: string, text: string): boolean {
   return PUBLIC_PRICE_OR_LINK_RE.test(`${title}\n${text}`);
+}
+
+const CJK_RE = /[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff]/;
+
+function containsCjk(title: string, text: string, tags: string[] = []): boolean {
+  return CJK_RE.test(`${title}\n${text}\n${tags.join(' ')}`);
+}
+
+/** Translate known Chinese product names; strip leftover CJK from public fields. */
+export function sanitizePublicModelNames(text: string): string {
+  return text
+    .replace(/REDMI\s*投影仪\s*5\s*Pro/gi, 'Redmi Projector 5 Pro')
+    .replace(/Redmi\s*投影仪\s*5\s*Pro/gi, 'Redmi Projector 5 Pro')
+    .replace(/投影仪\s*5\s*Pro/gi, 'Projector 5 Pro')
+    .replace(/投影仪/g, 'Projector')
+    .replace(CJK_RE, '')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\s+([,.;:!?])/g, '$1')
+    .trim();
 }
 
 /** SP-A-071b: reject dry product-card titles that just restate the lead. */
@@ -289,9 +311,9 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
   }
 
   const draft: DraftResult = {
-    title: title.trim(),
-    text: text.trim(),
-    tags: tags.map((t) => (t as string).trim()),
+    title: sanitizePublicModelNames(title.trim()),
+    text: sanitizePublicModelNames(text.trim()),
+    tags: tags.map((t) => sanitizePublicModelNames((t as string).trim())).filter(Boolean),
     toneCheck,
   };
 
@@ -301,6 +323,10 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
 
   if (containsBannedCliche(draft.title, draft.text) || /!/.test(draft.title)) {
     throw new Error('Editor draft fails tone gate (banned hype or exclamation in title).');
+  }
+
+  if (containsCjk(draft.title, draft.text, draft.tags)) {
+    throw new Error('Editor draft fails language gate (Chinese/CJK characters in public text).');
   }
 
   if (looksDryProductCardTitle(draft.title)) {
