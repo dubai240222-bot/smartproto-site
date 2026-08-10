@@ -69,11 +69,13 @@ export default function RootLayout({
       <body className="flex min-h-screen flex-col bg-[var(--bg)] text-[var(--text)] transition-colors duration-150">
         <Header articles={articles} />
         <div className="flex-1">{children}</div>
-        <footer className="mt-16 border-t border-[var(--border)] bg-[var(--surface)] py-8 text-xs text-[var(--muted)]">
-          <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
-            <p className="font-serif text-sm font-bold text-[var(--text)]">SMARTPROTO</p>
-            <p className="mt-1">Технологии раньше, чем они станут мейнстримом</p>
-            <p className="mt-4 text-[11px]">© {new Date().getFullYear()} SmartProto. Все права защищены.</p>
+        <footer className="mt-10 border-t border-[var(--border)] bg-[var(--surface)] py-5 text-xs text-[var(--muted)]">
+          <div className="mx-auto flex max-w-[1440px] flex-col items-center justify-between gap-2 px-2 text-center sm:flex-row sm:px-4 lg:px-5 sm:text-left">
+            <div>
+              <p className="text-sm font-semibold tracking-tight text-[var(--text)]">SMARTPROTO</p>
+              <p className="mt-0.5 font-normal">Технологии раньше мейнстрима</p>
+            </div>
+            <p className="text-[11px] font-normal">© {new Date().getFullYear()} SmartProto</p>
           </div>
         </footer>
       </body>

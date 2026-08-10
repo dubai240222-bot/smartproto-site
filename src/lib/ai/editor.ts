@@ -42,12 +42,20 @@ const EDITOR_SYSTEM_PROMPT = [
   'восклицательные заголовки, прямые обращения, рекламные обещания.',
   '',
   'РЕКЛАМНЫЕ СУПЕРЛАТИВЫ без проверки запрещены. Если производитель хвастается —',
-  '«Производитель утверждает…»; при необходимости «Независимых испытаний пока нет».',
+  'перефразируй факт без рекламного тона или кратко «Производитель утверждает…».',
   'ЗАГОЛОВОК: суть + польза/факт; без «!»; без интриги ради интриги.',
-  'Не выдумывай спеки, даты, автономность, отзывы. Нет данных — опусти или «не уточнено».',
+  'Не выдумывай спеки, даты, автономность, отзывы. Нет данных в источнике — просто не пиши про это.',
+  '',
+  'ЖЁСТКО ЗАПРЕЩЕНЫ «плевки в чай» / опровержения / оговорки об отсутствии данных:',
+  '«независимые испытания/тесты пока не проводились», «независимых испытаний пока нет»,',
+  '«характеристики/автономность/дата/цена не уточняются», «не раскрывается», «не сообщается»,',
+  '«информация отсутствует», «остаются неизвестными», «затрудняет оценку», «не позволяет судить»,',
+  '«производитель не уточнил…», «детальные технические характеристики не уточняются».',
+  'Не заканчивай текст абзацем про то, чего нет. Пиши только то, что известно по делу.',
+  '',
   'Без эмодзи. Без Docker/DevOps/HN-жаргона. Без публичных меток Китай/Qwen/Gemini.',
   '',
-  'Жёсткий reject (title="REJECT", text="off-topic", tags=["#reject"], toneCheck: limitationsIncluded=true, остальные false):',
+  'Жёсткий reject (title="REJECT", text="off-topic", tags=["#reject"], toneCheck все false):',
   'Trump/политика, celebrities, singers, writers/книги, кино/сериалы, природа/wildlife, музеи,',
   'материал в основном про цену+ссылку купить, overplayed mass gadget junk без новизны.',
   'Отвечай СТРОГО JSON без markdown и пояснений.',
@@ -87,9 +95,52 @@ const REJECT_DRAFT: DraftResult = {
     clickbait: false,
     hype: false,
     unsupportedClaims: false,
-    limitationsIncluded: true,
+    limitationsIncluded: false,
   },
 };
+
+/**
+ * SP-A-072 — “spit in the tea” hedges: disclaimers about missing tests/specs.
+ * Detected in code; stripped from drafts and banned in the prompt.
+ */
+const HEDGE_DISCLAIMER_RE =
+  /независим(?:ые|ых|ое)\s+(?:испытан|тест|обзор)|испытан\w*\s+пока\s+не\s+проводил|тесты?\s+пока\s+не\s+проводил|пока\s+не\s+проводились|независимых\s+испытаний\s+пока\s+нет|не\s+уточня(?:ют(?:ся)?|ется|ены|ен|ет)|не\s+раскрыв(?:ается|аются|ается|ты|т)|не\s+сообща(?:ется|ются|ет)|информаци\w+\s+отсутств|оста(?:ютс)?я\s+неизвестн|затрудняет\s+оценк|не\s+позволяет\s+судить|производитель\s+не\s+уточн|детальные\s+технические\s+характеристики|данные\s+об\s+автономности\s+.*не\s+уточн|полные\s+технические\s+характеристики\s+.*не\s+уточн|на\s+момент\s+публикации\s+не\s+(?:были\s+)?(?:обнародован|известн)|обзоров?\s+(?:устройства\s+)?пока\s+нет/i;
+
+function paragraphLooksLikeHedge(p: string): boolean {
+  const t = p.trim();
+  if (!t) return false;
+  if (HEDGE_DISCLAIMER_RE.test(t)) return true;
+  // Short closing shrugs about missing details
+  if (
+    t.length < 280 &&
+    /(?:не|нет)\s+(?:уточн|раскрыт|сообщ|известн|объявлен|проведен)/i.test(t) &&
+    /(?:характеристик|автономност|испытан|тест|обзор|дата|продаж|цен)/i.test(t)
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/** Drop hedge paragraphs; return cleaned text (may be empty if everything was hedge). */
+export function stripHedgeDisclaimers(text: string): string {
+  const parts = text
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .filter((p) => !paragraphLooksLikeHedge(p));
+  // Also strip trailing hedge sentences inside kept paragraphs
+  const cleaned = parts.map((p) => {
+    const sentences = p.split(/(?<=[.!?…])\s+/);
+    if (sentences.length <= 1) return p;
+    const kept = sentences.filter((s) => !paragraphLooksLikeHedge(s));
+    return kept.join(' ').trim() || p;
+  });
+  return cleaned.filter(Boolean).join('\n\n').trim();
+}
+
+export function containsHedgeDisclaimer(title: string, text: string): boolean {
+  return HEDGE_DISCLAIMER_RE.test(`${title}\n${text}`) || paragraphLooksLikeHedge(text);
+}
 
 export type DraftFormat = 'news' | 'article';
 
@@ -128,19 +179,19 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
   const formatInstructions =
     format === 'news'
       ? [
-          'ФОРМАТ: короткая новость-alert (SHORT NEWS). 60–110 слов. 1–2 абзаца.',
-          'Структура: что появилось → что это даёт / какую возможность открывает → осторожная оговорка если нужно.',
-          'БЕЗ цен, БЕЗ ссылок, БЕЗ «где купить». Без внутренних меток (Qwen/Gemini/Китай-отдел).',
+          'ФОРМАТ: информативная заметка. 100–300 русских слов (цель 180–260). 3–5 абзацев.',
+          'Структура: что появилось → плюсы / какую возможность открывает → кому полезно.',
+          'БЕЗ оговорок про отсутствие тестов/данных. БЕЗ цен, БЕЗ ссылок, БЕЗ «где купить».',
+          'Без внутренних меток (Qwen/Gemini/Китай-отдел).',
         ]
       : [
-          'ФОРМАТ: полный материал / обзор-notice (FULL ARTICLE). 160–240 слов.',
+          'ФОРМАТ: полный материал. 100–300 русских слов (цель 200–280). 3–5 абзацев.',
           'Структура строго:',
           '1) что представлено и какую возможность даёт;',
-          '2) сценарий пользы для обычного человека;',
-          '3) чем отличается / почему это интересно (факт из источника, не хайп);',
-          '4) ограничения / неизвестные данные / нет независимых тестов;',
-          '5) БЕЗ цен, БЕЗ outbound-ссылок и shop CTA.',
-          'Без внутренних меток (Qwen/Gemini/Китай-отдел).',
+          '2) сценарий пользы / плюсы для человека;',
+          '3) чем отличается / почему это интересно (факт из источника, не хайп).',
+          'Не добавляй пункт про ограничения, неизвестные данные или отсутствие независимых тестов.',
+          'БЕЗ цен, БЕЗ outbound-ссылок и shop CTA. Без внутренних меток (Qwen/Gemini/Китай-отдел).',
         ];
 
   const client = getOpenRouterClient();
@@ -148,7 +199,7 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
     model: EDITOR_MODEL,
     temperature: 0.35,
     top_p: 0.85,
-    max_tokens: format === 'news' ? 450 : 900,
+    max_tokens: format === 'news' ? 1200 : 1600,
     messages: [
       { role: 'system', content: EDITOR_SYSTEM_PROMPT },
       {
@@ -165,10 +216,10 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
           '{"title":string,"text":string,"tags":string[],"toneCheck":{"clickbait":bool,"hype":bool,"unsupportedClaims":bool,"limitationsIncluded":bool}}',
           '',
           'title: русский, до 90 символов; продукт + польза/факт; без восклицательных знаков.',
-          'Строго по фактам источника. Суперлативы производителя — только через «Производитель утверждает…».',
+          'Строго по фактам источника. Суперлативы производителя — сдержанно, без хвастовства.',
           'tags: 4–8; тематика + бренд если есть; БЕЗ тегов Китай/Qwen/Gemini/China Department.',
-          'toneCheck: честно оцени свой текст (clickbait/hype/unsupportedClaims должны быть false;',
-          'limitationsIncluded=true если есть явные оговорки).',
+          'toneCheck: clickbait/hype/unsupportedClaims/limitationsIncluded — все false.',
+          'limitationsIncluded=false всегда: оговорки про «не уточняется / нет независимых тестов» запрещены.',
           '',
           'Статья:',
           clampText(JSON.stringify(articleData, null, 2), 10000),
@@ -223,11 +274,20 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
     throw new Error('Editor model output missing valid "toneCheck" object.');
   }
 
+  let body = stripHedgeDisclaimers(text.trim());
+  if (!body) {
+    throw new Error('Editor draft empty after removing hedge/disclaimer paragraphs.');
+  }
+
   const draft: DraftResult = {
     title: title.trim(),
-    text: text.trim(),
+    text: body,
     tags: tags.map((t) => (t as string).trim()),
-    toneCheck,
+    toneCheck: {
+      ...toneCheck,
+      // Public copy must not lean on missing-data disclaimers.
+      limitationsIncluded: false,
+    },
   };
 
   if (draft.title.trim().toUpperCase() === 'REJECT') {
@@ -240,6 +300,10 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
 
   if (containsPublicPriceOrLink(draft.title, draft.text)) {
     throw new Error('Editor draft fails policy gate (public price or outbound/shop link).');
+  }
+
+  if (containsHedgeDisclaimer(draft.title, draft.text)) {
+    throw new Error('Editor draft fails policy gate (hedge/disclaimer about missing tests or specs).');
   }
 
   if (toneCheck.clickbait || toneCheck.hype || toneCheck.unsupportedClaims) {

@@ -8,8 +8,8 @@
  * GHA keeps schedule every 25 minutes; tick/workflow skip when floor not met (cheap idle).
  */
 
-export const NEWS_NORMAL_INTERVAL_MS = 25 * 60 * 1000;
-/** ~90–100 min — 4× vs 25m; mid-band ≈95m */
+export const NEWS_NORMAL_INTERVAL_MS = 60 * 60 * 1000; // SP-A-071B: ~1 editorial cycle/hour (not a publish obligation)
+/** Warmup slower floor when SMARTPROTO_NEWS_WARMUP_UNTIL is set */
 export const NEWS_WARMUP_INTERVAL_MS = 95 * 60 * 1000;
 export const ARTICLE_INTERVAL_MS = 3 * 60 * 60 * 1000;
 

@@ -59,7 +59,8 @@ export const CHINA_ANALYST_SYSTEM_PROMPT = [
   'Output ONE JSON dossier. Never invent specs/prices/dates/URLs; keep Chinese product/brand names; do not translate brand names;',
   'distinguish prototype / preorder / crowdfunding / on-sale; separate wholesale vs retail;',
   '新品/首发 alone are NOT novelty proof; fill unknownFacts, warningFlags;',
-  'recommended=true ONLY for buyable/preorder consumer gadgets with a named product — NOT trade shows, hiring, sales stats, cars, politics;',
+  'recommended=true ONLY for high-signal consumer gadgets / robots / unusual inventions — NOT mice, speakers/boomboxes,',
+  'Indian budget phones (Lava/Tecno), commodity keyboards, cars/MPV, SSD enclosures, merch, trade shows, hiring, sales stats, politics;',
   'sourceSuggestions[] may advise manufacturers/platforms/keywords/excludes for collectors — never add sources yourself;',
   'you NEVER publish.',
 ].join(' ');
@@ -71,6 +72,11 @@ const HARD_REJECT: [RegExp, string][] = [
   [/包治|根治|神药|医疗级疗效|百病/i, 'dubious medical claims'],
   // "史上最强" alone is common CN launch copy — only reject pure promo phrasing.
   [/宣传文案|限时疯抢|史上最强优惠|史上最低价|史上最强神器/i, 'marketing without facts'],
+  // SP-A-073 gray clutter — do not burn Qwen budget
+  [/鼠标|游戏鼠标|音箱|蓝牙音箱|低音炮|便携音箱|JBL\s*PULSE|Xboom/i, 'gray: mouse/speaker'],
+  [/Lava\s*Smart|Micromax|传音\s*(Tecno|Infinix)|itel\s+/i, 'gray: budget phone'],
+  [/机械键盘|游戏键盘(?!.*超薄)/i, 'gray: commodity keyboard'],
+  [/MPV|家用轿车|SUV\s*车型|汽车预售/i, 'gray: car'],
   // Non-product CN media noise (must not burn Qwen budget)
   [/入职|裁员|人事任命|担任.{0,12}负责人|向CEO/i, 'personnel / hiring'],
   [/十八场对谈|还只是游戏展吗|行业联盟成立/i, 'trade show / industry fluff'],

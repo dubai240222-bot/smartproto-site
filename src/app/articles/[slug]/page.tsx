@@ -3,11 +3,14 @@ import type { ReactElement } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Clock } from 'lucide-react';
-import { getAllArticles, getArticleBySlug, type Article } from '@/data/articles';
+import { getAllArticles, getArticleBySlug } from '@/data/articles';
 import { MediaPlaceholder, MediaThumb } from '@/components/media-placeholder';
+import { CategoryTags } from '@/components/article-card';
 import { InterestRating } from '@/components/interest-rating';
 import { formatPublishedAt, getRelatedArticles } from '@/lib/article-utils';
-import { formatAuthorCredit, resolveAuthorForArticle } from '@/lib/authors';
+import { resolveAuthorForArticle } from '@/lib/authors';
+import { displayHeroUrl } from '@/lib/homepage-editorial-mix';
+import { toPublicCategory } from '@/lib/public-labels';
 
 // SP-A-056: render per request (both storage modes) so a newly published
 // article — from SQLite on Hetzner, or freshly rebuilt JSON on Vercel — is
@@ -131,7 +134,11 @@ export default async function ArticlePage({
       const headingText = trimmedBlock.replace(/^##\s+/, '');
       const headingId = `heading-${headingCounter++}`;
       return (
-        <h2 key={index} id={headingId} className="scroll-mt-6 font-serif text-2xl font-bold text-[var(--text)] mt-8 mb-4">
+        <h2
+          key={index}
+          id={headingId}
+          className="mt-8 mb-3 scroll-mt-6 text-xl font-semibold tracking-tight text-[var(--text)] sm:text-[1.35rem]"
+        >
           {headingText}
         </h2>
       );
@@ -141,7 +148,11 @@ export default async function ArticlePage({
       const headingText = trimmedBlock.replace(/^###\s+/, '');
       const headingId = `heading-${headingCounter++}`;
       return (
-        <h3 key={index} id={headingId} className="scroll-mt-6 font-serif text-xl font-bold text-[var(--text)] mt-6 mb-3">
+        <h3
+          key={index}
+          id={headingId}
+          className="mt-6 mb-2.5 scroll-mt-6 text-lg font-semibold tracking-tight text-[var(--text)]"
+        >
           {headingText}
         </h3>
       );
@@ -174,7 +185,7 @@ export default async function ArticlePage({
     return (
       <p
         key={index}
-        className="mb-6 text-[18px] leading-[1.68] text-[var(--text)]"
+        className="mb-5 text-[16px] leading-[1.65] text-[var(--text)] sm:text-[17px]"
         dangerouslySetInnerHTML={{
           __html: formatInlineText(trimmedBlock).replace(/\n/g, '<br />'),
         }}
@@ -183,99 +194,79 @@ export default async function ArticlePage({
   };
 
   const contentBlocks = article.content.split('\n\n').filter(Boolean);
+  const hero = displayHeroUrl(article);
+  const extras = (article.images || []).filter((i) => i.role !== 'hero');
+  const publicCategory = toPublicCategory(article.category);
 
-  // SP-A-060: desktop container widened from 680px to a modern editorial
-  // width; body copy still caps out at a comfortable reading measure inside
-  // the left column, right rail holds the visual/related column so wide
-  // screens don't just show empty gutters either side of a narrow strip.
   return (
-    <main className="min-h-screen bg-[var(--bg)] text-[var(--text)] py-8 transition-colors">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Navigation back button */}
-        <div className="mb-6 max-w-5xl mx-auto">
+    <main className="home-editorial min-h-screen bg-[var(--bg)] text-[var(--text)] transition-colors">
+      <div className="mx-auto max-w-[1440px] px-2 py-3 sm:px-4 sm:py-4 lg:px-5">
+        <div className="mb-3">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--muted)] hover:text-[var(--text)] transition"
+            className="inline-flex items-center gap-1.5 text-[12px] font-normal text-[var(--muted)] transition hover:text-[var(--accent)]"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             На главную
           </Link>
         </div>
 
-        {/* Wide editorial column (was 680px) */}
-        <article className="max-w-5xl mx-auto">
-          {/* 1. Category */}
-          <div className="text-xs font-bold uppercase tracking-wider text-[var(--accent)]">
-            {article.category}
+        <article className="mx-auto max-w-5xl">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <time className="text-[11px] font-normal tabular-nums text-[var(--muted)]">
+              {formatPublishedAt(article.publishedAt)}
+            </time>
+            <CategoryTags category={article.category} tone="hash" />
           </div>
 
-          {/* 2. Title */}
-          <h1 className="mt-3 max-w-3xl font-serif text-3xl font-bold leading-tight text-[var(--text)] sm:text-4xl lg:text-5xl">
+          <h1 className="mt-2 max-w-3xl text-[1.45rem] font-semibold leading-[1.2] tracking-tight text-[var(--text)] sm:text-[1.85rem] lg:text-[2.1rem]">
             {article.title}
           </h1>
 
-          {/* 3. Lead */}
-          <p className="mt-4 max-w-3xl text-lg leading-relaxed text-[var(--muted)]">
+          <p className="mt-3 max-w-3xl text-[14px] font-normal leading-relaxed text-[var(--muted)] sm:text-[15px]">
             {article.summary}
           </p>
 
-          {/* 4. Byline · date · read time */}
-          <div className="mt-4 flex flex-wrap items-center gap-4 border-b border-[var(--border)] pb-6 text-xs text-[var(--muted)]">
-            <span>{formatAuthorCredit(resolveAuthorForArticle(article).name, formatPublishedAt(article.publishedAt))}</span>
-            <span>•</span>
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-[var(--border)] pb-3 text-[11px] text-[var(--muted)]">
+            <span>Автор: {resolveAuthorForArticle(article).name}</span>
             <span className="flex items-center gap-1">
-              <Clock className="h-3.5 w-3.5" />
+              <Clock className="h-3 w-3" />
               {article.readTime}
             </span>
           </div>
 
-          {/* 5. Hero image — real photo when present; compact editorial fallback when not. */}
-          {(() => {
-            const hero = article.images?.find((i) => i.role === 'hero')?.url || article.imageUrl;
-            const extras = (article.images || []).filter((i) => i.role !== 'hero');
-            return (
-              <>
-                <div className={hero ? 'my-8' : 'my-5'}>
-                  <MediaPlaceholder
-                    category={article.category}
-                    title={article.title}
-                    tags={article.tags}
-                    summary={article.summary}
-                    imageUrl={hero}
-                    description={hero ? 'Иллюстрация к материалу' : undefined}
-                    aspectRatio={hero ? 'aspect-[16/8]' : 'aspect-[16/7]'}
-                    compactFallback={!hero}
-                  />
-                </div>
-                {/* Mobile: secondary/detail sequentially under hero (desktop uses right rail). */}
-                {extras.length > 0 && (
-                  <div className="mb-8 space-y-4 lg:hidden">
-                    {extras.map((img) => (
-                      <div
-                        key={img.url}
-                        className="overflow-hidden rounded border border-[var(--border)] bg-[var(--surface)]"
-                      >
-                        <img
-                          src={img.url}
-                          alt={article.title}
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
-            );
-          })()}
+          <div className={hero ? 'my-5' : 'my-4'}>
+            <MediaPlaceholder
+              category={article.category}
+              title={article.title}
+              tags={article.tags}
+              summary={article.summary}
+              imageUrl={hero}
+              description={hero ? 'Иллюстрация к материалу' : undefined}
+              aspectRatio={hero ? 'aspect-[16/8]' : 'aspect-[16/7]'}
+              compactFallback={!hero}
+              className="rounded-sm"
+            />
+          </div>
 
-          {/* Two-column body: text (~68%) + visual/related rail (~32%).
-              Collapses to a single column on mobile/tablet. */}
-          <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_336px]">
+          {extras.length > 0 ? (
+            <div className="mb-6 space-y-3 lg:hidden">
+              {extras.map((img) => (
+                <div
+                  key={img.url}
+                  className="overflow-hidden rounded-sm border border-[var(--border)] bg-[var(--surface)]"
+                >
+                  <img src={img.url} alt={article.title} className="h-full w-full object-cover" />
+                </div>
+              ))}
+            </div>
+          ) : null}
+
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_300px]">
             <div className="min-w-0 max-w-3xl">
-              {/* 6. Table of Contents (TOC) - ONLY if at least 3 headings */}
-              {showToc && (
-                <div className="mb-8 rounded border border-[var(--border)] bg-[var(--surface)] p-4 text-xs">
-                  <h2 className="font-serif text-sm font-bold text-[var(--text)] mb-2">
+              {showToc ? (
+                <div className="mb-6 border border-[var(--border)] bg-[var(--surface)] p-3.5 text-[12px]">
+                  <h2 className="mb-2 text-[12px] font-medium tracking-wide text-[var(--muted)]">
                     Содержание
                   </h2>
                   <ul className="space-y-1.5 pl-4 list-disc text-[var(--muted)]">
@@ -283,7 +274,7 @@ export default async function ArticlePage({
                       <li key={h.id}>
                         <a
                           href={`#${h.id}`}
-                          className="text-[var(--text)] hover:text-[var(--accent)] hover:underline"
+                          className="text-[var(--text)] transition hover:text-[var(--accent)]"
                         >
                           {h.text}
                         </a>
@@ -291,101 +282,99 @@ export default async function ArticlePage({
                     ))}
                   </ul>
                 </div>
-              )}
+              ) : null}
 
-              {/* 7. Article Body */}
               <div className="article-body">
                 {contentBlocks.map((block, index) => renderBlock(block, index))}
               </div>
 
-              {/* Post-read reader feedback (SP-A-052) */}
               <InterestRating
                 slug={article.slug}
                 title={article.title}
                 summary={article.summary}
               />
 
-              {/* 8. Tags / Topic */}
-              <div className="mt-8 pt-4 border-t border-[var(--border)] flex items-center justify-between text-xs text-[var(--muted)]">
-                <span>
-                  Категория: <strong className="text-[var(--text)] font-semibold">{article.category}</strong>
-                </span>
-              </div>
+              {publicCategory ? (
+                <div className="mt-6 flex items-center border-t border-[var(--border)] pt-3 text-[12px] text-[var(--muted)]">
+                  <CategoryTags category={article.category} tone="hash" />
+                </div>
+              ) : null}
 
-              {/* 9. Source Block */}
-              {article.sourceUrl && (
-                <div className="mt-8 rounded border border-[var(--border)] bg-[var(--surface)] p-5">
-                  <h3 className="font-serif text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+              {article.sourceUrl ? (
+                <div className="mt-6 border border-[var(--border)] bg-[var(--surface)] p-4">
+                  <h3 className="text-[11px] font-medium tracking-wide text-[var(--muted)]">
                     Первоисточник
                   </h3>
-                  <div className="mt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <span className="text-sm font-medium text-[var(--text)]">
+                  <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <span className="text-[13px] font-medium text-[var(--text)]">
                       {getDomain(article.sourceUrl)}
                     </span>
                     <a
                       href={article.sourceUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent)] hover:underline"
+                      className="inline-flex items-center gap-1 text-[12px] font-medium text-[var(--accent)] hover:underline"
                     >
                       Открыть оригинал ↗
                     </a>
                   </div>
                 </div>
-              )}
+              ) : null}
             </div>
 
-            {/* 10. Right rail — secondary/detail on desktop + related. */}
             {(() => {
-              const extraImages = (article.images || []).filter((i) => i.role !== 'hero');
-              if (!extraImages.length && relatedArticles.length === 0) return null;
+              if (!extras.length && relatedArticles.length === 0) return null;
               return (
-                <aside className="lg:sticky lg:top-20 lg:self-start">
-                  {extraImages.length > 0 && (
-                    <div className="mb-8 hidden space-y-4 lg:block">
-                      {extraImages.map((img) => (
-                        <div key={img.url} className="overflow-hidden rounded border border-[var(--border)] bg-[var(--surface)]">
-                          <img src={img.url} alt={article.title} className="h-full w-full object-cover" />
+                <aside className="lg:sticky lg:top-16 lg:self-start">
+                  {extras.length > 0 ? (
+                    <div className="mb-6 hidden space-y-3 lg:block">
+                      {extras.map((img) => (
+                        <div
+                          key={img.url}
+                          className="overflow-hidden rounded-sm border border-[var(--border)] bg-[var(--surface)]"
+                        >
+                          <img
+                            src={img.url}
+                            alt={article.title}
+                            className="h-full w-full object-cover"
+                          />
                         </div>
                       ))}
                     </div>
-                  )}
-                  {relatedArticles.length > 0 && (
+                  ) : null}
+                  {relatedArticles.length > 0 ? (
                     <>
-                      <h2 className="font-serif text-lg font-bold text-[var(--text)] mb-4">
+                      <h2 className="mb-2 text-[12px] font-medium tracking-wide text-[var(--muted)]">
                         Читайте также
                       </h2>
-                      <div className="space-y-5">
+                      <div className="space-y-0">
                         {relatedArticles.map((rel) => (
                           <Link
                             key={rel.slug}
                             href={`/articles/${rel.slug}`}
-                            className="group flex gap-3 border-b border-[var(--border)] pb-5 last:border-b-0"
+                            className="group flex gap-2.5 border-b border-[var(--border)] py-2.5 last:border-b-0"
                           >
                             <MediaThumb
-                              imageUrl={rel.images?.find((i) => i.role === 'hero')?.url || rel.imageUrl}
+                              imageUrl={displayHeroUrl(rel)}
                               title={rel.title}
                               category={rel.category}
                               tags={rel.tags}
                               summary={rel.summary}
-                              className="h-16 w-16 aspect-square"
+                              className="h-[52px] w-[72px]"
                             />
                             <div className="min-w-0">
-                              <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--accent)]">
-                                {rel.category}
-                              </div>
-                              <h3 className="mt-0.5 font-serif text-sm font-bold leading-snug text-[var(--text)] group-hover:text-[var(--accent)] line-clamp-2">
+                              <time className="mb-0.5 block text-[10px] font-normal tabular-nums text-[var(--muted)]">
+                                {formatPublishedAt(rel.publishedAt)}
+                              </time>
+                              <h3 className="line-clamp-3 text-[13px] font-medium leading-snug text-[var(--text)] transition group-hover:text-[var(--accent)]">
                                 {rel.title}
                               </h3>
-                              <div className="mt-1 text-[10px] text-[var(--muted)]">
-                                {formatPublishedAt(rel.publishedAt)} • {rel.readTime}
-                              </div>
                             </div>
                           </Link>
                         ))}
                       </div>
                     </>
-                  )}
+                  ) : null}
                 </aside>
               );
             })()}
