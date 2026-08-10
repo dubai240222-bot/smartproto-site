@@ -1,0 +1,76 @@
+{
+  "id": "SP-A-068R1",
+  "floor": 70,
+  "rows": [
+    {
+      "key": "assistive",
+      "title": "Wearable that reads text aloud for people with low vision using on-device AI",
+      "expect": "not killed; ideally PASS >=70",
+      "score": 32,
+      "verdict": "REJECT",
+      "flagship": "NO",
+      "reality": "ANNOUNCED",
+      "humanWall": "Dependence on another person to read printed text/labels",
+      "openedDoor": "Independent reading for low-vision users",
+      "whoCares": "People with low vision who need everyday reading assistance",
+      "access": "Wearable form factor, no details on price or availability",
+      "why": "Generic description of a known category; no specific product or innovation identified."
+    },
+    {
+      "key": "tacta",
+      "title": "Tacta Systems takes aim at high-skilled manufacturing work with TactaBot",
+      "expect": "not auto-REJECT for SMB; NORMAL/STRONG or reject on real merit",
+      "score": 55,
+      "verdict": "REJECT",
+      "flagship": "NO",
+      "reality": "ANNOUNCED",
+      "humanWall": "Мелкая мастерская не может нанять квалифицированных сборщиков или содержать большую команду",
+      "openedDoor": "Один человек или малая команда может выполнять сложную сборку без найма специалистов",
+      "whoCares": "Владельцы малых производств, которые хотят автоматизировать сборку без больших инвестиций",
+      "access": "Требует покупки и настройки, не для обычного потребителя",
+      "why": "Ещё один коллаборативный робот для сборки, без явных отличий от существующих решений; дверь для обычного человека не открывается. [soft novelty: mid-band for ca"
+    },
+    {
+      "key": "csail",
+      "title": "MIT CSAIL researchers give robots a better feel for object manipulation",
+      "expect": "Human Value allowed; REALITY=RESEARCH; not hard-zero",
+      "score": 60,
+      "verdict": "REJECT",
+      "flagship": "NO",
+      "reality": "RESEARCH",
+      "humanWall": "Robots lack precise tactile feedback for object manipulation.",
+      "openedDoor": "Robots can handle objects more dexterously, potentially improving automation.",
+      "whoCares": "Robotics researchers and industrial automation engineers.",
+      "access": "Currently only a lab prototype; no consumer access.",
+      "why": "Research prototype with no clear near-term consumer application; limited everyday relevance."
+    },
+    {
+      "key": "factory",
+      "title": "New six-axis factory arm ships with 15% faster cycle time for auto plants",
+      "expect": "REJECT",
+      "score": 15,
+      "verdict": "REJECT",
+      "flagship": "NO",
+      "reality": "AVAILABLE",
+      "humanWall": "Требуется крупное производство и специалисты для интеграции",
+      "openedDoor": "Нет для обычного человека",
+      "whoCares": "Только инженеры автозаводов",
+      "access": "Только B2B, высокая стоимость",
+      "why": "Промышленный робот для заводов, без пользы для обычного человека. Улучшение скорости на 15% не открывает новых дверей. [soft novelty: mid-band for category impr"
+    },
+    {
+      "key": "specs",
+      "title": "iQOO T: cooling system test and 200 MP camera teased for next phone",
+      "expect": "REJECT",
+      "score": 19,
+      "verdict": "REJECT",
+      "flagship": "NO",
+      "reality": "ANNOUNCED",
+      "humanWall": "Никакой конкретной стены для обычного человека этот тизер не ломает.",
+      "openedDoor": "Дверь не открывается: пользователь получает чуть более «крутые» цифры в характеристиках.",
+      "whoCares": "Только энтузиасты спецификаций; для обычного человека изменения незаметны.",
+      "access": "Ранний слух/тизер, не продукт для покупки.",
+      "why": "Очередная утечка/тизер смартфона с упором на мегапиксели, охлаждение и смену чипа — без новой человеческой возможности или необычной идеи."
+    }
+  ]
+}

@@ -11,6 +11,7 @@ import { getOpenRouterClient, parseJsonObject, clampText } from './shared';
 import {
   hardRejectTopic,
   evaluateTopicLocal,
+  isAiOrInventionAlert,
   PREFERRED_APP_CATEGORIES,
   type EditorialMode,
   type NoveltyAssessment,
@@ -95,8 +96,17 @@ export async function scoutArticle(
   mode: EditorialMode = 'gadget',
 ): Promise<ScoutResult> {
   const gate = hardRejectTopic(title, text, { mode });
-  // Hard short-circuit definitive bans. NOT_ACTUALLY_NEW may still reach the model.
-  if (gate.reject && gate.rejectCode !== 'NOT_ACTUALLY_NEW') {
+  // Hard short-circuit definitive bans. Soft gates may still reach the model.
+  // SP-A-068R1: RESEARCH/NO_PRODUCT must not auto-zero Human Value — status limits promise, not score.
+  const softRejectThrough =
+    gate.rejectCode === 'NOT_ACTUALLY_NEW' ||
+    gate.rejectCode === 'NON_BUYABLE_RESEARCH' ||
+    (gate.rejectCode === 'NO_PRODUCT' &&
+      (isAiOrInventionAlert(title, text) ||
+        /\b(research|researchers?|prototype|lab\s+demo|university|csail)\b/i.test(
+          `${title}\n${text}`,
+        )));
+  if (gate.reject && !softRejectThrough) {
     return {
       ...evaluateTopicLocal(title, text),
       interesting: false,
@@ -120,52 +130,60 @@ export async function scoutArticle(
         : 'interesting=true если score>=75 и есть конкретный гаджет/app/AI-достижение/изобретение с пользой (покупка НЕ обязательна), isActuallyNew, noveltyEvidence не пуст. SP-A-068R: 70+ / flagship только при здравой стене→двери для обычного человека.';
 
   const client = getOpenRouterClient();
-  const completion = await client.chat.completions.create({
-    model: SCOUT_MODEL,
-    temperature: 0.1,
-    top_p: 0.9,
-    max_tokens: 1600,
-    include_reasoning: false,
-    reasoning: { max_tokens: 0 },
-    extra_body: {
+  const askScout = () =>
+    client.chat.completions.create({
+      model: SCOUT_MODEL,
+      temperature: 0.1,
+      top_p: 0.9,
+      max_tokens: 2800,
       include_reasoning: false,
       reasoning: { max_tokens: 0 },
-    },
-    messages: [
-      { role: 'system', content: systemPrompt },
-      {
-        role: 'user',
-        content: [
-          `Заголовок: ${title}`,
-          '',
-          `Текст: ${clampText(text, 8000)}`,
-          '',
-          'Верни только JSON:',
-          mode === 'app'
-            ? [
-                '{"interesting":boolean,"score":number,"reason":string,"productType":string,"isActuallyNew":boolean,',
-                '"noveltyEvidence":string[],"existingAlternatives":string,"functionalDifference":string,',
-                '"marketSaturation":"low"|"medium"|"high","rejectCode":string|null,',
-                '"parts":{"a":number,"b":number,"c":number,"d":number,"e":number}}',
-                `score=a+b+c+d+e. ${passHint}`,
-              ].join('\n')
-            : [
-                '{"interesting":boolean,"score":number,"reason":string,"productType":string,"status":"AVAILABLE"|"ANNOUNCED"|"PROTOTYPE"|"RESEARCH"|"CONCEPT"|"CROWDFUNDING",',
-                '"isActuallyNew":boolean,"noveltyEvidence":string[],"existingAlternatives":string,"functionalDifference":string,',
-                '"marketSaturation":"low"|"medium"|"high","rejectCode":string|null,',
-                '"humanWall":string,"openedDoor":string,"whoCares":string,"accessNote":string,"flagship":boolean,',
-                '"parts":{"humanSurprise":number,"visualDemonstrability":number,"everydayRelevance":number,"novelty":number,"shareability":number,"credibility":number}}',
-                'score = sum(parts) with caps 30+20+15+15+10+10. ' + passHint,
-                'SP-A-068R fields: humanWall/openedDoor/whoCares/accessNote короткие RU; flagship=true только если wall→door здраво для человека.',
-              ].join('\n'),
-          'high+пустой functionalDifference / только косметика → rejectCode=NOT_ACTUALLY_NEW. productType или "none". reason: 1 фраза RU.',
-        ].join('\n'),
+      extra_body: {
+        include_reasoning: false,
+        reasoning: { max_tokens: 0 },
       },
-    ],
-  } as any);
+      messages: [
+        { role: 'system', content: systemPrompt },
+        {
+          role: 'user',
+          content: [
+            `Заголовок: ${title}`,
+            '',
+            `Текст: ${clampText(text, 8000)}`,
+            '',
+            'Верни только JSON:',
+            mode === 'app'
+              ? [
+                  '{"interesting":boolean,"score":number,"reason":string,"productType":string,"isActuallyNew":boolean,',
+                  '"noveltyEvidence":string[],"existingAlternatives":string,"functionalDifference":string,',
+                  '"marketSaturation":"low"|"medium"|"high","rejectCode":string|null,',
+                  '"parts":{"a":number,"b":number,"c":number,"d":number,"e":number}}',
+                  `score=a+b+c+d+e. ${passHint}`,
+                ].join('\n')
+              : [
+                  '{"interesting":boolean,"score":number,"reason":string,"productType":string,"status":"AVAILABLE"|"ANNOUNCED"|"PROTOTYPE"|"RESEARCH"|"CONCEPT"|"CROWDFUNDING",',
+                  '"isActuallyNew":boolean,"noveltyEvidence":string[],"existingAlternatives":string,"functionalDifference":string,',
+                  '"marketSaturation":"low"|"medium"|"high","rejectCode":string|null,',
+                  '"humanWall":string,"openedDoor":string,"whoCares":string,"accessNote":string,"flagship":boolean,',
+                  '"parts":{"humanSurprise":number,"visualDemonstrability":number,"everydayRelevance":number,"novelty":number,"shareability":number,"credibility":number}}',
+                  'score = sum(parts) with caps 30+20+15+15+10+10. ' + passHint,
+                  'SP-A-068R fields: humanWall/openedDoor/whoCares/accessNote short RU or EN only (never Chinese); flagship=true only if wall→door is sound for a real person.',
+                ].join('\n'),
+            'high+пустой functionalDifference / только косметика → rejectCode=NOT_ACTUALLY_NEW. productType или "none". reason: 1 фраза RU или EN.',
+          ].join('\n'),
+        },
+      ],
+    } as any);
 
-  const choice = completion.choices[0];
-  const content = choice?.message?.content;
+  let completion = await askScout();
+  let choice = completion.choices[0];
+  let content = choice?.message?.content;
+  // One retry on empty/truncated output (DeepSeek flash length truncations).
+  if (!content || typeof content !== 'string' || content.trim() === '') {
+    completion = await askScout();
+    choice = completion.choices[0];
+    content = choice?.message?.content;
+  }
   if (!content || typeof content !== 'string' || content.trim() === '') {
     const finishReason = choice?.finish_reason ?? 'unknown';
     const msg = choice?.message as any;
@@ -286,11 +304,12 @@ export async function scoutArticle(
     score = 0;
   }
 
-  // Publish interest = score gate only (threshold unchanged at env/70). Soft mid-band stays visible.
+  // Publish interest = score gate. RESEARCH/PROTOTYPE may be interesting on score alone (068R1).
+  const researchOrProto = status === 'RESEARCH' || status === 'PROTOTYPE';
   const interesting =
     mode === 'ai_radar'
       ? score >= SCOUT_SCORE_THRESHOLD
-      : !noProduct && score >= SCOUT_SCORE_THRESHOLD;
+      : score >= SCOUT_SCORE_THRESHOLD && (!noProduct || researchOrProto);
 
   const reasonBase =
     typeof parsed.reason === 'string'
