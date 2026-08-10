@@ -25,6 +25,12 @@ export interface ScoutResult extends Partial<NoveltyAssessment> {
   status?: ProductStatus;
   partsV2?: ScoutScorePartsV2;
   commodityPenalty?: number;
+  /** SP-A-068R — editorial DNA explainability (gadget desk). */
+  humanWall?: string;
+  openedDoor?: string;
+  whoCares?: string;
+  accessNote?: string;
+  flagship?: boolean;
 }
 
 /** Consumer-gadgets gate. Prod default 75 when env unset; Hetzner compose uses 70. */
@@ -111,7 +117,7 @@ export async function scoutArticle(
       ? 'interesting=true только если score>=75, конкретное НОВОЕ полезное app/game, isActuallyNew, noveltyEvidence не пуст.'
       : mode === 'ai_radar'
         ? 'interesting=true если score>=70 по ФАКТАМ EVENT RECORD (capability/controls/embodied/freedom), не из-за brakes/too powerful/бренда.'
-        : 'interesting=true если score>=75 и есть конкретный гаджет/app/AI-достижение/изобретение с пользой (покупка НЕ обязательна), isActuallyNew, noveltyEvidence не пуст.';
+        : 'interesting=true если score>=75 и есть конкретный гаджет/app/AI-достижение/изобретение с пользой (покупка НЕ обязательна), isActuallyNew, noveltyEvidence не пуст. SP-A-068R: 70+ / flagship только при здравой стене→двери для обычного человека.';
 
   const client = getOpenRouterClient();
   const completion = await client.chat.completions.create({
@@ -147,8 +153,10 @@ export async function scoutArticle(
                 '{"interesting":boolean,"score":number,"reason":string,"productType":string,"status":"AVAILABLE"|"ANNOUNCED"|"PROTOTYPE"|"RESEARCH"|"CONCEPT"|"CROWDFUNDING",',
                 '"isActuallyNew":boolean,"noveltyEvidence":string[],"existingAlternatives":string,"functionalDifference":string,',
                 '"marketSaturation":"low"|"medium"|"high","rejectCode":string|null,',
+                '"humanWall":string,"openedDoor":string,"whoCares":string,"accessNote":string,"flagship":boolean,',
                 '"parts":{"humanSurprise":number,"visualDemonstrability":number,"everydayRelevance":number,"novelty":number,"shareability":number,"credibility":number}}',
                 'score = sum(parts) with caps 30+20+15+15+10+10. ' + passHint,
+                'SP-A-068R fields: humanWall/openedDoor/whoCares/accessNote короткие RU; flagship=true только если wall→door здраво для человека.',
               ].join('\n'),
           'high+пустой functionalDifference / только косметика → rejectCode=NOT_ACTUALLY_NEW. productType или "none". reason: 1 фраза RU.',
         ].join('\n'),
@@ -306,6 +314,26 @@ export async function scoutArticle(
     status,
     partsV2,
     commodityPenalty: commodityPenalty || undefined,
+    humanWall:
+      typeof (parsed as { humanWall?: unknown }).humanWall === 'string'
+        ? (parsed as { humanWall: string }).humanWall.trim()
+        : undefined,
+    openedDoor:
+      typeof (parsed as { openedDoor?: unknown }).openedDoor === 'string'
+        ? (parsed as { openedDoor: string }).openedDoor.trim()
+        : undefined,
+    whoCares:
+      typeof (parsed as { whoCares?: unknown }).whoCares === 'string'
+        ? (parsed as { whoCares: string }).whoCares.trim()
+        : undefined,
+    accessNote:
+      typeof (parsed as { accessNote?: unknown }).accessNote === 'string'
+        ? (parsed as { accessNote: string }).accessNote.trim()
+        : undefined,
+    flagship:
+      typeof (parsed as { flagship?: unknown }).flagship === 'boolean'
+        ? (parsed as { flagship: boolean }).flagship
+        : undefined,
     isActuallyNew,
     noveltyEvidence: modelEvidence,
     existingAlternatives:
