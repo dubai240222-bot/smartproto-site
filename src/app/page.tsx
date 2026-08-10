@@ -156,15 +156,15 @@ export default async function HomePage({
   );
 
   return (
-    <main className="min-h-screen bg-[var(--bg)] text-[var(--text)] transition-colors">
-      <div className="mx-auto max-w-[1280px] space-y-5 px-3 py-4 sm:space-y-6 sm:px-5 sm:py-5 lg:px-6">
+    <main className="home-editorial min-h-screen bg-[var(--bg)] text-[var(--text)] transition-colors">
+      <div className="mx-auto max-w-[1280px] space-y-4 px-3 py-3 sm:space-y-5 sm:px-5 sm:py-4 lg:px-6">
         {activeCategory ? (
           <>
             {thematicNavigator}
             <section className="space-y-4">
-              <div className="flex items-center justify-between gap-3 rounded border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5">
+              <div className="flex items-center justify-between gap-3 border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5">
                 <div>
-                  <h1 className="font-serif text-lg font-bold text-[var(--text)] sm:text-xl">
+                  <h1 className="text-lg font-extrabold tracking-tight text-[var(--text)] sm:text-xl">
                     Рубрика: <span className="text-[var(--accent)]">{activeCategory}</span>
                   </h1>
                   <p className="mt-0.5 text-xs text-[var(--muted)]">
@@ -173,7 +173,7 @@ export default async function HomePage({
                 </div>
                 <Link
                   href="/"
-                  className="shrink-0 rounded border border-[var(--border)] bg-[var(--bg)] px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-[var(--surface)]"
+                  className="shrink-0 border border-[var(--border)] bg-[var(--bg)] px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-[var(--surface)]"
                 >
                   На главную
                 </Link>
@@ -186,7 +186,7 @@ export default async function HomePage({
                   ))}
                 </div>
               ) : (
-                <div className="rounded border border-[var(--border)] bg-[var(--surface)] p-6 text-center">
+                <div className="border border-[var(--border)] bg-[var(--surface)] p-6 text-center">
                   <p className="text-sm text-[var(--muted)]">В выбранной рубрике пока нет материалов.</p>
                   <Link href="/" className="mt-2 inline-block text-xs font-semibold text-[var(--accent)] hover:underline">
                     Вернуться на главную
@@ -199,16 +199,14 @@ export default async function HomePage({
           /* SP-A-066 — HOMEPAGE EDITORIAL GRID */
           <>
             {/* 1. TOP / LEAD AREA — ~65% hero + ~35% compact rail */}
-            <section className="grid gap-4 border-b border-[var(--border)] pb-5 lg:grid-cols-12 lg:gap-5 lg:pb-6">
-              <div className="lg:col-span-8">
-                {leadStory ? <LeadStory article={leadStory} /> : null}
-              </div>
-              <aside className="lg:col-span-4 lg:border-l lg:border-[var(--border)] lg:pl-5">
-                <div className="mb-2 flex items-center justify-between border-b border-[var(--border)] pb-1.5">
-                  <h2 className="text-[11px] font-bold uppercase tracking-wider text-[var(--text)]">
+            <section className="grid gap-3 border-b border-[var(--border)] pb-4 lg:grid-cols-12 lg:gap-5 lg:pb-5">
+              <div className="lg:col-span-8">{leadStory ? <LeadStory article={leadStory} /> : null}</div>
+              <aside className="bg-[var(--surface)] px-0 lg:col-span-4 lg:border-l lg:border-[var(--border)] lg:pl-5">
+                <div className="mb-1.5 flex items-center justify-between border-b-2 border-[var(--accent)] pb-1.5">
+                  <h2 className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[var(--text)]">
                     Сейчас важно
                   </h2>
-                  <Link href="/all" className="text-[10px] font-semibold text-[var(--accent)] hover:underline">
+                  <Link href="/all" className="text-[10px] font-bold text-[var(--accent)] hover:underline">
                     Все →
                   </Link>
                 </div>
@@ -222,14 +220,13 @@ export default async function HomePage({
 
             {/* 2. MAIN GRID — 4 cards */}
             {gridStories.length > 0 ? (
-              <section className="border-b border-[var(--border)] pb-5 sm:pb-6">
-                <div className="mb-3 flex items-center justify-between">
-                  <h2 className="text-[11px] font-bold uppercase tracking-wider text-[var(--text)]">
+              <section className="border-b border-[var(--border)] pb-4 sm:pb-5">
+                <div className="mb-2.5 flex items-center justify-between">
+                  <h2 className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[var(--text)]">
                     В фокусе
                   </h2>
-                  <span className="text-[10px] text-[var(--muted)]">CARD</span>
                 </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
                   {gridStories.map((article) => (
                     <GridStoryCard key={article.slug} article={article} />
                   ))}
@@ -239,14 +236,13 @@ export default async function HomePage({
 
             {/* 3. QUICK NEWS ROW — 4 compact text blocks */}
             {quickNews.length > 0 ? (
-              <section className="border-b border-[var(--border)] pb-5 sm:pb-6">
-                <div className="mb-3 flex items-center justify-between">
-                  <h2 className="text-[11px] font-bold uppercase tracking-wider text-[var(--accent)]">
+              <section className="border-b border-[var(--border)] pb-4 sm:pb-5">
+                <div className="mb-2.5 flex items-center justify-between">
+                  <h2 className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[var(--accent)]">
                     Быстро
                   </h2>
-                  <span className="text-[10px] text-[var(--muted)]">QUICK · без большой карточки</span>
                 </div>
-                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-3">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4 lg:gap-2.5">
                   {quickNews.map((article) => (
                     <QuickNewsBlock key={article.slug} article={article} />
                   ))}
@@ -254,17 +250,19 @@ export default async function HomePage({
               </section>
             ) : null}
 
-            {/* Secondary: archive teaser (not competing with first screen) */}
-            <section className="pt-1">
-              <div className="mb-3 flex items-center justify-between border-b border-[var(--border)] pb-2">
-                <h2 className="font-serif text-lg font-bold text-[var(--text)] sm:text-xl">Ещё материалы</h2>
-                <Link href="/all" className="text-xs font-semibold text-[var(--accent)] hover:underline">
-                  Открыть архив →
+            {/* Secondary dense text feed — not a wiki wall of cards */}
+            <section>
+              <div className="mb-2 flex items-center justify-between border-b border-[var(--border)] pb-1.5">
+                <h2 className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[var(--text)]">
+                  Ещё в ленте
+                </h2>
+                <Link href="/all" className="text-xs font-bold text-[var(--accent)] hover:underline">
+                  Архив →
                 </Link>
               </div>
-              <div className="divide-y divide-[var(--border)]">
-                {sortedArticles.slice(12, 20).map((article) => (
-                  <QuickUpdateItem key={`more-${article.slug}`} article={article} />
+              <div className="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
+                {sortedArticles.slice(12, 22).map((article) => (
+                  <LeadRailItem key={`more-${article.slug}`} article={article} />
                 ))}
               </div>
             </section>

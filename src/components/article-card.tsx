@@ -24,7 +24,7 @@ export function CategoryTags({
           {idx > 0 && <span className="mr-1.5 text-[var(--muted)] opacity-50">•</span>}
           <Link
             href={`/?category=${encodeURIComponent(tag)}`}
-            className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[var(--accent)] hover:underline hover:text-[var(--accent-hover)] transition-colors"
+            className="text-[10px] font-extrabold uppercase tracking-[0.06em] text-[var(--accent)] transition-colors hover:text-[var(--accent-hover)] sm:text-[11px]"
           >
             {tag}
           </Link>
@@ -68,29 +68,29 @@ function hasHeroImage(article: Article): boolean {
 export function LeadStory({ article }: { article: Article }) {
   const hero = articleHeroUrl(article);
   return (
-    <article className="group space-y-2.5">
-      <Link href={`/articles/${article.slug}`} className="block" aria-label={article.title}>
+    <article className="group space-y-2">
+      <Link href={`/articles/${article.slug}`} className="block overflow-hidden" aria-label={article.title}>
         <MediaPlaceholder
           category={article.category}
           title={article.title}
           tags={article.tags}
           summary={article.summary}
           imageUrl={hero}
-          aspectRatio="aspect-[16/9]"
+          aspectRatio="aspect-[16/9] sm:aspect-[2/1]"
           compactFallback
-          className="rounded"
+          className="rounded-sm"
         />
       </Link>
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
         <CategoryTags category={article.category} />
-        <time className="text-[10px] font-medium text-[var(--muted)] sm:text-[11px]">
+        <time className="text-[11px] font-medium tabular-nums text-[var(--muted)]">
           {formatPublishedAt(article.publishedAt)}
         </time>
       </div>
-      <h1 className="font-serif text-xl font-black leading-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-2xl lg:text-[1.75rem] lg:leading-[1.15]">
+      <h1 className="text-[1.35rem] font-extrabold leading-[1.15] tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-3xl lg:text-[2rem]">
         <Link href={`/articles/${article.slug}`}>{article.title}</Link>
       </h1>
-      <p className="line-clamp-3 text-sm leading-relaxed text-[var(--muted)] sm:text-[15px]">
+      <p className="line-clamp-2 text-[13px] leading-snug text-[var(--muted)] sm:text-sm sm:leading-relaxed">
         {article.summary}
       </p>
     </article>
@@ -101,12 +101,16 @@ export function LeadStory({ article }: { article: Article }) {
 export function LeadRailItem({ article }: { article: Article }) {
   return (
     <article className="group border-b border-[var(--border)] py-2.5 last:border-b-0 last:pb-0 first:pt-0">
-      <div className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+      <div className="mb-1 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5">
         <CategoryTags category={article.category} />
-        <span className="text-[10px] text-[var(--muted)]">{formatPublishedAt(article.publishedAt)}</span>
+        <span className="text-[10px] tabular-nums text-[var(--muted)]">
+          {formatPublishedAt(article.publishedAt)}
+        </span>
       </div>
-      <h2 className="font-serif text-sm font-bold leading-snug text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-[15px]">
-        <Link href={`/articles/${article.slug}`}>{article.title}</Link>
+      <h2 className="text-[14px] font-bold leading-snug tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-[15px]">
+        <Link href={`/articles/${article.slug}`} className="line-clamp-3">
+          {article.title}
+        </Link>
       </h2>
     </article>
   );
@@ -120,33 +124,24 @@ export function GridStoryCard({ article }: { article: Article }) {
   return (
     <article className="group flex flex-col">
       <Link href={`/articles/${article.slug}`} className="block" aria-label={article.title}>
-        {withImage ? (
-          <MediaPlaceholder
-            category={article.category}
-            title={article.title}
-            tags={article.tags}
-            summary={article.summary}
-            imageUrl={hero}
-            aspectRatio="aspect-[16/10]"
-            className="rounded"
-          />
-        ) : (
-          <MediaPlaceholder
-            category={article.category}
-            title={article.title}
-            tags={article.tags}
-            summary={article.summary}
-            aspectRatio="aspect-[16/10]"
-            compactFallback
-            className="rounded"
-          />
-        )}
+        <MediaPlaceholder
+          category={article.category}
+          title={article.title}
+          tags={article.tags}
+          summary={article.summary}
+          imageUrl={withImage ? hero : undefined}
+          aspectRatio="aspect-[16/10]"
+          compactFallback={!withImage}
+          className="rounded-sm"
+        />
       </Link>
       <div className="mt-2 flex flex-wrap items-center justify-between gap-1.5">
         <CategoryTags category={article.category} />
-        <time className="text-[10px] text-[var(--muted)]">{formatPublishedAt(article.publishedAt)}</time>
+        <time className="text-[10px] tabular-nums text-[var(--muted)]">
+          {formatPublishedAt(article.publishedAt)}
+        </time>
       </div>
-      <h3 className="mt-1 font-serif text-sm font-bold leading-snug text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-[15px]">
+      <h3 className="mt-1 text-[14px] font-bold leading-snug tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-[15px]">
         <Link href={`/articles/${article.slug}`} className="line-clamp-3">
           {article.title}
         </Link>
@@ -155,22 +150,23 @@ export function GridStoryCard({ article }: { article: Article }) {
   );
 }
 
-/** QUICK: short text-only note — no large image required. */
+/** QUICK: short text-only note — ForkLog-like dense strip, no large image. */
 export function QuickNewsBlock({ article }: { article: Article }) {
   return (
-    <article className="group flex h-full flex-col rounded border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 sm:px-3.5 sm:py-3">
-      <div className="mb-1.5 flex items-center gap-1.5">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--accent)]">Быстро</span>
-        <span className="text-[10px] text-[var(--muted)]">{formatPublishedAt(article.publishedAt)}</span>
+    <article className="group flex h-full flex-col border border-[var(--accent)]/20 bg-[var(--accent-subtle)] px-3 py-2.5 sm:px-3.5">
+      <div className="mb-1.5 flex items-center justify-between gap-2">
+        <span className="text-[10px] font-extrabold uppercase tracking-[0.08em] text-[var(--accent)]">
+          Быстро
+        </span>
+        <span className="text-[10px] tabular-nums text-[var(--muted)]">
+          {formatPublishedAt(article.publishedAt)}
+        </span>
       </div>
-      <h3 className="font-serif text-sm font-bold leading-snug text-[var(--text)] transition-colors group-hover:text-[var(--accent)]">
-        <Link href={`/articles/${article.slug}`} className="line-clamp-3">
+      <h3 className="text-[13px] font-bold leading-snug tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-sm">
+        <Link href={`/articles/${article.slug}`} className="line-clamp-4">
           {article.title}
         </Link>
       </h3>
-      <p className="mt-1.5 line-clamp-2 text-[11px] leading-relaxed text-[var(--muted)] sm:text-xs">
-        {article.summary}
-      </p>
     </article>
   );
 }

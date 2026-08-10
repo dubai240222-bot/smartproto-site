@@ -67,9 +67,9 @@ body {
   background-color: var(--bg);
   color: var(--text);
   min-height: 100vh;
-  font-family: Arial, Inter, system-ui, sans-serif;
-  font-size: 18px;
-  line-height: 1.65;
+  font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
   letter-spacing: normal;
   transition: background-color 0.15s ease, color 0.15s ease;
 }
@@ -79,14 +79,29 @@ body {
   color: var(--text);
 }
 
-/* Serif Font Utility for Newspaper Headlines */
+/* Serif Font Utility for Newspaper Headlines (article page) */
 .font-serif {
   font-family: Georgia, "Times New Roman", serif;
 }
 
 /* Sans Font Utility */
 .font-sans {
-  font-family: Arial, Inter, system-ui, sans-serif;
+  font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+/* SP-A-066 — homepage reads as tech media, not academic wiki */
+.home-editorial {
+  --bg: #f7f8fa;
+  --surface: #ffffff;
+  font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+html[data-theme="dark"] .home-editorial,
+.dark .home-editorial {
+  --bg: #141414;
+  --surface: #1c1c1c;
 }
 
 /* Article typography adhering to Reuters/NYT/WaPo guidelines */
