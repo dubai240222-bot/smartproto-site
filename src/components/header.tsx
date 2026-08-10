@@ -17,14 +17,19 @@ export function Header({ articles }: { articles: Article[] }) {
   const searchResults = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return [];
-    return articles.filter((article) => {
-      return (
-        article.title.toLowerCase().includes(q) ||
-        article.summary.toLowerCase().includes(q) ||
-        article.category.toLowerCase().includes(q) ||
-        article.content.toLowerCase().includes(q)
+    return articles
+      .filter((article) => {
+        return (
+          article.title.toLowerCase().includes(q) ||
+          article.summary.toLowerCase().includes(q) ||
+          article.category.toLowerCase().includes(q) ||
+          article.content.toLowerCase().includes(q)
+        );
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
       );
-    });
   }, [articles, query]);
 
   useEffect(() => {

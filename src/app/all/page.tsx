@@ -2,7 +2,6 @@
 import { getAllArticles } from '@/data/articles';
 import { GridStoryCard, LeadRailItem } from '@/components/article-card';
 import { PastNewsPager } from '@/components/past-news-pager';
-import { orderArticlesForHomepage } from '@/lib/homepage-editorial-mix';
 import { sortArticlesByPublishedDate } from '@/lib/article-utils';
 
 export const dynamic = 'force-dynamic';
@@ -17,8 +16,7 @@ export default async function AllArticlesPage({
   const params = await searchParams;
   const requestedPage = Math.max(1, parseInt(params.page || '1', 10) || 1);
 
-  const sorted = sortArticlesByPublishedDate(getAllArticles());
-  const feed = orderArticlesForHomepage(sorted);
+  const feed = sortArticlesByPublishedDate(getAllArticles());
   const totalPages = Math.max(1, Math.ceil(feed.length / PAGE_SIZE));
   const currentPage = Math.min(requestedPage, totalPages);
   const start = (currentPage - 1) * PAGE_SIZE;
@@ -37,7 +35,7 @@ export default async function AllArticlesPage({
               Лента новостей
             </h1>
             <p className="mt-1 text-[13px] font-normal text-[var(--muted)]">
-              {feed.length} материалов · свежие и сильные темы выше
+              {feed.length} материалов · сначала самые новые
             </p>
           </div>
           <Link

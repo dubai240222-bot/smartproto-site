@@ -4,11 +4,6 @@ import { ThematicNavigator } from '@/components/thematic-navigator';
 import { PastNewsPager } from '@/components/past-news-pager';
 import { sortArticlesByPublishedDate } from '@/lib/article-utils';
 import {
-  orderArticlesForHomepage,
-  pickRotatingLead,
-  hasDisplayWorthyImage,
-} from '@/lib/homepage-editorial-mix';
-import {
   LeadStory,
   LeadRailItem,
   GridStoryCard,
@@ -18,7 +13,6 @@ import {
 
 const FRONT_SLOT_COUNT = 14; // lead + rail5 + grid4 + quick4
 const PAST_PAGE_SIZE = 10;
-const LEAD_HOLD_HOURS = 5;
 
 function textBlob(a: Article): string {
   const tags = Array.isArray(a.tags) ? a.tags.join(' ') : '';
@@ -164,24 +158,9 @@ export default async function HomePage({
   const requestedPage = Math.max(1, parseInt(params.page || '1', 10) || 1);
 
   const sortedArticles = sortArticlesByPublishedDate(getAllArticles());
-  // Editorial mix for homepage slots: AI/apps first, avoid commodity streaks
-  const feedArticles = orderArticlesForHomepage(sortedArticles);
-  // Lead rotates every few hours among photo-worthy / high-interest candidates
-  const { lead: leadStory, rest: afterLead } = pickRotatingLead(feedArticles, LEAD_HOLD_HOURS);
-
-  // Prefer display-worthy photos in the visual grid
-  const photoFirst = [
-    ...afterLead.filter((a) => hasDisplayWorthyImage(a)),
-    ...afterLead.filter((a) => !hasDisplayWorthyImage(a)),
-  ];
-  // Deduplicate while preferring photo-first order
-  const seen = new Set<string>();
-  const restOrdered: Article[] = [];
-  for (const a of [...photoFirst, ...afterLead]) {
-    if (seen.has(a.slug)) continue;
-    seen.add(a.slug);
-    restOrdered.push(a);
-  }
+  // Strict chronological order: newest first across lead, rail, grid, quick, past.
+  const leadStory = sortedArticles[0];
+  const restOrdered = sortedArticles.slice(1);
 
   const leadRail = restOrdered.slice(0, 5);
   const gridStories = restOrdered.slice(5, 9);

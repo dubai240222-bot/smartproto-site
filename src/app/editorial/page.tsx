@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { getAllArticles, type Article } from '@/data/articles';
 import { GridStoryCard, LeadRailItem } from '@/components/article-card';
-import { orderArticlesForHomepage } from '@/lib/homepage-editorial-mix';
 import { sortArticlesByPublishedDate } from '@/lib/article-utils';
 
 export const metadata = {
@@ -17,7 +16,7 @@ function textBlob(a: Article): string {
 }
 
 function pickTheme(list: Article[], pred: (a: Article) => boolean, limit = 6): Article[] {
-  return orderArticlesForHomepage(list.filter(pred)).slice(0, limit);
+  return sortArticlesByPublishedDate(list.filter(pred)).slice(0, limit);
 }
 
 export default function EditorialPage() {
