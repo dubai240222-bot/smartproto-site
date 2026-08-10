@@ -73,7 +73,7 @@ function modelPrecisionHint(article: ArticleRow): string {
     return [
       'ТОЧНОСТЬ МОДЕЛИ: всегда пиши полное имя «Redmi 17 5G» (и отдельно «Redmi 17 4G», если речь о 4G-версии).',
       'Нельзя сокращать до просто «Redmi» / «редми» без номера модели, когда речь о смартфоне.',
-      'В title можно вопрос про автономность, но в первом абзаце текста обязательно «Xiaomi / Redmi 17 5G» с фактом батареи.',
+      'В первом абзаце текста обязательно «Xiaomi / Redmi 17 5G» с фактом батареи.',
     ].join(' ');
   }
   if (/投影仪|projector|china-redmi(?!-17)/.test(blob) || article.slug === 'china-redmi') {
@@ -92,13 +92,54 @@ function modelPrecisionHint(article: ArticleRow): string {
   if (/hoverair|versa/.test(blob)) {
     return 'ТОЧНОСТЬ МОДЕЛИ: всегда «HoverAir Versa», не просто «HoverAir» или «дрон».';
   }
+  if (/gemini-robotics-er|robotics.er.2/.test(blob)) {
+    return 'ТОЧНОСТЬ МОДЕЛИ: всегда «Gemini Robotics ER 2» (не просто Gemini / Robotics).';
+  }
+  if (/gemini-robotics-2|gemini robotics 2/.test(blob)) {
+    return 'ТОЧНОСТЬ МОДЕЛИ: всегда «Gemini Robotics 2» + «Google DeepMind», не просто Gemini.';
+  }
+  if (/tactabot|tacta/.test(blob)) {
+    return 'ТОЧНОСТЬ МОДЕЛИ: всегда «TactaBot» / «Tacta Systems»; AI-модель «Dexterous Intelligence» если есть в исходнике.';
+  }
+  if (/rainpoint/.test(blob)) {
+    return 'ТОЧНОСТЬ МОДЕЛИ: всегда «RainPoint» + конкретные элементы комплекта из исходника (шлюз, зоны, датчик почвы).';
+  }
+  if (/delta|aero|bassinet|люльк/.test(blob)) {
+    return 'ТОЧНОСТЬ МОДЕЛИ: всегда полное «Delta Children Aero Smart Auto Glide Bassinet» или «Delta Children Aero» с уточнением, что это люлька.';
+  }
+  if (/meta|bracelet|браслет/.test(blob)) {
+    return 'ТОЧНОСТЬ: «браслет Meta» / исследование Meta — не выдумывай коммерческое имя модели, если его нет в исходнике.';
+  }
+  if (/rfid|сан-диего|ucsd/.test(blob)) {
+    return 'ТОЧНОСТЬ: исследование UC San Diego / RFID на смартфоне — сохрани affiliation; не выдумывай бренд чипа.';
+  }
   if (/guitar|robot|3d/.test(blob)) {
     return 'ТОЧНОСТЬ МОДЕЛИ: если в исходнике есть имя проекта/автора — сохрани; иначе «3D-печатный робот-гитарист» без выдуманного бренда.';
   }
-  return 'ТОЧНОСТЬ МОДЕЛИ: используй полное точное имя продукта из исходника, не сокращай до бренда.';
+  return 'ТОЧНОСТЬ МОДЕЛИ: используй полное точное имя продукта/системы из исходника, не сокращай до бренда.';
 }
 
-async function rewriteOne(article: ArticleRow, avoidTitles: string[]): Promise<RewriteResult> {
+function titleStyleHint(index: number): string {
+  // Mix styles so not every headline is a question.
+  const styles = [
+    'STYLE TITLE: утверждение с интригой (без «?» и без «!»), например «Роботам дали цельное «тело»-управление».',
+    'STYLE TITLE: короткий факт-хук без двоеточия-спеки, например «Видео стало инструкцией для робота».',
+    'STYLE TITLE: вопрос по реальному факту (один из немногих с «?»).',
+    'STYLE TITLE: сценарий/польза без вопроса, например «Когда роботу нужно обновить мозги на ходу».',
+    'STYLE TITLE: конкретная возможность продукта, не карточка «Бренд: спека».',
+    'STYLE TITLE: вопрос по реальному факту (с «?»).',
+    'STYLE TITLE: спокойный curiosity без вопроса — намёк на смену привычки.',
+    'STYLE TITLE: практический угол («что меняется в поливе/быту»), без «?».',
+    'STYLE TITLE: польза/сценарий для родителя или дома, без «?» и без «Модель: спека».',
+  ];
+  return styles[index % styles.length];
+}
+
+async function rewriteOne(
+  article: ArticleRow,
+  avoidTitles: string[],
+  index: number,
+): Promise<RewriteResult> {
   const client = getOpenRouterClient();
   const completion = await client.chat.completions.create({
     model: MODEL,
@@ -113,14 +154,14 @@ async function rewriteOne(article: ArticleRow, avoidTitles: string[]): Promise<R
           'ГОЛОС: только мужской / безличный. Без «ребята/друзья», без витрины и «купи здесь».',
           'Длина content: РОВНО 250–300 русских слов (считай!). Минимум 250. 4–5 абзацев.',
           'Если текста мало — расширь конкретикой по фактам исходника (сценарии, отличия, ограничения), без воды и повторов.',
-          'ЗАГОЛОВОК: мягкий curiosity-hook по РЕАЛЬНОМУ факту (часто вопрос). Без «!».',
+          'ЗАГОЛОВОК: мягкий curiosity-hook по РЕАЛЬНОМУ факту. Не делай ВСЕ заголовки вопросами —',
+          'чередуй утверждение / сценарий / факт-хук / иногда вопрос. Без «!». Без шаблона «Модель: спека».',
           'Плохо: «Redmi 17 5G: смартфон с батареей 7500 мАч».',
-          'Хорошо: «А хватит ли заряда на неделю?» — факт модели в первом абзаце.',
           'Title ≠ первое предложение текста. Не начинай content с дословного title.',
-          'Первый абзац: кто/что представил + ТОЧНОЕ имя модели + ключевая особенность.',
+          'Первый абзац: кто/что представил + ТОЧНОЕ имя модели/системы + ключевая особенность.',
           'Дальше: как устроено, кому полезно, чем отличается, ограничения/неизвестное.',
           'Не выдумывай спеки/цены/даты. Нет данных — опусти или «не уточнено».',
-          'Без цен, URL, shop CTA, эмодзи, хайпа (революционный/бомба/вау).',
+          'Без цен, URL, shop CTA, эмодзи, хайпа (революционный/бомба/вау/инновационный).',
           'КИТАЙСКИЕ ИЕРОГЛИФЫ ЗАПРЕЩЕНЫ в title/content/summary/tags. Имя модели всегда переводи на латиницу',
           '(пример: 投影仪 → Projector; пиши «Redmi Projector 5 Pro», никогда «REDMI 投影仪 5 Pro»).',
           'Отвечай СТРОГО JSON без markdown.',
@@ -133,8 +174,9 @@ async function rewriteOne(article: ArticleRow, avoidTitles: string[]): Promise<R
           '{"title":string,"content":string,"summary":string,"tags":string[]}',
           '',
           modelPrecisionHint(article),
+          titleStyleHint(index),
           '',
-          'title: до 90 символов, curiosity-hook, без «!», без шаблона «Модель: спека», без иероглифов.',
+          'title: до 90 символов; curiosity без фейка; без «!»; без иероглифов; НЕ обязан быть вопросом.',
           'content: ОБЯЗАТЕЛЬНО 250–300 слов (не меньше 250). Информативно, без воды. Без китайских иероглифов.',
           'Перед ответом мысленно посчитай слова в content — если <250, допиши ещё абзац про сценарий пользы и ограничения.',
           'summary: 1–2 предложения из нового текста (~160–220 символов), с точным переведённым именем модели.',
@@ -278,14 +320,19 @@ async function main(): Promise<void> {
   const out: ArticleRow[] = [];
   const usedTitles: string[] = [];
 
-  for (const row of rows) {
+  for (const [idx, row] of rows.entries()) {
     console.log(`\n→ ${row.slug}`);
     console.log(`  old: ${row.title}`);
     let lastErr: unknown;
     let result: RewriteResult | null = null;
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        result = await rewriteOne(row, usedTitles);
+        result = await rewriteOne(row, usedTitles, idx);
+        // Soft prefer: if too many recent titles are questions, retry once with non-question style.
+        const recentQs = usedTitles.slice(-2).filter((t) => t.includes('?')).length;
+        if (result.title.includes('?') && recentQs >= 2 && attempt < 3) {
+          throw new Error('Too many consecutive question titles; retry non-question style');
+        }
         break;
       } catch (err) {
         lastErr = err;
