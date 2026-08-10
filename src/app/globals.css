@@ -104,7 +104,7 @@ html[data-theme="dark"] .home-editorial,
   --surface: #1c1c1c;
 }
 
-/* Article typography adhering to Reuters/NYT/WaPo guidelines */
+/* Article typography — aligned with homepage editorial density */
 .article-container {
   max-width: 680px;
   margin-left: auto;
@@ -112,34 +112,36 @@ html[data-theme="dark"] .home-editorial,
 }
 
 .article-body {
-  font-family: Arial, Inter, system-ui, sans-serif;
-  font-size: 18px;
-  line-height: 1.68;
+  font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 16.5px;
+  line-height: 1.65;
   color: var(--text);
 }
 
 .article-body p {
-  margin-bottom: 1.5em;
+  margin-bottom: 1.25em;
 }
 
 .article-body h2 {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 1.5em;
-  line-height: 1.3;
-  font-weight: 700;
+  font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 1.3em;
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--text);
-  margin-top: 2em;
-  margin-bottom: 0.8em;
+  margin-top: 1.75em;
+  margin-bottom: 0.65em;
 }
 
 .article-body h3 {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 1.25em;
-  line-height: 1.35;
-  font-weight: 700;
+  font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 1.12em;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--text);
-  margin-top: 1.6em;
-  margin-bottom: 0.6em;
+  margin-top: 1.4em;
+  margin-bottom: 0.5em;
 }
 
 .article-body ul,

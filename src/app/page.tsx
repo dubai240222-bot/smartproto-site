@@ -209,20 +209,21 @@ export default async function HomePage({
           <>
             {thematicNavigator}
             <section className="space-y-4">
-              <div className="flex items-center justify-between gap-3 border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5">
+              <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--border)] pb-3">
                 <div>
-                  <h1 className="text-lg font-semibold tracking-tight text-[var(--text)] sm:text-xl">
-                    Рубрика: <span className="text-[var(--accent)]">{activeCategory}</span>
+                  <p className="text-[12px] font-medium tracking-wide text-[var(--muted)]">Рубрика</p>
+                  <h1 className="mt-1 text-xl font-semibold tracking-tight text-[var(--text)] sm:text-2xl">
+                    {activeCategory}
                   </h1>
-                  <p className="mt-0.5 text-xs font-normal text-[var(--muted)]">
-                    Найдено материалов: {filteredArticles.length}
+                  <p className="mt-1 text-[13px] font-normal text-[var(--muted)]">
+                    {filteredArticles.length} материалов
                   </p>
                 </div>
                 <Link
                   href="/"
-                  className="shrink-0 border border-[var(--border)] bg-[var(--bg)] px-3 py-1.5 text-xs font-medium transition-colors hover:bg-[var(--surface)]"
+                  className="text-[12px] font-normal text-[var(--muted)] transition hover:text-[var(--accent)]"
                 >
-                  На главную
+                  ← На главную
                 </Link>
               </div>
 
@@ -325,6 +326,8 @@ export default async function HomePage({
                 currentPage={currentPage}
                 totalPages={totalPages}
                 totalPast={totalPast}
+                basePath="/"
+                hash="#past-news"
               />
             </section>
           </>

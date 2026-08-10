@@ -406,24 +406,22 @@ export function ArsTechnicaCard({ article }: { article: Article }) {
 /* -------------------------------------------------------------------------- */
 /* 4. Quick Update Item: Minimal Chronological Feed Row (No heavy card)       */
 /* -------------------------------------------------------------------------- */
+/** Category / archive list row — denser editorial, same DNA as LeadRailItem. */
 export function QuickUpdateItem({ article }: { article: Article }) {
-  const hero = articleHeroUrl(article);
+  const hero = displayHeroUrl(article);
   return (
-    <article className="group py-3.5 border-b border-[var(--border)] last:border-b-0 flex items-start gap-3 sm:gap-5">
-      <div className="flex-1 space-y-1.5 min-w-0">
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="text-[11px] font-mono font-semibold text-[var(--muted)]">
-            {cardByline(article)}
-          </span>
-          <span className="text-[var(--muted)] opacity-40">•</span>
-          <CategoryTags category={article.category} />
+    <article className="group flex items-start gap-3 border-b border-[var(--border)] py-3 last:border-b-0 sm:gap-4">
+      <div className="min-w-0 flex-1 space-y-1">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+          <time className="text-[10px] font-normal tabular-nums text-[var(--muted)]">
+            {formatPublishedAt(article.publishedAt)}
+          </time>
+          <CategoryTags category={article.category} tone="hash" />
         </div>
-
-        <h3 className="font-serif text-base sm:text-lg font-bold text-[var(--text)] transition-colors group-hover:text-[var(--accent)] leading-snug">
+        <h3 className="text-[14px] font-medium leading-snug tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-[15px]">
           <Link href={`/articles/${article.slug}`}>{article.title}</Link>
         </h3>
-
-        <p className="text-xs sm:text-sm text-[var(--muted)] leading-relaxed line-clamp-2 max-w-4xl">
+        <p className="line-clamp-2 max-w-3xl text-[12px] font-normal leading-snug text-[var(--muted)] sm:text-[13px]">
           {article.summary}
         </p>
       </div>
@@ -434,7 +432,7 @@ export function QuickUpdateItem({ article }: { article: Article }) {
           category={article.category}
           tags={article.tags}
           summary={article.summary}
-          className="w-[112px] h-[84px] sm:w-[180px] sm:h-[120px] md:w-[200px] md:h-[132px]"
+          className="h-[72px] w-[96px] sm:h-[88px] sm:w-[120px]"
         />
       </Link>
     </article>

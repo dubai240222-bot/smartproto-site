@@ -149,10 +149,12 @@ export function Header({ articles }: { articles: Article[] }) {
                           }}
                           className="block rounded p-1.5 transition hover:bg-[var(--bg)]"
                         >
-                          <div className="text-[10px] font-semibold uppercase text-[var(--accent)]">
-                            {article.category}
+                          <div className="text-[10px] font-normal text-[var(--muted)]">
+                            #{String(article.category || '')
+                              .toLowerCase()
+                              .replace(/\s+/g, '')}
                           </div>
-                          <h4 className="mt-0.5 line-clamp-2 font-serif text-sm font-bold leading-snug text-[var(--text)]">
+                          <h4 className="mt-0.5 line-clamp-2 text-sm font-medium leading-snug text-[var(--text)]">
                             {article.title}
                           </h4>
                           <div className="mt-1 flex items-center gap-1 text-[10px] text-[var(--muted)]">
