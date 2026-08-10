@@ -6,6 +6,7 @@
  */
 import type { Article } from '@/data/articles';
 import { inferEditorialFocus, type EditorialFocus } from '@/lib/newsroom/diversity-guard';
+import { isWeakIllustrationUrl } from '@/lib/collectors/photo-scout';
 
 export type MixBucket =
   | 'ai_models'
@@ -114,14 +115,7 @@ function articleHeroUrl(article: Article): string | undefined {
 
 /** Logo / brand / icon tiles that read as empty illustrations on the lead. */
 export function isWeakHeroUrl(url: string): boolean {
-  const u = url.toLowerCase();
-  return (
-    /logo|favicon|sprite|wordmark|brand[-_]?mark|icon[-_]?only|\/icons?\/|apple-touch|og-default|default[-_]image|placeholder|1x1|pixel\.gif|\.svg(\?|$)/i.test(
-      u,
-    ) ||
-    /google.*logo|gstatic\.com\/.*logo|lh3\.googleusercontent\.com\/.*[-_]s\d{2,3}([?\-]|$)/i.test(u) ||
-    /unsplash\.com/i.test(u)
-  );
+  return isWeakIllustrationUrl(url);
 }
 
 export function hasDisplayWorthyImage(article: Article): boolean {

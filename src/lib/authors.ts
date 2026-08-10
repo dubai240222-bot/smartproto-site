@@ -92,6 +92,13 @@ export const AUTHOR_ROSTER: EditorialAuthor[] = [
     agentId: 'factory-shift',
     bio: 'Американская лента релизов — полезные новинки без блогерского пафоса.',
   },
+  {
+    id: 'mira-soloveva',
+    name: 'Мира Соловьёва',
+    desk: 'Photo desk',
+    agentId: 'photo-editor',
+    bio: 'Фоторедактор SmartProto: реальное фото устройства важнее красивого логотипа.',
+  },
 ];
 
 const BY_ID = new Map(AUTHOR_ROSTER.map((a) => [a.id, a]));
