@@ -48,6 +48,134 @@ function cardByline(article: Article): string {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Shared helpers                                                             */
+/* -------------------------------------------------------------------------- */
+
+function articleHeroUrl(article: { imageUrl?: string; images?: { url: string; role: string }[] }): string | undefined {
+  return article.images?.find((i) => i.role === 'hero')?.url || article.imageUrl;
+}
+
+function hasHeroImage(article: Article): boolean {
+  const url = articleHeroUrl(article);
+  return Boolean(url && String(url).trim());
+}
+
+/* -------------------------------------------------------------------------- */
+/* SP-A-066 — Homepage editorial levels: LEAD / CARD / QUICK                  */
+/* -------------------------------------------------------------------------- */
+
+/** LEAD: large hero story (~2/3 of top band). */
+export function LeadStory({ article }: { article: Article }) {
+  const hero = articleHeroUrl(article);
+  return (
+    <article className="group space-y-2.5">
+      <Link href={`/articles/${article.slug}`} className="block" aria-label={article.title}>
+        <MediaPlaceholder
+          category={article.category}
+          title={article.title}
+          tags={article.tags}
+          summary={article.summary}
+          imageUrl={hero}
+          aspectRatio="aspect-[16/9]"
+          compactFallback
+          className="rounded"
+        />
+      </Link>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <CategoryTags category={article.category} />
+        <time className="text-[10px] font-medium text-[var(--muted)] sm:text-[11px]">
+          {formatPublishedAt(article.publishedAt)}
+        </time>
+      </div>
+      <h1 className="font-serif text-xl font-black leading-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-2xl lg:text-[1.75rem] lg:leading-[1.15]">
+        <Link href={`/articles/${article.slug}`}>{article.title}</Link>
+      </h1>
+      <p className="line-clamp-3 text-sm leading-relaxed text-[var(--muted)] sm:text-[15px]">
+        {article.summary}
+      </p>
+    </article>
+  );
+}
+
+/** LEAD rail: compact important items without large images. */
+export function LeadRailItem({ article }: { article: Article }) {
+  return (
+    <article className="group border-b border-[var(--border)] py-2.5 last:border-b-0 last:pb-0 first:pt-0">
+      <div className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+        <CategoryTags category={article.category} />
+        <span className="text-[10px] text-[var(--muted)]">{formatPublishedAt(article.publishedAt)}</span>
+      </div>
+      <h2 className="font-serif text-sm font-bold leading-snug text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-[15px]">
+        <Link href={`/articles/${article.slug}`}>{article.title}</Link>
+      </h2>
+    </article>
+  );
+}
+
+/** CARD: equal grid cell — image + category + headline + time. */
+export function GridStoryCard({ article }: { article: Article }) {
+  const hero = articleHeroUrl(article);
+  const withImage = hasHeroImage(article);
+
+  return (
+    <article className="group flex flex-col">
+      <Link href={`/articles/${article.slug}`} className="block" aria-label={article.title}>
+        {withImage ? (
+          <MediaPlaceholder
+            category={article.category}
+            title={article.title}
+            tags={article.tags}
+            summary={article.summary}
+            imageUrl={hero}
+            aspectRatio="aspect-[16/10]"
+            className="rounded"
+          />
+        ) : (
+          <MediaPlaceholder
+            category={article.category}
+            title={article.title}
+            tags={article.tags}
+            summary={article.summary}
+            aspectRatio="aspect-[16/10]"
+            compactFallback
+            className="rounded"
+          />
+        )}
+      </Link>
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-1.5">
+        <CategoryTags category={article.category} />
+        <time className="text-[10px] text-[var(--muted)]">{formatPublishedAt(article.publishedAt)}</time>
+      </div>
+      <h3 className="mt-1 font-serif text-sm font-bold leading-snug text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-[15px]">
+        <Link href={`/articles/${article.slug}`} className="line-clamp-3">
+          {article.title}
+        </Link>
+      </h3>
+    </article>
+  );
+}
+
+/** QUICK: short text-only note — no large image required. */
+export function QuickNewsBlock({ article }: { article: Article }) {
+  return (
+    <article className="group flex h-full flex-col rounded border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 sm:px-3.5 sm:py-3">
+      <div className="mb-1.5 flex items-center gap-1.5">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--accent)]">Быстро</span>
+        <span className="text-[10px] text-[var(--muted)]">{formatPublishedAt(article.publishedAt)}</span>
+      </div>
+      <h3 className="font-serif text-sm font-bold leading-snug text-[var(--text)] transition-colors group-hover:text-[var(--accent)]">
+        <Link href={`/articles/${article.slug}`} className="line-clamp-3">
+          {article.title}
+        </Link>
+      </h3>
+      <p className="mt-1.5 line-clamp-2 text-[11px] leading-relaxed text-[var(--muted)] sm:text-xs">
+        {article.summary}
+      </p>
+    </article>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /* 1. Standard Article Card (Refreshed for light/dark theme CSS variables)   */
 /* -------------------------------------------------------------------------- */
 type ArticleCardVariant = 'default' | 'featured' | 'compact';
@@ -57,10 +185,6 @@ interface ArticleCardProps {
   variant?: ArticleCardVariant;
   eyebrow?: string;
   className?: string;
-}
-
-function articleHeroUrl(article: { imageUrl?: string; images?: { url: string; role: string }[] }): string | undefined {
-  return article.images?.find((i) => i.role === 'hero')?.url || article.imageUrl;
 }
 
 export function ArticleCard({ article, variant = 'default', eyebrow, className }: ArticleCardProps) {
