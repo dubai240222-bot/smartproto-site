@@ -47,6 +47,10 @@ const FORCED_DEADLINE_MS = Number(process.env.SMARTPROTO_FORCED_DEADLINE_MS || 1
 const FORCED_SCOUT_THRESHOLD = process.env.SMARTPROTO_FORCED_SCOUT_THRESHOLD || '25';
 const POLL_MS = 15_000;
 
+/** SP-A-074 — nightly retention (~01:00 server local time). Default ON. */
+const RETENTION_ENABLED = (process.env.SMARTPROTO_RETENTION_ENABLED ?? 'true').toLowerCase() !== 'false';
+const RETENTION_HOUR = Number(process.env.SMARTPROTO_RETENTION_HOUR ?? 1);
+
 mkdirSync(DATA_DIR, { recursive: true });
 
 function readMode(): Mode {
@@ -82,6 +86,9 @@ interface WorkerState {
   forcedPublished?: number;
   testAutoTicks?: number;
   testAutoSetAt?: string;
+  /** SP-A-074 — last successful retention cleanup (ISO). */
+  lastRetentionAt?: string;
+  lastRetentionStatus?: string;
 }
 
 function readState(): WorkerState {
@@ -151,7 +158,59 @@ function isDue(lastIso: string | undefined, intervalMs: number): boolean {
   return Date.now() - last >= intervalMs;
 }
 
+function retentionDueToday(lastRetentionAt?: string, now = new Date()): boolean {
+  if (now.getHours() !== RETENTION_HOUR) return false;
+  if (!lastRetentionAt) return true;
+  const last = new Date(lastRetentionAt);
+  if (!Number.isFinite(last.getTime())) return true;
+  return (
+    last.getFullYear() !== now.getFullYear() ||
+    last.getMonth() !== now.getMonth() ||
+    last.getDate() !== now.getDate()
+  );
+}
+
+/** SP-A-074 — once/day cleanup; independent of AUTO news ticks (no hourly spam). */
+function runRetentionCleanup(): Promise<{ ok: boolean }> {
+  return new Promise((resolve) => {
+    log(
+      `SP-A-074 retention cleanup (hour=${RETENTION_HOUR}, days=${process.env.SMARTPROTO_RETENTION_DAYS || 10}, min=${process.env.SMARTPROTO_MIN_ARTICLES || 100}, max=${process.env.SMARTPROTO_MAX_DELETE_PER_RUN || 25})…`,
+    );
+    const child = spawn('npx', ['tsx', 'scripts/run-retention-cleanup.ts', '--execute'], {
+      cwd: process.cwd(),
+      env: {
+        ...process.env,
+        ARTICLES_STORE: 'sqlite',
+        SMARTPROTO_DB_PATH: process.env.SMARTPROTO_DB_PATH || '/app/data/smartproto.db',
+        SMARTPROTO_MEDIA_DIR: process.env.SMARTPROTO_MEDIA_DIR || '/app/public/media',
+        SMARTPROTO_DATA_DIR: process.env.SMARTPROTO_DATA_DIR || DATA_DIR,
+      },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    child.stdout?.on('data', (buf: Buffer) => process.stdout.write(buf));
+    child.stderr?.on('data', (buf: Buffer) => process.stderr.write(buf));
+    child.on('exit', (code) => resolve({ ok: code === 0 }));
+    child.on('error', () => resolve({ ok: false }));
+  });
+}
+
+async function maybeRetentionCleanup(): Promise<void> {
+  if (!RETENTION_ENABLED) return;
+  const state = readState();
+  if (!retentionDueToday(state.lastRetentionAt)) return;
+  const { ok } = await runRetentionCleanup();
+  writeState({
+    lastRetentionAt: new Date().toISOString(),
+    lastRetentionStatus: ok ? 'ok' : 'error',
+  });
+  log(`SP-A-074 retention cleanup finished: ${ok ? 'ok' : 'error'}`);
+}
+
 async function loopOnce(): Promise<void> {
+  // Retention runs even when editorial mode is OFF so disk stays bounded
+  // without requiring AUTO ticks — still only once per night.
+  await maybeRetentionCleanup();
+
   const mode = readMode();
 
   if (mode === 'off') {
