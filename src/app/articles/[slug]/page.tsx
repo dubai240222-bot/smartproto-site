@@ -222,6 +222,17 @@ export default async function ArticlePage({
           {/* 4. Byline · date · read time */}
           <div className="mt-4 flex flex-wrap items-center gap-4 border-b border-[var(--border)] pb-6 text-xs text-[var(--muted)]">
             <span>{formatAuthorCredit(resolveAuthorForArticle(article).name, formatPublishedAt(article.publishedAt))}</span>
+            {/^AUTHOR_ARTICLE$/i.test(article.category) ? (
+              <>
+                <span>•</span>
+                <span>Авторская статья</span>
+              </>
+            ) : /^REVIEW_OPINION$/i.test(article.category) ? (
+              <>
+                <span>•</span>
+                <span>Обзор / мнение</span>
+              </>
+            ) : null}
             <span>•</span>
             <span className="flex items-center gap-1">
               <Clock className="h-3.5 w-3.5" />

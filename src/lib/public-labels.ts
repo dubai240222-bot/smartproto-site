@@ -21,6 +21,11 @@ const CATEGORY_MAP: Record<string, string> = {
   здоровье: 'Здоровье',
   дом: 'Дом',
   игры: 'Игры',
+  // SP-A-075 — Author Door
+  author_article: 'Авторская статья',
+  review_opinion: 'Обзор / мнение',
+  'авторская статья': 'Авторская статья',
+  'обзор / мнение': 'Обзор / мнение',
 };
 
 /** Map a raw category fragment to a reader-friendly label. */
