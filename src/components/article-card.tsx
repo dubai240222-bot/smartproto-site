@@ -5,26 +5,47 @@ import { formatPublishedAt } from '@/lib/article-utils';
 import { formatAuthorByline, resolveAuthorForArticle } from '@/lib/authors';
 import { MediaPlaceholder, MediaThumb } from '@/components/media-placeholder';
 import { toPublicCategory } from '@/lib/public-labels';
+import { displayHeroUrl } from '@/lib/homepage-editorial-mix';
 
 export function CategoryTags({
   category,
   className = '',
+  tone = 'subtle',
 }: {
   category: string;
   className?: string;
+  /** subtle = near-muted meta; hash = soft hashtag under title */
+  tone?: 'subtle' | 'hash';
 }) {
   // SP-A-050: never show КИТАЙ / Qwen / factory marks on cards.
   const publicCat = toPublicCategory(category);
-  const parts = publicCat ? [publicCat] : ['Гаджеты'];
+  const parts = publicCat ? [publicCat] : [];
+  if (parts.length === 0) return null;
+
+  if (tone === 'hash') {
+    return (
+      <div className={`flex flex-wrap items-center gap-1.5 ${className}`}>
+        {parts.map((tag) => (
+          <Link
+            key={tag}
+            href={`/?category=${encodeURIComponent(tag)}`}
+            className="text-[11px] font-normal text-[var(--muted)]/70 transition-colors hover:text-[var(--accent)]"
+          >
+            #{tag.toLowerCase().replace(/\s+/g, '')}
+          </Link>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className={`flex flex-wrap items-center gap-1.5 ${className}`}>
       {parts.map((tag, idx) => (
         <span key={tag} className="inline-flex items-center">
-          {idx > 0 && <span className="mr-1.5 text-[var(--muted)] opacity-50">•</span>}
+          {idx > 0 && <span className="mr-1.5 text-[var(--muted)]/40">·</span>}
           <Link
             href={`/?category=${encodeURIComponent(tag)}`}
-            className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[var(--accent)] hover:underline hover:text-[var(--accent-hover)] transition-colors"
+            className="text-[10px] font-normal uppercase tracking-wide text-[var(--muted)]/55 transition-colors hover:text-[var(--muted)]"
           >
             {tag}
           </Link>
@@ -48,6 +69,145 @@ function cardByline(article: Article): string {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Shared helpers                                                             */
+/* -------------------------------------------------------------------------- */
+
+function articleHeroUrl(article: { imageUrl?: string; images?: { url: string; role: string }[] }): string | undefined {
+  return article.images?.find((i) => i.role === 'hero')?.url || article.imageUrl;
+}
+
+function hasHeroImage(article: Article): boolean {
+  const url = articleHeroUrl(article);
+  return Boolean(url && String(url).trim());
+}
+
+/* -------------------------------------------------------------------------- */
+/* SP-A-066 — Homepage editorial levels: LEAD / CARD / QUICK                  */
+/* -------------------------------------------------------------------------- */
+
+/** LEAD: large hero story — shorter image, skip weak logo tiles. */
+export function LeadStory({ article }: { article: Article }) {
+  const hero = displayHeroUrl(article);
+  return (
+    <article className="group space-y-1.5">
+      <Link href={`/articles/${article.slug}`} className="block overflow-hidden" aria-label={article.title}>
+        <MediaPlaceholder
+          category={article.category}
+          title={article.title}
+          tags={article.tags}
+          summary={article.summary}
+          imageUrl={hero}
+          aspectRatio="aspect-[2/1] sm:aspect-[21/9]"
+          compactFallback
+          className="rounded-sm"
+        />
+      </Link>
+      <div className="flex flex-wrap items-baseline justify-between gap-2 pt-0.5">
+        <time className="text-[11px] font-normal tabular-nums text-[var(--muted)]">
+          {formatPublishedAt(article.publishedAt)}
+        </time>
+        <CategoryTags category={article.category} tone="hash" />
+      </div>
+      <h1 className="text-[1.25rem] font-semibold leading-[1.2] tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-[1.65rem] lg:text-[1.85rem]">
+        <Link href={`/articles/${article.slug}`}>{article.title}</Link>
+      </h1>
+      <p className="line-clamp-2 text-[13px] font-normal leading-snug text-[var(--muted)] sm:text-sm">
+        {article.summary}
+      </p>
+    </article>
+  );
+}
+
+/** LEAD rail / past feed: compact row with small thumb. */
+export function LeadRailItem({ article }: { article: Article }) {
+  const hero = displayHeroUrl(article);
+  return (
+    <article className="group flex items-start gap-2.5 border-b border-[var(--border)] py-2 last:border-b-0 last:pb-0 first:pt-0">
+      <Link href={`/articles/${article.slug}`} className="shrink-0" aria-label={article.title}>
+        <MediaThumb
+          imageUrl={hero}
+          title={article.title}
+          category={article.category}
+          tags={article.tags}
+          summary={article.summary}
+          className="h-[52px] w-[72px] sm:h-[56px] sm:w-[80px]"
+        />
+      </Link>
+      <div className="min-w-0 flex-1">
+        <time className="mb-0.5 block text-[10px] font-normal tabular-nums text-[var(--muted)]">
+          {formatPublishedAt(article.publishedAt)}
+        </time>
+        <h2 className="text-[13px] font-medium leading-snug tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-[14px]">
+          <Link href={`/articles/${article.slug}`} className="line-clamp-3">
+            {article.title}
+          </Link>
+        </h2>
+      </div>
+    </article>
+  );
+}
+
+/** CARD: equal grid cell — skip weak logos; denser meta. */
+export function GridStoryCard({ article }: { article: Article }) {
+  const hero = displayHeroUrl(article);
+
+  return (
+    <article className="group flex flex-col">
+      <Link href={`/articles/${article.slug}`} className="block" aria-label={article.title}>
+        <MediaPlaceholder
+          category={article.category}
+          title={article.title}
+          tags={article.tags}
+          summary={article.summary}
+          imageUrl={hero}
+          aspectRatio="aspect-[16/10]"
+          compactFallback={!hero}
+          className="rounded-sm"
+        />
+      </Link>
+      <time className="mt-1.5 text-[10px] font-normal tabular-nums text-[var(--muted)]">
+        {formatPublishedAt(article.publishedAt)}
+      </time>
+      <h3 className="mt-0.5 text-[13px] font-medium leading-snug tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-[14px]">
+        <Link href={`/articles/${article.slug}`} className="line-clamp-3">
+          {article.title}
+        </Link>
+      </h3>
+      <CategoryTags category={article.category} tone="hash" className="mt-1" />
+    </article>
+  );
+}
+
+/** QUICK: short note with small photo. */
+export function QuickNewsBlock({ article }: { article: Article }) {
+  const hero = displayHeroUrl(article);
+  return (
+    <article className="group flex h-full gap-2.5 border border-[var(--border)] bg-[var(--surface)] p-2 sm:p-2.5">
+      <Link href={`/articles/${article.slug}`} className="shrink-0" aria-label={article.title}>
+        <MediaThumb
+          imageUrl={hero}
+          title={article.title}
+          category={article.category}
+          tags={article.tags}
+          summary={article.summary}
+          className="h-[64px] w-[88px] sm:h-[72px] sm:w-[96px]"
+        />
+      </Link>
+      <div className="min-w-0 flex-1">
+        <time className="mb-1 block text-[10px] font-normal tabular-nums text-[var(--muted)]">
+          {formatPublishedAt(article.publishedAt)}
+        </time>
+        <h3 className="text-[13px] font-medium leading-snug tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-sm">
+          <Link href={`/articles/${article.slug}`} className="line-clamp-3">
+            {article.title}
+          </Link>
+        </h3>
+      </div>
+    </article>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /* 1. Standard Article Card (Refreshed for light/dark theme CSS variables)   */
 /* -------------------------------------------------------------------------- */
 type ArticleCardVariant = 'default' | 'featured' | 'compact';
@@ -57,10 +217,6 @@ interface ArticleCardProps {
   variant?: ArticleCardVariant;
   eyebrow?: string;
   className?: string;
-}
-
-function articleHeroUrl(article: { imageUrl?: string; images?: { url: string; role: string }[] }): string | undefined {
-  return article.images?.find((i) => i.role === 'hero')?.url || article.imageUrl;
 }
 
 export function ArticleCard({ article, variant = 'default', eyebrow, className }: ArticleCardProps) {
@@ -250,24 +406,22 @@ export function ArsTechnicaCard({ article }: { article: Article }) {
 /* -------------------------------------------------------------------------- */
 /* 4. Quick Update Item: Minimal Chronological Feed Row (No heavy card)       */
 /* -------------------------------------------------------------------------- */
+/** Category / archive list row — denser editorial, same DNA as LeadRailItem. */
 export function QuickUpdateItem({ article }: { article: Article }) {
-  const hero = articleHeroUrl(article);
+  const hero = displayHeroUrl(article);
   return (
-    <article className="group py-3.5 border-b border-[var(--border)] last:border-b-0 flex items-start gap-3 sm:gap-5">
-      <div className="flex-1 space-y-1.5 min-w-0">
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="text-[11px] font-mono font-semibold text-[var(--muted)]">
-            {cardByline(article)}
-          </span>
-          <span className="text-[var(--muted)] opacity-40">•</span>
-          <CategoryTags category={article.category} />
+    <article className="group flex items-start gap-3 border-b border-[var(--border)] py-3 last:border-b-0 sm:gap-4">
+      <div className="min-w-0 flex-1 space-y-1">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+          <time className="text-[10px] font-normal tabular-nums text-[var(--muted)]">
+            {formatPublishedAt(article.publishedAt)}
+          </time>
+          <CategoryTags category={article.category} tone="hash" />
         </div>
-
-        <h3 className="font-serif text-base sm:text-lg font-bold text-[var(--text)] transition-colors group-hover:text-[var(--accent)] leading-snug">
+        <h3 className="text-[14px] font-medium leading-snug tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-[15px]">
           <Link href={`/articles/${article.slug}`}>{article.title}</Link>
         </h3>
-
-        <p className="text-xs sm:text-sm text-[var(--muted)] leading-relaxed line-clamp-2 max-w-4xl">
+        <p className="line-clamp-2 max-w-3xl text-[12px] font-normal leading-snug text-[var(--muted)] sm:text-[13px]">
           {article.summary}
         </p>
       </div>
@@ -278,7 +432,7 @@ export function QuickUpdateItem({ article }: { article: Article }) {
           category={article.category}
           tags={article.tags}
           summary={article.summary}
-          className="w-[112px] h-[84px] sm:w-[180px] sm:h-[120px] md:w-[200px] md:h-[132px]"
+          className="h-[72px] w-[96px] sm:h-[88px] sm:w-[120px]"
         />
       </Link>
     </article>

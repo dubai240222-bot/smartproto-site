@@ -5,10 +5,10 @@
  *  1) Extract visual entity (company/brand/model/object)
  *  2) Mine 10–20 candidates from source + official/newsroom/lab/trusted pages
  *     (NO paid search API; NO invented search results)
- *  3) AI Photo Editor picks ≤3 (hero/secondary/detail) or NONE
+ *  3) Photo Editor desk (фоторедактор) picks ≤3 real photos or NONE
  *  4) Download locally — hotlink never required
  *
- * WRONG IMAGE is worse than NO IMAGE. Rumors / ambiguous models → reject.
+ * WRONG IMAGE / empty logo tile is worse than NO IMAGE. Rumors / ambiguous models → reject.
  */
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -65,7 +65,18 @@ export interface PhotoPipelineReport {
 }
 
 const IGNORE_SRC_RE =
-  /avatar|logo|icon|qrcode|1x1|pixel|spinner|badge|sprite|placeholder|emoji|gravatar|wp-includes|favicon/i;
+  /avatar|logo|icon|qrcode|1x1|pixel|spinner|badge|sprite|placeholder|emoji|gravatar|wp-includes|favicon|wordmark|brand[-_]?mark|apple-touch|og-default|default[-_]image/i;
+
+/** Empty brand tiles / logos that look like weak illustrations on the homepage. */
+export function isWeakIllustrationUrl(url: string): boolean {
+  const u = url.toLowerCase();
+  return (
+    IGNORE_SRC_RE.test(u) ||
+    /\.svg(\?|$)/i.test(u) ||
+    /google.*logo|gstatic\.com\/.*logo|lh3\.googleusercontent\.com\/.*[-_]s\d{2,3}([?\-]|$)/i.test(u) ||
+    /unsplash\.com/i.test(u)
+  );
+}
 
 const SCREENSHOT_MARKER_RE =
   /小时前|分钟前|微博正文|跑分|转发|评论|点赞|geekbench|antutu|benchmark score|single-core|multi-core|截图|screenshot|price\s*table|\$\d{2,}\.\d{2}/i;
@@ -405,25 +416,34 @@ interface EditorPick {
 }
 
 /**
- * AI Photo Editor — selects ≤3 URLs from mined candidates. May return none.
+ * AI Photo Editor desk (фоторедактор редакции) — picks ≤3 real product/scene photos.
+ * Empty logo tiles / brand marks are rejected. WRONG IMAGE is worse than NO IMAGE.
  */
 export async function editPhotoSelection(opts: {
   entity: PhotoEntity;
   title: string;
   candidates: PhotoCandidate[];
 }): Promise<{ picks: { url: string; role: ScoutImage['role'] }[]; rejected: { url: string; reason: string }[]; reason: string }> {
-  if (!opts.candidates.length) {
-    return { picks: [], rejected: [], reason: 'no candidates' };
+  const usable = opts.candidates.filter((c) => !isWeakIllustrationUrl(c.url) && looksLikeRasterPhoto(c.url));
+  if (!usable.length) {
+    return {
+      picks: [],
+      rejected: opts.candidates.map((c) => ({
+        url: c.url,
+        reason: isWeakIllustrationUrl(c.url) ? 'weak logo/icon illustration' : 'no usable raster',
+      })),
+      reason: 'photo desk: no usable product photos in candidates',
+    };
   }
   if (opts.entity.status === 'rumor' && !opts.entity.model) {
     return {
       picks: [],
-      rejected: opts.candidates.map((c) => ({ url: c.url, reason: 'rumor without confirmed model' })),
+      rejected: usable.map((c) => ({ url: c.url, reason: 'rumor without confirmed model' })),
       reason: 'rumor strict NO IMAGE',
     };
   }
 
-  const catalog = opts.candidates.slice(0, 20).map((c, i) => ({
+  const catalog = usable.slice(0, 20).map((c, i) => ({
     id: i + 1,
     url: c.url,
     tier: c.tier,
@@ -441,19 +461,21 @@ export async function editPhotoSelection(opts: {
         {
           role: 'system',
           content: [
-            'You are the SmartProto Photo Editor. Pick at most 3 product photos.',
-            'WRONG IMAGE is worse than NO IMAGE. If unsure the photo shows THIS exact product, reject all (hero/secondary/detail = null).',
+            'You are the SmartProto Photo Editor desk (фоторедактор редакции).',
+            'Give the homepage a REAL photo of the product, robot, device, or lab demo — never a logo tile.',
+            'WRONG IMAGE or empty brand illustration is worse than NO IMAGE.',
+            'Pick at most 3 photos. Prefer: clear full product/device shot, second angle, meaningful detail.',
+            'HARD REJECT: logos, icons, wordmarks, Google/G letter tiles, SVG, UI screenshots, social banners, price tables, watermarks, wrong model, near-duplicates, abstract brand art with no device.',
+            'If only logo/brand tiles remain → return all null (NO IMAGE).',
             'Return ONLY compact JSON: {"hero":url|null,"secondary":url|null,"detail":url|null,"rejected":[{"url":"...","reason":"..."}],"reason":"..."}',
-            'hero = best clear full view; secondary = other angle/use; detail = meaningful close-up only.',
-            'Reject: UI/social screenshots, SVG, banners, price tables, overlays, watermarks, wrong generation/model, near-duplicates.',
-            'Prefer official/newsroom/lab tiers. URLs MUST be copied exactly from candidates. Do not invent URLs.',
-            'Keep rejected list short (max 6 items) to avoid truncation.',
+            'URLs MUST be copied exactly from candidates. Do not invent URLs. Keep rejected ≤6.',
           ].join(' '),
         },
         {
           role: 'user',
           content: clampText(
             JSON.stringify({
+              desk: 'Photo Editor',
               articleTitle: opts.title,
               entity: {
                 company: opts.entity.company,
@@ -478,12 +500,18 @@ export async function editPhotoSelection(opts: {
     });
     const raw = completion.choices[0]?.message?.content || '';
     const parsed = parseJsonObject<EditorPick>(raw);
-    const allowed = new Set(opts.candidates.map((c) => c.url));
+    const allowed = new Set(usable.map((c) => c.url));
     const roles: ScoutImage['role'][] = ['hero', 'secondary', 'detail'];
     const picks: { url: string; role: ScoutImage['role'] }[] = [];
     for (const role of roles) {
       const u = parsed[role];
-      if (typeof u === 'string' && allowed.has(u) && looksLikeRasterPhoto(u) && !picks.some((p) => p.url === u)) {
+      if (
+        typeof u === 'string' &&
+        allowed.has(u) &&
+        looksLikeRasterPhoto(u) &&
+        !isWeakIllustrationUrl(u) &&
+        !picks.some((p) => p.url === u)
+      ) {
         picks.push({ url: u, role });
       }
     }
@@ -493,41 +521,40 @@ export async function editPhotoSelection(opts: {
           .filter((r) => r.url)
           .slice(0, 10)
       : [];
-    // Explicit AI NO IMAGE (all null) must win — do not heuristic-fill.
     if (!picks.length) {
       return {
         picks: [],
         rejected:
           rejected.length > 0
             ? rejected
-            : opts.candidates.map((c) => ({ url: c.url, reason: parsed.reason || 'ai editor: no safe pick' })),
-        reason: parsed.reason || 'ai editor returned no safe images',
+            : usable.map((c) => ({ url: c.url, reason: parsed.reason || 'photo desk: no safe pick' })),
+        reason: parsed.reason || 'photo desk returned no safe images',
       };
     }
-    return { picks, rejected, reason: parsed.reason || 'ai editor' };
+    return { picks, rejected, reason: parsed.reason || 'photo desk' };
   } catch (err) {
     console.log(
       `[photo-editor] AI failed, conservative heuristic: ${err instanceof Error ? err.message : String(err)}`,
     );
-    // Conservative: only top-tier raster URLs that look like product shots, max 2.
-    const safe = opts.candidates.filter(
+    const safe = usable.filter(
       (c) =>
-        looksLikeRasterPhoto(c.url) &&
         (c.tier === 'official' ||
           c.tier === 'newsroom' ||
           c.tier === 'trusted_media' ||
-          c.tier === 'source_article') &&
-        /product|upload|wp-content|brightspot|neuromotor|wristband|keyboard|bassinet|irrigation|rainpoint|altar|aero/i.test(
-          c.url + c.context,
-        ),
+          c.tier === 'source_article' ||
+          c.tier === 'lab' ||
+          c.tier === 'presskit') &&
+        !isWeakIllustrationUrl(c.url),
     );
-    const picks = (safe.length ? safe : opts.candidates.filter((c) => looksLikeRasterPhoto(c.url)))
-      .slice(0, 2)
-      .map((c, i) => ({
-        url: c.url,
-        role: (['hero', 'secondary'] as ScoutImage['role'][])[i],
-      }));
-    return { picks, rejected: [], reason: 'conservative heuristic after AI error' };
+    const picks = safe.slice(0, 2).map((c, i) => ({
+      url: c.url,
+      role: (['hero', 'secondary'] as ScoutImage['role'][])[i],
+    }));
+    return {
+      picks,
+      rejected: [],
+      reason: picks.length ? 'photo desk heuristic fallback' : 'photo desk AI+heuristic empty',
+    };
   }
 }
 
@@ -800,15 +827,17 @@ export async function resolveArticlePhotos(opts: {
     }
   }
 
-  // Drop screenshot / UI leftovers even if an editor picked them.
+  // Drop screenshot / UI leftovers and weak logo tiles even if an editor picked them.
   edited = {
     ...edited,
     picks: edited.picks.filter(
-      (p) => !/screenshot|screen%20shot|screen_shot|ui.?capture|comments?/i.test(p.url),
+      (p) =>
+        !/screenshot|screen%20shot|screen_shot|ui.?capture|comments?/i.test(p.url) &&
+        !isWeakIllustrationUrl(p.url),
     ),
   };
-  if (!edited.picks.length && mined.candidates.length && researchMode) {
-    notes.push('post-filter removed screenshot/UI picks — NO IMAGE');
+  if (!edited.picks.length && mined.candidates.length) {
+    notes.push('photo desk post-filter removed weak logo/UI picks');
   }
 
   const selected = edited.picks.length
