@@ -7,6 +7,8 @@
  * still reject SEO spam, gambling, crypto pumps, generic roundups.
  */
 
+import { shouldHardRejectGreyNoise } from './human-priority-gate';
+
 export type MarketSaturation = 'low' | 'medium' | 'high';
 export type EditorialMode = 'gadget' | 'app' | 'ai_radar';
 
@@ -688,13 +690,13 @@ export function hardRejectTopic(
     };
   }
 
-  // SP-A-073: gray everyday clutter — mice, speakers, Indian budget phones, cars…
-  // No consumer-angle salvage: readers should not spend time on this.
-  if (isGrayCommodityHard(title, text)) {
+  // SP-A-071 Human Priority Gate: grey gadget noise without a human door → reject.
+  // Assistive / democratizing exceptions pass when detectHumanDoor ≠ none.
+  if (shouldHardRejectGreyNoise(title, text)) {
     return {
       reject: true,
       reason:
-        'Жёсткий reject: бытовая серость (мышь/колонка/бюджетный телефон/клавиатура/авто) без сенсации — SP-A-073.',
+        'Жёсткий reject: grey gadget noise без человеческой двери (мышь/аудио/spec refresh/factory arm) — SP-A-071.',
       rejectCode: 'GRAY_COMMODITY',
     };
   }

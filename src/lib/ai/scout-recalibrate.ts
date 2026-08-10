@@ -6,10 +6,13 @@
 import {
   hasStrongConsumerAngle,
   isCommodityLowWow,
-  isGrayCommodityHard,
   isKeepWowException,
   isOverplayedMassTopic,
 } from './hard-reject';
+import {
+  applyHumanPriorityGate,
+  isGreyGadgetNoise,
+} from './human-priority-gate';
 
 export type ProductStatus =
   | 'AVAILABLE'
@@ -42,12 +45,8 @@ const SMART_HOME_ROUTINE_RE =
 
 export function looksCommodityRoutine(title: string, text = ''): boolean {
   const hay = `${title}\n${text}`;
-  if (isKeepWowException(title, text) || hasStrongConsumerAngle(title, text)) {
-    // Gray hard commodities still count as routine for Scout penalty.
-    if (isGrayCommodityHard(title, text)) return true;
-    return false;
-  }
-  if (isGrayCommodityHard(title, text)) return true;
+  if (isGreyGadgetNoise(title, text)) return true;
+  if (isKeepWowException(title, text) || hasStrongConsumerAngle(title, text)) return false;
   if (isCommodityLowWow(title, text) || isOverplayedMassTopic(title, text)) return true;
   return COMMODITY_ROUTINE_RE.test(hay);
 }
@@ -98,35 +97,40 @@ function clamp(n: number, lo: number, hi: number): number {
 }
 
 /**
- * Apply anti-commodity penalty after model parts sum.
- * Wrong product / routine electronics should not sit at 80+.
+ * SP-A-071 Human Priority Gate + legacy anti-commodity caps.
+ * Threshold env (70) unchanged — we only demote scores.
  */
 export function applyAntiCommodityPenalty(
   rawScore: number,
   title: string,
   text = '',
 ): { score: number; penalty: number; reason?: string } {
-  if (looksCommodityRoutine(title, text)) {
-    // Routine phones/lineups/leaks → land in ~0–25 band.
+  const priority = applyHumanPriorityGate(rawScore, title, text);
+  let score = priority.score;
+  let penalty = priority.penalty;
+  let reason = priority.reason;
+
+  // Extra legacy caps only if priority gate did not already block/demote harder.
+  if (!priority.blockPublish && looksCommodityRoutine(title, text) && priority.door === 'none') {
     const targetCap = 25;
-    const penalty = Math.max(0, rawScore - targetCap);
-    return {
-      score: Math.min(rawScore, targetCap),
-      penalty,
-      reason: 'anti-commodity (routine product / lineup / specs refresh)',
-    };
+    if (score > targetCap) {
+      penalty += score - targetCap;
+      score = targetCap;
+      reason = reason
+        ? `${reason}; anti-commodity cap`
+        : 'anti-commodity (routine product / lineup / specs refresh)';
+    }
   }
-  if (looksSmartHomeRoutine(title, text)) {
-    // RainPoint-class → ~0–35.
+  if (!priority.blockPublish && looksSmartHomeRoutine(title, text) && priority.door === 'none') {
     const targetCap = 35;
-    const penalty = Math.max(0, rawScore - targetCap);
-    return {
-      score: Math.min(rawScore, targetCap),
-      penalty,
-      reason: 'smart-home routine (not enough surprise)',
-    };
+    if (score > targetCap) {
+      penalty += score - targetCap;
+      score = targetCap;
+      reason = reason ? `${reason}; smart-home routine` : 'smart-home routine (not enough surprise)';
+    }
   }
-  return { score: rawScore, penalty: 0 };
+
+  return { score, penalty, reason };
 }
 
 /**
@@ -188,34 +192,28 @@ export function applySoftNoveltyAdjust(
 }
 
 export const SCOUT_SYSTEM_PROMPT_GADGET_V2 = [
-  'Ты разведчик SmartProto. Нужны СЕНСАЦИИ и сильные истории: роботы, Physical AI, необычные изобретения,',
-  'AI-демо с понятным «вау», research с ясной пользой — НЕ бытовая серость.',
+  'Ты разведчик SmartProto. Нужны истории с человеческой дверью: экономия денег/времени,',
+  'один человек вместо команды/специалиста, услуга домой, самостоятельность, новая способность,',
+  'снятие рутины — НЕ серая бытовуха.',
   'HARD: конкретный объект интереса (устройство / прототип / research demo / app). Покупка сегодня НЕ обязательна.',
   'Публичный текст БЕЗ цен и БЕЗ ссылок.',
   '',
   'Оценка 0–100 СТРОГО суммой частей (новые веса SP-A-065):',
-  'humanSurprise 0–30 — обычный человек: «неужели такое уже существует?» / «хочу переслать другу»',
-  'visualDemonstrability 0–20 — можно ли показать сильным фото/видео',
-  'everydayRelevance 0–15 — ценность понятна без техподготовки',
-  'novelty 0–15 — новая категория/способ, не «ещё одна версия»',
-  'shareability 0–10 — захочет ли человек отправить знакомому',
+  'humanSurprise 0–30 — «неужели такое уже существует?» / «перешлю другу»',
+  'visualDemonstrability 0–20 — сильное фото/видео',
+  'everydayRelevance 0–15 — понятная польза без техподготовки',
+  'novelty 0–15 — новый способ, не «ещё одна версия»',
+  'shareability 0–10 — захочет ли отправить знакомому',
   'credibility 0–10 — реальный продукт / prototype / primary research',
   '',
-  'ANTI-COMMODITY / СЕРОСТЬ → score 0–20 (почти всегда REJECT по порогу):',
-  'мыши, колонки/сабвуферы/boombox/JBL Pulse, обычные наушники TWS, механические клавиатуры,',
-  'индийские/бюджетные смартфоны (Lava/Tecno/Infinix/Micromax), очередной iQOO/Redmi battery-card,',
-  'SSD-боксы, USB-hub, автомобили/MPV, обычный smart-watering kit, merch.',
-  'Читателю НЕЗАЧЕМ тратить на это время.',
+  'GREY NOISE → очень низкий score (0–20), если нет человеческой двери:',
+  'мышь, клавиатура, колонка/сабвуфер/наушники, обычный smartphone launch, монитор/TV,',
+  'зарядка/powerbank, gaming accessory, color/spec refresh, megapixels/Hz/+N%,',
+  'factory/warehouse robot arm без прямой пользы обычному человеку.',
   '',
-  'SOFT NOVELTY (SP-A-065B): не ставь score=0 только потому что категория уже существует.',
-  'Необычное улучшение с сильным surprise (не мышь/колонка) → ориентир 40–69.',
-  '70+ только при высоком humanSurprise / shareability / настоящей новизне способа.',
-  '',
-  'ЭТАЛОНЫ: Meta gesture wristband → 80–90; humanoid / robot finger / Gemini Robotics → 80–95;',
-  'HoverAir transform camera → 70–85; RFID-on-phone research → 70–85;',
-  'JBL Pulse / AULA mouse / Lava phone / Xboom → 0–15; iQOO Z-series battery card → 0–25.',
+  'ИСКЛЮЧЕНИЕ: серый класс ОК, если есть дверь (assistive independence, clinic→home,',
+  'pro-инструмент стал доступен дома, один человек вместо команды).',
   '',
   'status: AVAILABLE | ANNOUNCED | PROTOTYPE | RESEARCH | CONCEPT | CROWDFUNDING.',
   'Не маскируй concept/crowdfunding под AVAILABLE.',
-  'REJECT серость сразу в reason; не трать высокий score на мыши и колонки.',
 ].join('\n');
