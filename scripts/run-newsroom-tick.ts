@@ -570,7 +570,8 @@ async function tryChinaPublishOnce(opts: {
     }
 
     const wc = wordCount(draft.text);
-    const minWords = opts.format === 'news' ? 40 : 120;
+    // SP-A-071: Editor targets 250–300 words; reject thin drafts early
+    const minWords = opts.format === 'news' ? 220 : 240;
     if (wc < minWords) {
       console.log(chalk.yellow(`China draft too short for ${opts.format} (${wc} < ${minWords})`));
       continue;
@@ -1199,7 +1200,8 @@ async function publishRssOnce(opts: {
       }
 
       const wc = wordCount(draft.text);
-      const minWords = opts.format === 'news' ? 40 : 120;
+      // SP-A-071: Editor targets 250–300 words; reject thin drafts early
+      const minWords = opts.format === 'news' ? 220 : 240;
       if (wc < minWords) {
         console.log(chalk.yellow(`Draft too short for ${opts.format} (${wc} < ${minWords})`));
         lastSkip = 'draft too short';
