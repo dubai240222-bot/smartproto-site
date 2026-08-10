@@ -7,6 +7,8 @@
  * still reject SEO spam, gambling, crypto pumps, generic roundups.
  */
 
+import { shouldHardRejectGreyNoise } from './human-priority-gate';
+
 export type MarketSaturation = 'low' | 'medium' | 'high';
 export type EditorialMode = 'gadget' | 'app' | 'ai_radar';
 
@@ -339,6 +341,57 @@ const COMMODITY_LOW_WOW_PATTERNS: RegExp[] = [
 ];
 
 /**
+ * SP-A-073 — gray everyday clutter readers should not spend time on.
+ * Always rejected in gadget mode (no «для дома» salvage).
+ * Mice, boomboxes/speakers/subwoofers, Indian budget phones, dull PC junk, cars-as-news.
+ */
+const GRAY_COMMODITY_HARD_PATTERNS: RegExp[] = [
+  // Mice as the product (not “replaces your mouse”)
+  /\b(gaming|wireless|wired|optical)?\s*(gaming\s+)?mouse\b|\b(игров\w*\s+)?мышь\b|\bмыши\b|\bмышек\b/i,
+  /\b(aula|logitech|razer|steelseries|glorious|lamzu)\b.{0,40}\b(mouse|мышь)/i,
+  /\b(sc\d{2,4}|g\s*pro|deathadder|viper)\b.{0,30}\b(mouse|мышь|dpi|polling)/i,
+  // Speakers / boomboxes / subwoofers / party audio
+  /\b(bluetooth\s+)?speaker\b|\bboombox\b|\bxboom\b|\bsubwoofer\b|\bсабвуфер/i,
+  /\bпортативн\w*\s+(колонк|акустик)|\bколонк[аиуе]?\b|\bакустическ\w*\s+систем/i,
+  /\bjbl\s*(pulse|flip|charge|boombox|xtreme)/i,
+  /\blg\s+xboom|\bxboom\s+blast/i,
+  // Indian / ultra-budget phone churn
+  /\b(lava|micromax|itel)\b.{0,50}\b(phone|smartphone|smart\s*\d|мобил|смартфон)/i,
+  /\blava\s+smart\b|\bmicromax\s+in\b/i,
+  /\b(tecno|infinix)\b.{0,40}\b(spark|hot|camon|smart\s*\d|бюджетн)/i,
+  /\b(бюджетн\w*\s+смартфон|budget\s+smartphone)\b/i,
+  // Dull storage / dock clutter
+  /\b(ssd\s*enclosure|nvme\s*(box|enclosure|корпус)|внешн\w*\s+ssd[- ]?бокс)\b/i,
+  /\busb[- ]?hub\b|\bcard\s*reader\b|\bкардридер\b/i,
+  // Cars / MPV as consumer “gadget” noise
+  /\b(mpv|suv|седан|кроссовер)\b/i,
+  /\b(автомобил|family\s+mpv|dongfeng|xinghai)\b/i,
+  // Generic mechanical / gaming keyboards (Altar-class ultra-thin still needs KEEP or fail — treat as gray)
+  /\b(mechanical|gaming|мембранн\w*)\s+keyboard\b|\bмеханическ\w*\s+клавиатур/i,
+  // Generic TWS earbuds
+  /\b(tws|true\s+wireless)\b.{0,40}\b(earbuds|наушник)/i,
+  /\bopen[- ]?(fit|ear)\s*2?\b.{0,40}\b(наушник|earbuds|headphones|shokz)\b/i,
+  /\bshokz\s+openfit\b/i,
+];
+
+/** “Replaces mouse/keyboard” inventions are NOT gray commodity. */
+const REPLACES_PERIPHERAL_RE =
+  /\b(replace|replaces|вместо|без\s+необходимости|отказаться\s+от)\b[\s\S]{0,40}\b(mouse|мыши|мышь|keyboard|клавиатур)/i;
+
+export function isGrayCommodityHard(title: string, text = ''): boolean {
+  if (isKeepWowException(title, text)) return false;
+  const hay = `${title}\n${text}`;
+  if (REPLACES_PERIPHERAL_RE.test(hay)) {
+    // Only speakers/phones/cars/ssd still apply
+    return GRAY_COMMODITY_HARD_PATTERNS.filter((re) => {
+      const s = re.source.toLowerCase();
+      return !/mouse|мышь|мыши|keyboard|клавиатур|aula|razer|logitech|sc\\d/i.test(s);
+    }).some((re) => re.test(hay));
+  }
+  return GRAY_COMMODITY_HARD_PATTERNS.some((re) => re.test(hay));
+}
+
+/**
  * SP-A-054 — editorial ALERT mode: interesting AI capability / invention / useful software
  * may pass without a buyable SKU (no prices/links in public copy).
  */
@@ -637,6 +690,17 @@ export function hardRejectTopic(
     };
   }
 
+  // SP-A-071 Human Priority Gate: grey gadget noise without a human door → reject.
+  // Assistive / democratizing exceptions pass when detectHumanDoor ≠ none.
+  if (shouldHardRejectGreyNoise(title, text)) {
+    return {
+      reject: true,
+      reason:
+        'Жёсткий reject: grey gadget noise без человеческой двери (мышь/аудио/spec refresh/factory arm) — SP-A-071.',
+      rejectCode: 'GRAY_COMMODITY',
+    };
+  }
+
   // SP-A-049 / SP-A-050: downrank ordinary monitors, power banks, merch, maker-tools.
   // Casio CRW-H001 / smart rings KEEP via isKeepWowException.
   if (isCommodityLowWow(title, text) && !hasStrongConsumerAngle(title, text)) {
@@ -732,6 +796,7 @@ export function looksBuyableGadget(title: string, text = '', sourceName = ''): b
     gate.rejectCode === 'NON_BUYABLE_RESEARCH' ||
     gate.rejectCode === 'NICHE_NO_CONSUMER_ANGLE' ||
     gate.rejectCode === 'COMMODITY_LOW_WOW' ||
+    gate.rejectCode === 'GRAY_COMMODITY' ||
     gate.rejectCode === 'OVERPLAYED_MASS'
   ) {
     return false;

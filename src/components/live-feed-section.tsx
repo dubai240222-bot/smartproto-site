@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowUpRight, ExternalLink, Loader2 } from 'lucide-react';
+import { ExternalLink, Loader2 } from 'lucide-react';
 
 type HackerNewsItem = {
   id: number;
@@ -17,11 +17,8 @@ type HackerNewsItem = {
 };
 
 function formatDate(unixSeconds?: number) {
-  if (!unixSeconds) {
-    return 'Unknown time';
-  }
-
-  return new Intl.DateTimeFormat('en-US', {
+  if (!unixSeconds) return '—';
+  return new Intl.DateTimeFormat('ru-RU', {
     day: '2-digit',
     month: 'short',
     hour: '2-digit',
@@ -33,6 +30,7 @@ function getOutboundUrl(item: HackerNewsItem) {
   return item.url || item.hnUrl;
 }
 
+/** Optional live HN strip — styled to match SmartProto editorial chrome. */
 export function LiveFeedSection() {
   const [items, setItems] = useState<HackerNewsItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,126 +43,82 @@ export function LiveFeedSection() {
       try {
         setLoading(true);
         setError('');
-
         const response = await fetch('/api/feed', { cache: 'no-store' });
         if (!response.ok) {
-          throw new Error('Failed to load live feed');
+          throw new Error('Не удалось загрузить ленту');
         }
-
-        const data = (await response.json()) as HackerNewsItem[];
+        const data = (await response.json()) as { items?: HackerNewsItem[] };
+        if (active) setItems(Array.isArray(data.items) ? data.items : []);
+      } catch (err) {
         if (active) {
-          setItems(Array.isArray(data) ? data : []);
-        }
-      } catch {
-        if (active) {
-          setError('Unable to load the live signal right now.');
+          setError(err instanceof Error ? err.message : 'Ошибка загрузки');
+          setItems([]);
         }
       } finally {
-        if (active) {
-          setLoading(false);
-        }
+        if (active) setLoading(false);
       }
     }
 
-    loadFeed();
-
+    void loadFeed();
+    const timer = window.setInterval(() => void loadFeed(), 5 * 60 * 1000);
     return () => {
       active = false;
+      window.clearInterval(timer);
     };
   }, []);
 
   return (
-    <section className="mx-auto max-w-7xl px-4 pb-16">
-      <div className="rounded-[2rem] border border-white/8 bg-slate-950/60 p-6 shadow-[0_30px_110px_-55px_rgba(69,162,158,0.5)] md:p-8">
-        <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-2xl">
-            <span className="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.28em] text-cyan-300">
-              Live signal
-            </span>
-            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white md:text-4xl">
-              Hacker News top stories, shown as a news-style feed
+    <section className="home-editorial mx-auto max-w-[1440px] px-2 pb-8 sm:px-4 lg:px-5">
+      <div className="border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-[var(--border)] pb-3">
+          <div>
+            <p className="text-[12px] font-medium tracking-wide text-[var(--muted)]">Сигнал</p>
+            <h2 className="mt-1 text-lg font-semibold tracking-tight text-[var(--text)] sm:text-xl">
+              Hacker News · топ
             </h2>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300 md:text-base">
-              This block keeps the site visibly alive before any AI model is connected. It pulls current signals from
-              the public feed and presents them as clean editorial cards.
+            <p className="mt-1 text-[13px] font-normal text-[var(--muted)]">
+              Живая внешняя лента · обновление каждые 5 минут
             </p>
           </div>
-
-          <div className="flex flex-wrap gap-3">
-            <div className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3">
-              <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-slate-400">Stories</p>
-              <p className="mt-2 text-2xl font-semibold text-white">{loading ? '—' : items.length}</p>
-            </div>
-            <div className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3">
-              <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-slate-400">Refresh</p>
-              <p className="mt-2 text-2xl font-semibold text-white">5 min</p>
-            </div>
-          </div>
+          <p className="text-[12px] tabular-nums text-[var(--muted)]">
+            {loading ? '…' : `${items.length} историй`}
+          </p>
         </div>
 
         {loading ? (
-          <div className="flex items-center gap-3 rounded-2xl border border-white/8 bg-slate-950/80 px-5 py-4">
-            <Loader2 className="h-5 w-5 animate-spin text-cyan-300" />
-            <span className="text-sm text-slate-300">Loading live signal...</span>
+          <div className="flex items-center gap-2 py-6 text-[13px] text-[var(--muted)]">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Загрузка…
           </div>
         ) : error ? (
-          <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 px-5 py-4 text-sm text-amber-100">
-            <p>{error}</p>
-          </div>
+          <p className="py-4 text-[13px] text-[var(--muted)]">{error}</p>
         ) : items.length > 0 ? (
-          <div className="grid gap-5 lg:grid-cols-3">
+          <div className="divide-y divide-[var(--border)]">
             {items.map((item) => (
-              <article
-                key={item.id}
-                className="group flex h-full flex-col rounded-3xl border border-white/8 bg-slate-950/70 p-6 transition duration-300 hover:-translate-y-1 hover:border-cyan-400/30 hover:bg-white/7"
-              >
-                <div className="mb-4 flex items-start justify-between gap-4">
-                  <div>
-                    <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-cyan-300/90">Rank #{item.rank}</p>
-                    <p className="mt-2 text-xs text-slate-400">{item.by || 'unknown author'}</p>
-                  </div>
-                  <span className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.24em] text-cyan-300">
-                    {item.type || 'story'}
-                  </span>
+              <article key={item.id} className="flex flex-wrap items-start justify-between gap-3 py-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] font-normal tabular-nums text-[var(--muted)]">
+                    #{item.rank} · {formatDate(item.time)} · {item.score ?? 0} pts
+                  </p>
+                  <h3 className="mt-1 text-[14px] font-medium leading-snug tracking-tight text-[var(--text)]">
+                    {item.title || 'Без названия'}
+                  </h3>
                 </div>
-
-                <h3 className="text-xl font-semibold leading-tight text-white">{item.title || 'Untitled story'}</h3>
-
-                <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-slate-400">
-                  <span>{formatDate(item.time)}</span>
-                  <span>•</span>
-                  <span>{item.score ?? 0} points</span>
-                  <span>•</span>
-                  <span>{item.descendants ?? 0} comments</span>
-                </div>
-
-                <div className="mt-auto pt-6">
-                  <a
-                    href={getOutboundUrl(item)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-sm font-medium text-cyan-300 transition duration-300 hover:text-cyan-200"
-                  >
-                    Open source
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </a>
-                </div>
+                <a
+                  href={getOutboundUrl(item)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex shrink-0 items-center gap-1 text-[12px] font-medium text-[var(--accent)] hover:underline"
+                >
+                  Источник
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
               </article>
             ))}
           </div>
         ) : (
-          <div className="rounded-2xl border border-white/8 bg-slate-950/80 px-5 py-4 text-sm text-slate-300">
-            No live stories were returned yet.
-          </div>
+          <p className="py-4 text-[13px] text-[var(--muted)]">Пока нет историй.</p>
         )}
-
-        <div className="mt-6 flex items-center justify-between gap-4 rounded-2xl border border-white/8 bg-white/5 px-4 py-3 text-xs text-slate-400">
-          <span>Raw JSON live feed with no AI connection yet.</span>
-          <span className="inline-flex items-center gap-2 text-cyan-300">
-            News-style curation
-            <ArrowUpRight className="h-4 w-4" />
-          </span>
-        </div>
       </div>
     </section>
   );
