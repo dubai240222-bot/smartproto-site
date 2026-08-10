@@ -15,6 +15,7 @@ import {
   type EditorialMode,
   type NoveltyAssessment,
 } from './hard-reject';
+import { passesEditorialPriority } from './human-priority-gate';
 
 export interface ScoutResult extends Partial<NoveltyAssessment> {
   interesting: boolean;
@@ -278,25 +279,30 @@ export async function scoutArticle(
     score = 0;
   }
 
-  // Publish interest = score gate only (threshold unchanged at env/70). Soft mid-band stays visible.
+  // SP-A-071B: interesting only if score clears threshold AND editorial priority
+  // (human door or share-worthy robotics/AI). SKIP is success when nothing qualifies.
+  const priorityOk = mode === 'ai_radar' ? true : passesEditorialPriority(title, text);
   const interesting =
     mode === 'ai_radar'
       ? score >= SCOUT_SCORE_THRESHOLD
-      : !noProduct && score >= SCOUT_SCORE_THRESHOLD;
+      : !noProduct && score >= SCOUT_SCORE_THRESHOLD && priorityOk;
 
   const reasonBase =
     typeof parsed.reason === 'string'
       ? parsed.reason
       : noProduct
         ? 'Нет явного покупаемого продукта/устройства.'
-        : !isActuallyNew
-          ? 'Категория знакома — mid-band / soft novelty.'
-          : 'No reason provided by scout model.';
+        : !priorityOk
+          ? 'SP-A-071B SKIP — нет human door / share-worthy сигнала (не публикуем ради регулярности).'
+          : !isActuallyNew
+            ? 'Категория знакома — mid-band / soft novelty.'
+            : 'No reason provided by scout model.';
 
   const tags: string[] = [];
   if (commodityPenalty > 0) tags.push(`commodity −${commodityPenalty}`);
   if (noveltyPenalty > 0) tags.push(`novelty −${noveltyPenalty}`);
   if (noveltyNote && !isActuallyNew && !noProduct) tags.push(noveltyNote);
+  if (!priorityOk && mode !== 'ai_radar') tags.push('071B priority skip');
 
   return {
     interesting,

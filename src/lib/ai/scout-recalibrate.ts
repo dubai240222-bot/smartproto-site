@@ -214,6 +214,9 @@ export const SCOUT_SYSTEM_PROMPT_GADGET_V2 = [
   'ИСКЛЮЧЕНИЕ: серый класс ОК, если есть дверь (assistive independence, clinic→home,',
   'pro-инструмент стал доступен дома, один человек вместо команды).',
   '',
+  'SP-A-071B: публикация НЕ обязательна каждый час. Если нет реакции «неужели? / пригодится / перешлю» —',
+  'ставь низкий score. SKIP сильного кандидата лучше, чем серая бытовуха ради регулярности.',
+  '',
   'status: AVAILABLE | ANNOUNCED | PROTOTYPE | RESEARCH | CONCEPT | CROWDFUNDING.',
   'Не маскируй concept/crowdfunding под AVAILABLE.',
 ].join('\n');
