@@ -118,18 +118,31 @@ export function LeadStory({ article }: { article: Article }) {
   );
 }
 
-/** LEAD rail: compact important items without large images. */
+/** LEAD rail / past feed: compact row with small thumb. */
 export function LeadRailItem({ article }: { article: Article }) {
+  const hero = displayHeroUrl(article);
   return (
-    <article className="group border-b border-[var(--border)] py-2 last:border-b-0 last:pb-0 first:pt-0">
-      <time className="mb-0.5 block text-[10px] font-normal tabular-nums text-[var(--muted)]">
-        {formatPublishedAt(article.publishedAt)}
-      </time>
-      <h2 className="text-[13px] font-medium leading-snug tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-[14px]">
-        <Link href={`/articles/${article.slug}`} className="line-clamp-3">
-          {article.title}
-        </Link>
-      </h2>
+    <article className="group flex items-start gap-2.5 border-b border-[var(--border)] py-2 last:border-b-0 last:pb-0 first:pt-0">
+      <Link href={`/articles/${article.slug}`} className="shrink-0" aria-label={article.title}>
+        <MediaThumb
+          imageUrl={hero}
+          title={article.title}
+          category={article.category}
+          tags={article.tags}
+          summary={article.summary}
+          className="h-[52px] w-[72px] sm:h-[56px] sm:w-[80px]"
+        />
+      </Link>
+      <div className="min-w-0 flex-1">
+        <time className="mb-0.5 block text-[10px] font-normal tabular-nums text-[var(--muted)]">
+          {formatPublishedAt(article.publishedAt)}
+        </time>
+        <h2 className="text-[13px] font-medium leading-snug tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-[14px]">
+          <Link href={`/articles/${article.slug}`} className="line-clamp-3">
+            {article.title}
+          </Link>
+        </h2>
+      </div>
     </article>
   );
 }
@@ -165,19 +178,31 @@ export function GridStoryCard({ article }: { article: Article }) {
   );
 }
 
-/** QUICK: short text-only note — no loud category stamp. */
+/** QUICK: short note with small photo. */
 export function QuickNewsBlock({ article }: { article: Article }) {
+  const hero = displayHeroUrl(article);
   return (
-    <article className="group flex h-full flex-col border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 sm:px-3.5">
-      <time className="mb-1.5 text-[10px] font-normal tabular-nums text-[var(--muted)]">
-        {formatPublishedAt(article.publishedAt)}
-      </time>
-      <h3 className="text-[13px] font-medium leading-snug tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-sm">
-        <Link href={`/articles/${article.slug}`} className="line-clamp-4">
-          {article.title}
-        </Link>
-      </h3>
-      <CategoryTags category={article.category} tone="hash" className="mt-2" />
+    <article className="group flex h-full gap-2.5 border border-[var(--border)] bg-[var(--surface)] p-2 sm:p-2.5">
+      <Link href={`/articles/${article.slug}`} className="shrink-0" aria-label={article.title}>
+        <MediaThumb
+          imageUrl={hero}
+          title={article.title}
+          category={article.category}
+          tags={article.tags}
+          summary={article.summary}
+          className="h-[64px] w-[88px] sm:h-[72px] sm:w-[96px]"
+        />
+      </Link>
+      <div className="min-w-0 flex-1">
+        <time className="mb-1 block text-[10px] font-normal tabular-nums text-[var(--muted)]">
+          {formatPublishedAt(article.publishedAt)}
+        </time>
+        <h3 className="text-[13px] font-medium leading-snug tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-sm">
+          <Link href={`/articles/${article.slug}`} className="line-clamp-3">
+            {article.title}
+          </Link>
+        </h3>
+      </div>
     </article>
   );
 }
