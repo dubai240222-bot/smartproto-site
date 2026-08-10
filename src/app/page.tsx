@@ -3,6 +3,7 @@ import { getAllArticles, type Article } from '@/data/articles';
 import { ThematicNavigator } from '@/components/thematic-navigator';
 import { PastNewsPager } from '@/components/past-news-pager';
 import { sortArticlesByPublishedDate } from '@/lib/article-utils';
+import { orderArticlesForHomepage } from '@/lib/homepage-editorial-mix';
 import {
   LeadStory,
   LeadRailItem,
@@ -158,14 +159,16 @@ export default async function HomePage({
   const requestedPage = Math.max(1, parseInt(params.page || '1', 10) || 1);
 
   const sortedArticles = sortArticlesByPublishedDate(getAllArticles());
+  // Editorial mix for homepage slots: AI/apps first, avoid commodity streaks
+  const feedArticles = orderArticlesForHomepage(sortedArticles);
 
-  // SP-A-066 editorial levels (freshness order; no backend ranking yet)
-  const leadStory = sortedArticles[0];
-  const leadRail = sortedArticles.slice(1, 4);
-  const gridStories = sortedArticles.slice(4, 8);
-  const quickNews = sortedArticles.slice(8, 12);
+  // SP-A-066 editorial levels (mixed order; not raw chronology)
+  const leadStory = feedArticles[0];
+  const leadRail = feedArticles.slice(1, 4);
+  const gridStories = feedArticles.slice(4, 8);
+  const quickNews = feedArticles.slice(8, 12);
 
-  const pastPool = sortedArticles.slice(FRONT_SLOT_COUNT);
+  const pastPool = feedArticles.slice(FRONT_SLOT_COUNT);
   const totalPast = pastPool.length;
   const totalPages = Math.max(1, Math.ceil(totalPast / PAST_PAGE_SIZE));
   const currentPage = Math.min(requestedPage, totalPages);
