@@ -42,11 +42,19 @@ const EDITOR_SYSTEM_PROMPT = [
   '«убийца iPhone», «изменит мир», «перевернёт рынок», «вы обязаны это увидеть», «все захотят купить»,',
   '«мы в восторге», «наконец-то свершилось», «будущее уже наступило»,',
   '«ваш спаситель», «этот малыш», «просто находка», «маст-хэв», «идеальный выбор», «стильный аксессуар»,',
-  'восклицательные заголовки, прямые обращения, рекламные обещания.',
+  'кричащие восклицательные заголовки, прямые обращения «вы/ребята», рекламные обещания.',
   '',
   'РЕКЛАМНЫЕ СУПЕРЛАТИВЫ без проверки запрещены. Если производитель хвастается —',
   '«Производитель утверждает…»; при необходимости «Независимых испытаний пока нет».',
-  'ЗАГОЛОВОК: суть + польза/факт; без «!»; без интриги ради интриги.',
+  '',
+  'ЗАГОЛОВОК (SP-A-071b): мягкий curiosity-hook по РЕАЛЬНОМУ факту материала — вопрос или интрига,',
+  'которая обещает смысл, а не сухой пересказ спеки. Без «!». Без фейка и без ложного крика.',
+  'Плохо: «Redmi 17 5G: смартфон с батареей 7500 мАч» (это дубль первого предложения / карточка товара).',
+  'Хорошо: «А хватит ли заряда на неделю?» — а факт «Xiaomi представила Redmi 17 5G с батареей 7500 мАч»',
+  'идёт в ПЕРВОМ абзаце текста, не в title.',
+  'Заголовок ≠ первое предложение текста. Не начинай text с дословного повтора title.',
+  'Не обещай в title того, чего нет в источнике (неделя автономности — только как вопрос/проверка заявки,',
+  'если в материале есть большая батарея/автономность; иначе другой честный hook).',
   'Не выдумывай спеки, даты, автономность, отзывы. Нет данных — опусти или «не уточнено».',
   'Без эмодзи. Без Docker/DevOps/HN-жаргона. Без публичных меток Китай/Qwen/Gemini.',
   '',
@@ -66,6 +74,37 @@ const PUBLIC_PRICE_OR_LINK_RE =
 
 function containsPublicPriceOrLink(title: string, text: string): boolean {
   return PUBLIC_PRICE_OR_LINK_RE.test(`${title}\n${text}`);
+}
+
+/** SP-A-071b: reject dry product-card titles that just restate the lead. */
+function looksDryProductCardTitle(title: string): boolean {
+  const t = title.trim();
+  // "Brand Model: battery/spec …" or "Brand Model — battery/spec"
+  if (/[:—–-]\s*.{6,}/.test(t) && /\d+\s*(?:мАч|mah|гб|gb|тб|tb|вт|w|мм|гц|hz|дюйм)/i.test(t)) {
+    return true;
+  }
+  // "Brand представила/анонсировала Model" as the whole title
+  if (/^(?:xiaomi|redmi|samsung|apple|huawei|honor|oppo|vivo|realme|google|sony|asus|lenovo|nothing)\b/i.test(t)
+    && /(?:представил|анонсировал|выпустил|запустил)/i.test(t)) {
+    return true;
+  }
+  return false;
+}
+
+function titleDuplicatesLead(title: string, text: string): boolean {
+  const norm = (s: string) =>
+    s
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}\s]+/gu, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  const t = norm(title);
+  if (t.length < 18) return false;
+  const lead = norm(text.slice(0, 220));
+  if (!lead) return false;
+  if (lead.startsWith(t)) return true;
+  const head = t.slice(0, Math.min(48, t.length));
+  return head.length >= 18 && lead.startsWith(head);
 }
 
 function parseToneCheck(value: unknown): ToneCheck | null {
@@ -134,7 +173,7 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
       ? [
           'ФОРМАТ: информативная редакционная заметка (NEWS). 250–300 слов (строго в диапазоне). 3–5 абзацев.',
           'Структура:',
-          '1) что произошло / что представлено;',
+          '1) первый абзац — конкретный факт (кто/что представил + ключевая особенность), НЕ повтор title;',
           '2) как это устроено на понятном уровне;',
           '3) кому и в каком сценарии полезно;',
           '4) чем отличается от привычного (факт из источника, не хайп);',
@@ -145,7 +184,7 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
       : [
           'ФОРМАТ: информативный разбор (ARTICLE). 250–300 слов (строго в диапазоне). 3–5 абзацев.',
           'Структура строго:',
-          '1) что представлено и какую возможность даёт;',
+          '1) первый абзац — конкретный факт (кто/что представлено + ключевая особенность), НЕ повтор title;',
           '2) как это работает на понятном уровне;',
           '3) сценарий пользы для обычного человека;',
           '4) чем отличается / почему это интересно (факт из источника, не хайп);',
@@ -185,12 +224,16 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
           'Верни СТРОГО JSON:',
           '{"title":string,"text":string,"tags":string[],"toneCheck":{"clickbait":bool,"hype":bool,"unsupportedClaims":bool,"limitationsIncluded":bool}}',
           '',
-          'title: русский, до 90 символов; продукт + польза/факт; без восклицательных знаков.',
-          'text: полноценный информативный текст 250–300 слов — не короткий alert и не вода.',
+          'title: русский, до 90 символов; мягкий curiosity-hook (часто вопрос) по реальному факту;',
+          'НЕ шаблон «Бренд Модель: спека»; НЕ дубль первого предложения; без «!».',
+          'Пример направления: «А хватит ли заряда на неделю?» вместо «Redmi 17 5G: батарея 7500 мАч».',
+          'text: 250–300 слов. Первый абзац — конкретный факт (кто/что представил + ключевая особенность);',
+          'дальше — как работает, кому полезно, отличие, ограничения. Не начинай text с дословного title.',
           'Строго по фактам источника. Суперлативы производителя — только через «Производитель утверждает…».',
           'tags: 4–8; тематика + бренд если есть; БЕЗ тегов Китай/Qwen/Gemini/China Department.',
-          'toneCheck: честно оцени свой текст (clickbait/hype/unsupportedClaims должны быть false;',
-          'limitationsIncluded=true если есть явные оговорки).',
+          'toneCheck: soft curiosity-title по факту НЕ считается clickbait=true;',
+          'clickbait=true только для обмана/фейка/кричащего хайпа. hype/unsupportedClaims должны быть false;',
+          'limitationsIncluded=true если есть явные оговорки.',
           '',
           'Статья:',
           clampText(JSON.stringify(articleData, null, 2), 10000),
@@ -260,13 +303,23 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
     throw new Error('Editor draft fails tone gate (banned hype or exclamation in title).');
   }
 
+  if (looksDryProductCardTitle(draft.title)) {
+    throw new Error('Editor draft fails title gate (dry product-card title; need soft curiosity hook).');
+  }
+
+  if (titleDuplicatesLead(draft.title, draft.text)) {
+    throw new Error('Editor draft fails title gate (title duplicates opening of text).');
+  }
+
   if (containsPublicPriceOrLink(draft.title, draft.text)) {
     throw new Error('Editor draft fails policy gate (public price or outbound/shop link).');
   }
 
-  if (toneCheck.clickbait || toneCheck.hype || toneCheck.unsupportedClaims) {
+  // SP-A-071b: soft curiosity titles may self-flag as clickbait; block only hype/fake claims.
+  // Deceptive scream titles are already caught by banned cliche + "!" gate.
+  if (toneCheck.hype || toneCheck.unsupportedClaims) {
     throw new Error(
-      `Editor toneCheck publication gate failed: clickbait=${toneCheck.clickbait}, hype=${toneCheck.hype}, unsupportedClaims=${toneCheck.unsupportedClaims}`,
+      `Editor toneCheck publication gate failed: hype=${toneCheck.hype}, unsupportedClaims=${toneCheck.unsupportedClaims}`,
     );
   }
 
