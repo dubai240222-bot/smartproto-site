@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getAllArticles, type Article } from '@/data/articles';
 import { ThematicNavigator } from '@/components/thematic-navigator';
+import { PastNewsPager } from '@/components/past-news-pager';
 import { sortArticlesByPublishedDate } from '@/lib/article-utils';
 import {
   LeadStory,
@@ -9,6 +10,9 @@ import {
   QuickNewsBlock,
   QuickUpdateItem,
 } from '@/components/article-card';
+
+const FRONT_SLOT_COUNT = 12; // lead + rail3 + grid4 + quick4
+const PAST_PAGE_SIZE = 10;
 
 function textBlob(a: Article): string {
   const tags = Array.isArray(a.tags) ? a.tags.join(' ') : '';
@@ -30,6 +34,19 @@ function filterArticlesByCategory(categoryName: string, list: Article[]): Articl
     // SP-A-050: Китай/Qwen are not public filter categories anymore.
     if (norm === 'китай' || norm === 'china' || norm === 'qwen') {
       return cat.includes('гаджет');
+    }
+    // Serial / shipping products (not lab prototypes / research alone)
+    if (norm === 'производство' || norm === 'серия' || norm === 'серийное') {
+      return (
+        cat.includes('гаджет') ||
+        cat.includes('смартфон') ||
+        cat.includes('новинк') ||
+        blob.includes('представил') ||
+        blob.includes('анонсир') ||
+        blob.includes('выпустил') ||
+        blob.includes('в продаже') ||
+        blob.includes('производител')
+      );
     }
     if (norm === 'новинки') {
       return cat.includes('новинк') || title.includes('новинк');
@@ -134,18 +151,26 @@ function filterArticlesByCategory(categoryName: string, list: Article[]): Articl
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string }>;
+  searchParams: Promise<{ category?: string; page?: string }>;
 }) {
   const params = await searchParams;
   const activeCategory = params.category?.trim();
+  const requestedPage = Math.max(1, parseInt(params.page || '1', 10) || 1);
 
   const sortedArticles = sortArticlesByPublishedDate(getAllArticles());
 
   // SP-A-066 editorial levels (freshness order; no backend ranking yet)
   const leadStory = sortedArticles[0];
-  const leadRail = sortedArticles.slice(1, 4); // 3 compact importants
-  const gridStories = sortedArticles.slice(4, 8); // 4 cards
-  const quickNews = sortedArticles.slice(8, 12); // 4 short notes
+  const leadRail = sortedArticles.slice(1, 4);
+  const gridStories = sortedArticles.slice(4, 8);
+  const quickNews = sortedArticles.slice(8, 12);
+
+  const pastPool = sortedArticles.slice(FRONT_SLOT_COUNT);
+  const totalPast = pastPool.length;
+  const totalPages = Math.max(1, Math.ceil(totalPast / PAST_PAGE_SIZE));
+  const currentPage = Math.min(requestedPage, totalPages);
+  const pastStart = (currentPage - 1) * PAST_PAGE_SIZE;
+  const pastPageArticles = pastPool.slice(pastStart, pastStart + PAST_PAGE_SIZE);
 
   const filteredArticles = activeCategory
     ? filterArticlesByCategory(activeCategory, sortedArticles)
@@ -164,16 +189,16 @@ export default async function HomePage({
             <section className="space-y-4">
               <div className="flex items-center justify-between gap-3 border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5">
                 <div>
-                  <h1 className="text-lg font-extrabold tracking-tight text-[var(--text)] sm:text-xl">
+                  <h1 className="text-lg font-semibold tracking-tight text-[var(--text)] sm:text-xl">
                     Рубрика: <span className="text-[var(--accent)]">{activeCategory}</span>
                   </h1>
-                  <p className="mt-0.5 text-xs text-[var(--muted)]">
+                  <p className="mt-0.5 text-xs font-normal text-[var(--muted)]">
                     Найдено материалов: {filteredArticles.length}
                   </p>
                 </div>
                 <Link
                   href="/"
-                  className="shrink-0 border border-[var(--border)] bg-[var(--bg)] px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-[var(--surface)]"
+                  className="shrink-0 border border-[var(--border)] bg-[var(--bg)] px-3 py-1.5 text-xs font-medium transition-colors hover:bg-[var(--surface)]"
                 >
                   На главную
                 </Link>
@@ -187,8 +212,13 @@ export default async function HomePage({
                 </div>
               ) : (
                 <div className="border border-[var(--border)] bg-[var(--surface)] p-6 text-center">
-                  <p className="text-sm text-[var(--muted)]">В выбранной рубрике пока нет материалов.</p>
-                  <Link href="/" className="mt-2 inline-block text-xs font-semibold text-[var(--accent)] hover:underline">
+                  <p className="text-sm font-normal text-[var(--muted)]">
+                    В выбранной рубрике пока нет материалов.
+                  </p>
+                  <Link
+                    href="/"
+                    className="mt-2 inline-block text-xs font-medium text-[var(--accent)] hover:underline"
+                  >
                     Вернуться на главную
                   </Link>
                 </div>
@@ -198,15 +228,18 @@ export default async function HomePage({
         ) : (
           /* SP-A-066 — HOMEPAGE EDITORIAL GRID */
           <>
-            {/* 1. TOP / LEAD AREA — ~65% hero + ~35% compact rail */}
+            {/* 1. TOP / LEAD AREA */}
             <section className="grid gap-3 border-b border-[var(--border)] pb-4 lg:grid-cols-12 lg:gap-5 lg:pb-5">
               <div className="lg:col-span-8">{leadStory ? <LeadStory article={leadStory} /> : null}</div>
               <aside className="bg-[var(--surface)] px-0 lg:col-span-4 lg:border-l lg:border-[var(--border)] lg:pl-5">
-                <div className="mb-1.5 flex items-center justify-between border-b-2 border-[var(--accent)] pb-1.5">
-                  <h2 className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[var(--text)]">
-                    Сейчас важно
+                <div className="mb-1.5 flex items-center justify-between border-b border-[var(--border)] pb-1.5">
+                  <h2 className="text-[12px] font-medium tracking-wide text-[var(--muted)]">
+                    Новинки технологий
                   </h2>
-                  <Link href="/all" className="text-[10px] font-bold text-[var(--accent)] hover:underline">
+                  <Link
+                    href="/all"
+                    className="text-[11px] font-normal text-[var(--muted)] transition hover:text-[var(--accent)]"
+                  >
                     Все →
                   </Link>
                 </div>
@@ -218,13 +251,11 @@ export default async function HomePage({
               </aside>
             </section>
 
-            {/* 2. MAIN GRID — 4 cards */}
+            {/* 2. MAIN GRID */}
             {gridStories.length > 0 ? (
               <section className="border-b border-[var(--border)] pb-4 sm:pb-5">
                 <div className="mb-2.5 flex items-center justify-between">
-                  <h2 className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[var(--text)]">
-                    В фокусе
-                  </h2>
+                  <h2 className="text-[12px] font-medium tracking-wide text-[var(--muted)]">Лента</h2>
                 </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
                   {gridStories.map((article) => (
@@ -234,13 +265,11 @@ export default async function HomePage({
               </section>
             ) : null}
 
-            {/* 3. QUICK NEWS ROW — 4 compact text blocks */}
+            {/* 3. QUICK NEWS ROW */}
             {quickNews.length > 0 ? (
               <section className="border-b border-[var(--border)] pb-4 sm:pb-5">
-                <div className="mb-2.5 flex items-center justify-between">
-                  <h2 className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[var(--accent)]">
-                    Быстро
-                  </h2>
+                <div className="mb-2.5">
+                  <h2 className="text-[12px] font-medium tracking-wide text-[var(--muted)]">Коротко</h2>
                 </div>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4 lg:gap-2.5">
                   {quickNews.map((article) => (
@@ -250,21 +279,29 @@ export default async function HomePage({
               </section>
             ) : null}
 
-            {/* Secondary dense text feed — not a wiki wall of cards */}
-            <section>
+            {/* Past news with numbered pages */}
+            <section id="past-news">
               <div className="mb-2 flex items-center justify-between border-b border-[var(--border)] pb-1.5">
-                <h2 className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[var(--text)]">
-                  Ещё в ленте
+                <h2 className="text-[12px] font-medium tracking-wide text-[var(--muted)]">
+                  Лента новостей
                 </h2>
-                <Link href="/all" className="text-xs font-bold text-[var(--accent)] hover:underline">
+                <Link
+                  href="/all"
+                  className="text-[11px] font-normal text-[var(--muted)] transition hover:text-[var(--accent)]"
+                >
                   Архив →
                 </Link>
               </div>
               <div className="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
-                {sortedArticles.slice(12, 22).map((article) => (
-                  <LeadRailItem key={`more-${article.slug}`} article={article} />
+                {pastPageArticles.map((article) => (
+                  <LeadRailItem key={`past-${article.slug}`} article={article} />
                 ))}
               </div>
+              <PastNewsPager
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalPast={totalPast}
+              />
             </section>
           </>
         )}

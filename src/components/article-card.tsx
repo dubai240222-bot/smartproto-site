@@ -9,22 +9,42 @@ import { toPublicCategory } from '@/lib/public-labels';
 export function CategoryTags({
   category,
   className = '',
+  tone = 'subtle',
 }: {
   category: string;
   className?: string;
+  /** subtle = near-muted meta; hash = soft hashtag under title */
+  tone?: 'subtle' | 'hash';
 }) {
   // SP-A-050: never show КИТАЙ / Qwen / factory marks on cards.
   const publicCat = toPublicCategory(category);
-  const parts = publicCat ? [publicCat] : ['Гаджеты'];
+  const parts = publicCat ? [publicCat] : [];
+  if (parts.length === 0) return null;
+
+  if (tone === 'hash') {
+    return (
+      <div className={`flex flex-wrap items-center gap-1.5 ${className}`}>
+        {parts.map((tag) => (
+          <Link
+            key={tag}
+            href={`/?category=${encodeURIComponent(tag)}`}
+            className="text-[11px] font-normal text-[var(--muted)]/70 transition-colors hover:text-[var(--accent)]"
+          >
+            #{tag.toLowerCase().replace(/\s+/g, '')}
+          </Link>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className={`flex flex-wrap items-center gap-1.5 ${className}`}>
       {parts.map((tag, idx) => (
         <span key={tag} className="inline-flex items-center">
-          {idx > 0 && <span className="mr-1.5 text-[var(--muted)] opacity-50">•</span>}
+          {idx > 0 && <span className="mr-1.5 text-[var(--muted)]/40">·</span>}
           <Link
             href={`/?category=${encodeURIComponent(tag)}`}
-            className="text-[10px] font-extrabold uppercase tracking-[0.06em] text-[var(--accent)] transition-colors hover:text-[var(--accent-hover)] sm:text-[11px]"
+            className="text-[10px] font-normal uppercase tracking-wide text-[var(--muted)]/55 transition-colors hover:text-[var(--muted)]"
           >
             {tag}
           </Link>
@@ -81,18 +101,16 @@ export function LeadStory({ article }: { article: Article }) {
           className="rounded-sm"
         />
       </Link>
-      <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
-        <CategoryTags category={article.category} />
-        <time className="text-[11px] font-medium tabular-nums text-[var(--muted)]">
-          {formatPublishedAt(article.publishedAt)}
-        </time>
-      </div>
-      <h1 className="text-[1.35rem] font-extrabold leading-[1.15] tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-3xl lg:text-[2rem]">
+      <time className="block text-[11px] font-normal tabular-nums text-[var(--muted)]">
+        {formatPublishedAt(article.publishedAt)}
+      </time>
+      <h1 className="text-[1.35rem] font-semibold leading-[1.15] tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-3xl lg:text-[2rem]">
         <Link href={`/articles/${article.slug}`}>{article.title}</Link>
       </h1>
-      <p className="line-clamp-2 text-[13px] leading-snug text-[var(--muted)] sm:text-sm sm:leading-relaxed">
+      <p className="line-clamp-2 text-[13px] font-normal leading-snug text-[var(--muted)] sm:text-sm sm:leading-relaxed">
         {article.summary}
       </p>
+      <CategoryTags category={article.category} tone="hash" className="pt-0.5" />
     </article>
   );
 }
@@ -101,22 +119,22 @@ export function LeadStory({ article }: { article: Article }) {
 export function LeadRailItem({ article }: { article: Article }) {
   return (
     <article className="group border-b border-[var(--border)] py-2.5 last:border-b-0 last:pb-0 first:pt-0">
-      <div className="mb-1 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5">
-        <CategoryTags category={article.category} />
-        <span className="text-[10px] tabular-nums text-[var(--muted)]">
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <time className="text-[10px] font-normal tabular-nums text-[var(--muted)]">
           {formatPublishedAt(article.publishedAt)}
-        </span>
+        </time>
       </div>
-      <h2 className="text-[14px] font-bold leading-snug tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-[15px]">
+      <h2 className="text-[14px] font-medium leading-snug tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-[15px]">
         <Link href={`/articles/${article.slug}`} className="line-clamp-3">
           {article.title}
         </Link>
       </h2>
+      <CategoryTags category={article.category} tone="hash" className="mt-1" />
     </article>
   );
 }
 
-/** CARD: equal grid cell — image + category + headline + time. */
+/** CARD: equal grid cell — image + headline + time + soft hashtag. */
 export function GridStoryCard({ article }: { article: Article }) {
   const hero = articleHeroUrl(article);
   const withImage = hasHeroImage(article);
@@ -135,38 +153,32 @@ export function GridStoryCard({ article }: { article: Article }) {
           className="rounded-sm"
         />
       </Link>
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-1.5">
-        <CategoryTags category={article.category} />
-        <time className="text-[10px] tabular-nums text-[var(--muted)]">
-          {formatPublishedAt(article.publishedAt)}
-        </time>
-      </div>
-      <h3 className="mt-1 text-[14px] font-bold leading-snug tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-[15px]">
+      <time className="mt-2 text-[10px] font-normal tabular-nums text-[var(--muted)]">
+        {formatPublishedAt(article.publishedAt)}
+      </time>
+      <h3 className="mt-1 text-[14px] font-medium leading-snug tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-[15px]">
         <Link href={`/articles/${article.slug}`} className="line-clamp-3">
           {article.title}
         </Link>
       </h3>
+      <CategoryTags category={article.category} tone="hash" className="mt-1.5" />
     </article>
   );
 }
 
-/** QUICK: short text-only note — ForkLog-like dense strip, no large image. */
+/** QUICK: short text-only note — no loud category stamp. */
 export function QuickNewsBlock({ article }: { article: Article }) {
   return (
-    <article className="group flex h-full flex-col border border-[var(--accent)]/20 bg-[var(--accent-subtle)] px-3 py-2.5 sm:px-3.5">
-      <div className="mb-1.5 flex items-center justify-between gap-2">
-        <span className="text-[10px] font-extrabold uppercase tracking-[0.08em] text-[var(--accent)]">
-          Быстро
-        </span>
-        <span className="text-[10px] tabular-nums text-[var(--muted)]">
-          {formatPublishedAt(article.publishedAt)}
-        </span>
-      </div>
-      <h3 className="text-[13px] font-bold leading-snug tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-sm">
+    <article className="group flex h-full flex-col border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 sm:px-3.5">
+      <time className="mb-1.5 text-[10px] font-normal tabular-nums text-[var(--muted)]">
+        {formatPublishedAt(article.publishedAt)}
+      </time>
+      <h3 className="text-[13px] font-medium leading-snug tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-sm">
         <Link href={`/articles/${article.slug}`} className="line-clamp-4">
           {article.title}
         </Link>
       </h3>
+      <CategoryTags category={article.category} tone="hash" className="mt-2" />
     </article>
   );
 }

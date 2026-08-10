@@ -67,7 +67,7 @@ export function Header({ articles }: { articles: Article[] }) {
           </Link>
 
           {/* Desktop nav — inline with brand row */}
-          <nav className="hidden min-w-0 flex-1 items-center justify-center gap-x-4 text-[11px] font-semibold uppercase tracking-wide text-[var(--text)] lg:flex xl:gap-x-5">
+          <nav className="hidden min-w-0 flex-1 items-center justify-center gap-x-4 text-[11px] font-medium uppercase tracking-wide text-[var(--text)] lg:flex xl:gap-x-5">
             <Link href="/all" className="text-[var(--accent)] transition hover:opacity-90">
               Новости
             </Link>
@@ -83,8 +83,8 @@ export function Header({ articles }: { articles: Article[] }) {
             <Link href="/?category=Наука" className="transition hover:text-[var(--accent)]">
               Наука
             </Link>
-            <Link href="/?category=Гаджеты" className="transition hover:text-[var(--accent)]">
-              Китай
+            <Link href="/?category=Производство" className="transition hover:text-[var(--accent)]">
+              Производство
             </Link>
             <Link href="/all" className="text-[var(--muted)] transition hover:text-[var(--accent)]">
               Ещё
@@ -200,7 +200,7 @@ export function Header({ articles }: { articles: Article[] }) {
 
         {/* Mobile / tablet nav */}
         <nav className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-[var(--border)] py-1.5 text-[11px] font-medium text-[var(--text)] lg:hidden">
-          <Link href="/all" className="font-semibold text-[var(--accent)]">
+          <Link href="/all" className="font-medium text-[var(--accent)]">
             Новости
           </Link>
           <Link href="/?category=Роботы" className="transition hover:text-[var(--accent)]">
@@ -214,6 +214,9 @@ export function Header({ articles }: { articles: Article[] }) {
           </Link>
           <Link href="/?category=Наука" className="transition hover:text-[var(--accent)]">
             Наука
+          </Link>
+          <Link href="/?category=Производство" className="transition hover:text-[var(--accent)]">
+            Производство
           </Link>
           <Link href="/all" className="text-[var(--muted)] transition hover:text-[var(--accent)]">
             Ещё
