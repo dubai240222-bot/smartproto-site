@@ -5,6 +5,7 @@ import { formatPublishedAt } from '@/lib/article-utils';
 import { formatAuthorByline, resolveAuthorForArticle } from '@/lib/authors';
 import { MediaPlaceholder, MediaThumb } from '@/components/media-placeholder';
 import { toPublicCategory } from '@/lib/public-labels';
+import { displayHeroUrl } from '@/lib/homepage-editorial-mix';
 
 export function CategoryTags({
   category,
@@ -84,11 +85,11 @@ function hasHeroImage(article: Article): boolean {
 /* SP-A-066 — Homepage editorial levels: LEAD / CARD / QUICK                  */
 /* -------------------------------------------------------------------------- */
 
-/** LEAD: large hero story (~2/3 of top band). */
+/** LEAD: large hero story — shorter image, skip weak logo tiles. */
 export function LeadStory({ article }: { article: Article }) {
-  const hero = articleHeroUrl(article);
+  const hero = displayHeroUrl(article);
   return (
-    <article className="group space-y-2">
+    <article className="group space-y-1.5">
       <Link href={`/articles/${article.slug}`} className="block overflow-hidden" aria-label={article.title}>
         <MediaPlaceholder
           category={article.category}
@@ -96,21 +97,23 @@ export function LeadStory({ article }: { article: Article }) {
           tags={article.tags}
           summary={article.summary}
           imageUrl={hero}
-          aspectRatio="aspect-[16/9] sm:aspect-[2/1]"
+          aspectRatio="aspect-[2/1] sm:aspect-[21/9]"
           compactFallback
           className="rounded-sm"
         />
       </Link>
-      <time className="block text-[11px] font-normal tabular-nums text-[var(--muted)]">
-        {formatPublishedAt(article.publishedAt)}
-      </time>
-      <h1 className="text-[1.35rem] font-semibold leading-[1.15] tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-3xl lg:text-[2rem]">
+      <div className="flex flex-wrap items-baseline justify-between gap-2 pt-0.5">
+        <time className="text-[11px] font-normal tabular-nums text-[var(--muted)]">
+          {formatPublishedAt(article.publishedAt)}
+        </time>
+        <CategoryTags category={article.category} tone="hash" />
+      </div>
+      <h1 className="text-[1.25rem] font-semibold leading-[1.2] tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-[1.65rem] lg:text-[1.85rem]">
         <Link href={`/articles/${article.slug}`}>{article.title}</Link>
       </h1>
-      <p className="line-clamp-2 text-[13px] font-normal leading-snug text-[var(--muted)] sm:text-sm sm:leading-relaxed">
+      <p className="line-clamp-2 text-[13px] font-normal leading-snug text-[var(--muted)] sm:text-sm">
         {article.summary}
       </p>
-      <CategoryTags category={article.category} tone="hash" className="pt-0.5" />
     </article>
   );
 }
@@ -118,26 +121,22 @@ export function LeadStory({ article }: { article: Article }) {
 /** LEAD rail: compact important items without large images. */
 export function LeadRailItem({ article }: { article: Article }) {
   return (
-    <article className="group border-b border-[var(--border)] py-2.5 last:border-b-0 last:pb-0 first:pt-0">
-      <div className="mb-1 flex items-center justify-between gap-2">
-        <time className="text-[10px] font-normal tabular-nums text-[var(--muted)]">
-          {formatPublishedAt(article.publishedAt)}
-        </time>
-      </div>
-      <h2 className="text-[14px] font-medium leading-snug tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-[15px]">
+    <article className="group border-b border-[var(--border)] py-2 last:border-b-0 last:pb-0 first:pt-0">
+      <time className="mb-0.5 block text-[10px] font-normal tabular-nums text-[var(--muted)]">
+        {formatPublishedAt(article.publishedAt)}
+      </time>
+      <h2 className="text-[13px] font-medium leading-snug tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-[14px]">
         <Link href={`/articles/${article.slug}`} className="line-clamp-3">
           {article.title}
         </Link>
       </h2>
-      <CategoryTags category={article.category} tone="hash" className="mt-1" />
     </article>
   );
 }
 
-/** CARD: equal grid cell — image + headline + time + soft hashtag. */
+/** CARD: equal grid cell — skip weak logos; denser meta. */
 export function GridStoryCard({ article }: { article: Article }) {
-  const hero = articleHeroUrl(article);
-  const withImage = hasHeroImage(article);
+  const hero = displayHeroUrl(article);
 
   return (
     <article className="group flex flex-col">
@@ -147,21 +146,21 @@ export function GridStoryCard({ article }: { article: Article }) {
           title={article.title}
           tags={article.tags}
           summary={article.summary}
-          imageUrl={withImage ? hero : undefined}
+          imageUrl={hero}
           aspectRatio="aspect-[16/10]"
-          compactFallback={!withImage}
+          compactFallback={!hero}
           className="rounded-sm"
         />
       </Link>
-      <time className="mt-2 text-[10px] font-normal tabular-nums text-[var(--muted)]">
+      <time className="mt-1.5 text-[10px] font-normal tabular-nums text-[var(--muted)]">
         {formatPublishedAt(article.publishedAt)}
       </time>
-      <h3 className="mt-1 text-[14px] font-medium leading-snug tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-[15px]">
+      <h3 className="mt-0.5 text-[13px] font-medium leading-snug tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-[14px]">
         <Link href={`/articles/${article.slug}`} className="line-clamp-3">
           {article.title}
         </Link>
       </h3>
-      <CategoryTags category={article.category} tone="hash" className="mt-1.5" />
+      <CategoryTags category={article.category} tone="hash" className="mt-1" />
     </article>
   );
 }

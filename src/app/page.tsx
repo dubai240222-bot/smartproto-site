@@ -3,7 +3,11 @@ import { getAllArticles, type Article } from '@/data/articles';
 import { ThematicNavigator } from '@/components/thematic-navigator';
 import { PastNewsPager } from '@/components/past-news-pager';
 import { sortArticlesByPublishedDate } from '@/lib/article-utils';
-import { orderArticlesForHomepage } from '@/lib/homepage-editorial-mix';
+import {
+  orderArticlesForHomepage,
+  pickRotatingLead,
+  hasDisplayWorthyImage,
+} from '@/lib/homepage-editorial-mix';
 import {
   LeadStory,
   LeadRailItem,
@@ -12,8 +16,9 @@ import {
   QuickUpdateItem,
 } from '@/components/article-card';
 
-const FRONT_SLOT_COUNT = 12; // lead + rail3 + grid4 + quick4
+const FRONT_SLOT_COUNT = 14; // lead + rail5 + grid4 + quick4
 const PAST_PAGE_SIZE = 10;
+const LEAD_HOLD_HOURS = 5;
 
 function textBlob(a: Article): string {
   const tags = Array.isArray(a.tags) ? a.tags.join(' ') : '';
@@ -161,14 +166,28 @@ export default async function HomePage({
   const sortedArticles = sortArticlesByPublishedDate(getAllArticles());
   // Editorial mix for homepage slots: AI/apps first, avoid commodity streaks
   const feedArticles = orderArticlesForHomepage(sortedArticles);
+  // Lead rotates every few hours among photo-worthy / high-interest candidates
+  const { lead: leadStory, rest: afterLead } = pickRotatingLead(feedArticles, LEAD_HOLD_HOURS);
 
-  // SP-A-066 editorial levels (mixed order; not raw chronology)
-  const leadStory = feedArticles[0];
-  const leadRail = feedArticles.slice(1, 4);
-  const gridStories = feedArticles.slice(4, 8);
-  const quickNews = feedArticles.slice(8, 12);
+  // Prefer display-worthy photos in the visual grid
+  const photoFirst = [
+    ...afterLead.filter((a) => hasDisplayWorthyImage(a)),
+    ...afterLead.filter((a) => !hasDisplayWorthyImage(a)),
+  ];
+  // Deduplicate while preferring photo-first order
+  const seen = new Set<string>();
+  const restOrdered: Article[] = [];
+  for (const a of [...photoFirst, ...afterLead]) {
+    if (seen.has(a.slug)) continue;
+    seen.add(a.slug);
+    restOrdered.push(a);
+  }
 
-  const pastPool = feedArticles.slice(FRONT_SLOT_COUNT);
+  const leadRail = restOrdered.slice(0, 5);
+  const gridStories = restOrdered.slice(5, 9);
+  const quickNews = restOrdered.slice(9, 13);
+
+  const pastPool = restOrdered.slice(FRONT_SLOT_COUNT - 1);
   const totalPast = pastPool.length;
   const totalPages = Math.max(1, Math.ceil(totalPast / PAST_PAGE_SIZE));
   const currentPage = Math.min(requestedPage, totalPages);
@@ -185,7 +204,7 @@ export default async function HomePage({
 
   return (
     <main className="home-editorial min-h-screen bg-[var(--bg)] text-[var(--text)] transition-colors">
-      <div className="mx-auto max-w-[1280px] space-y-4 px-3 py-3 sm:space-y-5 sm:px-5 sm:py-4 lg:px-6">
+      <div className="mx-auto max-w-[1440px] space-y-3 px-2 py-2.5 sm:space-y-4 sm:px-4 sm:py-3 lg:px-5">
         {activeCategory ? (
           <>
             {thematicNavigator}
@@ -231,11 +250,13 @@ export default async function HomePage({
         ) : (
           /* SP-A-066 — HOMEPAGE EDITORIAL GRID */
           <>
-            {/* 1. TOP / LEAD AREA */}
-            <section className="grid gap-3 border-b border-[var(--border)] pb-4 lg:grid-cols-12 lg:gap-5 lg:pb-5">
-              <div className="lg:col-span-8">{leadStory ? <LeadStory article={leadStory} /> : null}</div>
-              <aside className="bg-[var(--surface)] px-0 lg:col-span-4 lg:border-l lg:border-[var(--border)] lg:pl-5">
-                <div className="mb-1.5 flex items-center justify-between border-b border-[var(--border)] pb-1.5">
+            {/* 1. TOP / LEAD AREA — denser: shorter hero + fuller rail */}
+            <section className="grid items-start gap-3 border-b border-[var(--border)] pb-3 lg:grid-cols-12 lg:gap-4 lg:pb-4">
+              <div className="lg:col-span-7 xl:col-span-8">
+                {leadStory ? <LeadStory article={leadStory} /> : null}
+              </div>
+              <aside className="flex flex-col lg:col-span-5 xl:col-span-4 lg:border-l lg:border-[var(--border)] lg:pl-4">
+                <div className="mb-1 flex items-center justify-between border-b border-[var(--border)] pb-1">
                   <h2 className="text-[12px] font-medium tracking-wide text-[var(--muted)]">
                     Новинки технологий
                   </h2>
@@ -246,7 +267,7 @@ export default async function HomePage({
                     Все →
                   </Link>
                 </div>
-                <div>
+                <div className="flex-1">
                   {leadRail.map((article) => (
                     <LeadRailItem key={article.slug} article={article} />
                   ))}

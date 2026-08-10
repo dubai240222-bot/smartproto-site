@@ -39,7 +39,7 @@ export function Header({ articles }: { articles: Article[] }) {
 
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--surface)]/95 text-[var(--text)] backdrop-blur-sm transition-colors">
-      <div className="mx-auto max-w-[1280px] px-3 sm:px-5 lg:px-6">
+      <div className="mx-auto max-w-[1440px] px-2 sm:px-4 lg:px-5">
         <div className="flex items-center justify-between gap-3 py-2 sm:py-2.5">
           {/* Brand — compact for editorial density */}
           <Link

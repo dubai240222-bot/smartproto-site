@@ -101,7 +101,68 @@ function recencyBonus(publishedAt: string, nowMs: number): number {
 
 function scoreArticle(article: Article, nowMs: number): number {
   const bucket = inferMixBucket(article);
-  return bucketPriority(bucket) + recencyBonus(article.publishedAt, nowMs);
+  let score = bucketPriority(bucket) + recencyBonus(article.publishedAt, nowMs);
+  // Prefer real product/scene photos over empty logo tiles on the homepage.
+  if (hasDisplayWorthyImage(article)) score += 12;
+  else if (articleHeroUrl(article) && isWeakHeroUrl(articleHeroUrl(article)!)) score -= 20;
+  return score;
+}
+
+function articleHeroUrl(article: Article): string | undefined {
+  return article.images?.find((i) => i.role === 'hero')?.url || article.imageUrl || undefined;
+}
+
+/** Logo / brand / icon tiles that read as empty illustrations on the lead. */
+export function isWeakHeroUrl(url: string): boolean {
+  const u = url.toLowerCase();
+  return (
+    /logo|favicon|sprite|wordmark|brand[-_]?mark|icon[-_]?only|\/icons?\/|apple-touch|og-default|default[-_]image|placeholder|1x1|pixel\.gif|\.svg(\?|$)/i.test(
+      u,
+    ) ||
+    /google.*logo|gstatic\.com\/.*logo|lh3\.googleusercontent\.com\/.*[-_]s\d{2,3}([?\-]|$)/i.test(u) ||
+    /unsplash\.com/i.test(u)
+  );
+}
+
+export function hasDisplayWorthyImage(article: Article): boolean {
+  const url = articleHeroUrl(article);
+  if (!url || !String(url).trim()) return false;
+  return !isWeakHeroUrl(url);
+}
+
+export function displayHeroUrl(article: Article): string | undefined {
+  const url = articleHeroUrl(article);
+  if (!url || isWeakHeroUrl(url)) return undefined;
+  return url;
+}
+
+/**
+ * Rotate the LEAD among strong photo-backed candidates every `holdHours`.
+ * Stays put for many hours, but changes more often than “forever newest #1”.
+ */
+export function pickRotatingLead(
+  feed: Article[],
+  holdHours = 5,
+): { lead: Article; rest: Article[] } {
+  if (feed.length === 0) {
+    throw new Error('pickRotatingLead: empty feed');
+  }
+  const photoPool = feed.filter(hasDisplayWorthyImage);
+  const interestPool = feed.filter((a) => {
+    const b = inferMixBucket(a);
+    return b === 'ai_models' || b === 'phone_apps' || b === 'robotics' || b === 'invention';
+  });
+  const pool =
+    photoPool.length >= 3
+      ? photoPool.slice(0, 12)
+      : interestPool.length >= 3
+        ? interestPool.slice(0, 12)
+        : feed.slice(0, 12);
+
+  const bucket = Math.floor(Date.now() / (Math.max(1, holdHours) * 3_600_000));
+  const lead = pool[bucket % pool.length] || feed[0];
+  const rest = feed.filter((a) => a.slug !== lead.slug);
+  return { lead, rest };
 }
 
 /**
