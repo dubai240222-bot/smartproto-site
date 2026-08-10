@@ -6,6 +6,7 @@
 import {
   hasStrongConsumerAngle,
   isCommodityLowWow,
+  isGrayCommodityHard,
   isKeepWowException,
   isOverplayedMassTopic,
 } from './hard-reject';
@@ -33,7 +34,7 @@ export interface ScoutScorePartsV2 {
  * Strong unusual angle can still pass via hasStrongConsumerAngle / KEEP exceptions.
  */
 const COMMODITY_ROUTINE_RE =
-  /\b(new\s+(iphone|pixel|galaxy|smartphone|phone|laptop|notebook|ultrabook|monitor|keyboard|power\s*bank|charger)\b)|(\b(lineup|line-up|series)\s+(will\s+)?(be\s+)?(unveil|announce|launch|reveal))|(\b(will\s+unveil|to\s+announce|set\s+to\s+launch).{0,40}(phone|smartphone|lineup|series))|(\b(specs?\s+leak|price\s+leak|rumor|rumour).{0,40}(iphone|pixel|galaxy|xiaomi|huawei|iqoo|oppo|vivo))|(\b(refresh|incremental\s+update|same\s+design|minor\s+upgrade)\b.{0,40}(phone|laptop|monitor|keyboard))|(обычн\w*\s+(смартфон|ноутбук|монитор|клавиатур|пауэрбанк))|(представит\s+линейк)|(утечк\w*.{0,30}(iqoo|huawei|xiaomi|pixel|iphone))/i;
+  /\b(new\s+(iphone|pixel|galaxy|smartphone|phone|laptop|notebook|ultrabook|monitor|keyboard|power\s*bank|charger|mouse|speaker|earbuds)\b)|(\b(lineup|line-up|series)\s+(will\s+)?(be\s+)?(unveil|announce|launch|reveal))|(\b(will\s+unveil|to\s+announce|set\s+to\s+launch).{0,40}(phone|smartphone|lineup|series))|(\b(specs?\s+leak|price\s+leak|rumor|rumour).{0,40}(iphone|pixel|galaxy|xiaomi|huawei|iqoo|oppo|vivo|lava))|(\b(refresh|incremental\s+update|same\s+design|minor\s+upgrade)\b.{0,40}(phone|laptop|monitor|keyboard|mouse|speaker))|(обычн\w*\s+(смартфон|ноутбук|монитор|клавиатур|пауэрбанк|мышь|колонк))|(представит\s+линейк)|(утечк\w*.{0,30}(iqoo|huawei|xiaomi|pixel|iphone|lava))|(jbl\s*pulse|xboom|aula\s*sc\d)/i;
 
 /** Routine smart-home SKUs without a surprising mechanism (e.g. basic soil+rain watering kit). */
 const SMART_HOME_ROUTINE_RE =
@@ -41,7 +42,12 @@ const SMART_HOME_ROUTINE_RE =
 
 export function looksCommodityRoutine(title: string, text = ''): boolean {
   const hay = `${title}\n${text}`;
-  if (isKeepWowException(title, text) || hasStrongConsumerAngle(title, text)) return false;
+  if (isKeepWowException(title, text) || hasStrongConsumerAngle(title, text)) {
+    // Gray hard commodities still count as routine for Scout penalty.
+    if (isGrayCommodityHard(title, text)) return true;
+    return false;
+  }
+  if (isGrayCommodityHard(title, text)) return true;
   if (isCommodityLowWow(title, text) || isOverplayedMassTopic(title, text)) return true;
   return COMMODITY_ROUTINE_RE.test(hay);
 }
@@ -182,31 +188,34 @@ export function applySoftNoveltyAdjust(
 }
 
 export const SCOUT_SYSTEM_PROMPT_GADGET_V2 = [
-  'Ты разведчик SmartProto. Нужны действительно интересные изобретения, роботы, AI-демо, research с понятной пользой,',
-  'необычные гаджеты — НЕ обычный товарный шум.',
+  'Ты разведчик SmartProto. Нужны СЕНСАЦИИ и сильные истории: роботы, Physical AI, необычные изобретения,',
+  'AI-демо с понятным «вау», research с ясной пользой — НЕ бытовая серость.',
   'HARD: конкретный объект интереса (устройство / прототип / research demo / app). Покупка сегодня НЕ обязательна.',
   'Публичный текст БЕЗ цен и БЕЗ ссылок.',
   '',
   'Оценка 0–100 СТРОГО суммой частей (новые веса SP-A-065):',
-  'humanSurprise 0–30 — обычный человек: «неужели такое уже существует?»',
+  'humanSurprise 0–30 — обычный человек: «неужели такое уже существует?» / «хочу переслать другу»',
   'visualDemonstrability 0–20 — можно ли показать сильным фото/видео',
   'everydayRelevance 0–15 — ценность понятна без техподготовки',
   'novelty 0–15 — новая категория/способ, не «ещё одна версия»',
   'shareability 0–10 — захочет ли человек отправить знакомому',
   'credibility 0–10 — реальный продукт / prototype / primary research',
   '',
-  'ANTI-COMMODITY: низкие части (итог ориентир 0–35), если история про очередной смартфон/ноутбук/монитор/клавиатуру/powerbank,',
-  'линейку «представят в сентябре», утечку характеристик без необычной идеи, обычный smart-watering kit.',
+  'ANTI-COMMODITY / СЕРОСТЬ → score 0–20 (почти всегда REJECT по порогу):',
+  'мыши, колонки/сабвуферы/boombox/JBL Pulse, обычные наушники TWS, механические клавиатуры,',
+  'индийские/бюджетные смартфоны (Lava/Tecno/Infinix/Micromax), очередной iQOO/Redmi battery-card,',
+  'SSD-боксы, USB-hub, автомобили/MPV, обычный smart-watering kit, merch.',
+  'Читателю НЕЗАЧЕМ тратить на это время.',
   '',
   'SOFT NOVELTY (SP-A-065B): не ставь score=0 только потому что категория уже существует.',
-  'Необычное улучшение существующей категории (ультратонкая клавиатура, люлька с автооткликом на плач) → ориентир 40–69.',
+  'Необычное улучшение с сильным surprise (не мышь/колонка) → ориентир 40–69.',
   '70+ только при высоком humanSurprise / shareability / настоящей новизне способа.',
   '',
-  'ЭТАЛОНЫ: Meta gesture wristband → 80–90; humanoid laundry robot → 80–90; ETH drones → 70–85;',
-  'Delta Aero (cry-response) → ~50–70; Altar II (extreme thinness) → ~40–65; RainPoint watering → 0–35;',
-  'обычный iQOO/OPPO/iPhone rumor/lineup → 0–25.',
+  'ЭТАЛОНЫ: Meta gesture wristband → 80–90; humanoid / robot finger / Gemini Robotics → 80–95;',
+  'HoverAir transform camera → 70–85; RFID-on-phone research → 70–85;',
+  'JBL Pulse / AULA mouse / Lava phone / Xboom → 0–15; iQOO Z-series battery card → 0–25.',
   '',
   'status: AVAILABLE | ANNOUNCED | PROTOTYPE | RESEARCH | CONCEPT | CROWDFUNDING.',
   'Не маскируй concept/crowdfunding под AVAILABLE.',
-  'REJECT только мусор/политику/SEO — не обнуляй mid-band необычные улучшения.',
+  'REJECT серость сразу в reason; не трать высокий score на мыши и колонки.',
 ].join('\n');
