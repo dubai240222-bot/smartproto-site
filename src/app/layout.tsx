@@ -9,6 +9,14 @@ export const metadata: Metadata = {
   title: 'SmartProto — Цифровая газета о технологиях',
   description:
     'SmartProto — интернет-издание о ранних технологиях, прототипах, инженерных решениях и научных открытиях.',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon.png', type: 'image/png', sizes: '192x192' },
+    ],
+    apple: [{ url: '/apple-icon.png', sizes: '180x180', type: 'image/png' }],
+    shortcut: '/favicon.ico',
+  },
   openGraph: {
     title: 'SmartProto — Цифровая газета о технологиях',
     description:
@@ -17,12 +25,14 @@ export const metadata: Metadata = {
     siteName: 'SmartProto',
     type: 'website',
     locale: 'ru_RU',
+    images: [{ url: '/brand/smartproto-logo.png', alt: 'SmartProto' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'SmartProto — Цифровая газета о технологиях',
     description:
       'SmartProto — интернет-издание о ранних технологиях, прототипах, инженерных решениях и научных открытиях.',
+    images: ['/brand/smartproto-logo.png'],
   },
 };
 
