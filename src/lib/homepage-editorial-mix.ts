@@ -1,11 +1,10 @@
 /**
- * SP-A-066 — Homepage helpers (display-only).
- * Feed order is chronological (newest first) on /, /all, /editorial.
+ * SP-A-066 / SP-A-081 — Homepage helpers (display-only).
+ * Feed order is chronological (newest first) on /.
  * Mix helpers remain available for experiments; public pages use date sort.
  */
 import type { Article } from '@/data/articles';
 import { inferEditorialFocus, type EditorialFocus } from '@/lib/newsroom/diversity-guard';
-import { isWeakIllustrationUrl } from '@/lib/collectors/photo-scout';
 import { sortArticlesByPublishedDate } from '@/lib/article-utils';
 
 export type MixBucket =
@@ -36,6 +35,17 @@ const INVENTION_RE =
 /** Low reader-signal commodities for this site — mice, boomboxes, generic speakers, etc. */
 const COMMODITY_RE =
   /\b(mouse|мышь|мыши|boombox|xboom|bluetooth speaker|портативн\w*\s+акустик|колонк|динамик|keyboard|клавиатур|механическ\w+\s+клавиатур|earbuds|наушник|headphones|гарнитур|charger|зарядк|power bank|powerbank|cable|кабель|tripod|штатив|webcam|веб-?камер|usb hub|usb-hub|ssd enclosure|корпус\s+nvme|watering|полив|bassinet|люльк|lego)\b/i;
+
+/** Local copy of SPA-066 weak-tile heuristic (avoid coupling to photo-scout exports). */
+function isWeakIllustrationUrl(url: string): boolean {
+  const u = url.toLowerCase();
+  return (
+    /avatar|logo|icon|favicon|sprite|emoji|gravatar|placeholder/i.test(u) ||
+    /\.svg(\?|$)/i.test(u) ||
+    /google.*logo|gstatic\.com\/.*logo|lh3\.googleusercontent\.com\/.*[-_]s\d{2,3}([?\-]|$)/i.test(u) ||
+    /unsplash\.com/i.test(u)
+  );
+}
 
 function blobOf(a: Article): string {
   const tags = Array.isArray(a.tags) ? a.tags.join(' ') : '';
