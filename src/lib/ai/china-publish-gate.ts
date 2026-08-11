@@ -1,7 +1,16 @@
 /**
  * Shared editorial gate for China → Qwen dossiers before Editor publish.
  * Used by publish-china-qwen and newsroom tick (max 1 China pub per tick).
+ *
+ * SP-A-076 — editorial watch: grey commodity / no human door → SKIP
+ * (better idle than another monitor/mouse/budget-phone card).
  */
+
+import { isGrayCommodityHard } from '@/lib/ai/hard-reject';
+import {
+  passesEditorialPriority,
+  shouldHardRejectGreyNoise,
+} from '@/lib/ai/human-priority-gate';
 
 export type ChinaDossierGateInput = {
   productName: string;
@@ -39,10 +48,26 @@ export function dossierPublishable(
   if (/chinajoy|游戏展/.test(blob) && !/(手机|手表|耳机|手柄|平板|phone|watch)/i.test(blob + name)) {
     return { ok: false, reason: 'trade-show fluff without device' };
   }
-  if (d.recommended) return { ok: true, reason: 'qwen recommended' };
+
+  const title = d.translatedTitle || d.productName || d.originalTitle;
+  const text = [d.whatItDoes, d.consumerUse, d.whyItIsNew, sourceBody].join('\n');
+  if (shouldHardRejectGreyNoise(title, text) || isGrayCommodityHard(title, text)) {
+    return {
+      ok: false,
+      reason: 'editorial watch: grey commodity / no human door — SKIP',
+    };
+  }
+  if (!passesEditorialPriority(title, text)) {
+    return {
+      ok: false,
+      reason: 'editorial watch: not invention/share-worthy — prefer fewer',
+    };
+  }
+
+  if (d.recommended) return { ok: true, reason: 'qwen recommended + editorial watch' };
   const facts = [d.whatItDoes, d.consumerUse, d.whyItIsNew, sourceBody].join('\n').trim();
   if (name.length >= 4 && facts.length >= 80) {
-    return { ok: true, reason: 'editorial gadget bar (source-backed)' };
+    return { ok: true, reason: 'editorial gadget bar (source-backed + watch)' };
   }
   return { ok: false, reason: 'weak dossier / thin source' };
 }

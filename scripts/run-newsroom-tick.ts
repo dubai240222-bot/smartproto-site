@@ -6,7 +6,7 @@
  *   2) else RSS → hardReject → Scout → Reviewer → Editor
  *
  * Cycle types (independent supervisors / GHA jobs):
- *   news    — short format; interval floor ~25m / ~2–3/h (not an obligation to publish junk)
+ *   news    — short format; interval floor ~60m (1 cycle/h max; SKIP if no strong story)
  *   article — fuller + consumer scenario + Wow Score; interval floor 3h
  *
  * Git commit/push is left to the dual supervisor or GitHub Actions.
@@ -33,7 +33,7 @@ import {
 import { scoutArticle, SCOUT_SCORE_THRESHOLD } from '../src/lib/ai/scout';
 import { reviewArticle } from '../src/lib/ai/reviewer';
 import { writeDraft, type DraftFormat } from '../src/lib/ai/editor';
-import { hardRejectTopic, looksBuyableGadget, isAiOrInventionAlert } from '../src/lib/ai/hard-reject';
+import { hardRejectTopic, looksBuyableGadget } from '../src/lib/ai/hard-reject';
 import {
   collectAiRadarCandidates,
   normalizeAiRadarCandidates,
@@ -1144,9 +1144,8 @@ async function publishRssOnce(opts: {
       opts.metrics.sentToGemini += 1;
       const review = await reviewArticle(sourcePayload);
       if (/^REJECT\b/i.test(review.technicalVerdict)) {
-        // Soft override: Scout already scored high on AI/invention alert — don't idle the tick.
-        // SP-A-065CD: ai_radar — soft-pass only for strong EVENT already Scout-passed (≥floor) with normalized record / primary evidence.
-        // Not a blanket «if AI → PASS»; commodity without EVENT markers still rejected.
+        // SP-A-065CD / SP-A-071B: soft-pass ONLY for ai_radar EVENT already Scout-passed.
+        // Do NOT soft-pass generic invention rejects — idle/SKIP beats weak publish.
         const aiRadarEventOk =
           itemMode === 'ai_radar' &&
           scout.score >= scoutFloor &&
@@ -1154,19 +1153,13 @@ async function publishRssOnce(opts: {
             /critical cyber|whole body|embodied|autonom|boundary|safeguard|preparedness/i.test(
               `${item.title}\n${item.text || ''}`,
             ));
-        if (
-          aiRadarEventOk ||
-          (scout.score >= 80 && isAiOrInventionAlert(item.title, item.text || item.title))
-        ) {
+        if (aiRadarEventOk) {
           console.log(
             chalk.yellow(
-              `Reviewer reject soft-pass (${itemMode}, scout=${scout.score}): ${review.technicalVerdict}`,
+              `Reviewer reject soft-pass (ai_radar EVENT, scout=${scout.score}): ${review.technicalVerdict}`,
             ),
           );
-          review.technicalVerdict =
-            itemMode === 'ai_radar'
-              ? `PASS: AI radar EVENT (scout ${scout.score})`
-              : `PASS: AI/invention alert (scout ${scout.score})`;
+          review.technicalVerdict = `PASS: AI radar EVENT (scout ${scout.score})`;
         } else {
           console.log(chalk.yellow(`Reviewer reject: ${review.technicalVerdict}`));
           await markRejected(
