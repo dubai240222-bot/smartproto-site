@@ -66,11 +66,46 @@ function makeSummary(text: string): string {
 }
 
 function parseArgs(argv: string[]) {
+  const slugsArg = argv.find((a) => a.startsWith('--slugs='));
+  const slugs = slugsArg
+    ? slugsArg
+        .slice('--slugs='.length)
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : [];
   return {
     dryRun: argv.includes('--dry-run'),
     photosOnly: argv.includes('--photos-only'),
     rewriteOnly: argv.includes('--rewrite-only'),
+    slugs,
   };
+}
+
+async function fetchSourceSnippet(url?: string): Promise<string> {
+  if (!url || !/^https?:\/\//i.test(url)) return '';
+  try {
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(8000),
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (compatible; SmartProtoBot/1.0; +https://smartproto.net)',
+        Accept: 'text/html',
+      },
+      redirect: 'follow',
+    });
+    if (!res.ok) return '';
+    const html = await res.text();
+    const text = html
+      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return text.slice(0, 6000);
+  } catch {
+    return '';
+  }
 }
 
 async function assignThematicPhoto(article: StoredArticle, force = false): Promise<StoredArticle> {
@@ -114,13 +149,16 @@ async function rewriteArticle(article: StoredArticle): Promise<StoredArticle | n
       ? ('ai_radar' as const)
       : ('gadget' as const);
 
+  const sourceExtra = await fetchSourceSnippet(article.sourceUrl);
   const draft = await writeDraft(
     {
       format: 'article',
       mode,
       title: article.title,
       sourceName: article.sourceUrl || 'source',
-      text: [article.title, article.summary, article.content].filter(Boolean).join('\n\n'),
+      text: [article.title, article.summary, article.content, sourceExtra]
+        .filter(Boolean)
+        .join('\n\n'),
     },
     { technicalVerdict: 'PASS: existing published AUTO article — deepen to editorial standard' },
   );
@@ -155,10 +193,11 @@ async function main() {
     process.exit(1);
   }
 
-  const { dryRun, photosOnly, rewriteOnly } = parseArgs(process.argv.slice(2));
-  console.log('SP-A-088 fix visuals + rewrite', { dryRun, photosOnly, rewriteOnly });
+  const { dryRun, photosOnly, rewriteOnly, slugs } = parseArgs(process.argv.slice(2));
+  console.log('SP-A-088 fix visuals + rewrite', { dryRun, photosOnly, rewriteOnly, slugs: slugs.length });
 
-  const photoTargets = [...new Set([...REWRITE_SLUGS, ...PHOTO_ONLY_SLUGS])];
+  const rewriteList = slugs.length ? slugs : REWRITE_SLUGS;
+  const photoTargets = [...new Set([...rewriteList, ...(slugs.length ? [] : PHOTO_ONLY_SLUGS)])];
   let photoOk = 0;
   let rewriteOk = 0;
   let rewriteSkip = 0;
@@ -182,7 +221,7 @@ async function main() {
       if (next.imageUrl !== article.imageUrl) photoOk += 1;
     }
 
-    const shouldRewrite = !photosOnly && REWRITE_SLUGS.includes(slug) && !isChief(next);
+    const shouldRewrite = !photosOnly && rewriteList.includes(slug) && !isChief(next);
     if (shouldRewrite) {
       try {
         const rewritten = await rewriteArticle(next);
