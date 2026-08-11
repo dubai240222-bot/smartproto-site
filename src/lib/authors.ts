@@ -1,6 +1,9 @@
 ﻿/**
  * Ironic foreign-correspondent bylines for SmartProto.
  * Irony lives in pen names / desks only — article tone stays calm tech journalism.
+ *
+ * SP-A-078: AUTO author pool ~12 names with anti-repeat rotation.
+ * Do not rotate Chief Fast Lane / Author Door human bylines.
  */
 
 export type PipelineId =
@@ -41,7 +44,7 @@ export interface AuthorResolvable {
   tags?: string[];
 }
 
-/** Stable roster: witty foreign-desk pen names, not ethnic caricature. */
+/** Stable roster: tech-magazine pen names (mixed gender, international). */
 export const AUTHOR_ROSTER: EditorialAuthor[] = [
   {
     id: 'lin-jie',
@@ -92,13 +95,64 @@ export const AUTHOR_ROSTER: EditorialAuthor[] = [
     agentId: 'factory-shift',
     bio: 'Американская лента релизов — полезные новинки без блогерского пафоса.',
   },
+  // SP-A-078 — expand AUTO pool beyond 1–2 repeating names
+  {
+    id: 'sofia-reyes',
+    name: 'София Рейес',
+    desk: 'Madrid desk',
+    agentId: 'eu-wire',
+    bio: 'Мадридское бюро: понятные объяснения сложных новинок.',
+  },
+  {
+    id: 'james-whitfield',
+    name: 'Джеймс Уитфилд',
+    desk: 'Boston desk',
+    agentId: 'lab-wire',
+    bio: 'Бостонская лента: lab demos и практический смысл исследований.',
+  },
+  {
+    id: 'anya-petrova',
+    name: 'Аня Петрова',
+    desk: 'Nordic desk',
+    agentId: 'nordic-wire',
+    bio: 'Северное бюро: инженерия, энергия, аккуратный тон.',
+  },
+  {
+    id: 'erik-lindqvist',
+    name: 'Эрик Линдквист',
+    desk: 'Stockholm desk',
+    agentId: 'stockholm-wire',
+    bio: 'Стокгольм: железо, софт и бытовые последствия технологий.',
+  },
+  {
+    id: 'maya-okamoto',
+    name: 'Майя Окамото',
+    desk: 'Pacific desk',
+    agentId: 'pacific-wire',
+    bio: 'Тихоокеанская лента: гаджеты и будущие привычки.',
+  },
 ];
+
+/** SP-A-078 — AUTO rotation pool (~12). */
+export const AUTO_AUTHOR_POOL = [
+  'lin-jie',
+  'park-soyeon',
+  'klaus-weber',
+  'eleanor-hale',
+  'marco-bellini',
+  'hana-okada',
+  'tom-reed',
+  'sofia-reyes',
+  'james-whitfield',
+  'anya-petrova',
+  'erik-lindqvist',
+  'maya-okamoto',
+] as const;
+
+const ASIA_PREFERRED = ['lin-jie', 'park-soyeon', 'hana-okada', 'maya-okamoto', 'anya-petrova'] as const;
 
 const BY_ID = new Map(AUTHOR_ROSTER.map((a) => [a.id, a]));
 const BY_AGENT = new Map(AUTHOR_ROSTER.map((a) => [a.agentId, a]));
-
-/** Western desks used for deterministic rotation when pipeline is generic RSS. */
-const WESTERN_ROTATION = ['eleanor-hale', 'klaus-weber', 'marco-bellini', 'tom-reed', 'hana-okada'] as const;
 
 const GENERIC_AUTHORS = new Set([
   '',
@@ -169,9 +223,79 @@ function looksItalian(url?: string): boolean {
   return /\.it$|hwupgrade\.it|tomshw\.it/.test(host);
 }
 
-function westernByHash(seed: string): EditorialAuthor {
-  const idx = hashString(seed) % WESTERN_ROTATION.length;
-  return authorById(WESTERN_ROTATION[idx]);
+function isHumanDoorPipeline(pipeline?: PipelineId, agentId?: string): boolean {
+  const blob = `${pipeline || ''} ${agentId || ''}`.toLowerCase();
+  return /chief-fast-lane|chief\b|author-door|author\/contributor|contributor/.test(blob);
+}
+
+/** Recent published display names (newest first) — best-effort, never throws. */
+export function recentPublishedAuthorNames(limit = 5): string[] {
+  try {
+    if (process.env.ARTICLES_STORE === 'sqlite') {
+      // Lazy require avoids circular import with articles.ts at module load.
+      const { getAllArticlesFromDb } = require('@/lib/data-store/articles-repo') as {
+        getAllArticlesFromDb: () => Array<{ author?: string; publishedAt?: string }>;
+      };
+      const rows = getAllArticlesFromDb() || [];
+      return rows
+        .slice()
+        .sort((a, b) => String(b.publishedAt || '').localeCompare(String(a.publishedAt || '')))
+        .map((r) => (r.author || '').trim())
+        .filter(Boolean)
+        .slice(0, limit);
+    }
+  } catch {
+    /* ignore — rotation still works via hash */
+  }
+  return [];
+}
+
+/**
+ * Pick from AUTO pool; avoid names that already appear in the last few publishes.
+ * Soft geographic preference only shapes order, never locks to one person.
+ */
+export function pickRotatingAutoAuthor(
+  seed: string,
+  opts?: {
+    preferredIds?: readonly string[];
+    avoidNames?: string[];
+    recentLimit?: number;
+    /** When true (publish-time), skip names from last N published articles. */
+    avoidRecent?: boolean;
+  },
+): EditorialAuthor {
+  const avoid = new Set(
+    (
+      opts?.avoidNames ??
+      (opts?.avoidRecent ? recentPublishedAuthorNames(opts?.recentLimit ?? 5) : [])
+    ).map((n) => n.trim().toLowerCase()),
+  );
+  const preferred = (opts?.preferredIds || []).map((id) => authorById(id));
+  const rest = AUTO_AUTHOR_POOL.map((id) => authorById(id)).filter(
+    (a) => !preferred.some((p) => p.id === a.id),
+  );
+  const pool = [...preferred, ...rest];
+  const start = hashString(seed || 'smartproto') % pool.length;
+
+  for (let i = 0; i < pool.length; i++) {
+    const cand = pool[(start + i) % pool.length];
+    if (!avoid.has(cand.name.toLowerCase())) return cand;
+  }
+  const mostRecent = [...avoid][0];
+  for (let i = 0; i < pool.length; i++) {
+    const cand = pool[(start + i) % pool.length];
+    if (!mostRecent || cand.name.toLowerCase() !== mostRecent) return cand;
+  }
+  return pool[start];
+}
+
+function preferredIdsForSource(sourceUrl?: string, pipeline?: PipelineId): readonly string[] | undefined {
+  if (looksChina({ sourceUrl }) || /china|qwen/i.test(String(pipeline || ''))) return ASIA_PREFERRED;
+  if (looksKorea(sourceUrl)) return ['park-soyeon', 'hana-okada', 'maya-okamoto', ...ASIA_PREFERRED];
+  if (looksJapan(sourceUrl)) return ['hana-okada', 'maya-okamoto', 'park-soyeon'];
+  if (looksGerman(sourceUrl)) return ['klaus-weber', 'erik-lindqvist', 'eleanor-hale', 'tom-reed'];
+  if (looksItalian(sourceUrl)) return ['marco-bellini', 'sofia-reyes', 'eleanor-hale'];
+  return undefined;
 }
 
 /**
@@ -184,32 +308,15 @@ export function pickAuthorForPipeline(pipeline: PipelineId): EditorialAuthor {
     .toLowerCase()
     .replace(/_/g, '-');
 
-  if (key.includes('china') || key.includes('qwen')) {
-    return authorById('lin-jie');
-  }
-  if (key.includes('korea') || key.includes('seoul')) {
-    return authorById('park-soyeon');
-  }
-  if (key.includes('tokyo') || key.includes('japan')) {
-    return authorById('hana-okada');
-  }
-  if (key.includes('gadget')) {
-    return authorById('marco-bellini');
-  }
-  if (key.includes('newsroom') || key.includes('scout')) {
+  if (isHumanDoorPipeline(key)) {
     return authorById('eleanor-hale');
   }
-  if (key.includes('factory') || key.includes('burst')) {
-    return authorById('tom-reed');
-  }
-  if (key.includes('rss') || key.includes('editor')) {
-    return authorById('klaus-weber');
-  }
-  if (key.includes('publish-latest') || key.includes('latest')) {
-    return westernByHash(key);
-  }
 
-  return BY_AGENT.get(key) ?? westernByHash(key || 'smartproto');
+  // SP-A-078: all AUTO pipelines rotate through the pool (no locked Eleanor / Lin Jie).
+  return pickRotatingAutoAuthor(key, {
+    preferredIds: preferredIdsForSource(undefined, key),
+    avoidRecent: true,
+  });
 }
 
 /** Domain / category heuristic when pipeline alone is not enough. */
@@ -217,40 +324,35 @@ export function pickAuthorForSource(
   sourceUrl: string | undefined,
   pipeline?: PipelineId,
   seed = sourceUrl || 'smartproto',
+  opts?: { avoidRecent?: boolean },
 ): EditorialAuthor {
-  if (looksChina({ sourceUrl, category: '' })) return authorById('lin-jie');
-  if (looksKorea(sourceUrl)) return authorById('park-soyeon');
-  if (looksJapan(sourceUrl)) return authorById('hana-okada');
-  if (looksGerman(sourceUrl)) return authorById('klaus-weber');
-  if (looksItalian(sourceUrl)) return authorById('marco-bellini');
-
-  if (pipeline) {
-    const fromPipeline = pickAuthorForPipeline(pipeline);
-    if (
-      fromPipeline.id === 'eleanor-hale' ||
-      fromPipeline.id === 'tom-reed' ||
-      fromPipeline.id === 'klaus-weber' ||
-      fromPipeline.id === 'marco-bellini'
-    ) {
-      const host = domainOf(sourceUrl);
-      if (/techcrunch|theverge|arstechnica|wired|engadget|androidauthority|9to5/.test(host)) {
-        return westernByHash(seed);
-      }
-    }
-    return fromPipeline;
+  if (isHumanDoorPipeline(pipeline)) {
+    return authorById('eleanor-hale');
   }
 
-  return westernByHash(seed);
+  return pickRotatingAutoAuthor(seed, {
+    preferredIds: preferredIdsForSource(sourceUrl, pipeline),
+    avoidRecent: opts?.avoidRecent === true,
+  });
 }
 
 /** Stable persona from slug — used when author is missing on existing articles. */
 export function authorForSlug(slug: string, article?: AuthorResolvable): EditorialAuthor {
-  if (article && looksChina(article)) return authorById('lin-jie');
-  if (article && looksKorea(article.sourceUrl)) return authorById('park-soyeon');
-  if (article && looksJapan(article.sourceUrl)) return authorById('hana-okada');
-  if (article && looksGerman(article.sourceUrl)) return authorById('klaus-weber');
-  if (article && looksItalian(article.sourceUrl)) return authorById('marco-bellini');
-  return westernByHash(slug || 'smartproto');
+  if (article?.agentId && isHumanDoorPipeline(undefined, article.agentId)) {
+    if (!isGenericAuthor(article.author)) {
+      return {
+        id: 'custom',
+        name: article.author!.trim(),
+        desk: article.authorDesk || 'News desk',
+        agentId: article.agentId,
+        bio: '',
+      };
+    }
+  }
+  return pickRotatingAutoAuthor(slug || 'smartproto', {
+    preferredIds: preferredIdsForSource(article?.sourceUrl),
+    avoidRecent: false,
+  });
 }
 
 export function toAuthorStamp(persona: EditorialAuthor): AuthorStamp {
@@ -283,13 +385,26 @@ export function resolveAuthorForArticle(
     return { ...persona, ...toAuthorStamp(persona), authorDesk: article.authorDesk || persona.desk };
   }
 
+  if (article.agentId && isHumanDoorPipeline(undefined, article.agentId)) {
+    const persona = authorById('eleanor-hale');
+    return { ...persona, ...toAuthorStamp(persona) };
+  }
+
   if (article.agentId) {
-    const byAgent = BY_AGENT.get(article.agentId) ?? pickAuthorForPipeline(article.agentId);
-    return { ...byAgent, ...toAuthorStamp(byAgent) };
+    const persona = pickRotatingAutoAuthor(article.slug || article.sourceUrl || article.agentId, {
+      preferredIds: preferredIdsForSource(article.sourceUrl, article.agentId),
+      avoidRecent: false,
+    });
+    return { ...persona, ...toAuthorStamp(persona) };
   }
 
   if (pipeline) {
-    const persona = pickAuthorForSource(article.sourceUrl, pipeline, article.slug || article.sourceUrl);
+    const persona = pickAuthorForSource(
+      article.sourceUrl,
+      pipeline,
+      article.slug || article.sourceUrl,
+      { avoidRecent: false },
+    );
     return { ...persona, ...toAuthorStamp(persona) };
   }
 
@@ -300,14 +415,26 @@ export function resolveAuthorForArticle(
 /** Fields to spread into a new Article object at publish time. */
 export function stampAuthorForPipeline(
   pipeline: PipelineId,
-  opts?: { sourceUrl?: string; slug?: string },
+  opts?: { sourceUrl?: string; slug?: string; skipRotation?: boolean; agentId?: string },
 ): AuthorStamp {
-  const persona = pickAuthorForSource(
-    opts?.sourceUrl,
-    pipeline,
-    opts?.slug || opts?.sourceUrl || pipeline,
-  );
-  return toAuthorStamp(persona);
+  // Human doors / explicit skip: do not churn byline via AUTO pool.
+  if (opts?.skipRotation || isHumanDoorPipeline(pipeline, opts?.agentId)) {
+    const fixed =
+      BY_AGENT.get(String(pipeline || '').toLowerCase()) ||
+      authorById(/china|qwen/i.test(String(pipeline)) ? 'lin-jie' : 'eleanor-hale');
+    return toAuthorStamp(fixed);
+  }
+
+  const persona = pickRotatingAutoAuthor(opts?.slug || opts?.sourceUrl || String(pipeline), {
+    preferredIds: preferredIdsForSource(opts?.sourceUrl, pipeline),
+    avoidRecent: true,
+  });
+  // Keep pipeline agentId on stamp for analytics; display name rotates.
+  return {
+    author: persona.name,
+    authorDesk: persona.desk,
+    agentId: String(pipeline || persona.agentId),
+  };
 }
 
 /** Compact byline: «Имя · время» */
