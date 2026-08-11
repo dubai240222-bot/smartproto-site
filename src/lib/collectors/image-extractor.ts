@@ -217,8 +217,9 @@ function findFirstSignificantImg(html: string, baseUrl: string): string | null {
 /**
  * Returns a contextually fitting atmospheric/thematic photo fallback based on domain/topic,
  * strictly avoiding any wrong physical device images.
+ * Exported for Chief Fast Lane required-photo path (SP-A-077) — AUTO still uses extractArticleImage.
  */
-function getThematicFallback(title?: string, category?: string): string | null {
+export function getThematicFallback(title?: string, category?: string): string | null {
   const query = `${title || ''} ${category || ''}`.toLowerCase();
 
   // Public Figures / Famous Entities
