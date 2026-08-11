@@ -225,7 +225,7 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
     model: EDITOR_MODEL,
     temperature: 0.4,
     top_p: 0.85,
-    max_tokens: format === 'news' ? 900 : 1300,
+    max_tokens: format === 'news' ? 1100 : 1500,
     messages: [
       { role: 'system', content: EDITOR_SYSTEM_PROMPT },
       {
@@ -361,7 +361,7 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
     draft.title.trim().toUpperCase() !== 'REJECT' &&
     sourceRich &&
     draftWords > 0 &&
-    draftWords < 170
+    draftWords < 200
   ) {
     try {
       const depthRetry = await client.chat.completions.create({
@@ -374,8 +374,8 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
           {
             role: 'user',
             content: [
-              'Черновик слишком короткий и похож на сжатый перевод.',
-              'SP-A-087: перепиши как самостоятельный обзор на 180–300 слов (не меньше ~180).',
+              'Черновик слишком короткий (<200 слов) — на SmartProto такие тексты не воспринимают всерьёз.',
+              'SP-A-087: перепиши как самостоятельный обзор на 200–350 слов (цель ~220–300).',
               'Вынеси самый сильный факт в первый абзац; добавь сравнение, человеческий смысл и ближайшее будущее — только из входных данных.',
               'Без денежных сумм и URL. Тот же JSON с title, text, tags[], toneCheck.',
               '',
