@@ -241,6 +241,7 @@ export default async function ArticlePage({
                     title={article.title}
                     tags={article.tags}
                     summary={article.summary}
+                    agentId={article.agentId}
                     imageUrl={hero}
                     description={hero ? 'Иллюстрация к материалу' : undefined}
                     aspectRatio={hero ? 'aspect-[16/8]' : 'aspect-[16/7]'}

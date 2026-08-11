@@ -1,10 +1,11 @@
 /**
- * SP-A-065G — cheap visual fallback for articles without a safe product photo.
- * UI-only: infer brand / lab / category from title + tags + category.
+ * SP-A-065G / SP-A-079 — editorial visual fallback for articles without a safe product photo.
+ * UI-only: infer brand / org / category / topic from title + tags + category.
  * Never use RSS source name as the article brand (e.g. Robot Report ≠ Tacta).
+ * Never claims the tile is a real product photo.
  */
 
-export type VisualFallbackKind = 'brand' | 'organization' | 'category';
+export type VisualFallbackKind = 'brand' | 'organization' | 'category' | 'topic';
 
 /** Editorial category keys for CSS tile tone. */
 export type VisualCategoryKey =
@@ -15,7 +16,17 @@ export type VisualCategoryKey =
   | 'smart_home'
   | 'research'
   | 'china_tech'
-  | 'gadget';
+  | 'gadget'
+  | 'energy'
+  | 'future_work';
+
+export type VisualTopicKey =
+  | 'prototype'
+  | 'research'
+  | 'rumor'
+  | 'concept'
+  | 'review'
+  | 'chief';
 
 export interface VisualFallbackSpec {
   kind: VisualFallbackKind;
@@ -23,51 +34,123 @@ export interface VisualFallbackSpec {
   caption: string;
   /** Brand / org / category display name on the tile. */
   headline: string;
+  /** Short subtitle under the headline. */
+  subtitle: string;
   categoryKey: VisualCategoryKey;
+  topicKey?: VisualTopicKey;
   /** Single-letter / short mark for the tile monogram. */
   mark: string;
+  /** Category / topic badge label. */
+  badge: string;
 }
 
 /** Subject brands only — not news outlets. */
 const BRAND_RULES: { re: RegExp; name: string; mark?: string; cat?: VisualCategoryKey }[] = [
   { re: /\bopenai\b|\bchat\s*gpt\b|\bgpt-?\d|aardvark|\bastra\b/i, name: 'OpenAI', mark: 'O', cat: 'ai_future' },
   { re: /\banthropic\b|\bclaude\b/i, name: 'Anthropic', mark: 'A', cat: 'ai_future' },
-  { re: /\bdeepmind\b|\bgemini\b|\bgoogle\s+ai\b|\bgoogle\b(?=.*\b(model|robot|ai)\b)/i, name: 'Google', mark: 'G', cat: 'ai_future' },
+  { re: /\bdeepmind\b|\bgemini\b|\bgoogle\s+ai\b|\bgoogle\b(?=.*\b(model|robot|ai|pixel)\b)/i, name: 'Google', mark: 'G', cat: 'ai_future' },
   { re: /\bmeta\b(?=.*\b(ai|llama|bracelet|quest|ray-?ban)\b)|\bllama\b/i, name: 'Meta', mark: 'M', cat: 'ai_future' },
   { re: /\bmicrosoft\b|\bcopilot\b/i, name: 'Microsoft', mark: 'M', cat: 'ai_future' },
+  { re: /\blenovo\b|\blegion\b|\by700\b/i, name: 'Lenovo', mark: 'L', cat: 'gadget' },
+  { re: /\bvolkswagen\b|\b\bvw\b|\bid\.?\s*era\b|\bid\.?\s*\d/i, name: 'Volkswagen', mark: 'V', cat: 'mobility' },
+  { re: /\bgeely\b|\bgalaxy\s+tt\b/i, name: 'Geely', mark: 'G', cat: 'mobility' },
+  { re: /\bnintendo\b|\bswitch\b/i, name: 'Nintendo', mark: 'N', cat: 'gadget' },
   { re: /\bxiaomi\b|\bredmi\b|\bhyperos\b/i, name: 'Xiaomi', mark: 'X', cat: 'china_tech' },
   { re: /\bhuawei\b|\bharmonyos\b/i, name: 'Huawei', mark: 'H', cat: 'china_tech' },
   { re: /\bdji\b/i, name: 'DJI', mark: 'D', cat: 'mobility' },
   { re: /\bunitree\b/i, name: 'Unitree', mark: 'U', cat: 'robotics' },
+  { re: /\bagibot\b/i, name: 'AgiBot', mark: 'A', cat: 'robotics' },
   { re: /\btacta(?:bot)?\b/i, name: 'Tacta', mark: 'T', cat: 'robotics' },
   { re: /\biqoo\b/i, name: 'iQOO', mark: 'i', cat: 'china_tech' },
   { re: /\binsta360\b/i, name: 'Insta360', mark: 'I', cat: 'gadget' },
+  { re: /\bkeychron\b/i, name: 'Keychron', mark: 'K', cat: 'gadget' },
   { re: /\brainpoint\b/i, name: 'RainPoint', mark: 'R', cat: 'smart_home' },
   { re: /\bdelta\s+children\b|\baero\s+smart\b/i, name: 'Delta Children', mark: 'D', cat: 'smart_home' },
   { re: /\bsamsung\b/i, name: 'Samsung', mark: 'S', cat: 'gadget' },
   { re: /\bapple\b|\biphone\b|\bvision\s*pro\b/i, name: 'Apple', mark: 'A', cat: 'gadget' },
   { re: /\btesla\b|\boptimus\b/i, name: 'Tesla', mark: 'T', cat: 'robotics' },
   { re: /\bfigure\s*ai\b|\bfigure\s+\d/i, name: 'Figure', mark: 'F', cat: 'robotics' },
+  { re: /\bmedtronic\b|\bpillcam\b/i, name: 'Medtronic', mark: 'M', cat: 'healthtech' },
+  { re: /\bjoby\b/i, name: 'Joby', mark: 'J', cat: 'mobility' },
+  { re: /\bgadget\s*flow\b/i, name: 'Gadget Flow', mark: 'G', cat: 'gadget' },
 ];
 
-const ORG_RULES: { re: RegExp; name: string; mark?: string }[] = [
-  { re: /\bcsail\b|\bmit\b(?=.*\b(lab|robot|research|manipulat))/i, name: 'MIT CSAIL', mark: 'M' },
-  { re: /\beth(\s+zürich|\s+zurich|\b)/i, name: 'ETH', mark: 'E' },
-  { re: /\bieee\b/i, name: 'IEEE', mark: 'I' },
-  { re: /\bstanford\b/i, name: 'Stanford', mark: 'S' },
-  { re: /\bcarnegie\s+mellon|\bcmu\b/i, name: 'CMU', mark: 'C' },
-  { re: /\bberkeley\b|\buc\s*berkeley\b/i, name: 'UC Berkeley', mark: 'B' },
+const ORG_RULES: { re: RegExp; name: string; mark?: string; cat?: VisualCategoryKey }[] = [
+  { re: /\bcsail\b|\bmit\b(?=.*\b(lab|robot|research|manipulat|crest|simulator))/i, name: 'MIT', mark: 'M', cat: 'research' },
+  { re: /\bucl\b/i, name: 'UCL', mark: 'U', cat: 'research' },
+  { re: /\beth(\s+zürich|\s+zurich|\b)/i, name: 'ETH', mark: 'E', cat: 'research' },
+  { re: /\bieee\b/i, name: 'IEEE', mark: 'I', cat: 'research' },
+  { re: /\bstanford\b/i, name: 'Stanford', mark: 'S', cat: 'research' },
+  { re: /\bcarnegie\s+mellon|\bcmu\b/i, name: 'CMU', mark: 'C', cat: 'research' },
+  { re: /\bberkeley\b|\buc\s*berkeley\b/i, name: 'UC Berkeley', mark: 'B', cat: 'research' },
 ];
 
 const CATEGORY_LABELS: Record<VisualCategoryKey, string> = {
-  ai_future: 'AI / Future',
+  ai_future: 'AI',
   robotics: 'Robotics',
   mobility: 'Mobility',
-  healthtech: 'Healthtech',
+  healthtech: 'Health',
   smart_home: 'Smart Home',
   research: 'Research',
   china_tech: 'China Tech',
   gadget: 'Gadget',
+  energy: 'Energy',
+  future_work: 'Future Work',
+};
+
+const CATEGORY_SUBTITLES: Record<VisualCategoryKey, string> = {
+  ai_future: 'Искусственный интеллект и агенты',
+  robotics: 'Роботы и воплощённый ИИ',
+  mobility: 'Транспорт и мобильность',
+  healthtech: 'Здоровье и диагностика',
+  smart_home: 'Умный дом',
+  research: 'Наука и лаборатории',
+  china_tech: 'Азиатский tech-desk',
+  gadget: 'Гаджеты и устройства',
+  energy: 'Энергия и инфраструктура',
+  future_work: 'Будущее работы',
+};
+
+const TOPIC_META: Record<
+  VisualTopicKey,
+  { label: string; subtitle: string; mark: string; caption: string }
+> = {
+  prototype: {
+    label: 'Prototype',
+    subtitle: 'Прототип / ранняя демонстрация',
+    mark: 'P',
+    caption: 'Тематическая иллюстрация',
+  },
+  research: {
+    label: 'Research',
+    subtitle: 'Исследование и лабораторный результат',
+    mark: 'R',
+    caption: 'Тематическая иллюстрация',
+  },
+  rumor: {
+    label: 'Rumor / Leak',
+    subtitle: 'Утечка или неподтверждённый сигнал',
+    mark: '?',
+    caption: 'Тематическая иллюстрация',
+  },
+  concept: {
+    label: 'Concept',
+    subtitle: 'Концепт и ранний дизайн',
+    mark: 'C',
+    caption: 'Тематическая иллюстрация',
+  },
+  review: {
+    label: 'Review',
+    subtitle: 'Обзор и практический разбор',
+    mark: '✓',
+    caption: 'Редакционная иллюстрация',
+  },
+  chief: {
+    label: 'Chief Pick',
+    subtitle: 'Выбор главного редактора',
+    mark: '★',
+    caption: 'Редакционная иллюстрация',
+  },
 };
 
 function haystack(opts: {
@@ -91,13 +174,30 @@ export function resolveVisualCategory(opts: {
   const hay = haystack(opts);
   const publicCat = (opts.category || '').toLowerCase();
 
-  if (/\b(robot|humanoid|exoskeleton|manipulat|tacta|unitree|optimus)\b|робот/i.test(hay)) {
+  if (/\b(robot|humanoid|exoskeleton|manipulat|tacta|unitree|optimus|soft\s+robot)\b|робот/i.test(hay)) {
     return 'robotics';
   }
-  if (/\b(drone|evtol|vehicle|mobility|rfid|gps|автопилот)\b/i.test(hay)) return 'mobility';
-  if (/\b(health|medical|wearable|sleep|bassinet|cry|здоров)\b/i.test(hay)) return 'healthtech';
+  if (
+    /\b(drone|evtol|vehicle|mobility|rfid|gps|автопилот|электромобил|ev\b|air\s*taxi|аэротакси)\b|volkswagen|geely/i.test(
+      hay,
+    )
+  ) {
+    return 'mobility';
+  }
+  if (/\b(solar|battery|energy|grid|power|окон.*энерг|счет за свет|энерг)\b/i.test(hay)) {
+    return 'energy';
+  }
+  if (/\b(health|medical|wearable|sleep|bassinet|cry|здоров|капсул|гастро|диагност)\b/i.test(hay)) {
+    return 'healthtech';
+  }
   if (/\b(smart\s*home|watering|soil|thermostat|умн\w*\s*дом|полив)\b/i.test(hay)) {
     return 'smart_home';
+  }
+  if (
+    /\b(office|workplace|future\s+of\s+work|automation\s+of\s+work|удаленн|офисн)\b/i.test(hay) ||
+    /future\s*work/i.test(publicCat)
+  ) {
+    return 'future_work';
   }
   if (/\b(csail|ieee|university|laboratory|researchers?|peer[- ]reviewed|lab\s+demo)\b|исследован/i.test(hay)) {
     return 'research';
@@ -111,14 +211,33 @@ export function resolveVisualCategory(opts: {
   return 'gadget';
 }
 
+export function resolveVisualTopic(opts: {
+  title?: string;
+  category?: string;
+  tags?: string[];
+  summary?: string;
+  agentId?: string;
+}): VisualTopicKey | null {
+  const hay = haystack(opts);
+  const agent = (opts.agentId || '').toLowerCase();
+  if (/chief|chief-fast-lane/i.test(agent) || /\bchief\b/i.test(hay)) return 'chief';
+  if (/\b(rumor|leak|утечк|слух)\b/i.test(hay)) return 'rumor';
+  if (/\b(prototype|прототип)\b/i.test(hay)) return 'prototype';
+  if (/\b(concept|концепт|рендер)\b/i.test(hay)) return 'concept';
+  if (/\b(review|обзор|hands-?on)\b/i.test(hay)) return 'review';
+  if (/\b(research|lab|university|исследован|лаборатор)\b/i.test(hay)) return 'research';
+  return null;
+}
+
 /**
- * Pick brand → organization → category. Never uses feed/source name.
+ * Pick brand → organization → topic → category. Never uses feed/source name.
  */
 export function resolveVisualFallback(opts: {
   title?: string;
   category?: string;
   tags?: string[];
   summary?: string;
+  agentId?: string;
 }): VisualFallbackSpec {
   const hay = haystack(opts);
   const categoryKey = resolveVisualCategory(opts);
@@ -127,52 +246,78 @@ export function resolveVisualFallback(opts: {
     if (b.re.test(hay)) {
       return {
         kind: 'brand',
-        caption: 'Иллюстрация бренда',
+        caption: 'Редакционная иллюстрация',
         headline: b.name,
+        subtitle: CATEGORY_SUBTITLES[b.cat || categoryKey],
         categoryKey: b.cat || categoryKey,
         mark: (b.mark || b.name.charAt(0)).toUpperCase(),
+        badge: 'Brand',
       };
     }
   }
 
   for (const o of ORG_RULES) {
     if (o.re.test(hay)) {
+      const cat = o.cat || 'research';
       return {
         kind: 'organization',
-        caption: 'Иллюстрация организации',
+        caption: 'Редакционная иллюстрация',
         headline: o.name,
-        categoryKey: 'research',
+        subtitle: CATEGORY_SUBTITLES[cat],
+        categoryKey: cat,
         mark: (o.mark || o.name.charAt(0)).toUpperCase(),
+        badge: 'Organization',
       };
     }
   }
 
+  const topic = resolveVisualTopic(opts);
+  if (topic) {
+    const meta = TOPIC_META[topic];
+    return {
+      kind: 'topic',
+      caption: meta.caption,
+      headline: meta.label,
+      subtitle: meta.subtitle,
+      categoryKey,
+      topicKey: topic,
+      mark: meta.mark,
+      badge: meta.label,
+    };
+  }
+
   return {
     kind: 'category',
-    caption: 'Редакционная иллюстрация',
+    caption: 'Тематическая иллюстрация',
     headline: CATEGORY_LABELS[categoryKey],
+    subtitle: CATEGORY_SUBTITLES[categoryKey],
     categoryKey,
     mark: CATEGORY_LABELS[categoryKey].charAt(0).toUpperCase(),
+    badge: CATEGORY_LABELS[categoryKey],
   };
 }
 
 export function visualFallbackToneClass(key: VisualCategoryKey): string {
   switch (key) {
     case 'ai_future':
-      return 'bg-[linear-gradient(145deg,#e8f0f4_0%,#d5e4ec_45%,#c5d5c8_100%)]';
+      return 'vf-tone vf-tone--ai';
     case 'robotics':
-      return 'bg-[linear-gradient(145deg,#ebe6df_0%,#d9d2c6_50%,#c4b8a8_100%)]';
+      return 'vf-tone vf-tone--robotics';
     case 'mobility':
-      return 'bg-[linear-gradient(145deg,#e4eef2_0%,#c9dde8_55%,#b0c4d4_100%)]';
+      return 'vf-tone vf-tone--mobility';
     case 'healthtech':
-      return 'bg-[linear-gradient(145deg,#ebe8e4_0%,#e0d5d0_50%,#d4c4bc_100%)]';
+      return 'vf-tone vf-tone--health';
     case 'smart_home':
-      return 'bg-[linear-gradient(145deg,#e7eee8_0%,#d2e0d4_50%,#b9ceb8_100%)]';
+      return 'vf-tone vf-tone--home';
     case 'research':
-      return 'bg-[linear-gradient(145deg,#e9e7e2_0%,#ddd8cf_50%,#cfc6b8_100%)]';
+      return 'vf-tone vf-tone--research';
     case 'china_tech':
-      return 'bg-[linear-gradient(145deg,#f0e8e4_0%,#e4d4cc_50%,#d4bfb4_100%)]';
+      return 'vf-tone vf-tone--china';
+    case 'energy':
+      return 'vf-tone vf-tone--energy';
+    case 'future_work':
+      return 'vf-tone vf-tone--work';
     default:
-      return 'bg-[linear-gradient(145deg,#eceae6_0%,#ddd9d2_50%,#cfc9c0_100%)]';
+      return 'vf-tone vf-tone--gadget';
   }
 }
