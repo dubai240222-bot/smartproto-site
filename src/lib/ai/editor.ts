@@ -22,11 +22,48 @@ const EDITOR_MODEL = process.env.OPENROUTER_EDITOR_MODEL ?? 'google/gemini-2.5-f
 const BANNED_CLICHE_RE =
   /дожил(?:и|а|о)?(?:\s+до\s+времени)?|вчера казалось фантастикой|вчера фантастика\s*[—–-]|ребята|друзья|вы\s+только\s+посмотрите|посмотрите|guys|look at this|просто\s+вау|\bвау\b|wow[!]?|вы\s+не\s+поверите|это\s+чудо|это\s+бомба|огонь[!]|обалдеть|офигенн|невероятн|революционн|потрясающ|фантастическ|гениальн|убийца\s+iphone|изменит\s+мир|переверн[её]т\s+рынок|вы\s+обязаны|все\s+захотят|мы\s+в\s+восторге|наконец[- ]то\s+свершилось|будущее\s+уже\s+наступил|ваш\s+спаситель|этот\s+малыш|просто\s+находка|это\s+же\s+не\s+просто|забудьте\s+про|вы\s+будете\s+в\s+восторге|берите,?\s+пока\s+есть|маст-?хэв|идеальный\s+выбор|стильный\s+аксессуар/i;
 
+/**
+ * SP-A-078 — CHIEF EDITORIAL DNA v1
+ * Distilled from live chief-fast-lane articles:
+ * Joby (850+ flights / 50k+ miles), MIT CRESt, Ahbstra water-from-air,
+ * PillCam Genius, UCL solar windows. Principles only — do not copy phrases.
+ */
+const CHIEF_EDITORIAL_DNA = [
+  'CHIEF EDITORIAL DNA v1 (SP-A-078) — SmartProto пишет не каталог и не пресс-релиз.',
+  'Покажи: что стало возможно; какую старую проблему это ломает; почему это интересно обычному человеку;',
+  'как может изменить жизнь; почему это уже кусочек будущего.',
+  '',
+  'ФОРМУЛА ПОДАЧИ (выбирай вход по истории — не штампуй один шаблон):',
+  '1) человеческая сцена / проблема / старое представление;',
+  '2) сильный ДОКАЗУЕМЫЙ факт из источника;',
+  '3) что теперь стало возможно;',
+  '4) как это может коснуться жизни человека;',
+  '5) лёгкий живой финал: тонкая улыбка / наблюдение / ирония (в большинстве подходящих тем).',
+  '',
+  'LEAD: цепляй за 1–2 предложения. Не «Компания X сообщила…».',
+  'Вход по ситуации: сцена, сравнение, необычная способность, боль которую убирают, цифра, вопрос «а что если…».',
+  'Разрешено: «Представьте…», «Забудьте о…», метафоры, мягкая ирония, риторический вопрос — НО не повторяй одну и ту же открывалку в каждой статье.',
+  'Если все материалы начинаются с «Представьте…» — это провал. Разнообразие обязательно.',
+  '',
+  'TITLE: сильный факт ИЛИ новая человеческая возможность. Не «Компания X представила Y». Не копируй headline источника.',
+  '',
+  'ФИНАЛЬНЫЙ ЮМОР: в большинстве подходящих статей — тонкий умный финал (образ будущего, бытовое наблюдение).',
+  'Не стендап, не мемы, не «ахаха», не клоунада. Серьёзные темы (тяжёлая болезнь / трагедия / генотерапия) — без юмора.',
+  'Не заканчивай длинным охлаждающим опровержением и не ставь штамп «независимые испытания пока не проводились».',
+  '',
+  'FACT INTEGRITY: никаких выдуманных цифр/преимуществ/сенсаций. Прогноз — как прогноз; прототип — не массовый продукт.',
+  'Пиши ТОЛЬКО о продукте/событии из входного источника. Не подменяй тему другим гаджетом или выдуманным продуктом.',
+  'Пайплайн: SOURCE → STRONGEST INTERESTING FACT → HUMAN MEANING → ARTICLE',
+  '(не: SOURCE → COMPANY ANNOUNCEMENT → SPECS → SUMMARY).',
+].join(' ');
+
 const EDITOR_SYSTEM_PROMPT = [
-  'Ты спокойный компетентный редактор SmartProto — не блогер, не продавец, не карточка товара.',
+  'Ты технически грамотный живой журналист SmartProto — не блогер, не продавец, не карточка товара.',
   'ГОЛОС АВТОРА: только мужской. Журналист пишет от мужского лица или безлично.',
   'ЗАПРЕЩЕНО женское самообозначение и формы 1-го лица прош. вр. на -а/-ла/-лась.',
-  'Тон SP-A-054: короткое EDITORIAL ALERT / notice — что появилось и что это даёт человеку;',
+  CHIEF_EDITORIAL_DNA,
+  '',
+  'Тон: умный, живой, понятный, чуть ироничный, человеческий; без канцелярита и корпоративного языка;',
   'не витрина, не «купи здесь», не обзор-каталог. Без обращений «ребята/друзья».',
   'Можно: интересные изобретения, полезные возможности гаджетов/приложений, grounded AI capability news',
   '(реальные демо, research milestones, полезные AI-инструменты, шаги к большей автономии — без кликбейт sci-fi).',
@@ -42,9 +79,8 @@ const EDITOR_SYSTEM_PROMPT = [
   'восклицательные заголовки, прямые обращения, рекламные обещания.',
   '',
   'РЕКЛАМНЫЕ СУПЕРЛАТИВЫ без проверки запрещены. Если производитель хвастается —',
-  '«Производитель утверждает…»; при необходимости «Независимых испытаний пока нет».',
-  'ЗАГОЛОВОК: суть + польза/факт; без «!»; без интриги ради интриги.',
-  'Не выдумывай спеки, даты, автономность, отзывы. Нет данных — опусти или «не уточнено».',
+  '«Производитель утверждает…» (без штампа про независимые испытания в финале).',
+  'Не выдумывай спеки, даты, автономность, отзывы, сенсации. Нет данных — опусти или «не уточнено».',
   'Без эмодзи. Без Docker/DevOps/HN-жаргона. Без публичных меток Китай/Qwen/Gemini.',
   '',
   'Жёсткий reject (title="REJECT", text="off-topic", tags=["#reject"], toneCheck: limitationsIncluded=true, остальные false):',
@@ -91,6 +127,40 @@ const REJECT_DRAFT: DraftResult = {
   },
 };
 
+function draftStaysOnSourceTopic(sourceTitle: string, draftTitle: string, draftText: string): boolean {
+  const stop = new Set([
+    'the',
+    'and',
+    'for',
+    'with',
+    'new',
+    'для',
+    'при',
+    'про',
+    'или',
+    'как',
+    'это',
+    'что',
+    'смартфон',
+    'планшет',
+    'клавиатура',
+    'геймпад',
+    'устройства',
+    'новый',
+    'новая',
+    'новые',
+  ]);
+  const tokens = sourceTitle
+    .toLowerCase()
+    .split(/[^a-z0-9а-яё+]+/i)
+    .map((t) => t.trim())
+    .filter((t) => t.length >= 3 && !stop.has(t));
+  if (tokens.length === 0) return true;
+  const hay = `${draftTitle}\n${draftText}`.toLowerCase();
+  const hits = tokens.filter((t) => hay.includes(t)).length;
+  return hits >= Math.min(2, Math.max(1, Math.ceil(tokens.length * 0.34)));
+}
+
 export type DraftFormat = 'news' | 'article';
 
 export async function writeDraft(articleData: object, reviewData: object): Promise<DraftResult> {
@@ -128,110 +198,126 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
   const formatInstructions =
     format === 'news'
       ? [
-          'ФОРМАТ: короткая новость-alert (SHORT NEWS). 60–110 слов. 1–2 абзаца.',
-          'Структура: что появилось → что это даёт / какую возможность открывает → осторожная оговорка если нужно.',
-          'БЕЗ цен, БЕЗ ссылок, БЕЗ «где купить». Без внутренних меток (Qwen/Gemini/Китай-отдел).',
+          'ФОРМАТ: короткая новость (SHORT NEWS). 100–180 слов. 1–2 абзаца.',
+          'Формула: сцена или сильный факт → что стало возможно → касание жизни; финал можно чуть живым.',
+          'Не начинай с «Компания X представила…». Варьируй открывалку (не всегда «Представьте/Забудьте»). Без цен/ссылок.',
         ]
       : [
-          'ФОРМАТ: полный материал / обзор-notice (FULL ARTICLE). 160–240 слов.',
-          'Структура строго:',
-          '1) что представлено и какую возможность даёт;',
-          '2) сценарий пользы для обычного человека;',
-          '3) чем отличается / почему это интересно (факт из источника, не хайп);',
-          '4) ограничения / неизвестные данные / нет независимых тестов;',
-          '5) БЕЗ цен, БЕЗ outbound-ссылок и shop CTA.',
-          'Без внутренних меток (Qwen/Gemini/Китай-отдел).',
+          'ФОРМАТ: полный материал (FULL ARTICLE). 130–280 слов (130–180 OK если сильно).',
+          'Формула (варьируй вход — не штампуй «Представьте…» / «Забудьте о…» каждый раз):',
+          '1) человеческая сцена / проблема / старое представление ИЛИ сильный факт / сравнение / вопрос;',
+          '2) доказуемый факт из источника;',
+          '3) что теперь стало возможно;',
+          '4) как это коснётся обычного человека / кусочек будущего;',
+          '5) лёгкий умный финал (улыбка/наблюдение), кроме тяжёлых медицинских/трагических тем;',
+          '6) БЕЗ цен, БЕЗ outbound-ссылок и shop CTA; без охлаждающего финала-опровержения.',
         ];
 
   const client = getOpenRouterClient();
-  const completion = await client.chat.completions.create({
-    model: EDITOR_MODEL,
-    temperature: 0.35,
-    top_p: 0.85,
-    max_tokens: format === 'news' ? 450 : 900,
-    messages: [
-      { role: 'system', content: EDITOR_SYSTEM_PROMPT },
-      {
-        role: 'user',
-        content: [
-          mode === 'app'
-            ? 'Подготовь заметку о конкретном полезном мобильном приложении или notable-игре (App Store / Google Play OK).'
-            : 'Подготовь заметку ТОЛЬКО о покупаемом/предзаказываемом гаджете/товаре для быта или работы.',
-          mode === 'app'
-            ? 'Если SEO-roundup / gambling / crypto / нет конкретного app — верни REJECT-черновик. Добавь тег «приложения».'
-            : 'Если тема off-topic / нет покупаемого продукта — верни REJECT-черновик.',
-          ...formatInstructions,
-          'Верни СТРОГО JSON:',
-          '{"title":string,"text":string,"tags":string[],"toneCheck":{"clickbait":bool,"hype":bool,"unsupportedClaims":bool,"limitationsIncluded":bool}}',
-          '',
-          'title: русский, до 90 символов; продукт + польза/факт; без восклицательных знаков.',
-          'Строго по фактам источника. Суперлативы производителя — только через «Производитель утверждает…».',
-          'tags: 4–8; тематика + бренд если есть; БЕЗ тегов Китай/Qwen/Gemini/China Department.',
-          'toneCheck: честно оцени свой текст (clickbait/hype/unsupportedClaims должны быть false;',
-          'limitationsIncluded=true если есть явные оговорки).',
-          '',
-          'Статья:',
-          clampText(JSON.stringify(articleData, null, 2), 10000),
-          '',
-          'Ревью:',
-          clampText(JSON.stringify(reviewData, null, 2), 10000),
-        ].join('\n'),
-      },
-    ],
-  });
 
-  const content = completion.choices[0]?.message?.content;
-  const rawText = typeof content === 'string' ? content.trim() : '';
+  const buildUserContent = (extra?: string) =>
+    [
+      mode === 'app'
+        ? 'Подготовь заметку о конкретном полезном мобильном приложении или notable-игре (App Store / Google Play OK).'
+        : mode === 'ai_radar'
+          ? 'Подготовь заметку о grounded AI / research / capability событии (не gadget desk).'
+          : 'Подготовь заметку о гаджете, изобретении или tech-событии с ясной пользой человеку.',
+      mode === 'app'
+        ? 'Если SEO-roundup / gambling / crypto / нет конкретного app — верни REJECT-черновик. Добавь тег «приложения».'
+        : mode === 'ai_radar'
+          ? 'Если commodity PR / API bump без capability — верни REJECT-черновик.'
+          : 'Если тема off-topic / пустой анонс без смысла — верни REJECT-черновик.',
+      ...formatInstructions,
+      'Сначала: STRONGEST INTERESTING FACT + HUMAN ANGLE, затем статья. Не копируй фразы эталонных Chief-текстов.',
+      'Тема строго из источника — не подменяй продукт/событие.',
+      'Открывалку выбирай по истории: сцена ИЛИ факт ИЛИ сравнение ИЛИ вопрос — не один шаблон на все статьи.',
+      extra || '',
+      'Верни СТРОГО JSON:',
+      '{"title":string,"text":string,"tags":string[],"toneCheck":{"clickbait":bool,"hype":bool,"unsupportedClaims":bool,"limitationsIncluded":bool}}',
+      '',
+      'title: русский, до 90 символов; факт или новая возможность; без «!»; не «Компания представила»; не копируй source headline.',
+      'Строго по фактам источника. Суперлативы производителя — только через «Производитель утверждает…».',
+      'tags: 4–8; тематика + бренд если есть; БЕЗ тегов Китай/Qwen/Gemini/China Department.',
+      'toneCheck: честно оцени свой текст (clickbait/hype/unsupportedClaims должны быть false;',
+      'limitationsIncluded=true только если в тексте есть реальное существенное ограничение, не штамп).',
+      '',
+      'Статья:',
+      clampText(JSON.stringify(articleData, null, 2), 10000),
+      '',
+      'Ревью:',
+      clampText(JSON.stringify(reviewData, null, 2), 10000),
+    ]
+      .filter(Boolean)
+      .join('\n');
 
-  if (!rawText) {
-    throw new Error('Editor model returned an empty response.');
+  async function requestDraft(extra?: string): Promise<DraftResult> {
+    const completion = await client.chat.completions.create({
+      model: EDITOR_MODEL,
+      temperature: 0.45,
+      top_p: 0.88,
+      max_tokens: format === 'news' ? 550 : 1000,
+      messages: [
+        { role: 'system', content: EDITOR_SYSTEM_PROMPT },
+        { role: 'user', content: buildUserContent(extra) },
+      ],
+    });
+
+    const content = completion.choices[0]?.message?.content;
+    const rawText = typeof content === 'string' ? content.trim() : '';
+    if (!rawText) throw new Error('Editor model returned an empty response.');
+
+    const jsonText = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(jsonText);
+    } catch {
+      throw new Error(`Editor model output is not valid JSON: ${rawText}`);
+    }
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      throw new Error('Editor model JSON output must be an object.');
+    }
+
+    const { title, text, tags, toneCheck: rawTone } = parsed as Record<string, unknown>;
+    if (typeof title !== 'string' || !title.trim()) {
+      throw new Error('Editor model output missing or empty "title" string.');
+    }
+    if (typeof text !== 'string' || !text.trim()) {
+      throw new Error('Editor model output missing or empty "text" string.');
+    }
+    if (
+      !Array.isArray(tags) ||
+      tags.length === 0 ||
+      !tags.every((t) => typeof t === 'string' && t.trim().length > 0)
+    ) {
+      throw new Error('Editor model output "tags" must be a non-empty array of non-empty strings.');
+    }
+    const toneCheck = parseToneCheck(rawTone);
+    if (!toneCheck) throw new Error('Editor model output missing valid "toneCheck" object.');
+
+    return {
+      title: title.trim(),
+      text: text.trim(),
+      tags: tags.map((t) => (t as string).trim()),
+      toneCheck,
+    };
   }
 
-  const jsonText = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(jsonText);
-  } catch {
-    throw new Error(`Editor model output is not valid JSON: ${rawText}`);
-  }
-
-  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-    throw new Error('Editor model JSON output must be an object.');
-  }
-
-  const { title, text, tags, toneCheck: rawTone } = parsed as Record<string, unknown>;
-
-  if (typeof title !== 'string' || !title.trim()) {
-    throw new Error('Editor model output missing or empty "title" string.');
-  }
-
-  if (typeof text !== 'string' || !text.trim()) {
-    throw new Error('Editor model output missing or empty "text" string.');
-  }
-
-  if (
-    !Array.isArray(tags) ||
-    tags.length === 0 ||
-    !tags.every((t) => typeof t === 'string' && t.trim().length > 0)
-  ) {
-    throw new Error('Editor model output "tags" must be a non-empty array of non-empty strings.');
-  }
-
-  const toneCheck = parseToneCheck(rawTone);
-  if (!toneCheck) {
-    throw new Error('Editor model output missing valid "toneCheck" object.');
-  }
-
-  const draft: DraftResult = {
-    title: title.trim(),
-    text: text.trim(),
-    tags: tags.map((t) => (t as string).trim()),
-    toneCheck,
-  };
+  let draft = await requestDraft();
 
   if (draft.title.trim().toUpperCase() === 'REJECT') {
     return { ...REJECT_DRAFT, tags: draft.tags.length ? draft.tags : REJECT_DRAFT.tags };
+  }
+
+  if (!draftStaysOnSourceTopic(sourceTitle, draft.title, draft.text)) {
+    draft = await requestDraft(
+      `ВАЖНО: предыдущий черновик ушёл не в ту тему. Пиши ТОЛЬКО про: «${clampText(sourceTitle, 120)}». Не выдумывай другой продукт.`,
+    );
+    if (draft.title.trim().toUpperCase() === 'REJECT') {
+      return { ...REJECT_DRAFT, tags: draft.tags.length ? draft.tags : REJECT_DRAFT.tags };
+    }
+    if (!draftStaysOnSourceTopic(sourceTitle, draft.title, draft.text)) {
+      throw new Error('Editor draft fails topic integrity (drifted from source product/event).');
+    }
   }
 
   if (containsBannedCliche(draft.title, draft.text) || /!/.test(draft.title)) {
@@ -242,9 +328,9 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
     throw new Error('Editor draft fails policy gate (public price or outbound/shop link).');
   }
 
-  if (toneCheck.clickbait || toneCheck.hype || toneCheck.unsupportedClaims) {
+  if (draft.toneCheck.clickbait || draft.toneCheck.hype || draft.toneCheck.unsupportedClaims) {
     throw new Error(
-      `Editor toneCheck publication gate failed: clickbait=${toneCheck.clickbait}, hype=${toneCheck.hype}, unsupportedClaims=${toneCheck.unsupportedClaims}`,
+      `Editor toneCheck publication gate failed: clickbait=${draft.toneCheck.clickbait}, hype=${draft.toneCheck.hype}, unsupportedClaims=${draft.toneCheck.unsupportedClaims}`,
     );
   }
 
