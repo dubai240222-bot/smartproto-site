@@ -2,8 +2,17 @@
  * SP-A-056 — Direct Publisher repository: atomic slug-unique upsert + reads.
  * Used only in ARTICLES_STORE=sqlite mode (Hetzner). Keeps the exact `Article`
  * shape used by src/data/articles.ts so the rest of the app is unaffected.
+ *
+ * SP-A-082 — new AUTO inserts pass through finalAutoCommodityGate before write.
+ * Chief / Author / existing-row updates / explicit skip are not blocked.
  */
 import { getDb } from './db';
+import {
+  FinalAutoGateError,
+  assertFinalAutoPublishAllowed,
+} from '../ai/final-auto-commodity-gate';
+
+export { FinalAutoGateError };
 
 export interface ArticleImage {
   url: string;
@@ -97,12 +106,33 @@ export function getArticleBySlugFromDb(slug: string): StoredArticle | undefined 
   return row ? rowToArticle(row) : undefined;
 }
 
+export type UpsertArticleOptions = {
+  /** Photo backfill / migration / explicit ops — skip SP-A-082 gate. */
+  skipFinalAutoGate?: boolean;
+};
+
 /**
  * Atomic publish: INSERT OR REPLACE inside a transaction guarantees the row is
  * either fully written or not written at all — never a half-article/corrupt row.
  * Re-publishing an existing slug updates it in place (no duplicate).
+ *
+ * SP-A-082: brand-new AUTO rows are blocked when the final commodity gate rejects.
  */
-export function upsertArticle(article: StoredArticle): void {
+export function upsertArticle(article: StoredArticle, opts?: UpsertArticleOptions): void {
+  if (!opts?.skipFinalAutoGate) {
+    const existing = getArticleBySlugFromDb(article.slug);
+    if (!existing) {
+      assertFinalAutoPublishAllowed({
+        title: article.title,
+        summary: article.summary,
+        content: article.content,
+        tags: article.tags,
+        category: article.category,
+        agentId: article.agentId,
+      });
+    }
+  }
+
   const stmt = getDb().prepare(`
     INSERT INTO articles
       (slug, id, title, category, tags, summary, content, sourceUrl, publishedAt, readTime, imageUrl, images, author, authorDesk, agentId, updatedAt)
@@ -151,7 +181,7 @@ export function countArticles(): number {
 export function migrateFromJson(articles: StoredArticle[]): { inserted: number; total: number } {
   const before = countArticles();
   const tx = getDb().transaction((items: StoredArticle[]) => {
-    for (const a of items) upsertArticle(a);
+    for (const a of items) upsertArticle(a, { skipFinalAutoGate: true });
   });
   tx(articles);
   const after = countArticles();

@@ -25,6 +25,8 @@ services:
       ARTICLES_STORE: sqlite
       SMARTPROTO_DB_PATH: /app/data/smartproto.db
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3100}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      EDITORIAL_DOOR_SECRET: ${EDITORIAL_DOOR_SECRET}
     volumes:
       - ../data:/app/data
       - ../images:/app/public/media
@@ -61,6 +63,14 @@ services:
       SMARTPROTO_TEST_AUTO_INTERVAL_MS: "${SMARTPROTO_TEST_AUTO_INTERVAL_MS:-1200000}"
       SMARTPROTO_TEST_AUTO_MAX_TICKS: "${SMARTPROTO_TEST_AUTO_MAX_TICKS:-0}"
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      EDITORIAL_DOOR_SECRET: ${EDITORIAL_DOOR_SECRET}
+      # SP-A-074 — nightly retention (~01:00 local). Keeps ≥100 articles; max 25 deletes/run.
+      SMARTPROTO_RETENTION_ENABLED: "${SMARTPROTO_RETENTION_ENABLED:-true}"
+      SMARTPROTO_RETENTION_DAYS: "${SMARTPROTO_RETENTION_DAYS:-10}"
+      SMARTPROTO_MIN_ARTICLES: "${SMARTPROTO_MIN_ARTICLES:-100}"
+      SMARTPROTO_MAX_DELETE_PER_RUN: "${SMARTPROTO_MAX_DELETE_PER_RUN:-25}"
+      SMARTPROTO_RETENTION_HOUR: "${SMARTPROTO_RETENTION_HOUR:-1}"
+      SMARTPROTO_MEDIA_DIR: /app/public/media
     volumes:
       - ../data:/app/data
       - ../images:/app/public/media

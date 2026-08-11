@@ -51,3 +51,6 @@ data/*.db
 data/*.db-*
 data/worker-mode.json
 data/worker-state.json
+data/prod-retention-snap/
+data/prod-media-snap/
+data/spa072-test.db*

@@ -222,6 +222,17 @@ export default async function ArticlePage({
           {/* 4. Byline · date · read time */}
           <div className="mt-4 flex flex-wrap items-center gap-4 border-b border-[var(--border)] pb-6 text-xs text-[var(--muted)]">
             <span>{formatAuthorCredit(resolveAuthorForArticle(article).name, formatPublishedAt(article.publishedAt))}</span>
+            {/^AUTHOR_ARTICLE$/i.test(article.category) ? (
+              <>
+                <span>•</span>
+                <span>Авторская статья</span>
+              </>
+            ) : /^REVIEW_OPINION$/i.test(article.category) ? (
+              <>
+                <span>•</span>
+                <span>Обзор / мнение</span>
+              </>
+            ) : null}
             <span>•</span>
             <span className="flex items-center gap-1">
               <Clock className="h-3.5 w-3.5" />
@@ -356,33 +367,46 @@ export default async function ArticlePage({
                         Читайте также
                       </h2>
                       <div className="space-y-5">
-                        {relatedArticles.map((rel) => (
-                          <Link
-                            key={rel.slug}
-                            href={`/articles/${rel.slug}`}
-                            className="group flex gap-3 border-b border-[var(--border)] pb-5 last:border-b-0"
-                          >
-                            <MediaThumb
-                              imageUrl={rel.images?.find((i) => i.role === 'hero')?.url || rel.imageUrl}
-                              title={rel.title}
-                              category={rel.category}
-                              tags={rel.tags}
-                              summary={rel.summary}
-                              className="h-16 w-16 aspect-square"
-                            />
-                            <div className="min-w-0">
-                              <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--accent)]">
-                                {rel.category}
+                        {relatedArticles.map((rel, idx) => {
+                          const rawUrl =
+                            rel.images?.find((i) => i.role === 'hero')?.url || rel.imageUrl;
+                          // Avoid adjacent related thumbs sharing one visual (scan false-dup).
+                          // Full category fallback stock = SP-A-084 (next task).
+                          const prevUrl =
+                            idx > 0
+                              ? relatedArticles[idx - 1].images?.find((i) => i.role === 'hero')
+                                  ?.url || relatedArticles[idx - 1].imageUrl
+                              : undefined;
+                          const imageUrl =
+                            rawUrl && prevUrl && rawUrl === prevUrl ? undefined : rawUrl;
+                          return (
+                            <Link
+                              key={rel.slug}
+                              href={`/articles/${rel.slug}`}
+                              className="group flex gap-3 border-b border-[var(--border)] pb-5 last:border-b-0"
+                            >
+                              <MediaThumb
+                                imageUrl={imageUrl}
+                                title={rel.title}
+                                category={rel.category}
+                                tags={rel.tags}
+                                summary={rel.summary}
+                                className="h-16 w-16 aspect-square"
+                              />
+                              <div className="min-w-0">
+                                <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--accent)]">
+                                  {rel.category}
+                                </div>
+                                <h3 className="mt-0.5 font-serif text-sm font-bold leading-snug text-[var(--text)] group-hover:text-[var(--accent)] line-clamp-2">
+                                  {rel.title}
+                                </h3>
+                                <div className="mt-1 text-[10px] text-[var(--muted)]">
+                                  {formatPublishedAt(rel.publishedAt)} • {rel.readTime}
+                                </div>
                               </div>
-                              <h3 className="mt-0.5 font-serif text-sm font-bold leading-snug text-[var(--text)] group-hover:text-[var(--accent)] line-clamp-2">
-                                {rel.title}
-                              </h3>
-                              <div className="mt-1 text-[10px] text-[var(--muted)]">
-                                {formatPublishedAt(rel.publishedAt)} • {rel.readTime}
-                              </div>
-                            </div>
-                          </Link>
-                        ))}
+                            </Link>
+                          );
+                        })}
                       </div>
                     </>
                   )}
