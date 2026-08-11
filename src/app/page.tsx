@@ -1,16 +1,18 @@
 import Link from 'next/link';
 import { getAllArticles, type Article } from '@/data/articles';
-import { MediaPlaceholder } from '@/components/media-placeholder';
 import { ThematicNavigator } from '@/components/thematic-navigator';
-import { formatPublishedAt, sortArticlesByPublishedDate } from '@/lib/article-utils';
-import { formatAuthorByline, resolveAuthorForArticle } from '@/lib/authors';
+import { PastNewsPager } from '@/components/past-news-pager';
+import { sortArticlesByPublishedDate } from '@/lib/article-utils';
 import {
-  CategoryTags,
-  VergeNumberedItem,
-  ArsTechnicaCard,
+  LeadStory,
+  LeadRailItem,
+  GridStoryCard,
+  QuickNewsBlock,
   QuickUpdateItem,
-  StratecheryDeepDive,
 } from '@/components/article-card';
+
+const FRONT_SLOT_COUNT = 14; // lead + rail5 + grid4 + quick4
+const PAST_PAGE_SIZE = 10;
 
 function textBlob(a: Article): string {
   const tags = Array.isArray(a.tags) ? a.tags.join(' ') : '';
@@ -32,6 +34,19 @@ function filterArticlesByCategory(categoryName: string, list: Article[]): Articl
     // SP-A-050: Китай/Qwen are not public filter categories anymore.
     if (norm === 'китай' || norm === 'china' || norm === 'qwen') {
       return cat.includes('гаджет');
+    }
+    // Serial / shipping products (not lab prototypes / research alone)
+    if (norm === 'производство' || norm === 'серия' || norm === 'серийное') {
+      return (
+        cat.includes('гаджет') ||
+        cat.includes('смартфон') ||
+        cat.includes('новинк') ||
+        blob.includes('представил') ||
+        blob.includes('анонсир') ||
+        blob.includes('выпустил') ||
+        blob.includes('в продаже') ||
+        blob.includes('производител')
+      );
     }
     if (norm === 'новинки') {
       return cat.includes('новинк') || title.includes('новинк');
@@ -92,7 +107,7 @@ function filterArticlesByCategory(categoryName: string, list: Article[]): Articl
         blob.includes('fitness')
       );
     }
-    if (norm === 'робототехника') {
+    if (norm === 'робототехника' || norm === 'роботы') {
       return cat.includes('робот') || title.includes('робот');
     }
     if (norm === 'open source') {
@@ -114,6 +129,15 @@ function filterArticlesByCategory(categoryName: string, list: Article[]): Articl
     if (norm === 'разборы') {
       return cat.includes('разборы') || cat.includes('формат') || title.includes('разбор');
     }
+    if (norm === 'наука') {
+      return (
+        cat.includes('наук') ||
+        cat.includes('research') ||
+        blob.includes('research') ||
+        blob.includes('lab') ||
+        title.includes('лаборатор')
+      );
+    }
 
     return (
       cat.includes(norm) ||
@@ -127,28 +151,30 @@ function filterArticlesByCategory(categoryName: string, list: Article[]): Articl
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string }>;
+  searchParams: Promise<{ category?: string; page?: string }>;
 }) {
   const params = await searchParams;
   const activeCategory = params.category?.trim();
+  const requestedPage = Math.max(1, parseInt(params.page || '1', 10) || 1);
 
   const sortedArticles = sortArticlesByPublishedDate(getAllArticles());
+  // SP-A-081 — restore ForkLog-like LEAD/RAIL/GRID/QUICK/PAST from e88c7b1 (SPA-066).
+  // Strict chronology + inherent no-repeat: each slug appears in exactly one front/past slot.
+  const leadStory = sortedArticles[0];
+  const restOrdered = sortedArticles.slice(1);
 
-  // Articles for specific editorial slots
-  const mainStory = sortedArticles[0];
-  const editorialPicks = sortedArticles.slice(0, 5); // 1 to 5 numbered picks
-  const visualFeatureStories = sortedArticles.slice(1, 4); // Ars Technica 2-3 visual blocks
-  
-  // Stratechery Deep Dive candidate (prefer deploy playbook or longform analysis)
-  const deepDiveStory =
-    sortedArticles.find(
-      (a) => a.slug.includes('deploy') || a.category.toLowerCase().includes('разбор'),
-    ) || sortedArticles[2] || sortedArticles[0];
+  const leadRail = restOrdered.slice(0, 5);
+  const gridStories = restOrdered.slice(5, 9);
+  const quickNews = restOrdered.slice(9, 13);
 
-  // Quick updates stream
-  const quickUpdates = sortedArticles;
+  // Past / «Вся лента» continues after the 14 front slots (never restarts at article #1).
+  const pastPool = restOrdered.slice(FRONT_SLOT_COUNT - 1);
+  const totalPast = pastPool.length;
+  const totalPages = Math.max(1, Math.ceil(totalPast / PAST_PAGE_SIZE));
+  const currentPage = Math.min(requestedPage, totalPages);
+  const pastStart = (currentPage - 1) * PAST_PAGE_SIZE;
+  const pastPageArticles = pastPool.slice(pastStart, pastStart + PAST_PAGE_SIZE);
 
-  // Filtered view if a category is selected
   const filteredArticles = activeCategory
     ? filterArticlesByCategory(activeCategory, sortedArticles)
     : [];
@@ -158,44 +184,44 @@ export default async function HomePage({
   );
 
   return (
-    <main className="min-h-screen bg-[var(--bg)] text-[var(--text)] transition-colors py-6 sm:py-10">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-10 sm:space-y-14">
-        {/* ACTIVE CATEGORY FILTER VIEW */}
+    <main className="home-editorial min-h-screen bg-[var(--bg)] text-[var(--text)] transition-colors">
+      <div className="mx-auto max-w-[1440px] space-y-3 px-2 py-2.5 sm:space-y-4 sm:px-4 sm:py-3 lg:px-5">
         {activeCategory ? (
           <>
             {thematicNavigator}
-            <section className="space-y-6">
-              <div className="p-4 rounded-lg border border-[var(--border)] bg-[var(--surface)] flex items-center justify-between">
+            <section className="space-y-4">
+              <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--border)] pb-3">
                 <div>
-                  <h1 className="font-serif text-xl font-bold text-[var(--text)]">
-                    Рубрика: <span className="text-[var(--accent)]">{activeCategory}</span>
+                  <p className="text-[12px] font-medium tracking-wide text-[var(--muted)]">Рубрика</p>
+                  <h1 className="mt-1 text-xl font-semibold tracking-tight text-[var(--text)] sm:text-2xl">
+                    {activeCategory}
                   </h1>
-                  <p className="text-xs text-[var(--muted)] mt-0.5">
-                    Найдено материалов: {filteredArticles.length}
+                  <p className="mt-1 text-[13px] font-normal text-[var(--muted)]">
+                    {filteredArticles.length} материалов
                   </p>
                 </div>
                 <Link
                   href="/"
-                  className="text-xs font-semibold px-3 py-1.5 rounded border border-[var(--border)] bg-[var(--bg)] hover:bg-[var(--surface)] transition-colors"
+                  className="text-[12px] font-normal text-[var(--muted)] transition hover:text-[var(--accent)]"
                 >
-                  Показать всю ленту
+                  ← На главную
                 </Link>
               </div>
 
               {filteredArticles.length > 0 ? (
-                <div className="space-y-4">
+                <div className="divide-y divide-[var(--border)]">
                   {filteredArticles.map((article) => (
                     <QuickUpdateItem key={article.slug} article={article} />
                   ))}
                 </div>
               ) : (
-                <div className="p-8 text-center border border-[var(--border)] rounded-lg bg-[var(--surface)]">
-                  <p className="text-sm text-[var(--muted)]">
+                <div className="border border-[var(--border)] bg-[var(--surface)] p-6 text-center">
+                  <p className="text-sm font-normal text-[var(--muted)]">
                     В выбранной рубрике пока нет материалов.
                   </p>
                   <Link
                     href="/"
-                    className="mt-3 inline-block text-xs font-semibold text-[var(--accent)] hover:underline"
+                    className="mt-2 inline-block text-xs font-medium text-[var(--accent)] hover:underline"
                   >
                     Вернуться на главную
                   </Link>
@@ -204,141 +230,86 @@ export default async function HomePage({
             </section>
           </>
         ) : (
-          /* DIVERSE EDITORIAL HOMEPAGE (No uniform card wall!) */
+          /* SP-A-066 — HOMEPAGE EDITORIAL GRID */
           <>
-            {/* 0. NEWS FEED — near the top so «Новости» is never buried */}
-            <section id="news" className="scroll-mt-24 space-y-4 pb-8 border-b border-[var(--border)]">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h2 className="font-serif text-xl sm:text-2xl font-bold text-[var(--text)]">
-                    Последние новости
-                  </h2>
-                  <p className="mt-1 text-xs text-[var(--muted)]">
-                    Свежие материалы о гаджетах и технологиях
-                  </p>
-                </div>
-                <Link
-                  href="/all"
-                  className="shrink-0 text-xs font-semibold text-[var(--accent)] hover:underline"
-                >
-                  Все новости →
-                </Link>
+            {/* 1. TOP / LEAD AREA — denser: shorter hero + fuller rail */}
+            <section className="grid items-start gap-3 border-b border-[var(--border)] pb-3 lg:grid-cols-12 lg:gap-4 lg:pb-4">
+              <div className="lg:col-span-7 xl:col-span-8">
+                {leadStory ? <LeadStory article={leadStory} /> : null}
               </div>
-              <div className="space-y-1 divide-y divide-[var(--border)]">
-                {sortedArticles.slice(0, 6).map((article) => (
-                  <QuickUpdateItem key={`news-${article.slug}`} article={article} />
-                ))}
-              </div>
-            </section>
-
-            {/* Thematic navigator — directly above «Выбор редакции» */}
-            {thematicNavigator}
-
-            {/* 1. HERO STORY + "ВЫБОР РЕДАКЦИИ" (The Verge Style Split Grid) */}
-            <section className="grid gap-8 lg:grid-cols-12 lg:items-start pb-10 border-b border-[var(--border)]">
-              {/* LEFT (8 Cols): Hero Main Story */}
-              {mainStory && (
-                <div className="lg:col-span-8 lg:pr-8 lg:border-r border-[var(--border)] space-y-4">
-                  <div className="group space-y-4">
-                    <MediaPlaceholder
-                      category={mainStory.category}
-                      title={mainStory.title}
-                      imageUrl={
-                        mainStory.images?.find((i) => i.role === 'hero')?.url || mainStory.imageUrl
-                      }
-                      aspectRatio="aspect-[16/9]"
-                      className="rounded-lg shadow-sm"
-                    />
-
-                    <CategoryTags category={mainStory.category} className="pt-1" />
-
-                    <h1 className="font-serif text-2xl sm:text-4xl font-black leading-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)]">
-                      <Link href={`/articles/${mainStory.slug}`}>{mainStory.title}</Link>
-                    </h1>
-
-                    <p className="text-sm sm:text-base leading-relaxed text-[var(--muted)]">
-                      {mainStory.summary}
-                    </p>
-
-                    <div className="flex items-center gap-3 text-xs text-[var(--muted)] pt-1 border-t border-[var(--border)]">
-                      <span>
-                        {formatAuthorByline(
-                          resolveAuthorForArticle(mainStory).name,
-                          formatPublishedAt(mainStory.publishedAt),
-                        )}
-                      </span>
-                      <span>•</span>
-                      <span>Время чтения: {mainStory.readTime}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* RIGHT (4 Cols): "Выбор редакции" Numbered List 1-5 (The Verge Style) */}
-              <div className="lg:col-span-4 space-y-4">
-                <div className="flex items-center justify-between border-b-2 border-[var(--accent)] pb-2">
-                  <h2 className="font-serif text-sm font-bold uppercase tracking-wider text-[var(--text)]">
-                    Выбор редакции
+              <aside className="flex flex-col lg:col-span-5 xl:col-span-4 lg:border-l lg:border-[var(--border)] lg:pl-4">
+                <div className="mb-1 flex items-center justify-between border-b border-[var(--border)] pb-1">
+                  <h2 className="text-[12px] font-medium tracking-wide text-[var(--muted)]">
+                    Новинки технологий
                   </h2>
-                  <span className="text-[10px] font-mono text-[var(--accent)] font-bold">
-                    TOP 1–5
-                  </span>
+                  <Link
+                    href="/all"
+                    className="text-[11px] font-normal text-[var(--muted)] transition hover:text-[var(--accent)]"
+                  >
+                    Все →
+                  </Link>
                 </div>
-
-                <div className="divide-y divide-[var(--border)]">
-                  {editorialPicks.map((article, idx) => (
-                    <VergeNumberedItem
-                      key={article.slug}
-                      index={idx + 1}
-                      article={article}
-                    />
+                <div className="flex-1">
+                  {leadRail.map((article) => (
+                    <LeadRailItem key={article.slug} article={article} />
                   ))}
                 </div>
-              </div>
+              </aside>
             </section>
 
-            {/* 2. "ВИЗУАЛЬНЫЕ ИСТОРИИ" (Ars Technica Style Feature Blocks) */}
-            <section className="space-y-6 pb-10 border-b border-[var(--border)]">
-              <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="h-4 w-1 bg-[var(--accent)] rounded-full"></div>
-                  <h2 className="font-serif text-xl sm:text-2xl font-bold text-[var(--text)]">
-                    Визуальные истории
-                  </h2>
+            {/* 2. MAIN GRID */}
+            {gridStories.length > 0 ? (
+              <section className="border-b border-[var(--border)] pb-4 sm:pb-5">
+                <div className="mb-2.5 flex items-center justify-between">
+                  <h2 className="text-[12px] font-medium tracking-wide text-[var(--muted)]">Лента</h2>
                 </div>
-                <span className="text-xs font-mono text-[var(--muted)]">Ars Technica Style</span>
-              </div>
-
-              <div className="grid gap-6 md:grid-cols-3">
-                {visualFeatureStories.map((article) => (
-                  <ArsTechnicaCard key={article.slug} article={article} />
-                ))}
-              </div>
-            </section>
-
-            {/* 3. "ГЛУБОКИЙ РАЗБОР" (Stratechery Style Calm Reading Column) */}
-            {deepDiveStory && (
-              <section className="pb-10 border-b border-[var(--border)]">
-                <StratecheryDeepDive article={deepDiveStory} />
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
+                  {gridStories.map((article) => (
+                    <GridStoryCard key={article.slug} article={article} />
+                  ))}
+                </div>
               </section>
-            )}
+            ) : null}
 
-            {/* 4. Full chronological archive teaser */}
-            <section className="space-y-6">
-              <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
-                <h2 className="font-serif text-xl sm:text-2xl font-bold text-[var(--text)]">
-                  Вся лента
+            {/* 3. QUICK NEWS ROW */}
+            {quickNews.length > 0 ? (
+              <section className="border-b border-[var(--border)] pb-4 sm:pb-5">
+                <div className="mb-2.5">
+                  <h2 className="text-[12px] font-medium tracking-wide text-[var(--muted)]">Коротко</h2>
+                </div>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4 lg:gap-2.5">
+                  {quickNews.map((article) => (
+                    <QuickNewsBlock key={article.slug} article={article} />
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            {/* Past news with numbered pages */}
+            <section id="past-news">
+              <div className="mb-2 flex items-center justify-between border-b border-[var(--border)] pb-1.5">
+                <h2 className="text-[12px] font-medium tracking-wide text-[var(--muted)]">
+                  Лента новостей
                 </h2>
-                <Link href="/all" className="text-xs font-semibold text-[var(--accent)] hover:underline">
-                  Открыть архив новостей →
+                <Link
+                  href="/all"
+                  className="text-[11px] font-normal text-[var(--muted)] transition hover:text-[var(--accent)]"
+                >
+                  Архив →
                 </Link>
               </div>
-
-              <div className="space-y-1 divide-y divide-[var(--border)]">
-                {quickUpdates.map((article) => (
-                  <QuickUpdateItem key={article.slug} article={article} />
+              <div className="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
+                {pastPageArticles.map((article) => (
+                  <LeadRailItem key={`past-${article.slug}`} article={article} />
                 ))}
               </div>
+              <PastNewsPager
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalPast={totalPast}
+                basePath="/"
+                hash="#past-news"
+              />
             </section>
           </>
         )}
