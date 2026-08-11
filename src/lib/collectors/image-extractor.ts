@@ -227,17 +227,50 @@ function u(id: string): string {
   return `https://images.unsplash.com/${id}?auto=format&fit=crop&w=1200&q=80`;
 }
 
-/** Topic pools — bright editorial frames, never one grey wall for every card. */
+/**
+ * Local category / stock banners on disk (SP-A-088b).
+ * Prefer these over remote Unsplash so the site never falls back to grey SVG templates
+ * or one shared stock frame (e.g. Pepper robot).
+ */
+const LOCAL_CATEGORY_KEYS = [
+  'ai',
+  'robot',
+  'gadget',
+  'smartphone',
+  'vehicle',
+  'camera',
+  'wearable',
+  'tablet',
+  'keyboard',
+  'printer',
+  'storage',
+  'irrigation',
+  'research',
+  'network',
+  'mouse',
+  'bassinet',
+] as const;
+
+function localCategoryUrl(key: string): string {
+  return `/api/media/_category/${key}.jpg`;
+}
+
+/** Topic pools — bright editorial frames. Never reuse Pepper stock as the only robotics/AI frame. */
 const THEMATIC_POOLS = {
   people: [u('photo-1570295999919-56ceb5ecca61'), u('photo-1507003211169-0a1dd7228f2d'), u('photo-1472099645785-5658abf4ff4e')],
-  openai: [u('photo-1485827404703-89b55fcc595e'), u('photo-1677442136019-21780ecad995'), u('photo-1620712943543-bcc4688e7485')],
+  openai: [
+    localCategoryUrl('ai'),
+    u('photo-1677442136019-21780ecad995'),
+    u('photo-1620712943543-bcc4688e7485'),
+    u('photo-1519389950473-47ba0277781c'),
+  ],
   apple: [u('photo-1512941937669-90a1b58e7e9c'), u('photo-1510557880182-3d4d3cba35a5'), u('photo-1592899677977-9c10ca588bbd')],
   robotics: [
-    u('photo-1485827404703-89b55fcc595e'),
-    u('photo-1535378917041-10a22f510809'),
+    localCategoryUrl('robot'),
     u('photo-1581091226825-a6a2a5aee158'),
     u('photo-1581092918056-0c4c3acd3789'),
     u('photo-1561557944-6e7860d1a7eb'),
+    u('photo-1581092160562-40aa08e78837'),
   ],
   optics: [
     u('photo-1561557944-6e7860d1a7eb'),
@@ -246,6 +279,7 @@ const THEMATIC_POOLS = {
     u('photo-1507413245164-6160d8298b31'),
   ],
   mobility: [
+    localCategoryUrl('vehicle'),
     u('photo-1492144534655-ae79c964c9d7'),
     u('photo-1503376780353-7e6692767b70'),
     u('photo-1552519507-da3b142c6e3d'),
@@ -253,6 +287,7 @@ const THEMATIC_POOLS = {
   ],
   infra: [u('photo-1605745341112-85968b19335b'), u('photo-1451187580459-43490279c0fa'), u('photo-1558494949-ef010cbdcc31')],
   gadget: [
+    localCategoryUrl('gadget'),
     u('photo-1558346490-a72e53ae2d4f'),
     u('photo-1518770660439-4636190af475'),
     u('photo-1588508065123-287b28e013da'),
@@ -261,17 +296,28 @@ const THEMATIC_POOLS = {
   ],
   security: [u('photo-1531482615713-2afd69097998'), u('photo-1563986768609-322da13575f3'), u('photo-1550751827-4bd374c3f58b')],
   ai: [
+    localCategoryUrl('ai'),
     u('photo-1677442136019-21780ecad995'),
     u('photo-1620712943543-bcc4688e7485'),
-    u('photo-1485827404703-89b55fcc595e'),
-    u('photo-1535378917041-10a22f510809'),
+    u('photo-1519389950473-47ba0277781c'),
+    u('photo-1633356122544-f134324a6cee'),
   ],
   code: [u('photo-1512820790803-83ca734da794'), u('photo-1461749280684-dccba630e2f6'), u('photo-1516321318423-f06f85e504b3')],
   planning: [u('photo-1552664730-d307ca884978'), u('photo-1531403009284-440f080d1e12'), u('photo-1454165804606-c3d57bc86b40')],
   weather: [u('photo-1509391366360-2e959784a276'), u('photo-1501594907352-04cda38ebc29'), u('photo-1469474968028-56623f02e42e')],
   health: [u('photo-1576091160399-112ba8d25d1d'), u('photo-1582719478250-c89cae4dc85b'), u('photo-1579684385127-1ef15d508118')],
-  phone: [u('photo-1511707171634-5f897ff02aa9'), u('photo-1592899677977-9c10ca588bbd'), u('photo-1510557880182-3d4d3cba35a5')],
-  network: [u('photo-1544197150-b99a41b40b3e'), u('photo-1451187580459-43490279c0fa'), u('photo-1558494949-ef010cbdcc31')],
+  phone: [
+    localCategoryUrl('smartphone'),
+    u('photo-1511707171634-5f897ff02aa9'),
+    u('photo-1592899677977-9c10ca588bbd'),
+    u('photo-1510557880182-3d4d3cba35a5'),
+  ],
+  network: [
+    localCategoryUrl('network'),
+    u('photo-1451187580459-43490279c0fa'),
+    u('photo-1558494949-ef010cbdcc31'),
+    u('photo-1550751827-4bd374c3f58b'),
+  ],
 } as const;
 
 /**
@@ -432,7 +478,11 @@ export function getThematicFallback(title?: string, category?: string, seed?: st
     return pickPool([...THEMATIC_POOLS.weather], s);
   }
 
-  return pickPool([...THEMATIC_POOLS.planning, ...THEMATIC_POOLS.gadget], s);
+  // General Innovation / Editorial — rotate local category banners first (no grey SVG / no shared Pepper).
+  return pickPool(
+    [...LOCAL_CATEGORY_KEYS.map(localCategoryUrl), ...THEMATIC_POOLS.planning, ...THEMATIC_POOLS.gadget],
+    s,
+  );
 }
 
 /**
