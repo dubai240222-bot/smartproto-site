@@ -234,13 +234,13 @@ async function main() {
       evidence: dossier.evidence,
     };
 
-    // Frame for Editor/hard-reject in Russian while keeping Chinese source facts (no invented specs).
+    // SP-A-088: parser = miner — pass SOURCE PACK only; Editor writes the voice.
     const framed = {
       ...articleData,
+      format: 'article' as const,
       title: dossier.productName || articleData.title,
       text: [
-        `Новый гаджет / устройство (источник: ${c.sourceName}).`,
-        `Анонс / новая модель. По данным источника можно купить или оформить предзаказ, если указано в тексте.`,
+        'SOURCE PACK (parser/dossier facts — Editor пишет самостоятельный обзор, не перевод):',
         articleData.text,
       ].join('\n\n'),
     };
