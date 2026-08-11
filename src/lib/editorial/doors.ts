@@ -291,7 +291,7 @@ async function ensureChiefArticlePhoto(opts: {
   }
 
   // 3) Honest thematic illustration by topic (never leave empty for Chief).
-  const thematic = getThematicFallback(opts.title, 'Технологии');
+  const thematic = getThematicFallback(opts.title, 'Технологии', opts.title);
   if (thematic) {
     const downloaded = await downloadImagesLocally(opts.slug, [{ url: thematic, role: 'hero' }]);
     if (downloaded.length) {

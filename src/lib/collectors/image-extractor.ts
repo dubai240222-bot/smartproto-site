@@ -214,31 +214,143 @@ function findFirstSignificantImg(html: string, baseUrl: string): string | null {
   return null;
 }
 
+/** Stable pick from a pool so adjacent articles rarely share one stock frame. */
+function pickPool(pool: string[], seed?: string): string {
+  if (!pool.length) return '';
+  if (!seed) return pool[0];
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  return pool[h % pool.length];
+}
+
+function u(id: string): string {
+  return `https://images.unsplash.com/${id}?auto=format&fit=crop&w=1200&q=80`;
+}
+
+/**
+ * Local category / stock banners on disk (SP-A-088b).
+ * Prefer these over remote Unsplash so the site never falls back to grey SVG templates
+ * or one shared stock frame (e.g. Pepper robot).
+ */
+const LOCAL_CATEGORY_KEYS = [
+  'ai',
+  'robot',
+  'gadget',
+  'smartphone',
+  'vehicle',
+  'camera',
+  'wearable',
+  'tablet',
+  'keyboard',
+  'printer',
+  'storage',
+  'irrigation',
+  'research',
+  'network',
+  'mouse',
+  'bassinet',
+] as const;
+
+function localCategoryUrl(key: string): string {
+  return `/api/media/_category/${key}.jpg`;
+}
+
+/** Topic pools — bright editorial frames. Never reuse Pepper stock as the only robotics/AI frame. */
+const THEMATIC_POOLS = {
+  people: [u('photo-1570295999919-56ceb5ecca61'), u('photo-1507003211169-0a1dd7228f2d'), u('photo-1472099645785-5658abf4ff4e')],
+  openai: [
+    localCategoryUrl('ai'),
+    u('photo-1677442136019-21780ecad995'),
+    u('photo-1620712943543-bcc4688e7485'),
+    u('photo-1519389950473-47ba0277781c'),
+  ],
+  apple: [u('photo-1512941937669-90a1b58e7e9c'), u('photo-1510557880182-3d4d3cba35a5'), u('photo-1592899677977-9c10ca588bbd')],
+  robotics: [
+    localCategoryUrl('robot'),
+    u('photo-1581091226825-a6a2a5aee158'),
+    u('photo-1581092918056-0c4c3acd3789'),
+    u('photo-1561557944-6e7860d1a7eb'),
+    u('photo-1581092160562-40aa08e78837'),
+  ],
+  optics: [
+    u('photo-1561557944-6e7860d1a7eb'),
+    u('photo-1518709268805-4e9042af9f23'),
+    u('photo-1451187580459-43490279c0fa'),
+    u('photo-1507413245164-6160d8298b31'),
+  ],
+  mobility: [
+    localCategoryUrl('vehicle'),
+    u('photo-1492144534655-ae79c964c9d7'),
+    u('photo-1503376780353-7e6692767b70'),
+    u('photo-1552519507-da3b142c6e3d'),
+    u('photo-1549317661-bd32c8ce0db2'),
+  ],
+  infra: [u('photo-1605745341112-85968b19335b'), u('photo-1451187580459-43490279c0fa'), u('photo-1558494949-ef010cbdcc31')],
+  gadget: [
+    localCategoryUrl('gadget'),
+    u('photo-1558346490-a72e53ae2d4f'),
+    u('photo-1518770660439-4636190af475'),
+    u('photo-1588508065123-287b28e013da'),
+    u('photo-1526170375885-4d8ecf77b99f'),
+    u('photo-1505740420928-5e560c06d30e'),
+  ],
+  security: [u('photo-1531482615713-2afd69097998'), u('photo-1563986768609-322da13575f3'), u('photo-1550751827-4bd374c3f58b')],
+  ai: [
+    localCategoryUrl('ai'),
+    u('photo-1677442136019-21780ecad995'),
+    u('photo-1620712943543-bcc4688e7485'),
+    u('photo-1519389950473-47ba0277781c'),
+    u('photo-1633356122544-f134324a6cee'),
+  ],
+  code: [u('photo-1512820790803-83ca734da794'), u('photo-1461749280684-dccba630e2f6'), u('photo-1516321318423-f06f85e504b3')],
+  planning: [u('photo-1552664730-d307ca884978'), u('photo-1531403009284-440f080d1e12'), u('photo-1454165804606-c3d57bc86b40')],
+  weather: [u('photo-1509391366360-2e959784a276'), u('photo-1501594907352-04cda38ebc29'), u('photo-1469474968028-56623f02e42e')],
+  health: [u('photo-1576091160399-112ba8d25d1d'), u('photo-1582719478250-c89cae4dc85b'), u('photo-1579684385127-1ef15d508118')],
+  phone: [
+    localCategoryUrl('smartphone'),
+    u('photo-1511707171634-5f897ff02aa9'),
+    u('photo-1592899677977-9c10ca588bbd'),
+    u('photo-1510557880182-3d4d3cba35a5'),
+  ],
+  network: [
+    localCategoryUrl('network'),
+    u('photo-1451187580459-43490279c0fa'),
+    u('photo-1558494949-ef010cbdcc31'),
+    u('photo-1550751827-4bd374c3f58b'),
+  ],
+} as const;
+
 /**
  * Returns a contextually fitting atmospheric/thematic photo fallback based on domain/topic,
  * strictly avoiding any wrong physical device images.
  * Exported for Chief Fast Lane required-photo path (SP-A-077) — AUTO still uses extractArticleImage.
+ * Optional `seed` (slug) rotates within the topic pool so cards do not share one stock frame.
  */
-export function getThematicFallback(title?: string, category?: string): string | null {
+export function getThematicFallback(title?: string, category?: string, seed?: string): string | null {
   const query = `${title || ''} ${category || ''}`.toLowerCase();
+  const s = seed || title || category || 'smartproto';
 
-  // Public Figures / Famous Entities
-  if (query.includes('musk') || query.includes('маск')) {
-    return 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=1200&q=80';
-  }
+  if (query.includes('musk') || query.includes('маск')) return pickPool([...THEMATIC_POOLS.people], s);
   if (query.includes('openai') || query.includes('altman') || query.includes('альтман')) {
-    return 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=1200&q=80';
+    return pickPool([...THEMATIC_POOLS.openai], s);
   }
   if (query.includes('apple') || query.includes('mac') || query.includes('iphone')) {
-    return 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=1200&q=80';
+    return pickPool([...THEMATIC_POOLS.apple], s);
   }
 
-  // Robotics / Tactile / Cybernetics — bright studio robot (never gloomy circuit boards)
-  if (query.includes('robot') || query.includes('робот') || query.includes('tactile') || query.includes('рука') || query.includes('сенсор')) {
-    return 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=1200&q=80';
+  if (
+    query.includes('robot') ||
+    query.includes('робот') ||
+    query.includes('tactile') ||
+    query.includes('tacta') ||
+    query.includes('рука') ||
+    query.includes('сенсор') ||
+    query.includes('симулятор') ||
+    query.includes('manipulat')
+  ) {
+    return pickPool([...THEMATIC_POOLS.robotics], s);
   }
 
-  // Optics / Fiber / Quantum / Projector / Light — immersive colorful projection, not dark cinema
   if (
     query.includes('fiber') ||
     query.includes('optic') ||
@@ -248,15 +360,67 @@ export function getThematicFallback(title?: string, category?: string): string |
     query.includes('квант') ||
     query.includes('свет')
   ) {
-    return 'https://images.unsplash.com/photo-1561557944-6e7860d1a7eb?auto=format&fit=crop&w=1200&q=80';
+    return pickPool([...THEMATIC_POOLS.optics], s);
   }
 
-  // Infrastructure / Deploy / Cloud — vivid shipping/containers metaphor, not gray racks
-  if (query.includes('deploy') || query.includes('cloud') || query.includes('server') || query.includes('инфраструктур') || query.includes('докер') || query.includes('docker')) {
-    return 'https://images.unsplash.com/photo-1605745341112-85968b19335b?auto=format&fit=crop&w=1200&q=80';
+  if (
+    query.includes('volkswagen') ||
+    query.includes('id. era') ||
+    query.includes('электромобил') ||
+    query.includes('ev ') ||
+    query.includes('sedan') ||
+    query.includes('автомоб') ||
+    query.includes('geely') ||
+    query.includes('galaxy tt')
+  ) {
+    return pickPool([...THEMATIC_POOLS.mobility], s);
   }
 
-  // Gadgets / Hardware / Prototyping — bright bench with colorful jumper wires
+  if (
+    query.includes('5g') ||
+    query.includes('huawei') ||
+    query.includes('сеть') ||
+    query.includes('network') ||
+    query.includes('wifi') ||
+    query.includes('wi-fi') ||
+    query.includes('беспровод')
+  ) {
+    return pickPool([...THEMATIC_POOLS.network], s);
+  }
+
+  if (
+    query.includes('health') ||
+    query.includes('cancer') ||
+    query.includes('медицин') ||
+    query.includes('рак') ||
+    query.includes('breast') ||
+    query.includes('diagnos')
+  ) {
+    return pickPool([...THEMATIC_POOLS.health], s);
+  }
+
+  if (
+    query.includes('phone') ||
+    query.includes('смартфон') ||
+    query.includes('pixel') ||
+    query.includes('smartphone') ||
+    query.includes('аннонс') ||
+    query.includes('анонс')
+  ) {
+    return pickPool([...THEMATIC_POOLS.phone], s);
+  }
+
+  if (
+    query.includes('deploy') ||
+    query.includes('cloud') ||
+    query.includes('server') ||
+    query.includes('инфраструктур') ||
+    query.includes('докер') ||
+    query.includes('docker')
+  ) {
+    return pickPool([...THEMATIC_POOLS.infra], s);
+  }
+
   if (
     query.includes('gadget') ||
     query.includes('гаджет') ||
@@ -267,28 +431,34 @@ export function getThematicFallback(title?: string, category?: string): string |
     query.includes('pcb') ||
     query.includes('электрон')
   ) {
-    return 'https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?auto=format&fit=crop&w=1200&q=80';
+    return pickPool([...THEMATIC_POOLS.gadget], s);
   }
 
-  // Cybersecurity / Hacking / Signal analysis — bright collaborative engineering, not green matrix gloom
   if (
     query.includes('security') ||
     query.includes('hack') ||
     query.includes('крипто') ||
     query.includes('безопасность') ||
+    query.includes('cyber') ||
+    query.includes('кибер') ||
     query.includes('defcon') ||
-    query.includes('hn') ||
     query.includes('сигнал')
   ) {
-    return 'https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=1200&q=80';
+    return pickPool([...THEMATIC_POOLS.security], s);
   }
 
-  // AI / LLM / Machine Learning — friendly bright robotics, not abstract blue blobs
-  if (query.includes('ai') || query.includes('ии') || query.includes('нейро') || query.includes('gpt') || query.includes('llm') || query.includes('модель')) {
-    return 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=1200&q=80';
+  if (
+    query.includes('ai') ||
+    query.includes('ии') ||
+    query.includes('нейро') ||
+    query.includes('gpt') ||
+    query.includes('llm') ||
+    query.includes('модель') ||
+    query.includes('ganpaint')
+  ) {
+    return pickPool([...THEMATIC_POOLS.ai], s);
   }
 
-  // Software / Code / Open Source / Dev / Briefs — colorful editorial books
   if (
     query.includes('code') ||
     query.includes('разработ') ||
@@ -297,21 +467,22 @@ export function getThematicFallback(title?: string, category?: string): string |
     query.includes('open-source') ||
     query.includes('open source')
   ) {
-    return 'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=1200&q=80';
+    return pickPool([...THEMATIC_POOLS.code], s);
   }
 
-  // Analytics / Dashboard — sticky-note planning energy (avoid sterile laptop-dashboard clichés)
   if (query.includes('analy') || query.includes('аналит') || query.includes('dashboard') || query.includes('chart')) {
-    return 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1200&q=80';
+    return pickPool([...THEMATIC_POOLS.planning], s);
   }
 
-  // Weather / Atmospheric — bright solar daylight
   if (query.includes('rain') || query.includes('weather') || query.includes('дождь') || query.includes('погода')) {
-    return 'https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&w=1200&q=80';
+    return pickPool([...THEMATIC_POOLS.weather], s);
   }
 
-  // General Innovation / Editorial — bright sticky-note planning session
-  return 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1200&q=80';
+  // General Innovation / Editorial — rotate local category banners first (no grey SVG / no shared Pepper).
+  return pickPool(
+    [...LOCAL_CATEGORY_KEYS.map(localCategoryUrl), ...THEMATIC_POOLS.planning, ...THEMATIC_POOLS.gadget],
+    s,
+  );
 }
 
 /**
@@ -382,5 +553,5 @@ export async function extractArticleImage(
     }
   }
 
-  return getThematicFallback(title, category);
+  return getThematicFallback(title, category, title);
 }

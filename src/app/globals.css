@@ -177,10 +177,11 @@ html[data-theme="dark"] .home-editorial,
   color: var(--accent);
 }
 
-/* SP-A-079 — visual fallback tones (kept under SPA-081 homepage CSS) */
+/* SP-A-079 / SP-A-088 — visual fallback tones (never a flat grey window) */
 .visual-fallback {
   min-height: 100%;
   isolation: isolate;
+  background: linear-gradient(145deg, #e6dcc8 0%, #d2c3a4 48%, #b8a482 100%);
 }
 
 .visual-fallback__grain {
@@ -199,35 +200,36 @@ html[data-theme="dark"] .home-editorial,
   background: radial-gradient(circle, rgba(0, 0, 0, 0.08), transparent 70%);
 }
 
+/* SP-A-088 — brighter category tones (avoid grey walls when photo is missing) */
 .vf-tone--ai {
-  background: linear-gradient(145deg, #e7f1f6 0%, #d3e4ee 48%, #c4d7c9 100%);
+  background: linear-gradient(145deg, #d8eef8 0%, #b7d9ec 45%, #9bc4a8 100%);
 }
 .vf-tone--robotics {
-  background: linear-gradient(145deg, #efe8df 0%, #ddd3c4 50%, #c7b7a4 100%);
+  background: linear-gradient(145deg, #f3e0c8 0%, #e2c49a 48%, #c9966a 100%);
 }
 .vf-tone--mobility {
-  background: linear-gradient(145deg, #e3eef4 0%, #c8dde9 52%, #aec6d8 100%);
+  background: linear-gradient(145deg, #cfe6f5 0%, #9fc8e4 50%, #6fa3c8 100%);
 }
 .vf-tone--health {
-  background: linear-gradient(145deg, #efe9e5 0%, #e2d4ce 50%, #d3c0b6 100%);
+  background: linear-gradient(145deg, #f3d9d2 0%, #e8b8ae 48%, #d49286 100%);
 }
 .vf-tone--home {
-  background: linear-gradient(145deg, #e6eee8 0%, #d1e0d5 50%, #b8ceb9 100%);
+  background: linear-gradient(145deg, #d5ead9 0%, #b3d6ba 50%, #8fbf98 100%);
 }
 .vf-tone--research {
-  background: linear-gradient(145deg, #ebe8e1 0%, #ddd6cb 50%, #cfc4b4 100%);
+  background: linear-gradient(145deg, #e8dcc6 0%, #d4c19e 48%, #bda67a 100%);
 }
 .vf-tone--china {
-  background: linear-gradient(145deg, #f1e9e4 0%, #e5d5cc 50%, #d5c0b5 100%);
+  background: linear-gradient(145deg, #f5d8c8 0%, #e8b89f 48%, #d49272 100%);
 }
 .vf-tone--energy {
-  background: linear-gradient(145deg, #f0efe4 0%, #e4dfc4 48%, #d2c89a 100%);
+  background: linear-gradient(145deg, #f2e8b8 0%, #e4d47a 48%, #c9b84a 100%);
 }
 .vf-tone--work {
-  background: linear-gradient(145deg, #e8ebea 0%, #d5ddd9 50%, #c0ccc6 100%);
+  background: linear-gradient(145deg, #d5e4df 0%, #b3cdc4 50%, #8fb3a8 100%);
 }
 .vf-tone--gadget {
-  background: linear-gradient(145deg, #eceae5 0%, #ddd8d0 50%, #cbc4ba 100%);
+  background: linear-gradient(145deg, #e6dcc8 0%, #d2c3a4 48%, #b8a482 100%);
 }
 
 html[data-theme='dark'] .vf-tone--ai,
