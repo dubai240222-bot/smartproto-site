@@ -159,3 +159,98 @@ body {
 .article-text-link:visited {
   color: var(--accent);
 }
+
+/* SP-A-079 — Editorial fallback templates (no real photo) */
+.visual-fallback {
+  min-height: 100%;
+  isolation: isolate;
+}
+
+.visual-fallback__grain {
+  background-image:
+    radial-gradient(circle at 18% 22%, rgba(255, 255, 255, 0.55), transparent 42%),
+    radial-gradient(circle at 82% 78%, rgba(0, 0, 0, 0.06), transparent 46%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.18), transparent 55%);
+  opacity: 0.9;
+}
+
+.visual-fallback__orb {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.55), transparent 68%);
+}
+
+.visual-fallback__orb--soft {
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.08), transparent 70%);
+}
+
+.vf-tone--ai {
+  background: linear-gradient(145deg, #e7f1f6 0%, #d3e4ee 48%, #c4d7c9 100%);
+}
+.vf-tone--robotics {
+  background: linear-gradient(145deg, #efe8df 0%, #ddd3c4 50%, #c7b7a4 100%);
+}
+.vf-tone--mobility {
+  background: linear-gradient(145deg, #e3eef4 0%, #c8dde9 52%, #aec6d8 100%);
+}
+.vf-tone--health {
+  background: linear-gradient(145deg, #efe9e5 0%, #e2d4ce 50%, #d3c0b6 100%);
+}
+.vf-tone--home {
+  background: linear-gradient(145deg, #e6eee8 0%, #d1e0d5 50%, #b8ceb9 100%);
+}
+.vf-tone--research {
+  background: linear-gradient(145deg, #ebe8e1 0%, #ddd6cb 50%, #cfc4b4 100%);
+}
+.vf-tone--china {
+  background: linear-gradient(145deg, #f1e9e4 0%, #e5d5cc 50%, #d5c0b5 100%);
+}
+.vf-tone--energy {
+  background: linear-gradient(145deg, #f0efe4 0%, #e4dfc4 48%, #d2c89a 100%);
+}
+.vf-tone--work {
+  background: linear-gradient(145deg, #e8ebea 0%, #d5ddd9 50%, #c0ccc6 100%);
+}
+.vf-tone--gadget {
+  background: linear-gradient(145deg, #eceae5 0%, #ddd8d0 50%, #cbc4ba 100%);
+}
+
+html[data-theme='dark'] .vf-tone--ai,
+.dark .vf-tone--ai {
+  background: linear-gradient(145deg, #243038 0%, #2a3a42 55%, #2f4038 100%);
+}
+html[data-theme='dark'] .vf-tone--robotics,
+.dark .vf-tone--robotics {
+  background: linear-gradient(145deg, #322c26 0%, #3a322a 55%, #44382e 100%);
+}
+html[data-theme='dark'] .vf-tone--mobility,
+.dark .vf-tone--mobility {
+  background: linear-gradient(145deg, #243038 0%, #2c3a44 55%, #334552 100%);
+}
+html[data-theme='dark'] .vf-tone--health,
+.dark .vf-tone--health {
+  background: linear-gradient(145deg, #322c2a 0%, #3a322f 55%, #443936 100%);
+}
+html[data-theme='dark'] .vf-tone--home,
+.dark .vf-tone--home {
+  background: linear-gradient(145deg, #28302b 0%, #303a33 55%, #38443c 100%);
+}
+html[data-theme='dark'] .vf-tone--research,
+.dark .vf-tone--research {
+  background: linear-gradient(145deg, #2e2c28 0%, #37332d 55%, #403a32 100%);
+}
+html[data-theme='dark'] .vf-tone--china,
+.dark .vf-tone--china {
+  background: linear-gradient(145deg, #332c28 0%, #3c332e 55%, #463a34 100%);
+}
+html[data-theme='dark'] .vf-tone--energy,
+.dark .vf-tone--energy {
+  background: linear-gradient(145deg, #322f24 0%, #3a3628 55%, #443f2e 100%);
+}
+html[data-theme='dark'] .vf-tone--work,
+.dark .vf-tone--work {
+  background: linear-gradient(145deg, #2a2e2c 0%, #323836 55%, #3a423f 100%);
+}
+html[data-theme='dark'] .vf-tone--gadget,
+.dark .vf-tone--gadget {
+  background: linear-gradient(145deg, #2c2b28 0%, #353430 55%, #3e3c37 100%);
+}
+
