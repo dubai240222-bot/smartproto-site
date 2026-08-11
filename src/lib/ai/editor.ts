@@ -179,6 +179,9 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
     typeof (articleData as { sourceName?: unknown }).sourceName === 'string'
       ? (articleData as { sourceName: string }).sourceName
       : '';
+  const chiefLane =
+    (articleData as { chiefFastLane?: unknown }).chiefFastLane === true ||
+    (articleData as { chiefLane?: unknown }).chiefLane === true;
   const mode: EditorialMode =
     (articleData as { mode?: unknown }).mode === 'app'
       ? 'app'
@@ -192,7 +195,8 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
     typeof (reviewData as { technicalVerdict?: unknown }).technicalVerdict === 'string'
       ? (reviewData as { technicalVerdict: string }).technicalVerdict
       : '';
-  if (gate.reject || /^REJECT\b/i.test(reviewVerdict)) {
+  // SP-A-088 — Chief Fast Lane keeps human override access; AUTO still gated.
+  if (!chiefLane && (gate.reject || /^REJECT\b/i.test(reviewVerdict))) {
     return REJECT_DRAFT;
   }
 
@@ -235,13 +239,18 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
             ? 'Подготовь самостоятельный обзор о конкретном полезном мобильном приложении или notable-игре (App Store / Google Play OK).'
             : mode === 'ai_radar'
               ? 'Подготовь самостоятельный обзор о grounded AI / robotics / research capability (EVENT) — не перевод пресс-релиза и не витрину SKU.'
-              : 'Подготовь самостоятельный обзор о гаджете/товаре для быта или работы — не перевод анонса.',
+              : chiefLane
+                ? 'Chief Fast Lane: самостоятельный редакционный обзор по источнику — живой SmartProto-голос, не перевод и не пресс-релиз.'
+                : 'Подготовь самостоятельный редакционный обзор о технологии / устройстве / событии — не перевод анонса и не карточка товара.',
           mode === 'app'
             ? 'Если SEO-roundup / gambling / crypto / нет конкретного app — верни REJECT-черновик. Добавь тег «приложения».'
             : mode === 'ai_radar'
               ? 'Если нет явного capability/event — верни REJECT. Не раздувай commodity без новой способности.'
-              : 'Если тема off-topic / нет покупаемого продукта — верни REJECT-черновик.',
+              : chiefLane
+                ? 'Chief override: Scout не применяется. Пиши по фактам источника; REJECT только при полной невозможности понять тему.'
+                : 'Если тема off-topic / пустой commodity без новой способности — верни REJECT-черновик.',
           ...formatInstructions,
+          'SP-A-088 ONE VOICE: тот же Editorial DNA для Chief и AUTO. Parser только шахтёр — автор = Editor.',
           'SP-A-087: найди самый яркий честный факт и сделай его центром. Не пересказ. Норма 200–350 слов.',
           'SP-A-085: закрой мысль цифрами/сравнением из входных данных; не поднимай габариты/вес/батарею без ответа.',
           'Верни СТРОГО JSON:',
