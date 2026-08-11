@@ -47,6 +47,10 @@ import {
   dossierPublishable,
 } from '../src/lib/ai/china-publish-gate';
 import {
+  FinalAutoGateError,
+  assertFinalAutoPublishAllowed,
+} from '../src/lib/ai/final-auto-commodity-gate';
+import {
   checkCycleCadence,
   getNewsIntervalMs,
   getNewsWarmupUntilIso,
@@ -683,6 +687,37 @@ async function tryChinaPublishOnce(opts: {
         ...(images.length ? { imageUrl: images[0].url, images } : {}),
         ...stampAuthorForPipeline('china-qwen', { sourceUrl: c.sourceUrl, slug }),
       };
+
+      // SP-A-082 — final AUTO gate before articles.json + SQLite (covers china soft gadget bar).
+      try {
+        assertFinalAutoPublishAllowed({
+          title: article.title,
+          summary: article.summary,
+          content: article.content,
+          tags: article.tags,
+          category: article.category,
+          agentId: article.agentId || 'china-qwen',
+        });
+      } catch (err) {
+        if (err instanceof FinalAutoGateError) {
+          console.log(chalk.yellow(`China blocked by final gate: ${err.message}`));
+          fresh.journal.entries.push({
+            id: slug,
+            url: c.sourceUrl,
+            title: draft.title,
+            processedAt: publishedAt,
+            status: 'rejected',
+            reason: err.message,
+            slug,
+            channel: 'china-qwen',
+            cycle: opts.cycle,
+          });
+          await writeFile(opts.journalPath, JSON.stringify(fresh.journal, null, 2) + '\n', 'utf8');
+          opts.urls.add(c.sourceUrl);
+          continue;
+        }
+        throw err;
+      }
 
       const deduped = filterRemovedArticles(
         fresh.articles.filter(
@@ -1337,6 +1372,27 @@ async function publishRssOnce(opts: {
             : {}),
           ...stampAuthorForPipeline('newsroom-scout', { sourceUrl: item.url, slug }),
         } as Article;
+
+        // SP-A-082 — final AUTO gate before articles.json + SQLite (RSS / AI radar).
+        try {
+          assertFinalAutoPublishAllowed({
+            title: article.title,
+            summary: article.summary,
+            content: article.content,
+            tags: article.tags,
+            category: article.category,
+            agentId: article.agentId || 'newsroom-scout',
+          });
+        } catch (err) {
+          if (err instanceof FinalAutoGateError) {
+            console.log(chalk.yellow(`RSS blocked by final gate: ${err.message}`));
+            await markRejected(fresh.journal, opts.journalPath, item, err.message, scout.score);
+            opts.urls.add(item.url);
+            lastSkip = err.message;
+            return false;
+          }
+          throw err;
+        }
 
         const deduped = filterRemovedArticles(
           fresh.articles.filter(
