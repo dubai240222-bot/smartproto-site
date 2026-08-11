@@ -7,7 +7,8 @@ import path from 'node:path';
 import { getAllArticles, type Article } from '@/data/articles';
 import { getOpenRouterClient, clampText } from '@/lib/ai/shared';
 import { extractArticlePlainText } from '@/lib/collectors/article-text';
-import { resolveArticlePhotos } from '@/lib/collectors/photo-scout';
+import { getThematicFallback } from '@/lib/collectors/image-extractor';
+import { downloadImagesLocally, resolveArticlePhotos } from '@/lib/collectors/photo-scout';
 import { stampAuthorForPipeline } from '@/lib/authors';
 import { toPublicCategory, toPublicTags } from '@/lib/public-labels';
 import type { StoredArticle } from '@/lib/data-store/articles-repo';
@@ -163,6 +164,150 @@ function extractCanonicalUrl(html: string, baseUrl: string): string {
   } catch {
     return normalizeUrl(baseUrl);
   }
+}
+
+/**
+ * SP-A-077 — Chief-only HTML enrich when generic extractor returns a thin teaser.
+ * Does not change AUTO collectors.
+ */
+function enrichChiefSourceFromHtml(html: string, existing: string): string {
+  const meta =
+    html.match(
+      /<meta[^>]+(?:property|name)=["']og:description["'][^>]+content=["']([^"']+)["']/i,
+    )?.[1] ||
+    html.match(
+      /<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']og:description["']/i,
+    )?.[1] ||
+    html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i)?.[1] ||
+    '';
+  const articleChunk =
+    html.match(/<article\b[^>]*>([\s\S]*?)<\/article>/i)?.[1] ||
+    html.match(
+      /<div[^>]+class=["'][^"']*(?:post-content|entry-content|article-content|content-inner|news-content)[^"']*["'][^>]*>([\s\S]*?)<\/div>/i,
+    )?.[1] ||
+    '';
+  const raw = (articleChunk || html)
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, ' ')
+    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, ' ')
+    .replace(/<\/(p|div|h[1-6]|li|br)>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+  const parts = [existing, meta, raw.slice(0, 6000)].filter(Boolean);
+  // Prefer longest unique blend
+  const merged = parts
+    .sort((a, b) => b.length - a.length)
+    .reduce((acc, p) => (acc.includes(p.slice(0, 80)) ? acc : `${acc}\n\n${p}`.trim()), '');
+  return merged.slice(0, 8000) || existing;
+}
+
+/** SP-A-077 — Chief must ship with a hero photo (AUTO may still publish without). */
+export type ChiefPhotoKind = 'SOURCE_PHOTO' | 'WEB_PHOTO' | 'THEMATIC_PHOTO';
+
+function extractSourcePhotoUrls(html: string, baseUrl: string, extra?: string): string[] {
+  const out: string[] = [];
+  const push = (raw: string | undefined) => {
+    const t = (raw || '').trim();
+    if (!t) return;
+    try {
+      const abs = new URL(t, baseUrl).toString();
+      if (/^https?:\/\//i.test(abs) && !out.includes(abs)) out.push(abs);
+    } catch {
+      /* ignore */
+    }
+  };
+  push(extra);
+  const patterns = [
+    /<meta[^>]+property=["']og:image(?::secure_url)?["'][^>]+content=["']([^"']+)["']/gi,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image(?::secure_url)?["']/gi,
+    /<meta[^>]+name=["']twitter:image(?::src)?["'][^>]+content=["']([^"']+)["']/gi,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image(?::src)?["']/gi,
+  ];
+  for (const re of patterns) {
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(html)) !== null) push(m[1]);
+  }
+  return out;
+}
+
+async function ensureChiefArticlePhoto(opts: {
+  slug: string;
+  title: string;
+  text: string;
+  sourceUrl: string;
+  html?: string;
+  fallbackUrl?: string;
+}): Promise<{
+  images: NonNullable<Article['images']>;
+  imageUrl: string;
+  kind: ChiefPhotoKind;
+  remoteUrl: string;
+} | null> {
+  // 1) Exact / close photo from source article (og:image, twitter:image, extract fallback).
+  const sourceCandidates = extractSourcePhotoUrls(opts.html || '', opts.sourceUrl, opts.fallbackUrl);
+  if (sourceCandidates.length) {
+    const downloaded = await downloadImagesLocally(
+      opts.slug,
+      sourceCandidates.slice(0, 2).map((url, i) => ({
+        url,
+        role: (i === 0 ? 'hero' : 'secondary') as 'hero' | 'secondary',
+      })),
+    );
+    if (downloaded.length) {
+      return {
+        images: downloaded,
+        imageUrl: downloaded[0].url,
+        kind: 'SOURCE_PHOTO',
+        remoteUrl: downloaded[0].sourceUrl || sourceCandidates[0],
+      };
+    }
+  }
+
+  // 2) Web / photo-scout close match (exact product / research demo when available).
+  try {
+    const report = await resolveArticlePhotos({
+      slug: opts.slug,
+      title: opts.title,
+      text: opts.text,
+      sourceUrl: opts.sourceUrl,
+      fallbackUrl: opts.fallbackUrl,
+      html: opts.html,
+      maxResearchPages: 2,
+    });
+    if (report.selected?.length) {
+      return {
+        images: report.selected,
+        imageUrl: report.selected[0].url,
+        kind: 'WEB_PHOTO',
+        remoteUrl: report.selected[0].sourceUrl || report.selected[0].url,
+      };
+    }
+  } catch {
+    /* continue to thematic */
+  }
+
+  // 3) Honest thematic illustration by topic (never leave empty for Chief).
+  const thematic = getThematicFallback(opts.title, 'Технологии');
+  if (thematic) {
+    const downloaded = await downloadImagesLocally(opts.slug, [{ url: thematic, role: 'hero' }]);
+    if (downloaded.length) {
+      return {
+        images: downloaded.map((img) => ({
+          ...img,
+          // keep local url; sourceUrl stays remote thematic origin
+        })),
+        imageUrl: downloaded[0].url,
+        kind: 'THEMATIC_PHOTO',
+        remoteUrl: thematic,
+      };
+    }
+  }
+
+  return null;
 }
 
 /* ─── Publish helpers ─── */
@@ -457,6 +602,9 @@ export type ChiefJob = {
   articleUrl?: string;
   duplicateSlug?: string;
   duplicateTitle?: string;
+  /** SP-A-077 — how the required Chief hero was resolved */
+  photoKind?: ChiefPhotoKind;
+  photoUrl?: string;
   updatedAt: string;
   createdAt: string;
 };
@@ -585,7 +733,12 @@ export async function runChiefFastLane(jobId: string): Promise<ChiefJob> {
     try {
       const res = await fetch(url, {
         signal: AbortSignal.timeout(10000),
-        headers: { 'User-Agent': 'Mozilla/5.0 SmartProto-Chief/1.0', Accept: 'text/html' },
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          Accept: 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'ru,en;q=0.8',
+        },
         redirect: 'follow',
       });
       if (res.ok) html = await res.text();
@@ -607,27 +760,49 @@ export async function runChiefFastLane(jobId: string): Promise<ChiefJob> {
       });
     }
 
-    if (!page.text || page.text.trim().length < 120) {
-      return patchJob(job, { status: 'FAILED', message: 'Could not read enough text from source URL.' });
+    // SP-A-077 — Chief may get thin extractor output (e.g. ForkLog). Enrich from HTML
+    // for this door only; AUTO extract path unchanged.
+    let sourceText = page.text.trim();
+    if (html && sourceText.length < 800) {
+      const enriched = enrichChiefSourceFromHtml(html, sourceText);
+      if (enriched.length > sourceText.length) sourceText = enriched;
     }
 
-    // Source / safety sanity only — NOT Scout 70, NOT AUTO topic gates.
+    if (!sourceText || sourceText.length < 80) {
+      return patchJob(job, {
+        status: 'FAILED',
+        message: 'Could not read enough text from source URL (empty/blocked page).',
+      });
+    }
+
+    // SP-A-077 — Chief = human editorial override.
+    // Keep malware / obvious spam / empty. Do NOT apply AUTO substance depth (wordCount<40).
     job = patchJob(job, { status: 'EDITING', message: 'Source / safety sanity…' });
-    const wordCount = page.text.trim().split(/\s+/).filter(Boolean).length;
-    const blob = page.text.slice(0, 4000);
+    const blob = sourceText.slice(0, 5000);
     if (
-      wordCount < 40 ||
-      /buy now|crypto giveaway|double your bitcoin|100x returns|\bporn\b|\bxxx\b|viagra/i.test(blob)
+      /buy now|crypto giveaway|double your bitcoin|100x returns|\bporn\b|\bxxx\b|viagra|malware|phishing/i.test(
+        blob,
+      )
     ) {
       return patchJob(job, {
         status: 'FAILED',
-        message: 'Source failed basic safety / substance check.',
+        message: 'Source failed basic safety check (malware/spam patterns).',
+      });
+    }
+    // Obviously unrelated spam landing (not a real article)
+    if (
+      sourceText.length < 200 &&
+      !/[.!?。…]\s|[а-яёa-z]{4,}/i.test(sourceText)
+    ) {
+      return patchJob(job, {
+        status: 'FAILED',
+        message: 'Source failed: page does not look like a readable article.',
       });
     }
 
     job = patchJob(job, { status: 'EDITING', message: 'Writing chief draft…' });
     const draft = await writeChiefDraft({
-      sourceText: page.text,
+      sourceText,
       sourceUrl: url,
       note: job.note,
       reviewVerdict: 'Chief override: Scout bypass; source readable; local safety OK.',
@@ -650,28 +825,30 @@ export async function runChiefFastLane(jobId: string): Promise<ChiefJob> {
       });
     }
 
-    job = patchJob(job, { status: 'EDITING', message: 'Photo…' });
-    let images: Article['images'] = [];
-    let imageUrl: string | undefined;
-    try {
-      const report = await resolveArticlePhotos({
-        slug: slugifyTitle(draft.title, 'chief'),
-        title: draft.title,
-        text: draft.text,
-        sourceUrl: url,
-        fallbackUrl: page.imageUrl || undefined,
-        html: html || undefined,
-        maxResearchPages: 2,
-      });
-      images = report.selected?.length ? report.selected : [];
-      if (images?.length) imageUrl = images[0].url;
-    } catch {
-      images = [];
-    }
-
-    job = patchJob(job, { status: 'READY', message: 'Publishing…' });
+    job = patchJob(job, { status: 'EDITING', message: 'Photo (required for Chief)…' });
     const existing = new Set(getAllArticles().map((a) => a.slug));
     const slug = uniqueSlug(slugifyTitle(draft.title, 'chief'), existing);
+    const photo = await ensureChiefArticlePhoto({
+      slug,
+      title: draft.title,
+      text: draft.text,
+      sourceUrl: url,
+      html: html || undefined,
+      fallbackUrl: page.imageUrl || undefined,
+    });
+    if (!photo) {
+      return patchJob(job, {
+        status: 'FAILED',
+        message: 'Chief publish blocked: no usable photo (source/web/thematic all failed).',
+      });
+    }
+
+    job = patchJob(job, {
+      status: 'READY',
+      message: `Publishing with ${photo.kind}…`,
+      photoKind: photo.kind,
+      photoUrl: photo.imageUrl,
+    });
     const article: Article = {
       id: slug,
       slug,
@@ -683,16 +860,19 @@ export async function runChiefFastLane(jobId: string): Promise<ChiefJob> {
       sourceUrl: url,
       publishedAt: new Date().toISOString(),
       readTime: estimateReadTime(draft.text),
-      ...(imageUrl ? { imageUrl, images } : {}),
+      imageUrl: photo.imageUrl,
+      images: photo.images,
       ...stampAuthorForPipeline('newsroom-scout', { sourceUrl: url, slug }),
       agentId: 'chief-fast-lane',
     };
     await publishArticle(article);
     return patchJob(job, {
       status: 'PUBLISHED',
-      message: 'Published',
+      message: `Published (${photo.kind})`,
       articleSlug: slug,
       articleUrl: `${siteBase()}/articles/${slug}`,
+      photoKind: photo.kind,
+      photoUrl: photo.imageUrl,
     });
   } catch (err) {
     return patchJob(job, {
