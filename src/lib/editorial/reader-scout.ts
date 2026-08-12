@@ -1,23 +1,44 @@
 /**
  * SP-A-090 — Reader Scout Door («живые шахтёры»).
- * Public submissions enter an editorial queue. No direct publish.
- * Priority: Chief > Author > Reader Scout > AUTO parsers.
- * Does NOT bypass safety, dedupe, Scout, Reviewer, Editor, Photo, commodity gate.
+ * SP-A-096 — UNTRUSTED public input: quarantine + cheap moderation before editorial.
+ *
+ * Pipeline: SUBMISSION → cheap validation → QUARANTINE → abuse/content moderation
+ *   → only if SAFE → queued_editorial → Scout → Reviewer → Editor → Photo → gates → publish
+ *
+ * Priority: Chief > Staff Author > Reader Scout SAFE queue > AUTO.
+ * Reader Scout never publishes directly and never bypasses commodity gate.
  */
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { findPublishedDuplicate, normalizeUrl } from '@/lib/editorial/doors';
+import { cheapModerateReaderScout } from '@/lib/editorial/reader-scout-moderation';
 
 export const READER_SCOUT_SOURCE_TYPE = 'reader-scout' as const;
 export const READER_SCOUT_AGENT_ID = 'reader-scout';
 /** Display source name in Scout pool — used for priority seating. */
 export const READER_SCOUT_SOURCE_NAME = 'Reader Scout';
 
+/** Bounded Reader Scout seats per newsroom tick — must not starve AUTO / eat AI budget. */
+export const READER_SCOUT_SEATS_PER_TICK = 2;
+/** Cap open quarantine + editorial queue so abusers cannot flood disk/tick. */
+export const READER_SCOUT_MAX_OPEN_QUEUE = 40;
+const RATE_LIMIT_PER_HOUR = 5;
+const RATE_LIMIT_BURST_PER_10_MIN = 3;
+const ABUSE_REJECTS_BEFORE_COOLDOWN = 3;
+const ABUSE_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+
 export type ReaderScoutStatus =
+  | 'quarantined'
+  | 'safe'
+  | 'queued_editorial'
+  /** @deprecated SP-A-096 — treated as queued_editorial for back-compat */
   | 'queued'
   | 'processing'
   | 'rejected'
+  | 'rejected_abuse'
+  | 'rejected_spam'
+  | 'rejected_unsafe'
   | 'duplicate'
   | 'published';
 
@@ -32,7 +53,9 @@ export type ReaderScoutSubmission = {
   submitterName?: string;
   /** Stored internally only — never exposed in public APIs/UI. */
   submitterEmail?: string;
+  /** Internal moderation / reject detail — never public. */
   rejectReason?: string;
+  moderationReason?: string;
   articleSlug?: string;
   createdAt: string;
   updatedAt: string;
@@ -40,11 +63,11 @@ export type ReaderScoutSubmission = {
 };
 
 export type ReaderScoutAcceptResult =
-  | { ok: true; id: string; status: 'queued'; message: string }
+  | { ok: true; id: string; status: 'queued' | 'queued_editorial'; message: string }
   | {
       ok: false;
       status: 'rejected' | 'duplicate';
-      code: 'VALIDATION' | 'DUPLICATE' | 'RATE_LIMIT' | 'SPAM';
+      code: 'VALIDATION' | 'DUPLICATE' | 'RATE_LIMIT' | 'SPAM' | 'UNSAFE' | 'QUEUE_FULL';
       message: string;
       duplicateSlug?: string;
     };
@@ -52,7 +75,6 @@ export type ReaderScoutAcceptResult =
 const MAX_NOTE = 800;
 const MAX_NAME = 80;
 const MAX_EMAIL = 120;
-const RATE_LIMIT_PER_HOUR = 5;
 
 function dataRoot(): string {
   return process.env.SMARTPROTO_DATA_DIR || path.resolve(process.cwd(), 'data');
@@ -76,7 +98,9 @@ export function stripUserText(raw: unknown, max: number): string {
 }
 
 /** Strict http(s) URL validation — no javascript:/data:/file:. */
-export function validateScoutUrl(raw: string): { ok: true; url: string; normalized: string } | { ok: false; message: string } {
+export function validateScoutUrl(
+  raw: string,
+): { ok: true; url: string; normalized: string } | { ok: false; message: string } {
   const trimmed = (raw || '').trim();
   if (!trimmed) return { ok: false, message: 'Укажите ссылку.' };
   if (/\s/.test(trimmed)) return { ok: false, message: 'Ссылка содержит пробелы.' };
@@ -169,44 +193,158 @@ export async function patchReaderScoutSubmission(
   return next;
 }
 
+const OPEN_STATUSES: ReaderScoutStatus[] = [
+  'quarantined',
+  'safe',
+  'queued_editorial',
+  'queued',
+  'processing',
+];
+
+async function countOpenQueue(): Promise<number> {
+  const all = await listReaderScoutSubmissions();
+  return all.filter((s) => OPEN_STATUSES.includes(s.status)).length;
+}
+
 async function findQueuedDuplicate(normalizedUrl: string): Promise<ReaderScoutSubmission | null> {
   const all = await listReaderScoutSubmissions();
   return (
     all.find(
       (s) =>
         s.normalizedUrl === normalizedUrl &&
-        (s.status === 'queued' || s.status === 'processing' || s.status === 'published'),
+        (OPEN_STATUSES.includes(s.status) || s.status === 'published'),
     ) || null
   );
 }
+
+type RateState = {
+  stamps: number[];
+  rejects?: number[];
+  blockedUntil?: number;
+};
 
 function clientKey(ip: string): string {
   return createHash('sha256').update(`scout:${ip || 'unknown'}`).digest('hex').slice(0, 24);
 }
 
-async function checkRateLimit(ip: string): Promise<boolean> {
+async function readRateState(ip: string): Promise<{ file: string; state: RateState }> {
   await ensureDirs();
   const key = clientKey(ip);
   const file = path.join(rateDir(), `${key}.json`);
   const now = Date.now();
-  const windowMs = 60 * 60 * 1000;
-  let stamps: number[] = [];
   try {
     const raw = await fs.readFile(file, 'utf8');
-    const parsed = JSON.parse(raw) as { stamps?: number[] };
-    stamps = Array.isArray(parsed.stamps) ? parsed.stamps.filter((t) => now - t < windowMs) : [];
+    const parsed = JSON.parse(raw) as RateState;
+    return {
+      file,
+      state: {
+        stamps: Array.isArray(parsed.stamps)
+          ? parsed.stamps.filter((t) => now - t < 60 * 60 * 1000)
+          : [],
+        rejects: Array.isArray(parsed.rejects)
+          ? parsed.rejects.filter((t) => now - t < ABUSE_COOLDOWN_MS)
+          : [],
+        blockedUntil: typeof parsed.blockedUntil === 'number' ? parsed.blockedUntil : undefined,
+      },
+    };
   } catch {
-    stamps = [];
+    return { file, state: { stamps: [], rejects: [] } };
   }
-  if (stamps.length >= RATE_LIMIT_PER_HOUR) return false;
-  stamps.push(now);
-  await fs.writeFile(file, `${JSON.stringify({ stamps }, null, 2)}\n`);
-  return true;
+}
+
+async function writeRateState(file: string, state: RateState): Promise<void> {
+  await fs.writeFile(file, `${JSON.stringify(state, null, 2)}\n`);
+}
+
+async function checkRateLimit(ip: string): Promise<'ok' | 'rate' | 'cooldown'> {
+  const now = Date.now();
+  const { file, state } = await readRateState(ip);
+  if (state.blockedUntil && state.blockedUntil > now) return 'cooldown';
+  const burst = state.stamps.filter((t) => now - t < 10 * 60 * 1000);
+  if (burst.length >= RATE_LIMIT_BURST_PER_10_MIN) return 'rate';
+  if (state.stamps.length >= RATE_LIMIT_PER_HOUR) return 'rate';
+  state.stamps.push(now);
+  await writeRateState(file, state);
+  return 'ok';
+}
+
+async function recordModerationReject(ip: string): Promise<void> {
+  const now = Date.now();
+  const { file, state } = await readRateState(ip);
+  state.rejects = [...(state.rejects || []), now];
+  if (state.rejects.length >= ABUSE_REJECTS_BEFORE_COOLDOWN) {
+    state.blockedUntil = now + ABUSE_COOLDOWN_MS;
+  }
+  await writeRateState(file, state);
 }
 
 /**
- * Accept a public Reader Scout submission into the editorial queue.
- * Never publishes. Never returns submitter email.
+ * Apply cheap moderation to a quarantined (or legacy) submission.
+ * Never calls AI. Never publishes.
+ */
+export async function moderateReaderScoutSubmission(
+  id: string,
+): Promise<ReaderScoutSubmission | null> {
+  const cur = await getReaderScoutSubmission(id);
+  if (!cur) return null;
+  if (
+    cur.status !== 'quarantined' &&
+    cur.status !== 'safe' &&
+    // legacy items sitting as queued without moderation — treat once
+    !(cur.status === 'queued' && !cur.moderationReason)
+  ) {
+    return cur;
+  }
+
+  const verdict = cheapModerateReaderScout({ url: cur.url, note: cur.note });
+  if (!verdict.ok) {
+    return patchReaderScoutSubmission(id, {
+      status: verdict.status,
+      rejectReason: verdict.reason.slice(0, 400),
+      moderationReason: verdict.reason.slice(0, 400),
+    });
+  }
+  return patchReaderScoutSubmission(id, {
+    status: 'queued_editorial',
+    moderationReason: `SAFE→queued_editorial:${verdict.reason}`.slice(0, 400),
+    rejectReason: undefined,
+  });
+}
+
+/**
+ * Drain quarantine into editorial queue (or reject) — cheap only.
+ * Called from tick before seating.
+ */
+export async function processReaderScoutQuarantine(limit = 20): Promise<{
+  scanned: number;
+  promoted: number;
+  rejected: number;
+}> {
+  const quarantined = await listReaderScoutSubmissions('quarantined');
+  // Also heal legacy unmoderated `queued` items.
+  const legacy = (await listReaderScoutSubmissions('queued')).filter((s) => !s.moderationReason);
+  const batch = [...quarantined, ...legacy].slice(0, limit);
+  let promoted = 0;
+  let rejected = 0;
+  for (const s of batch) {
+    const next = await moderateReaderScoutSubmission(s.id);
+    if (!next) continue;
+    if (next.status === 'queued_editorial') promoted++;
+    else if (
+      next.status === 'rejected_abuse' ||
+      next.status === 'rejected_spam' ||
+      next.status === 'rejected_unsafe'
+    ) {
+      rejected++;
+    }
+  }
+  return { scanned: batch.length, promoted, rejected };
+}
+
+/**
+ * Accept a public Reader Scout submission.
+ * Quarantine-first → cheap moderation → editorial queue only if SAFE.
+ * Never publishes. Never returns submitter email or internal moderation detail.
  */
 export async function acceptReaderScoutSubmission(opts: {
   url: string;
@@ -239,12 +377,22 @@ export async function acceptReaderScoutSubmission(opts: {
     return { ok: false, status: 'rejected', code: 'VALIDATION', message: 'Некорректный email.' };
   }
 
-  if (!(await checkRateLimit(opts.ip || 'unknown'))) {
+  const rate = await checkRateLimit(opts.ip || 'unknown');
+  if (rate !== 'ok') {
     return {
       ok: false,
       status: 'rejected',
       code: 'RATE_LIMIT',
       message: 'Слишком много отправок. Попробуйте позже.',
+    };
+  }
+
+  if ((await countOpenQueue()) >= READER_SCOUT_MAX_OPEN_QUEUE) {
+    return {
+      ok: false,
+      status: 'rejected',
+      code: 'QUEUE_FULL',
+      message: 'Очередь редакции переполнена. Попробуйте позже.',
     };
   }
 
@@ -275,7 +423,7 @@ export async function acceptReaderScoutSubmission(opts: {
   const sub: ReaderScoutSubmission = {
     id,
     sourceType: READER_SCOUT_SOURCE_TYPE,
-    status: 'queued',
+    status: 'quarantined',
     url: urlCheck.url,
     normalizedUrl: urlCheck.normalized,
     note: note || undefined,
@@ -287,15 +435,62 @@ export async function acceptReaderScoutSubmission(opts: {
   };
   await persistSubmission(sub);
 
+  // Cheap moderation immediately — no AI. Unsafe never reaches editorial queue.
+  const moderated = await moderateReaderScoutSubmission(id);
+  if (!moderated) {
+    return { ok: false, status: 'rejected', code: 'VALIDATION', message: 'Не удалось сохранить.' };
+  }
+
+  if (
+    moderated.status === 'rejected_abuse' ||
+    moderated.status === 'rejected_spam' ||
+    moderated.status === 'rejected_unsafe'
+  ) {
+    await recordModerationReject(opts.ip || 'unknown');
+    const code =
+      moderated.status === 'rejected_spam'
+        ? 'SPAM'
+        : moderated.status === 'rejected_abuse'
+          ? 'SPAM'
+          : 'UNSAFE';
+    // Generic public message — never leak moderation taxonomy.
+    return {
+      ok: false,
+      status: 'rejected',
+      code,
+      message: 'Ссылка не подходит для редакции SmartProto.',
+    };
+  }
+
   return {
     ok: true,
     id,
-    status: 'queued',
+    status: 'queued_editorial',
     message: 'Спасибо. Находка передана в редакцию SmartProto.',
   };
 }
 
-/** Public-safe view — never includes email. */
+/** Map internal statuses to public-safe labels (no abuse taxonomy leak). */
+function publicStatus(status: ReaderScoutStatus): ReaderScoutStatus {
+  if (
+    status === 'quarantined' ||
+    status === 'safe' ||
+    status === 'queued_editorial' ||
+    status === 'queued'
+  ) {
+    return 'queued';
+  }
+  if (
+    status === 'rejected_abuse' ||
+    status === 'rejected_spam' ||
+    status === 'rejected_unsafe'
+  ) {
+    return 'rejected';
+  }
+  return status;
+}
+
+/** Public-safe view — never includes email, IP, or moderation reasons. */
 export function toPublicScoutView(sub: ReaderScoutSubmission): {
   id: string;
   status: ReaderScoutStatus;
@@ -306,7 +501,7 @@ export function toPublicScoutView(sub: ReaderScoutSubmission): {
 } {
   return {
     id: sub.id,
-    status: sub.status,
+    status: publicStatus(sub.status),
     url: sub.url,
     note: sub.note,
     submitterName: sub.submitterName,
@@ -314,10 +509,18 @@ export function toPublicScoutView(sub: ReaderScoutSubmission): {
   };
 }
 
+function isEditorialReady(status: ReaderScoutStatus): boolean {
+  return status === 'queued_editorial' || status === 'queued';
+}
+
 /**
- * Load queued finds for newsroom tick — seated ahead of AUTO parser intake.
+ * Load SAFE editorial-ready finds for newsroom tick.
+ * Quarantined / rejected items are never seated.
+ * Default seat budget: READER_SCOUT_SEATS_PER_TICK (2).
  */
-export async function loadQueuedReaderScoutForTick(limit = 4): Promise<
+export async function loadQueuedReaderScoutForTick(
+  limit = READER_SCOUT_SEATS_PER_TICK,
+): Promise<
   Array<{
     submissionId: string;
     id: string;
@@ -328,7 +531,16 @@ export async function loadQueuedReaderScoutForTick(limit = 4): Promise<
     sourceName: string;
   }>
 > {
-  const queued = await listReaderScoutSubmissions('queued');
+  // Ensure quarantine is drained with cheap filter before seating.
+  await processReaderScoutQuarantine(Math.max(limit * 3, 10));
+
+  const all = await listReaderScoutSubmissions();
+  const queued = all
+    .filter((s) => isEditorialReady(s.status) && Boolean(s.moderationReason))
+    .sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1));
+
+  // Legacy SP-A-090 items already `queued` with no moderationReason were healed above;
+  // if still present without reason, do not seat (unsafe → editor must be impossible).
   return queued.slice(0, limit).map((s) => {
     let host = 'link';
     try {

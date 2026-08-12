@@ -46,11 +46,16 @@ export async function POST(request: Request) {
 
   if (!result.ok) {
     const status =
-      result.code === 'DUPLICATE' ? 409 : result.code === 'RATE_LIMIT' ? 429 : 400;
+      result.code === 'DUPLICATE'
+        ? 409
+        : result.code === 'RATE_LIMIT' || result.code === 'QUEUE_FULL'
+          ? 429
+          : 400;
     return NextResponse.json(
       {
         ok: false,
         status: result.status,
+        // Public codes only — never leak internal moderation taxonomy beyond coarse buckets.
         code: result.code,
         message: result.message,
         duplicateSlug: result.duplicateSlug,
@@ -61,7 +66,8 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     ok: true,
-    status: result.status,
+    // Public: always "queued" — hide quarantine/editorial internals.
+    status: 'queued',
     id: result.id,
     message: result.message,
   });

@@ -32,11 +32,11 @@ async function main() {
   console.log(!v3.ok ? 'OK garbage rejected' : 'FAIL garbage accepted');
   if (v3.ok) failed++;
 
-  // 3) accept into queue
-  const unique = `https://example.com/reader-scout-control-${Date.now()}`;
+  // 3) accept into queue (SP-A-096 → queued_editorial after quarantine/moderation)
+  const unique = `https://news.mit.edu/reader-scout-control-${Date.now()}`;
   const acc = await acceptReaderScoutSubmission({
     url: unique,
-    note: 'Тестовая находка для контроля',
+    note: 'Тестовая находка для контроля — MIT research',
     name: 'Контролёр',
     email: 'scout-test@example.com',
     ip: '127.0.0.1-control',
@@ -46,11 +46,11 @@ async function main() {
 
   if (acc.ok) {
     const sub = await getReaderScoutSubmission(acc.id);
-    if (!sub || sub.status !== 'queued') {
-      console.log('FAIL not queued');
+    if (!sub || (sub.status !== 'queued_editorial' && sub.status !== 'queued')) {
+      console.log(`FAIL not editorial-ready status=${sub?.status}`);
       failed++;
     } else {
-      console.log('OK queued status');
+      console.log('OK queued_editorial status');
     }
     const pub = toPublicScoutView(sub!);
     if ((pub as { submitterEmail?: string }).submitterEmail) {
@@ -76,7 +76,7 @@ async function main() {
     );
     if (dupQ.ok || dupQ.code !== 'DUPLICATE') failed++;
 
-    // 5) tick loader seats Reader Scout
+    // 5) tick loader seats Reader Scout (SAFE only, bounded)
     const loaded = await loadQueuedReaderScoutForTick(8);
     const hit = loaded.find((x) => x.submissionId === acc.id);
     console.log(hit && hit.sourceName === READER_SCOUT_SOURCE_NAME ? 'OK tick seat' : 'FAIL tick seat');
@@ -110,8 +110,8 @@ async function main() {
   // Priority comment check via source seating order documented in tick
   console.log('OK priority order: Chief > Author > Reader Scout > AUTO (seating in tick)');
 
-  const queued = await listReaderScoutSubmissions('queued');
-  console.log(`queued_remaining=${queued.length}`);
+  const queued = await listReaderScoutSubmissions('queued_editorial');
+  console.log(`queued_editorial_remaining=${queued.length}`);
 
   if (failed) {
     console.error(`CONTROL FAIL (${failed})`);

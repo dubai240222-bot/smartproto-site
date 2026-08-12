@@ -54,6 +54,7 @@ import {
   loadQueuedReaderScoutForTick,
   patchReaderScoutSubmission,
   READER_SCOUT_AGENT_ID,
+  READER_SCOUT_SEATS_PER_TICK,
   READER_SCOUT_SOURCE_NAME,
 } from '../src/lib/editorial/reader-scout';
 import {
@@ -473,8 +474,9 @@ async function markRejected(
       item.submissionId ||
       (item.id.startsWith('reader-scout:') ? item.id.slice('reader-scout:'.length) : '');
     if (scoutSubId && (item.channelHint === 'reader-scout' || item.id.startsWith('reader-scout:'))) {
+      // SP-A-096 — soft retries stay in SAFE editorial queue, never re-enter unmoderated.
       void patchReaderScoutSubmission(scoutSubId, {
-        status: permanent ? 'rejected' : 'queued',
+        status: permanent ? 'rejected' : 'queued_editorial',
         rejectReason: reason.slice(0, 400),
       });
     }
@@ -1009,14 +1011,22 @@ async function publishRssOnce(opts: {
     `Scout threshold: ${scoutFloor} (cycle=${opts.cycle}${probeMode ? ', probe dig-deep' : ''})`,
   );
 
+  // SP-A-096 — empty RSS must not skip Staff Author / SAFE Reader Scout seats.
   if (candidates.length === 0) {
-    console.log('No RSS candidate — tick idle exit 0.');
-    opts.metrics.skipReason = 'no rss candidate';
-    return false;
+    console.log(
+      chalk.gray(
+        'No RSS candidate — continuing for Staff Author / Reader Scout seats if any.',
+      ),
+    );
   }
 
   if (opts.dryRun) {
     const item = candidates[0];
+    if (!item) {
+      console.log(chalk.cyan('Dry-run: no RSS candidate'));
+      opts.metrics.reason = 'dry-run empty';
+      return false;
+    }
     console.log(chalk.cyan(`Dry-run pick: [${item.sourceName}] ${item.title}`));
     opts.metrics.reason = 'dry-run rss pick';
     return true;
@@ -1110,10 +1120,10 @@ async function publishRssOnce(opts: {
     );
   }
 
-  // SP-A-090 — Reader Scout finds seated ahead of AUTO parser / AI radar intake.
+  // SP-A-090/096 — SAFE Reader Scout only; bounded seats (must not starve AUTO / AI budget).
   let readerItems: PoolItem[] = [];
   try {
-    const queued = await loadQueuedReaderScoutForTick(4);
+    const queued = await loadQueuedReaderScoutForTick(READER_SCOUT_SEATS_PER_TICK);
     readerItems = queued
       .filter((q) => q.url && !opts.urls.has(q.url))
       .map((q) => ({
@@ -1130,7 +1140,7 @@ async function publishRssOnce(opts: {
     if (readerItems.length) {
       console.log(
         chalk.cyan(
-          `— Channel R: Reader Scout queue (${readerItems.length}) — priority > AUTO parsers —`,
+          `— Channel R: Reader Scout SAFE queue (${readerItems.length}/${READER_SCOUT_SEATS_PER_TICK}) — priority > AUTO parsers —`,
         ),
       );
       for (const r of readerItems) {
