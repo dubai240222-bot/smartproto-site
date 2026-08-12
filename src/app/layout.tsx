@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import { headers } from 'next/headers';
 import { Header } from '@/components/header';
 import { HtmlLang } from '@/components/html-lang';
 import { LocaleSwitcherProvider } from '@/components/locale-switcher-context';
@@ -7,7 +8,7 @@ import { SiteFooter } from '@/components/site-footer';
 import { getAllArticles } from '@/data/articles';
 import { toLocaleSearchItems } from '@/data/localizations';
 import { getPublicSiteUrl } from '@/lib/site-url';
-import { LOCALE_UI } from '@/lib/i18n/locales';
+import { isAppLocale, LOCALE_UI, type AppLocale } from '@/lib/i18n/locales';
 import './globals.css';
 
 const siteUrl = getPublicSiteUrl();
@@ -42,20 +43,35 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+async function requestLocale(): Promise<AppLocale> {
+  try {
+    const h = await headers();
+    const raw = (h.get('x-smartproto-locale') || 'ru').toLowerCase();
+    return isAppLocale(raw) ? raw : 'ru';
+  } catch {
+    return 'ru';
+  }
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: ReactNode;
 }>) {
+  const locale = await requestLocale();
+  const ui = LOCALE_UI[locale];
   const articles = getAllArticles();
   const byId = new Map(
     articles.map((a) => [a.id, { category: a.category, publishedAt: a.publishedAt }]),
   );
-  const enItems = toLocaleSearchItems('en', byId);
-  const trItems = toLocaleSearchItems('tr', byId);
+
+  // SP-A-099 — ship only the active locale search corpus (no cross-language HTML payload).
+  const ruArticles = locale === 'ru' ? articles : [];
+  const enItems = locale === 'en' ? toLocaleSearchItems('en', byId) : [];
+  const trItems = locale === 'tr' ? toLocaleSearchItems('tr', byId) : [];
 
   return (
-    <html lang="ru" className="h-full antialiased" suppressHydrationWarning>
+    <html lang={ui.htmlLang} className="h-full antialiased" suppressHydrationWarning data-locale={locale}>
       <head>
         <meta charSet="utf-8" />
         <script
@@ -72,10 +88,6 @@ export default function RootLayout({
                     document.documentElement.classList.remove('dark');
                     document.documentElement.setAttribute('data-theme', 'light');
                   }
-                  var p = location.pathname || '/';
-                  var lang = (p === '/en' || p.indexOf('/en/') === 0) ? 'en' : (p === '/tr' || p.indexOf('/tr/') === 0) ? 'tr' : 'ru';
-                  document.documentElement.lang = lang;
-                  document.documentElement.setAttribute('data-locale', lang);
                 } catch (e) {}
               })();
             `,
@@ -85,7 +97,7 @@ export default function RootLayout({
       <body className="flex min-h-screen flex-col bg-[var(--bg)] text-[var(--text)] transition-colors duration-150">
         <LocaleSwitcherProvider>
           <HtmlLang />
-          <Header ruArticles={articles} enItems={enItems} trItems={trItems} />
+          <Header ruArticles={ruArticles} enItems={enItems} trItems={trItems} />
           <div className="flex-1">{children}</div>
           <SiteFooter />
         </LocaleSwitcherProvider>
