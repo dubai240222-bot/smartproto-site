@@ -95,9 +95,20 @@ async function callTranslateOnce(
       ? `This is an author COLUMN/OPINION: preserve the author's argument and voice; do not flatten into generic newsroom prose.`
       : `Keep a clear journalistic tone matching the original.`,
     `Do not translate the author's personal name if it appears; keep it as-is.`,
+    // SP-A-100F — small shared + TR guards (no AI QA, no translator rewrite).
+    `NEVER introduce brand names that do not exist in the canonical article (e.g. "кубики"/blocks must NOT become "Lego" unless LEGO is in the source).`,
+    `Do not invent new examples, brands, or metaphors absent from the source.`,
+    language === 'tr'
+      ? [
+          `Preserve technical semantic class exactly: experiment/эксперимент → Turkish "deney", NOT "deneyim" (experience).`,
+          `Prefer natural Turkish word order and phrasing over literal Russian syntax.`,
+        ].join('\n')
+      : '',
     `Return ONLY JSON: {"title":"...","summary":"...","content":"..."}`,
     `content may use blank-line paragraph breaks; no markdown headings required.`,
-  ].join('\n');
+  ]
+    .filter(Boolean)
+    .join('\n');
 
   const user = [
     `Target language: ${langName} (${language})`,

@@ -8,6 +8,7 @@ import {
   listPublishedLocalizations,
 } from '@/data/localizations';
 import { LanguageSwitcher } from '@/components/language-switcher';
+import { MediaPlaceholder } from '@/components/media-placeholder';
 import { articleSwitcherLinks, buildArticleLanguageAlternates } from '@/lib/i18n/article-alternates';
 import {
   LOCALE_UI,
@@ -18,11 +19,28 @@ import {
   localizeReadTime,
   type LocalizationLanguage,
 } from '@/lib/i18n/locales';
+import { displayHeroUrl } from '@/lib/homepage-editorial-mix';
 import { inferPublicCategory } from '@/lib/public-labels';
+import { getPublicSiteUrl } from '@/lib/site-url';
 import { disclosureSources } from '@/lib/source-label';
 import { resolveAuthorForArticle } from '@/lib/authors';
 
 export const dynamic = 'force-dynamic';
+
+/** SP-A-100F — EN/TR reuse canonical RU media (no separate localization photos). */
+function canonicalHeroUrl(canon: {
+  imageUrl?: string;
+  images?: { url: string; role: string }[];
+}): string | undefined {
+  return canon.images?.find((i) => i.role === 'hero')?.url || canon.imageUrl || undefined;
+}
+
+function absoluteMediaUrl(pathOrUrl: string | undefined): string | undefined {
+  if (!pathOrUrl) return undefined;
+  if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
+  const base = getPublicSiteUrl().replace(/\/$/, '');
+  return `${base}${pathOrUrl.startsWith('/') ? pathOrUrl : `/${pathOrUrl}`}`;
+}
 
 function escapeHtml(text: string): string {
   return text
@@ -74,6 +92,8 @@ export async function localizedArticleMetadata(
   // Override canonical to THIS locale URL.
   alternates.canonical = `/${language}/articles/${loc.localizedSlug}`;
 
+  const ogImage = absoluteMediaUrl(canonicalHeroUrl(canon));
+
   return {
     title: `${loc.localizedTitle} | SmartProto`,
     description: loc.localizedExcerpt,
@@ -83,6 +103,7 @@ export async function localizedArticleMetadata(
       description: loc.localizedExcerpt,
       locale: LOCALE_UI[language].ogLocale,
       type: 'article',
+      ...(ogImage ? { images: [{ url: ogImage }] } : {}),
     },
   };
 }
@@ -150,7 +171,27 @@ export function LocalizedArticlePage({
         ) : null}
       </div>
 
-      <div className="article-body mt-8">{renderParagraphs(loc.localizedContent)}</div>
+      {/* SP-A-100F: same story → same media from canonical RU article. */}
+      {(() => {
+        const hero = canonicalHeroUrl(canon);
+        return (
+          <div className={hero ? 'my-8' : 'my-5'}>
+            <MediaPlaceholder
+              slug={canon.slug}
+              category={canon.category}
+              title={loc.localizedTitle}
+              tags={canon.tags}
+              summary={loc.localizedExcerpt || canon.summary}
+              agentId={canon.agentId}
+              imageUrl={hero ? displayHeroUrl(canon) || hero : undefined}
+              aspectRatio={hero ? 'aspect-[16/8]' : 'aspect-[16/7]'}
+              compactFallback={!hero}
+            />
+          </div>
+        );
+      })()}
+
+      <div className="article-body">{renderParagraphs(loc.localizedContent)}</div>
 
       <div className="mt-8 border-t border-[var(--border)] pt-4 text-xs text-[var(--muted)]">
         <span>
