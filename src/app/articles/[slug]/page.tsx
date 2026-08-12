@@ -233,6 +233,21 @@ export default async function ArticlePage({
                 <span>•</span>
                 <span>Авторская статья</span>
               </>
+            ) : /^COLUMN$/i.test(article.category) ? (
+              <>
+                <span>•</span>
+                <span>Колонка</span>
+              </>
+            ) : /^OPINION$/i.test(article.category) ? (
+              <>
+                <span>•</span>
+                <span>Мнение</span>
+              </>
+            ) : /^REVIEW$/i.test(article.category) ? (
+              <>
+                <span>•</span>
+                <span>Обзор</span>
+              </>
             ) : /^REVIEW_OPINION$/i.test(article.category) ? (
               <>
                 <span>•</span>

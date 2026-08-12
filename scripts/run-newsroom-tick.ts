@@ -57,6 +57,12 @@ import {
   READER_SCOUT_SOURCE_NAME,
 } from '../src/lib/editorial/reader-scout';
 import {
+  loadQueuedStaffAuthorLinksForTick,
+  patchStaffAuthorLink,
+  STAFF_AUTHOR_LINK_AGENT_ID,
+  STAFF_AUTHOR_LINK_SOURCE_NAME,
+} from '../src/lib/editorial/doors';
+import {
   checkCycleCadence,
   getNewsIntervalMs,
   getNewsWarmupUntilIso,
@@ -118,7 +124,7 @@ interface JournalEntry {
   scoutScore?: number;
   reason?: string;
   slug?: string;
-  channel?: 'china-qwen' | 'rss' | 'ai-radar' | 'reader-scout';
+  channel?: 'china-qwen' | 'rss' | 'ai-radar' | 'reader-scout' | 'staff-author-link';
   /** SP-A-050 — which independent cycle published this */
   cycle?: CycleType;
 }
@@ -439,17 +445,39 @@ async function markRejected(
     status: 'rejected',
     scoutScore,
     reason,
-    channel: item.channelHint === 'reader-scout' ? 'reader-scout' : 'rss',
+    channel:
+      item.channelHint === 'staff-author-link'
+        ? 'staff-author-link'
+        : item.channelHint === 'reader-scout'
+          ? 'reader-scout'
+          : 'rss',
   });
-  // SP-A-090 — close Reader Scout queue item (no silent infinite retries).
-  const scoutSubId =
-    item.submissionId ||
-    (item.id.startsWith('reader-scout:') ? item.id.slice('reader-scout:'.length) : '');
-  if (scoutSubId) {
-    void patchReaderScoutSubmission(scoutSubId, {
-      status: permanent ? 'rejected' : 'queued',
-      rejectReason: reason.slice(0, 400),
-    });
+  // SP-A-090 / SP-A-094 — close queue items (no silent infinite retries).
+  if (
+    item.channelHint === 'staff-author-link' ||
+    item.id.startsWith('staff-author-link:')
+  ) {
+    const alinkId =
+      item.submissionId ||
+      (item.id.startsWith('staff-author-link:')
+        ? item.id.slice('staff-author-link:'.length)
+        : '');
+    if (alinkId) {
+      void patchStaffAuthorLink(alinkId, {
+        status: permanent ? 'rejected' : 'queued',
+        rejectReason: reason.slice(0, 400),
+      });
+    }
+  } else {
+    const scoutSubId =
+      item.submissionId ||
+      (item.id.startsWith('reader-scout:') ? item.id.slice('reader-scout:'.length) : '');
+    if (scoutSubId && (item.channelHint === 'reader-scout' || item.id.startsWith('reader-scout:'))) {
+      void patchReaderScoutSubmission(scoutSubId, {
+        status: permanent ? 'rejected' : 'queued',
+        rejectReason: reason.slice(0, 400),
+      });
+    }
   }
   await writeFile(journalPath, JSON.stringify(journal, null, 2) + '\n', 'utf8');
 }
@@ -1031,8 +1059,9 @@ async function publishRssOnce(opts: {
   type PoolItem = RssItem & {
     scoutMode?: EditorialMode;
     primaryStatus?: string;
-    channelHint?: 'rss' | 'ai-radar' | 'reader-scout';
+    channelHint?: 'rss' | 'ai-radar' | 'reader-scout' | 'staff-author-link';
     submissionId?: string;
+    staffAuthorName?: string;
   };
   let mergedPool: PoolItem[] = scoutPool.pool.map((p) => ({
     ...p,
@@ -1040,6 +1069,46 @@ async function publishRssOnce(opts: {
     channelHint: 'rss' as const,
   }));
   let aiRadarBest: string = '(none)';
+
+  // SP-A-094 — Staff Author links seated above Reader Scout / AUTO (below Chief).
+  let staffAuthorItems: PoolItem[] = [];
+  try {
+    const queued = await loadQueuedStaffAuthorLinksForTick(4);
+    staffAuthorItems = queued
+      .filter((q) => q.url && !opts.urls.has(q.url))
+      .map((q) => ({
+        id: q.id,
+        title: q.title,
+        url: q.url,
+        text: q.text,
+        publishedAt: q.publishedAt,
+        sourceName: q.sourceName,
+        scoutMode: 'gadget' as EditorialMode,
+        channelHint: 'staff-author-link' as const,
+        submissionId: q.submissionId,
+        staffAuthorName: q.authorName,
+      }));
+    if (staffAuthorItems.length) {
+      console.log(
+        chalk.cyan(
+          `— Channel A: Staff Author links (${staffAuthorItems.length}) — priority > Reader Scout / AUTO —`,
+        ),
+      );
+      for (const r of staffAuthorItems) {
+        console.log(chalk.gray(`  [Staff Author] ${r.title.slice(0, 80)}`));
+        void patchStaffAuthorLink(r.submissionId!, {
+          status: 'processing',
+          attempts: 1,
+        });
+      }
+    }
+  } catch (err) {
+    console.log(
+      chalk.yellow(
+        `Staff Author queue skipped: ${err instanceof Error ? err.message : String(err)}`,
+      ),
+    );
+  }
 
   // SP-A-090 — Reader Scout finds seated ahead of AUTO parser / AI radar intake.
   let readerItems: PoolItem[] = [];
@@ -1123,15 +1192,19 @@ async function publishRssOnce(opts: {
           primaryStatus: n.primaryStatus,
           channelHint: 'ai-radar' as const,
         }));
-      // Reader Scout > AI radar > RSS parser seats (still max 1 publish; full gates apply).
-      mergedPool = [...readerItems, ...aiItems, ...mergedPool].slice(
+      // Staff Author > Reader Scout > AI radar > RSS (still max 1 publish; full gates apply).
+      mergedPool = [...staffAuthorItems, ...readerItems, ...aiItems, ...mergedPool].slice(
         0,
-        scoutLimit + Math.min(aiItems.length, 3) + readerItems.length,
+        scoutLimit +
+          Math.min(aiItems.length, 3) +
+          readerItems.length +
+          staffAuthorItems.length,
       );
-      opts.metrics.candidatesCollected += aiCands.length + readerItems.length;
+      opts.metrics.candidatesCollected +=
+        aiCands.length + readerItems.length + staffAuthorItems.length;
       console.log(
         chalk.gray(
-          `Shared Scout pool after AI radar merge: ${mergedPool.length} (reader=${readerItems.length} ai seats=${aiItems.length})`,
+          `Shared Scout pool after AI radar merge: ${mergedPool.length} (staff=${staffAuthorItems.length} reader=${readerItems.length} ai seats=${aiItems.length})`,
         ),
       );
     } catch (err) {
@@ -1140,16 +1213,16 @@ async function publishRssOnce(opts: {
           `AI_RADAR collect skipped: ${err instanceof Error ? err.message : String(err)}`,
         ),
       );
-      if (readerItems.length) {
-        mergedPool = [...readerItems, ...mergedPool];
-        opts.metrics.candidatesCollected += readerItems.length;
+      if (staffAuthorItems.length || readerItems.length) {
+        mergedPool = [...staffAuthorItems, ...readerItems, ...mergedPool];
+        opts.metrics.candidatesCollected += readerItems.length + staffAuthorItems.length;
       }
     }
   } else {
     console.log(chalk.gray('AI_RADAR disabled (SMARTPROTO_AI_RADAR_ENABLED=false)'));
-    if (readerItems.length) {
-      mergedPool = [...readerItems, ...mergedPool];
-      opts.metrics.candidatesCollected += readerItems.length;
+    if (staffAuthorItems.length || readerItems.length) {
+      mergedPool = [...staffAuthorItems, ...readerItems, ...mergedPool];
+      opts.metrics.candidatesCollected += readerItems.length + staffAuthorItems.length;
     }
   }
 
@@ -1309,11 +1382,13 @@ async function publishRssOnce(opts: {
     const scout = selectedScouted.scout;
     const itemMode: EditorialMode = item.scoutMode === 'ai_radar' ? 'ai_radar' : 'gadget';
     const itemChannel =
-      item.channelHint === 'reader-scout'
-        ? 'reader-scout'
-        : item.channelHint === 'ai-radar'
-          ? 'ai-radar'
-          : 'rss';
+      item.channelHint === 'staff-author-link'
+        ? 'staff-author-link'
+        : item.channelHint === 'reader-scout'
+          ? 'reader-scout'
+          : item.channelHint === 'ai-radar'
+            ? 'ai-radar'
+            : 'rss';
     const chosenFocus = inferEditorialFocus({
       title: item.title,
       text: item.text || item.title,
@@ -1546,17 +1621,35 @@ async function publishRssOnce(opts: {
                 imageLabel: photoMeta.imageLabel,
               }
             : {}),
-          ...stampAuthorForPipeline(
-            item.sourceName === READER_SCOUT_SOURCE_NAME ||
+          ...(() => {
+            const isStaffLink =
+              item.sourceName === STAFF_AUTHOR_LINK_SOURCE_NAME ||
+              item.channelHint === 'staff-author-link' ||
+              item.id.startsWith('staff-author-link:');
+            const isReader =
+              item.sourceName === READER_SCOUT_SOURCE_NAME ||
               item.channelHint === 'reader-scout' ||
-              item.id.startsWith('reader-scout:')
-              ? READER_SCOUT_AGENT_ID
-              : 'newsroom-scout',
-            { sourceUrl: item.url, slug },
-          ),
+              item.id.startsWith('reader-scout:');
+            const pipelineId = isStaffLink
+              ? STAFF_AUTHOR_LINK_AGENT_ID
+              : isReader
+                ? READER_SCOUT_AGENT_ID
+                : 'newsroom-scout';
+            const stamped = stampAuthorForPipeline(pipelineId, { sourceUrl: item.url, slug });
+            // SP-A-094: staff journalist name wins over AUTO rotation when provided.
+            if (isStaffLink && item.staffAuthorName?.trim()) {
+              return {
+                ...stamped,
+                author: item.staffAuthorName.trim(),
+                authorDesk: 'Staff Author / Journalist',
+                agentId: STAFF_AUTHOR_LINK_AGENT_ID,
+              };
+            }
+            return stamped;
+          })(),
         } as Article;
 
-        // SP-A-082 — final AUTO gate before articles.json + SQLite (RSS / AI radar / Reader Scout).
+        // SP-A-082 — final AUTO gate (Staff Author links still pass commodity — not author-door bypass).
         try {
           assertFinalAutoPublishAllowed({
             title: article.title,
@@ -1566,7 +1659,11 @@ async function publishRssOnce(opts: {
             category: article.category,
             agentId:
               article.agentId ||
-              (item.channelHint === 'reader-scout' ? READER_SCOUT_AGENT_ID : 'newsroom-scout'),
+              (item.channelHint === 'staff-author-link'
+                ? STAFF_AUTHOR_LINK_AGENT_ID
+                : item.channelHint === 'reader-scout'
+                  ? READER_SCOUT_AGENT_ID
+                  : 'newsroom-scout'),
           });
         } catch (err) {
           if (err instanceof FinalAutoGateError) {
@@ -1627,15 +1724,41 @@ async function publishRssOnce(opts: {
             ? `${scout.reason} [diversity: ${selectedScouted.diversityNote}]`
             : scout.reason,
           slug,
-          channel: item.channelHint === 'reader-scout' ? 'reader-scout' : 'rss',
+          channel:
+            item.channelHint === 'staff-author-link'
+              ? 'staff-author-link'
+              : item.channelHint === 'reader-scout'
+                ? 'reader-scout'
+                : 'rss',
           cycle: opts.cycle,
         });
         await writeFile(opts.journalPath, JSON.stringify(fresh.journal, null, 2) + '\n', 'utf8');
 
+        if (
+          item.channelHint === 'staff-author-link' ||
+          item.id.startsWith('staff-author-link:')
+        ) {
+          const alinkId =
+            item.submissionId ||
+            (item.id.startsWith('staff-author-link:')
+              ? item.id.slice('staff-author-link:'.length)
+              : '');
+          if (alinkId) {
+            await patchStaffAuthorLink(alinkId, {
+              status: 'published',
+              articleSlug: slug,
+              rejectReason: undefined,
+            });
+          }
+        }
+
         const publishedScoutId =
           item.submissionId ||
           (item.id.startsWith('reader-scout:') ? item.id.slice('reader-scout:'.length) : '');
-        if (publishedScoutId) {
+        if (
+          publishedScoutId &&
+          (item.channelHint === 'reader-scout' || item.id.startsWith('reader-scout:'))
+        ) {
           await patchReaderScoutSubmission(publishedScoutId, {
             status: 'published',
             articleSlug: slug,

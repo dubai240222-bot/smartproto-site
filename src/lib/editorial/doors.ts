@@ -385,10 +385,39 @@ async function publishArticle(article: Article): Promise<void> {
 
 /* ─── Author Door ─── */
 
-export type AuthorType = 'AUTHOR_ARTICLE' | 'REVIEW_OPINION';
+export type AuthorType =
+  | 'AUTHOR_ARTICLE'
+  | 'COLUMN'
+  | 'OPINION'
+  | 'REVIEW'
+  | 'REVIEW_OPINION';
+
+export function normalizeAuthorType(raw: string): AuthorType | null {
+  const t = String(raw || '')
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, '_');
+  if (t === 'AUTHOR_ARTICLE' || t === 'ARTICLE') return 'AUTHOR_ARTICLE';
+  if (t === 'COLUMN') return 'COLUMN';
+  if (t === 'OPINION') return 'OPINION';
+  if (t === 'REVIEW') return 'REVIEW';
+  if (t === 'REVIEW_OPINION' || t === 'REVIEWOPINION') return 'REVIEW_OPINION';
+  return null;
+}
 
 export function authorTypeLabel(t: AuthorType): string {
-  return t === 'REVIEW_OPINION' ? 'Обзор / мнение' : 'Авторская статья';
+  switch (t) {
+    case 'COLUMN':
+      return 'Колонка';
+    case 'OPINION':
+      return 'Мнение';
+    case 'REVIEW':
+      return 'Обзор';
+    case 'REVIEW_OPINION':
+      return 'Обзор / мнение';
+    default:
+      return 'Авторская статья';
+  }
 }
 
 function authorFingerprintUrl(authorName: string, title: string): string {
@@ -415,11 +444,12 @@ async function polishAuthor(input: {
       {
         role: 'system',
         content: [
-          'Ты редактор SmartProto для АВТОРСКИХ материалов.',
-          'Лёгкая редактура НЕ переписывание. Сохрани позицию и стиль автора.',
-          'РАЗРЕШЕНО: орфография, читаемость, убрать повторы, сильнее title без «!», оформление SmartProto.',
-          'ЗАПРЕЩЕНО: менять позицию, выдумывать факты, стирать стиль, убирать авторство, кликбейт/реклама.',
-          'Верни СТРОГО JSON: {"title":string,"text":string,"tags":string[]}',
+          'Ты редактор SmartProto для АВТОРСКИХ материалов и колонок (Staff Author Desk).',
+          'Лёгкая редактура НЕ переписывание. СОХРАНЯЙ ГОЛОС АВТОРА.',
+          'РАЗРЕШЕНО: орфография, читаемость, убрать повторы, сильнее title без «!», лёгкая структура, проверка явных противоречий.',
+          'ЗАПРЕЩЕНО: менять позицию, выдумывать факты, стирать стиль, убирать авторство, кликбейт/реклама,',
+          'превращать колонку в безличный AUTO-style article / пресс-релиз.',
+          'Имя автора не менять и не подменять. Верни СТРОГО JSON: {"title":string,"text":string,"tags":string[]}',
         ].join('\n'),
       },
       {
@@ -479,10 +509,18 @@ export async function publishAuthorContribution(input: {
   sourceUrl?: string;
   note?: string;
 }): Promise<AuthorPublishResult> {
+  const type = normalizeAuthorType(String(input.type || ''));
+  if (!type) {
+    return {
+      ok: false,
+      status: 'FAILED',
+      code: 'VALIDATION',
+      message: 'TYPE must be AUTHOR_ARTICLE | COLUMN | OPINION | REVIEW | REVIEW_OPINION.',
+    };
+  }
   const authorName = input.authorName.trim();
   const title = input.title.trim();
   const text = input.text.trim();
-  const type = input.type;
   const sourceUrl = (input.sourceUrl || '').trim();
   const note = (input.note || '').trim();
 
@@ -494,9 +532,6 @@ export async function publishAuthorContribution(input: {
   }
   if (!text || text.length < 80) {
     return { ok: false, status: 'FAILED', code: 'VALIDATION', message: 'TEXT is too short.' };
-  }
-  if (type !== 'AUTHOR_ARTICLE' && type !== 'REVIEW_OPINION') {
-    return { ok: false, status: 'FAILED', code: 'VALIDATION', message: 'TYPE must be AUTHOR_ARTICLE or REVIEW_OPINION.' };
   }
   if (sourceUrl && !/^https?:\/\//i.test(sourceUrl)) {
     return { ok: false, status: 'FAILED', code: 'VALIDATION', message: 'SOURCE URL must be http(s).' };
@@ -560,7 +595,7 @@ export async function publishAuthorContribution(input: {
       publishedAt: new Date().toISOString(),
       readTime: estimateReadTime(polished.text),
       author: authorName,
-      authorDesk: 'Author / Contributor',
+      authorDesk: 'Staff Author / Journalist',
       agentId: 'author-door',
     };
     await publishArticle(article);
@@ -580,6 +615,281 @@ export async function publishAuthorContribution(input: {
       message: err instanceof Error ? err.message : String(err),
     };
   }
+}
+
+/* ─── SP-A-094 Staff Author Link queue (Mode A — propose news, no direct publish) ─── */
+
+export const STAFF_AUTHOR_LINK_AGENT_ID = 'staff-author-link';
+export const STAFF_AUTHOR_LINK_SOURCE_NAME = 'Staff Author';
+export const STAFF_AUTHOR_LINK_SOURCE_TYPE = 'staff-author-link' as const;
+
+export type StaffAuthorLinkStatus =
+  | 'queued'
+  | 'processing'
+  | 'rejected'
+  | 'duplicate'
+  | 'published';
+
+export type StaffAuthorLinkSubmission = {
+  id: string;
+  sourceType: typeof STAFF_AUTHOR_LINK_SOURCE_TYPE;
+  status: StaffAuthorLinkStatus;
+  url: string;
+  normalizedUrl: string;
+  note?: string;
+  authorName: string;
+  rejectReason?: string;
+  articleSlug?: string;
+  createdAt: string;
+  updatedAt: string;
+  attempts?: number;
+};
+
+function staffAuthorQueueDir(): string {
+  const root = process.env.SMARTPROTO_DATA_DIR || path.resolve(process.cwd(), 'data');
+  return path.join(root, 'staff-author-links');
+}
+
+async function ensureStaffAuthorDirs(): Promise<void> {
+  await fs.mkdir(staffAuthorQueueDir(), { recursive: true });
+}
+
+async function persistStaffAuthorLink(sub: StaffAuthorLinkSubmission): Promise<void> {
+  await ensureStaffAuthorDirs();
+  await fs.writeFile(
+    path.join(staffAuthorQueueDir(), `${sub.id}.json`),
+    `${JSON.stringify(sub, null, 2)}\n`,
+    'utf8',
+  );
+}
+
+function validateStaffAuthorUrl(
+  raw: string,
+): { ok: true; url: string; normalized: string } | { ok: false; message: string } {
+  const trimmed = (raw || '').trim();
+  if (!trimmed) return { ok: false, message: 'Укажите ссылку.' };
+  if (/\s/.test(trimmed)) return { ok: false, message: 'Ссылка содержит пробелы.' };
+  if (/^(javascript|data|file|vbscript|about):/i.test(trimmed)) {
+    return { ok: false, message: 'Недопустимый тип ссылки.' };
+  }
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    return { ok: false, message: 'Некорректная ссылка.' };
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    return { ok: false, message: 'Разрешены только http/https ссылки.' };
+  }
+  if (!parsed.hostname || parsed.hostname.length < 3 || !parsed.hostname.includes('.')) {
+    return { ok: false, message: 'Некорректный адрес сайта.' };
+  }
+  if (/^(localhost|127\.|0\.0\.0\.0|10\.|192\.168\.|169\.254\.)/i.test(parsed.hostname)) {
+    return { ok: false, message: 'Локальные адреса не принимаются.' };
+  }
+  const normalized = normalizeUrl(parsed.toString());
+  return { ok: true, url: parsed.toString(), normalized };
+}
+
+export async function listStaffAuthorLinks(
+  status?: StaffAuthorLinkStatus,
+): Promise<StaffAuthorLinkSubmission[]> {
+  try {
+    await ensureStaffAuthorDirs();
+    const files = await fs.readdir(staffAuthorQueueDir());
+    const out: StaffAuthorLinkSubmission[] = [];
+    for (const f of files) {
+      if (!f.endsWith('.json')) continue;
+      try {
+        const raw = await fs.readFile(path.join(staffAuthorQueueDir(), f), 'utf8');
+        const parsed = JSON.parse(raw) as StaffAuthorLinkSubmission;
+        if (status && parsed.status !== status) continue;
+        out.push(parsed);
+      } catch {
+        /* skip */
+      }
+    }
+    out.sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1));
+    return out;
+  } catch {
+    return [];
+  }
+}
+
+export async function getStaffAuthorLink(id: string): Promise<StaffAuthorLinkSubmission | null> {
+  try {
+    const raw = await fs.readFile(path.join(staffAuthorQueueDir(), `${id}.json`), 'utf8');
+    return JSON.parse(raw) as StaffAuthorLinkSubmission;
+  } catch {
+    return null;
+  }
+}
+
+export async function patchStaffAuthorLink(
+  id: string,
+  patch: Partial<StaffAuthorLinkSubmission>,
+): Promise<StaffAuthorLinkSubmission | null> {
+  const cur = await getStaffAuthorLink(id);
+  if (!cur) return null;
+  const next: StaffAuthorLinkSubmission = {
+    ...cur,
+    ...patch,
+    id: cur.id,
+    sourceType: STAFF_AUTHOR_LINK_SOURCE_TYPE,
+    updatedAt: new Date().toISOString(),
+  };
+  await persistStaffAuthorLink(next);
+  return next;
+}
+
+export type StaffAuthorLinkAcceptResult =
+  | { ok: true; id: string; status: 'queued'; message: string }
+  | {
+      ok: false;
+      status: 'rejected' | 'duplicate';
+      code: 'VALIDATION' | 'DUPLICATE' | 'SAFETY';
+      message: string;
+      duplicateSlug?: string;
+    };
+
+/**
+ * Mode A — trusted journalist proposes a URL. Queued only; never direct publish.
+ * Priority seating: above Reader Scout / AUTO, below Chief.
+ */
+export async function acceptStaffAuthorLink(input: {
+  url: string;
+  note?: string;
+  authorName: string;
+}): Promise<StaffAuthorLinkAcceptResult> {
+  const authorName = String(input.authorName || '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 80);
+  if (!authorName || authorName.length < 2) {
+    return { ok: false, status: 'rejected', code: 'VALIDATION', message: 'Укажите имя автора.' };
+  }
+  const urlCheck = validateStaffAuthorUrl(input.url);
+  if (!urlCheck.ok) {
+    return { ok: false, status: 'rejected', code: 'VALIDATION', message: urlCheck.message };
+  }
+  const note = String(input.note || '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 800);
+
+  const dup = findPublishedDuplicate({ url: urlCheck.url });
+  if (dup) {
+    return {
+      ok: false,
+      status: 'duplicate',
+      code: 'DUPLICATE',
+      message: 'Эта ссылка уже опубликована.',
+      duplicateSlug: dup.slug,
+    };
+  }
+  const queued = await listStaffAuthorLinks();
+  const queuedDup = queued.find(
+    (s) =>
+      s.normalizedUrl === urlCheck.normalized &&
+      (s.status === 'queued' || s.status === 'processing' || s.status === 'published'),
+  );
+  if (queuedDup) {
+    return {
+      ok: false,
+      status: 'duplicate',
+      code: 'DUPLICATE',
+      message: 'Эта ссылка уже в очереди редакции.',
+      duplicateSlug: queuedDup.articleSlug,
+    };
+  }
+
+  const now = new Date().toISOString();
+  const id = `alink-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+  const sub: StaffAuthorLinkSubmission = {
+    id,
+    sourceType: STAFF_AUTHOR_LINK_SOURCE_TYPE,
+    status: 'queued',
+    url: urlCheck.url,
+    normalizedUrl: urlCheck.normalized,
+    note: note || undefined,
+    authorName,
+    createdAt: now,
+    updatedAt: now,
+    attempts: 0,
+  };
+  await persistStaffAuthorLink(sub);
+  return {
+    ok: true,
+    id,
+    status: 'queued',
+    message: 'Ссылка принята в редакционную очередь (Staff Author). Без прямой публикации.',
+  };
+}
+
+/** Load queued staff-author links for newsroom tick — seated above Reader Scout. */
+export async function loadQueuedStaffAuthorLinksForTick(limit = 4): Promise<
+  Array<{
+    submissionId: string;
+    id: string;
+    title: string;
+    url: string;
+    text: string;
+    publishedAt: string;
+    sourceName: string;
+    authorName: string;
+  }>
+> {
+  const queued = await listStaffAuthorLinks('queued');
+  const out: Array<{
+    submissionId: string;
+    id: string;
+    title: string;
+    url: string;
+    text: string;
+    publishedAt: string;
+    sourceName: string;
+    authorName: string;
+  }> = [];
+  for (const s of queued.slice(0, limit)) {
+    let host = 'link';
+    try {
+      host = new URL(s.url).hostname.replace(/^www\./, '');
+    } catch {
+      /* ignore */
+    }
+    let extracted = '';
+    try {
+      const page = await extractArticlePlainText(s.url, { maxChars: 6000, timeoutMs: 10000 });
+      extracted = (page.text || '').slice(0, 6000);
+    } catch {
+      extracted = '';
+    }
+    const title = s.note?.trim()
+      ? `${s.authorName}: ${s.note.trim().slice(0, 90)}`
+      : `${s.authorName}: ${host}`;
+    const text = [
+      'SOURCE PACK (Staff Author / Journalist link — high priority, full editorial gates):',
+      s.note ? `Угол журналиста: ${s.note}` : '',
+      `Автор предложения: ${s.authorName}`,
+      `Источник: ${s.url}`,
+      extracted || '(текст страницы не извлечён — опирайся на URL/заметку)',
+    ]
+      .filter(Boolean)
+      .join('\n\n');
+    out.push({
+      submissionId: s.id,
+      id: `staff-author-link:${s.id}`,
+      title,
+      url: s.url,
+      text,
+      publishedAt: s.createdAt,
+      sourceName: STAFF_AUTHOR_LINK_SOURCE_NAME,
+      authorName: s.authorName,
+    });
+  }
+  return out;
 }
 
 /* ─── Chief Fast Lane (Scout bypass; fact/source/dedupe kept) ─── */
