@@ -755,7 +755,7 @@ async function tryChinaPublishOnce(opts: {
         content: draft.text,
         sourceUrl: c.sourceUrl,
         publishedAt,
-        readTime: `${Math.max(1, Math.ceil(wc / 150))} мин`,
+        readTime: `${Math.max(1, Math.ceil(wordCount(draft.text) / 150))} мин`,
         ...(images.length ? { imageUrl: images[0].url, images } : {}),
         ...stampAuthorForPipeline('china-qwen', { sourceUrl: c.sourceUrl, slug }),
       };
