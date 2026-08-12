@@ -18,13 +18,13 @@ services:
       dockerfile: Dockerfile
       args:
         ARTICLES_STORE: sqlite
-        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3100}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://www.smartproto.net}
     container_name: smartproto-web
     restart: unless-stopped
     environment:
       ARTICLES_STORE: sqlite
       SMARTPROTO_DB_PATH: /app/data/smartproto.db
-      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3100}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://www.smartproto.net}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
       EDITORIAL_DOOR_SECRET: ${EDITORIAL_DOOR_SECRET}
     volumes:
@@ -45,7 +45,7 @@ services:
       dockerfile: Dockerfile
       args:
         ARTICLES_STORE: sqlite
-        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3100}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://www.smartproto.net}
     container_name: smartproto-worker
     restart: unless-stopped
     command: ["npx", "tsx", "scripts/hetzner-worker.ts"]

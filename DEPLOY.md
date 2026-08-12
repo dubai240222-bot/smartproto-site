@@ -11,8 +11,10 @@ docker build \
 If you want SEO links, robots, and sitemap to use the production domain, pass `NEXT_PUBLIC_SITE_URL` at runtime:
 
 ```bash
-docker run -e NEXT_PUBLIC_SITE_URL=https://your-domain.com ...
+docker run -e NEXT_PUBLIC_SITE_URL=https://www.smartproto.net ...
 ```
+
+Default for SmartProto compose/Dockerfile is `https://www.smartproto.net`. Localhost values are sanitized away from public SEO helpers.
 
 ## 2) Move the image to Hetzner
 

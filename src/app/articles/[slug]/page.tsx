@@ -15,6 +15,8 @@ import {
 import { inferPublicCategory } from '@/lib/public-labels';
 import { displayHeroUrl } from '@/lib/homepage-editorial-mix';
 import { disclosureSources } from '@/lib/source-label';
+import { LanguageSwitcher } from '@/components/language-switcher';
+import { articleSwitcherLinks, buildArticleLanguageAlternates } from '@/lib/i18n/article-alternates';
 
 // SP-A-056: render per request (both storage modes) so a newly published
 // article — from SQLite on Hetzner, or freshly rebuilt JSON on Vercel — is
@@ -44,9 +46,10 @@ export async function generateMetadata({
   return {
     title: `${article.title} | SmartProto`,
     description: article.summary,
-    alternates: {
-      canonical: `/articles/${article.slug}`,
-    },
+    alternates: buildArticleLanguageAlternates({
+      articleId: article.id,
+      ruSlug: article.slug,
+    }),
   };
 }
 
@@ -190,14 +193,21 @@ export default async function ArticlePage({
     <main className="min-h-screen bg-[var(--bg)] text-[var(--text)] py-8 transition-colors">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Navigation back button */}
-        <div className="mb-6 max-w-5xl mx-auto">
+        <div className="mb-6 mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--muted)] hover:text-[var(--text)] transition"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--muted)] transition hover:text-[var(--text)]"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             На главную
           </Link>
+          <LanguageSwitcher
+            activeLocale="ru"
+            articleLinks={articleSwitcherLinks({
+              articleId: article.id,
+              ruSlug: article.slug,
+            })}
+          />
         </div>
 
         {/* Wide editorial column (was 680px) */}
