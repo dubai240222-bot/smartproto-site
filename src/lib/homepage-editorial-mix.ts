@@ -39,6 +39,8 @@ const COMMODITY_RE =
 /** Local copy of SPA-066 weak-tile heuristic (avoid coupling to photo-scout exports). */
 function isWeakIllustrationUrl(url: string): boolean {
   const u = url.toLowerCase();
+  // SP-A-084 curated stock banners (spfb=1) are intentional display assets.
+  if (/[?&]spfb=1(?:&|$)/.test(u) || /\/media\/fallbacks\//i.test(u)) return false;
   return (
     /avatar|logo|icon|favicon|sprite|emoji|gravatar|placeholder/i.test(u) ||
     /\.svg(\?|$)/i.test(u) ||

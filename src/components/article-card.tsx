@@ -4,21 +4,28 @@ import type { Article } from '@/data/articles';
 import { formatPublishedAt } from '@/lib/article-utils';
 import { formatAuthorByline, resolveAuthorForArticle } from '@/lib/authors';
 import { MediaPlaceholder, MediaThumb } from '@/components/media-placeholder';
-import { toPublicCategory } from '@/lib/public-labels';
+import { inferPublicCategory } from '@/lib/public-labels';
 import { displayHeroUrl } from '@/lib/homepage-editorial-mix';
 
 export function CategoryTags({
   category,
   className = '',
   tone = 'subtle',
+  title,
+  tags,
+  summary,
 }: {
   category: string;
   className?: string;
   /** subtle = near-muted meta; hash = soft hashtag under title */
   tone?: 'subtle' | 'hash';
+  title?: string;
+  tags?: string[];
+  summary?: string;
 }) {
   // SP-A-050: never show КИТАЙ / Qwen / factory marks on cards.
-  const publicCat = toPublicCategory(category);
+  // SP-A-084: re-infer when stored category is universal «Гаджеты».
+  const publicCat = inferPublicCategory({ category, title, tags, summary });
   const parts = publicCat ? [publicCat] : [];
   if (parts.length === 0) return null;
 
@@ -92,10 +99,12 @@ export function LeadStory({ article }: { article: Article }) {
     <article className="group space-y-1.5">
       <Link href={`/articles/${article.slug}`} className="block overflow-hidden" aria-label={article.title}>
         <MediaPlaceholder
+          slug={article.slug}
           category={article.category}
           title={article.title}
           tags={article.tags}
           summary={article.summary}
+          agentId={article.agentId}
           imageUrl={hero}
           aspectRatio="aspect-[2/1] sm:aspect-[21/9]"
           compactFallback
@@ -106,7 +115,13 @@ export function LeadStory({ article }: { article: Article }) {
         <time className="text-[11px] font-normal tabular-nums text-[var(--muted)]">
           {formatPublishedAt(article.publishedAt)}
         </time>
-        <CategoryTags category={article.category} tone="hash" />
+        <CategoryTags
+          category={article.category}
+          title={article.title}
+          tags={article.tags}
+          summary={article.summary}
+          tone="hash"
+        />
       </div>
       <h1 className="text-[1.25rem] font-semibold leading-[1.2] tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-[1.65rem] lg:text-[1.85rem]">
         <Link href={`/articles/${article.slug}`}>{article.title}</Link>
@@ -126,10 +141,12 @@ export function LeadRailItem({ article }: { article: Article }) {
       <Link href={`/articles/${article.slug}`} className="shrink-0" aria-label={article.title}>
         <MediaThumb
           imageUrl={hero}
+          slug={article.slug}
           title={article.title}
           category={article.category}
           tags={article.tags}
           summary={article.summary}
+          agentId={article.agentId}
           className="h-[52px] w-[72px] sm:h-[56px] sm:w-[80px]"
         />
       </Link>
@@ -155,10 +172,12 @@ export function GridStoryCard({ article }: { article: Article }) {
     <article className="group flex flex-col">
       <Link href={`/articles/${article.slug}`} className="block" aria-label={article.title}>
         <MediaPlaceholder
+          slug={article.slug}
           category={article.category}
           title={article.title}
           tags={article.tags}
           summary={article.summary}
+          agentId={article.agentId}
           imageUrl={hero}
           aspectRatio="aspect-[16/10]"
           compactFallback={!hero}
@@ -173,7 +192,14 @@ export function GridStoryCard({ article }: { article: Article }) {
           {article.title}
         </Link>
       </h3>
-      <CategoryTags category={article.category} tone="hash" className="mt-1" />
+      <CategoryTags
+        category={article.category}
+        title={article.title}
+        tags={article.tags}
+        summary={article.summary}
+        tone="hash"
+        className="mt-1"
+      />
     </article>
   );
 }
@@ -186,10 +212,12 @@ export function QuickNewsBlock({ article }: { article: Article }) {
       <Link href={`/articles/${article.slug}`} className="shrink-0" aria-label={article.title}>
         <MediaThumb
           imageUrl={hero}
+          slug={article.slug}
           title={article.title}
           category={article.category}
           tags={article.tags}
           summary={article.summary}
+          agentId={article.agentId}
           className="h-[64px] w-[88px] sm:h-[72px] sm:w-[96px]"
         />
       </Link>
@@ -231,6 +259,7 @@ export function ArticleCard({ article, variant = 'default', eyebrow, className }
       >
         <div className="space-y-3">
           <MediaPlaceholder
+            slug={article.slug}
             category={article.category}
             title={article.title}
             tags={article.tags}
@@ -277,6 +306,7 @@ export function ArticleCard({ article, variant = 'default', eyebrow, className }
           </div>
         </div>
         <MediaThumb
+          slug={article.slug}
           imageUrl={hero}
           title={article.title}
           category={article.category}
@@ -296,6 +326,7 @@ export function ArticleCard({ article, variant = 'default', eyebrow, className }
     >
       <div className="space-y-2.5">
         <MediaPlaceholder
+          slug={article.slug}
           category={article.category}
           title={article.title}
           tags={article.tags}
@@ -350,6 +381,7 @@ export function VergeNumberedItem({
         </div>
       </div>
       <MediaThumb
+        slug={article.slug}
         imageUrl={hero}
         title={article.title}
         category={article.category}
@@ -371,6 +403,7 @@ export function ArsTechnicaCard({ article }: { article: Article }) {
       <div>
         <div className="p-3 bg-[var(--bg)] border-b border-[var(--border)]">
           <MediaPlaceholder
+            slug={article.slug}
             category={article.category}
             title={article.title}
             tags={article.tags}
@@ -416,7 +449,13 @@ export function QuickUpdateItem({ article }: { article: Article }) {
           <time className="text-[10px] font-normal tabular-nums text-[var(--muted)]">
             {formatPublishedAt(article.publishedAt)}
           </time>
-          <CategoryTags category={article.category} tone="hash" />
+          <CategoryTags
+            category={article.category}
+            title={article.title}
+            tags={article.tags}
+            summary={article.summary}
+            tone="hash"
+          />
         </div>
         <h3 className="text-[14px] font-medium leading-snug tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-[15px]">
           <Link href={`/articles/${article.slug}`}>{article.title}</Link>
@@ -428,10 +467,12 @@ export function QuickUpdateItem({ article }: { article: Article }) {
       <Link href={`/articles/${article.slug}`} className="shrink-0" aria-label={article.title}>
         <MediaThumb
           imageUrl={hero}
+          slug={article.slug}
           title={article.title}
           category={article.category}
           tags={article.tags}
           summary={article.summary}
+          agentId={article.agentId}
           className="h-[72px] w-[96px] sm:h-[88px] sm:w-[120px]"
         />
       </Link>
@@ -462,6 +503,7 @@ export function StratecheryDeepDive({ article }: { article: Article }) {
         </h2>
 
         <MediaPlaceholder
+          slug={article.slug}
           category={article.category}
           title={article.title}
           tags={article.tags}
