@@ -138,14 +138,32 @@ export function applySoftNoveltyAdjust(
     parts?: ScoutScorePartsV2;
   },
 ): { score: number; penalty: number; capped: boolean; reason?: string } {
+  const hay = `${opts.title}\n${opts.text || ''}`;
+  // SP-A-068R1: research/prototype demos may keep model score (status limits promise, not value).
+  const researchDemo =
+    /\b(research|researchers?|prototype|lab\s+demo|university|csail|peer[- ]reviewed)\b/i.test(hay);
+  // Assistive independence — do not mid-band-kill «вместо второго человека».
+  const assistiveIndependence =
+    /\b(low[- ]?vision|blind|visually impaired|assistive|prosthetic|hearing|reads? text aloud|screen reader|wheelchair| independently )\b|слабовид|незряч|второй человек|самостоятельн/i.test(
+      hay,
+    );
+
   if (opts.noProduct) {
+    if (researchDemo) {
+      return {
+        score: Math.max(0, Math.min(75, rawScore)),
+        penalty: 0,
+        capped: rawScore > 75,
+        reason: 'research/prototype: keep human-value score (not a shop SKU)',
+      };
+    }
     return { score: 0, penalty: rawScore, capped: false, reason: 'no product' };
   }
   if (looksCommodityRoutine(opts.title, opts.text) || looksSmartHomeRoutine(opts.title, opts.text)) {
     // Commodity path already handled by applyAntiCommodityPenalty.
     return { score: rawScore, penalty: 0, capped: false };
   }
-  if (opts.isActuallyNew) {
+  if (opts.isActuallyNew || assistiveIndependence) {
     return { score: rawScore, penalty: 0, capped: false };
   }
 
@@ -187,10 +205,25 @@ export const SCOUT_SYSTEM_PROMPT_GADGET_V2 = [
   'HARD: конкретный объект интереса (устройство / прототип / research demo / app). Покупка сегодня НЕ обязательна.',
   'Публичный текст БЕЗ цен и БЕЗ ссылок.',
   '',
+  'EDITORIAL DNA v1.1 (SP-A-068R1): SmartProto ищет не TECHNOLOGY→NEWS, а HUMAN WALL → REAL TECHNOLOGY → OPENED DOOR → PROOF.',
+  'Главный вопрос: какую стену технология начинает ломать и какую дверь открывает обычному человеку?',
+  'Стены: слишком дорого/долго; нужен специалист/посредник/второй человек/команда/капитал; надо ехать; тяжело/опасно; долго учиться; здоровье; место проживания.',
+  'Сильные двери: можно самому; один ≈ небольшая команда; меньше капитал; без посредника; pro→consumer; услуга дома; экономия денег/времени; новая самостоятельность/способность.',
+  'Перед высоким score проверь здраво: WHO CARES (человек vs только индустрия); BEFORE→AFTER; NORMAL ALTERNATIVE не лучше ли?; ACCESS; MEANINGFUL CHANGE vs +N%/удобство; PROOF (AVAILABLE/ANNOUNCED/PROTOTYPE/RESEARCH/CONCEPT/CROWDFUNDING).',
+  'НЕ поднимай автоматически: processor/spec/megapixels/Hz/+N%; funding; partnerships; generic AI feature; factory robot «потому что робот» / +N% cycle time; humanoid demo без человеческой пользы; дорогую нишевую игрушку если обычная альтернатива разумнее.',
+  'flagship=true только если стена+дверь+who cares+meaningful change выглядят здраво для обычного человека (не формальный BEFORE→AFTER).',
+  '',
+  'SP-A-068R1 CALIBRATION (не ослаблять specs/factory/+N%/luxury):',
+  '- Assistive / «вместо второго человека» (low-vision, independently read/hear/move): сильная дверь. Не убивай score из-за niche/access/status. Ориентир 70–85 если proof есть; flagship возможен.',
+  '- SMB / one-person work (один ≈ команда, Tacta-класс): niche ≠ auto-REJECT. Может быть NORMAL/STRONG (55–80) без FLAGSHIP; REJECT только если нет реальной двери.',
+  '- REALITY STATUS ограничивает обещание, НЕ Human Value: RESEARCH/PROTOTYPE с доказанной новой человеческой возможностью → score по двери (часто 45–75), status=RESEARCH/PROTOTYPE. Не притворяйся consumer product. Не ставь 0 только потому что нельзя купить сегодня.',
+  '- Factory arm +15% / megapixels / lineup rumors → по-прежнему 0–25 REJECT.',
+  'Язык полей humanWall/openedDoor/whoCares/accessNote/reason: только русский или английский (не китайский).',
+  '',
   'Оценка 0–100 СТРОГО суммой частей (новые веса SP-A-065):',
-  'humanSurprise 0–30 — обычный человек: «неужели такое уже существует?»',
+  'humanSurprise 0–30 — обычный человек: «неужели такое уже существует?» (учитывай wall→door)',
   'visualDemonstrability 0–20 — можно ли показать сильным фото/видео',
-  'everydayRelevance 0–15 — ценность понятна без техподготовки',
+  'everydayRelevance 0–15 — ценность понятна без техподготовки (WHO CARES / ACCESS)',
   'novelty 0–15 — новая категория/способ, не «ещё одна версия»',
   'shareability 0–10 — захочет ли человек отправить знакомому',
   'credibility 0–10 — реальный продукт / prototype / primary research',
@@ -200,13 +233,13 @@ export const SCOUT_SYSTEM_PROMPT_GADGET_V2 = [
   '',
   'SOFT NOVELTY (SP-A-065B): не ставь score=0 только потому что категория уже существует.',
   'Необычное улучшение существующей категории (ультратонкая клавиатура, люлька с автооткликом на плач) → ориентир 40–69.',
-  '70+ только при высоком humanSurprise / shareability / настоящей новизне способа.',
+  '70+ только при высоком humanSurprise / shareability / настоящей новизне способа / явной двери для человека.',
   '',
-  'ЭТАЛОНЫ: Meta gesture wristband → 80–90; humanoid laundry robot → 80–90; ETH drones → 70–85;',
-  'Delta Aero (cry-response) → ~50–70; Altar II (extreme thinness) → ~40–65; RainPoint watering → 0–35;',
-  'обычный iQOO/OPPO/iPhone rumor/lineup → 0–25.',
+  'ЭТАЛОНЫ: Meta gesture wristband → 80–90; low-vision text-reader assistive → 70–85; humanoid laundry robot → 80–90;',
+  'Tacta-класс one-person SMB → 55–80 (не auto-reject); grounded RESEARCH с human door → 45–75 (status=RESEARCH);',
+  'Delta Aero → ~50–70; Altar II → ~40–65; RainPoint → 0–35; iQOO/specs rumor → 0–25; factory +15% cycle → 0–25.',
   '',
   'status: AVAILABLE | ANNOUNCED | PROTOTYPE | RESEARCH | CONCEPT | CROWDFUNDING.',
-  'Не маскируй concept/crowdfunding под AVAILABLE.',
-  'REJECT только мусор/политику/SEO — не обнуляй mid-band необычные улучшения.',
+  'Не маскируй concept/crowdfunding/research под AVAILABLE.',
+  'REJECT только мусор/политику/SEO/specs/factory-noise — не обнуляй assistive и grounded research.',
 ].join('\n');
