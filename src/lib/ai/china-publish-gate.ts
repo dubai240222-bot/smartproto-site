@@ -2,11 +2,10 @@
  * Shared editorial gate for China → Qwen dossiers before Editor publish.
  * Used by publish-china-qwen and newsroom tick (max 1 China pub per tick).
  *
- * SP-A-076 — editorial watch: grey commodity / no human door → SKIP
- * (better idle than another monitor/mouse/budget-phone card).
+ * SP-A-076 selective — editorial watch via human-priority-gate (grey noise / priority).
+ * SP-A-082 remains the final AUTO commodity kill switch at upsert.
  */
 
-import { isGrayCommodityHard } from '@/lib/ai/hard-reject';
 import {
   passesEditorialPriority,
   shouldHardRejectGreyNoise,
@@ -51,7 +50,7 @@ export function dossierPublishable(
 
   const title = d.translatedTitle || d.productName || d.originalTitle;
   const text = [d.whatItDoes, d.consumerUse, d.whyItIsNew, sourceBody].join('\n');
-  if (shouldHardRejectGreyNoise(title, text) || isGrayCommodityHard(title, text)) {
+  if (shouldHardRejectGreyNoise(title, text)) {
     return {
       ok: false,
       reason: 'editorial watch: grey commodity / no human door — SKIP',
