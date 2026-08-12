@@ -32,7 +32,7 @@ import {
 } from '../src/lib/newsroom/diversity-guard';
 import { scoutArticle, SCOUT_SCORE_THRESHOLD } from '../src/lib/ai/scout';
 import { reviewArticle } from '../src/lib/ai/reviewer';
-import { writeDraft, type DraftFormat } from '../src/lib/ai/editor';
+import { writeDraft, expandShortDraft, type DraftFormat } from '../src/lib/ai/editor';
 import { hardRejectTopic, looksBuyableGadget, isAiOrInventionAlert } from '../src/lib/ai/hard-reject';
 import {
   collectAiRadarCandidates,
@@ -315,6 +315,45 @@ function estimateReadTime(text: string): string {
 
 function wordCount(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+/** SP-A-093 — one expand when 150–179 words; <150 or still <180 after retry → fail. */
+async function ensureDraftMinWords(opts: {
+  draft: Awaited<ReturnType<typeof writeDraft>>;
+  sourcePayload: object;
+  review: object;
+  minWords?: number;
+  expandFrom?: number;
+  label?: string;
+  metrics?: { sentToGemini?: number; draftsCreated?: number };
+}): Promise<{ draft: Awaited<ReturnType<typeof writeDraft>>; ok: boolean; retried: boolean; wordsFirst: number; wordsAfter: number }> {
+  const minWords = opts.minWords ?? 180;
+  const expandFrom = opts.expandFrom ?? 150;
+  const label = opts.label || 'Draft';
+  let draft = opts.draft;
+  const wordsFirst = wordCount(draft.text);
+  if (wordsFirst >= minWords) {
+    return { draft, ok: true, retried: false, wordsFirst, wordsAfter: wordsFirst };
+  }
+  if (wordsFirst < expandFrom) {
+    console.log(chalk.yellow(`${label} too short (${wordsFirst} < ${minWords}) — below expand band, no retry`));
+    return { draft, ok: false, retried: false, wordsFirst, wordsAfter: wordsFirst };
+  }
+  console.log(
+    chalk.cyan(
+      `SP-A-093 expand retry: ${label} ${wordsFirst} words (band ${expandFrom}–${minWords - 1}) — one bounded expand`,
+    ),
+  );
+  if (opts.metrics) opts.metrics.sentToGemini = (opts.metrics.sentToGemini || 0) + 1;
+  draft = await expandShortDraft(opts.sourcePayload, opts.review, draft);
+  if (opts.metrics) opts.metrics.draftsCreated = (opts.metrics.draftsCreated || 0) + 1;
+  const wordsAfter = wordCount(draft.text);
+  console.log(chalk.gray(`SP-A-093 expand result: ${wordsFirst} → ${wordsAfter} words`));
+  if (wordsAfter < minWords) {
+    console.log(chalk.yellow(`${label} still too short after expand (${wordsAfter} < ${minWords})`));
+    return { draft, ok: false, retried: true, wordsFirst, wordsAfter };
+  }
+  return { draft, ok: true, retried: true, wordsFirst, wordsAfter };
 }
 
 async function loadState(journalPath: string, articlesPath: string) {
@@ -601,11 +640,15 @@ async function tryChinaPublishOnce(opts: {
       continue;
     }
 
-    const wc = wordCount(draft.text);
-    // SP-A-088: thin Editor output must not publish — same seriousness bar as Chief DNA
-    const minWords = 180;
-    if (wc < minWords) {
-      console.log(chalk.yellow(`China draft too short (${wc} < ${minWords})`));
+    const wcGate = await ensureDraftMinWords({
+      draft,
+      sourcePayload: framed,
+      review: reviewData,
+      label: 'China draft',
+      metrics: opts.metrics,
+    });
+    draft = wcGate.draft;
+    if (!wcGate.ok) {
       continue;
     }
 
@@ -1347,7 +1390,7 @@ async function publishRssOnce(opts: {
 
       console.log(chalk.gray(`Editor (${opts.format})...`));
       opts.metrics.sentToGemini += 1;
-      const draft = await writeDraft(sourcePayload, review);
+      let draft = await writeDraft(sourcePayload, review);
       opts.metrics.draftsCreated += 1;
       if (
         draft.title.trim().toUpperCase() === 'REJECT' ||
@@ -1361,11 +1404,15 @@ async function publishRssOnce(opts: {
         continue;
       }
 
-      const wc = wordCount(draft.text);
-      // SP-A-088: one seriousness bar — thin Editor drafts do not publish
-      const minWords = 180;
-      if (wc < minWords) {
-        console.log(chalk.yellow(`Draft too short (${wc} < ${minWords})`));
+      const wcGate = await ensureDraftMinWords({
+        draft,
+        sourcePayload,
+        review,
+        label: 'Draft',
+        metrics: opts.metrics,
+      });
+      draft = wcGate.draft;
+      if (!wcGate.ok) {
         lastSkip = 'draft too short';
         continue;
       }

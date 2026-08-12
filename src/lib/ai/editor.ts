@@ -363,49 +363,8 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
     draft = await parseEditorJson(typeof retryRaw === 'string' ? retryRaw.trim() : '');
   }
 
-  // SP-A-087 — one depth retry if draft is artificially thin while source has substance.
-  const draftWords = draft.text.trim().split(/\s+/).filter(Boolean).length;
-  const sourceRich = sourceText.trim().split(/\s+/).filter(Boolean).length >= 40;
-  if (
-    draft.title.trim().toUpperCase() !== 'REJECT' &&
-    sourceRich &&
-    draftWords > 0 &&
-    draftWords < 180
-  ) {
-    try {
-      const depthRetry = await client.chat.completions.create({
-        model: EDITOR_MODEL,
-        temperature: 0.35,
-        top_p: 0.85,
-        max_tokens: format === 'news' ? 1100 : 1500,
-        messages: [
-          { role: 'system', content: EDITOR_SYSTEM_PROMPT },
-          {
-            role: 'user',
-            content: [
-              'Черновик слишком короткий (<180 слов) — на SmartProto такие тексты не воспринимают всерьёз.',
-              'SP-A-087: перепиши как самостоятельный обзор на ~180–300 слов (цель ~200–280).',
-              'Вынеси самый сильный факт в первый абзац; добавь сравнение, человеческий смысл и ближайшее будущее — только из входных данных.',
-              'Без денежных сумм и URL. Тот же JSON с title, text, tags[], toneCheck.',
-              '',
-              'Входные данные:',
-              clampText(JSON.stringify(articleData, null, 2), 10000),
-              '',
-              'Тонкий черновик:',
-              clampText(draft.text, 4000),
-            ].join('\n'),
-          },
-        ],
-      });
-      const depthRaw = depthRetry.choices[0]?.message?.content;
-      const deeper = await parseEditorJson(typeof depthRaw === 'string' ? depthRaw.trim() : '');
-      if (deeper.title.trim().toUpperCase() !== 'REJECT') {
-        draft = deeper;
-      }
-    } catch {
-      /* keep previous draft if depth rewrite is malformed */
-    }
-  }
+  // SP-A-093: short-length expand (150–179) is handled by callers via expandShortDraft
+  // so newsroom can log FIRST/RETRY/AFTER and enforce max 1 retry outside writeDraft.
 
   if (draft.title.trim().toUpperCase() === 'REJECT') {
     return { ...REJECT_DRAFT, tags: draft.tags.length ? draft.tags : REJECT_DRAFT.tags };
@@ -426,4 +385,87 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
   }
 
   return draft;
+}
+
+/**
+ * SP-A-093 — exactly one expand retry for near-miss drafts (150–179 words).
+ * Does not invent facts. Returns the expanded draft (or original on parse failure).
+ */
+export async function expandShortDraft(
+  articleData: object,
+  reviewData: object,
+  draft: DraftResult,
+): Promise<DraftResult> {
+  if (draft.title.trim().toUpperCase() === 'REJECT') return draft;
+  const client = getOpenRouterClient();
+  const format: DraftFormat =
+    (articleData as { format?: unknown }).format === 'news' ? 'news' : 'article';
+  try {
+    const completion = await client.chat.completions.create({
+      model: EDITOR_MODEL,
+      temperature: 0.35,
+      top_p: 0.85,
+      max_tokens: format === 'news' ? 1200 : 1600,
+      messages: [
+        { role: 'system', content: EDITOR_SYSTEM_PROMPT },
+        {
+          role: 'user',
+          content: [
+            'SP-A-093 BOUNDED EXPAND RETRY:',
+            'Материал почти готов, но слишком короткий.',
+            'Доведи его до полноценного обзора 180–300 слов.',
+            'Не добавляй неподтверждённых фактов.',
+            'Используй только source pack / входные данные.',
+            'Раскрой:',
+            '- strongest fact;',
+            '- useful context/comparison;',
+            '- human meaning;',
+            '- FINISH THE THOUGHT;',
+            '- живой финал, если уместно.',
+            'Не раздувай текст пустыми словами.',
+            'Без цен и URL. Верни СТРОГО JSON:',
+            '{"title":string,"text":string,"tags":string[],"toneCheck":{"clickbait":bool,"hype":bool,"unsupportedClaims":bool,"limitationsIncluded":bool}}',
+            '',
+            'Входные данные (source pack):',
+            clampText(JSON.stringify(articleData, null, 2), 10000),
+            '',
+            'Ревью:',
+            clampText(JSON.stringify(reviewData, null, 2), 4000),
+            '',
+            'Текущий короткий черновик:',
+            clampText(
+              JSON.stringify(
+                { title: draft.title, text: draft.text, tags: draft.tags, toneCheck: draft.toneCheck },
+                null,
+                2,
+              ),
+              5000,
+            ),
+          ].join('\n'),
+        },
+      ],
+    });
+    const raw = completion.choices[0]?.message?.content;
+    if (!raw || typeof raw !== 'string') return draft;
+    const cleaned = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
+    const parsed = JSON.parse(cleaned) as DraftResult;
+    if (!parsed?.text || typeof parsed.text !== 'string') return draft;
+    if (String(parsed.title || '').trim().toUpperCase() === 'REJECT') return draft;
+    const next: DraftResult = {
+      title: String(parsed.title || draft.title).trim(),
+      text: parsed.text.trim(),
+      tags: Array.isArray(parsed.tags) && parsed.tags.length
+        ? parsed.tags.map((t) => String(t).trim())
+        : draft.tags,
+      toneCheck: parsed.toneCheck || draft.toneCheck,
+    };
+    if (containsBannedCliche(next.title, next.text) || /!/.test(next.title)) return draft;
+    if (containsPublicPriceOrLink(next.title, next.text)) return draft;
+    if (next.toneCheck.clickbait || next.toneCheck.hype || next.toneCheck.unsupportedClaims) {
+      return draft;
+    }
+    return next;
+  } catch {
+    return draft;
+  }
 }

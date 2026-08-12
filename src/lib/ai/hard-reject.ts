@@ -349,6 +349,30 @@ export function isAiOrInventionAlert(title: string, text = ''): boolean {
   return AI_OR_INVENTION_ALERT_RE.test(`${title}\n${text}`);
 }
 
+/**
+ * SP-A-093 — SmartProto is not a shop. Strong capability / consequence stories
+ * may reach Scout without BUY/PREORDER. Still face Scout 70 → Reviewer → Editor
+ * → Photo → commodity final gate. Does NOT unlock ordinary mouse/phone SKUs.
+ */
+const CAPABILITY_EDITORIAL_RE =
+  /\b(solar[- ]?powered|ambulance|smart\s+clothing|smart\s+textile|finger\s+movements?|memory\s+(architecture|prototype|device|chip)|denser\s+data|non[- ]?binary\s+memory|new\s+human\s+capability|human\s+capability|capability\s+breakthrough|assistive|independence|prosthetic|clinic\s*→\s*home|clinic\s+to\s+home|medical\s+(device|prototype|robot|imaging)|surgical\s+robot|major\s+autonomy|fully\s+autonomous|future\s+mobility|evtol|air\s+taxi|solid[- ]?state\s+battery|grid[- ]?scale|major\s+energy|novel\s+material|new\s+material|dramatic\s+cost|cost\s+reduction|\d{2,3}\s*%\s*(cheaper|fewer|less)|direct\s+access|disintermediat|brain[- ]?computer|bci\b|exoskeleton|humanoid\s+(robot|prototype)|robotics?\s+(prototype|demo|capability)|research\s+prototype|lab[- ]?to[- ]?life)\b|солнечн\w*\s+машин|умн\w*\s+(одежд|ткан)|памят\w*\s+архитектур|медицинск|протез|автономн|воздушн\w*\s+такси|новый\s+материал|снижен\w*\s+стоим/i;
+
+/** Titles that remain shop/SKU-shaped even if a capability keyword appears. */
+const ORDINARY_SKU_TITLE_RE =
+  /\b(gaming\s+)?(mouse|keyboard|monitor|earbuds?|headphones?|headset|psu|power\s*supply|gpu\s*cooler)\b|\b(iphone|galaxy\s*s\d+|pixel\s*\d+)\b.{0,40}\b(refresh|color|colour|leak|rumor)\b|\b(ordinary|generic)\s+(phone|smartphone|laptop)\b|игров\w*\s+мышь|обычн\w*\s+(мышь|клавиатур|монитор|наушник)/i;
+
+export function isCapabilityEditorialStory(title: string, text = ''): boolean {
+  const hay = `${title}\n${text}`;
+  if (ORDINARY_SKU_TITLE_RE.test(title)) return false;
+  if (isAiOrInventionAlert(title, text)) return true;
+  return CAPABILITY_EDITORIAL_RE.test(hay);
+}
+
+/** True when buy/preorder is not required (AI/invention alert OR capability story). */
+export function allowsWithoutBuyPreorder(title: string, text = ''): boolean {
+  return isCapabilityEditorialStory(title, text);
+}
+
 /** KEEP reference — unusual wearables must not be killed by commodity rules. */
 const KEEP_WOW_EXCEPTIONS: RegExp[] = [
   /\bcasio\b/i,
@@ -567,10 +591,23 @@ export function hardRejectTopic(
     if (re.test(hay)) {
       // SP-A-065C: AI cyber/preparedness stories often say "deployment" — not infra news.
       if (
-        /\bdeployment\b/i.test(re.source) &&
+        /deployment/i.test(re.source) &&
         isAiOrInventionAlert(title, text) &&
         /\b(cyber|preparedness|frontier|capability|safety\s+incident|model\s+risk)\b/i.test(hay)
       ) {
+        continue;
+      }
+      // SP-A-093: "memory architecture" / chip architecture ≠ building architecture.
+      if (
+        /architecture/i.test(re.source) &&
+        /\b(memory|chip|cpu|gpu|computer|software|system)\s+architecture\b|\barchitecture\s+(prototype|design)\b/i.test(
+          hay,
+        )
+      ) {
+        continue;
+      }
+      // SP-A-093: capability editorial stories should not die on architecture false hits.
+      if (allowsWithoutBuyPreorder(title, text) && /architecture/i.test(re.source)) {
         continue;
       }
       return {
@@ -582,8 +619,8 @@ export function hardRejectTopic(
   }
   for (const re of NON_BUYABLE_RESEARCH) {
     if (re.test(hay)) {
-      // Allow grounded AI capability / autonomy milestone alerts (owner: invent + AI news).
-      if (isAiOrInventionAlert(title, text)) {
+      // SP-A-093: capability / AI stories may reach Scout without a consumer SKU.
+      if (allowsWithoutBuyPreorder(title, text)) {
         break;
       }
       return {
@@ -658,11 +695,11 @@ export function hardRejectTopic(
       rejectCode: 'NICHE_NO_CONSUMER_ANGLE',
     };
   }
-  // SP-A-054 alert mode: AI capability / invention / useful software news may pass
-  // without buy/preorder signal (no prices/links in public copy anyway).
+  // SP-A-054 / SP-A-093: AI / capability / invention stories may pass without BUY/PREORDER.
+  // Ordinary commodity SKUs still die later at Scout/commodity final gate.
   if (!BUYABLE_PRODUCT_PATTERNS.some((re) => re.test(hay))) {
-    if (isAiOrInventionAlert(title, text)) {
-      // allow through — novelty check still applies below with softer AI path
+    if (allowsWithoutBuyPreorder(title, text)) {
+      // allow through — novelty check still applies below with softer capability path
     } else {
       return {
         reject: true,
@@ -672,7 +709,7 @@ export function hardRejectTopic(
     }
   }
   const novelty = assessNovelty(title, text, { sourceName, mode: 'gadget' });
-  if (!novelty.isActuallyNew && !isAiOrInventionAlert(title, text)) {
+  if (!novelty.isActuallyNew && !allowsWithoutBuyPreorder(title, text)) {
     return {
       reject: true,
       reason: 'Жёсткий reject: NOT_ACTUALLY_NEW — нет новизны / массовый старый товар / только косметика.',
