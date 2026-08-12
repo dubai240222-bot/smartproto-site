@@ -18,13 +18,17 @@ async function main() {
 
   for (const row of rows) {
     let articleId = row.articleId;
-    let canon = articles.find((a) => a.id === articleId);
+    let canon = articles.find((a) => a.id === articleId || a.slug === articleId);
     if (!canon) {
-      // Resolve by well-known slug if id drifted.
-      canon = articles.find((a) => a.slug === 'china-iqoo-t') || articles[0];
+      canon =
+        articles.find(
+          (a) => a.slug === 'these-3d-printed-objects-can-tell-you-if-they-re-being-used-properly',
+        ) || articles[0];
       if (!canon) throw new Error('No canonical article available for fixture');
       articleId = canon.id;
       console.log(`remapped fixture articleId ${row.articleId} → ${articleId} (${canon.slug})`);
+    } else if (canon.id !== articleId) {
+      articleId = canon.id;
     }
 
     const loc: ArticleLocalization = {
