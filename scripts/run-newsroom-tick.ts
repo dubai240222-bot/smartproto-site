@@ -62,6 +62,11 @@ import {
   getNewsWarmupUntilIso,
   isNewsWarmupActive,
 } from '../src/lib/newsroom/cadence';
+import {
+  buildFreshnessReport,
+  formatFreshnessReport,
+  type FreshnessReport,
+} from '../src/lib/newsroom/freshness';
 
 /**
  * SP-A-056 — on the Hetzner worker (ARTICLES_STORE=sqlite) also persist the
@@ -948,7 +953,27 @@ async function publishRssOnce(opts: {
 
   // SP-A-065B: cheap pre-rank + topic dedupe → Scout TOP 12–16 (not only first 4).
   // Probe/forced already digs deep; production now uses the same wider Scout window.
-  const scoutLimit = probeMode ? 16 : 14;
+  // SP-A-091 — freshness CRITICAL slightly widens Scout window (still bounded; no gate weaken).
+  const freshness: FreshnessReport = buildFreshnessReport({
+    articles: opts.articles.map((a) => ({ publishedAt: a.publishedAt, agentId: a.agentId })),
+    journalEntries: opts.journal.entries,
+  });
+  console.log(chalk.bold(formatFreshnessReport(freshness)));
+  if (freshness.freshnessStatus === 'WARNING') {
+    console.log(
+      chalk.yellow(
+        'FRESHNESS WARNING — expanding bounded candidate pipeline (quality floors unchanged).',
+      ),
+    );
+  } else if (freshness.freshnessStatus === 'CRITICAL') {
+    console.log(
+      chalk.red(
+        'FRESHNESS CRITICAL — editorial starvation; trying more Scout-passed candidates (not junk).',
+      ),
+    );
+  }
+  const pipelineBudget = freshness.pipelineCandidateBudget;
+  const scoutLimit = probeMode ? 16 : freshness.freshnessStatus === 'CRITICAL' ? 16 : 14;
   const scoutPool = buildScoutPool(candidates, { limit: scoutLimit, maxPerSource: 3 });
   console.log(
     chalk.gray(
@@ -1113,6 +1138,12 @@ async function publishRssOnce(opts: {
         diversityNote?: string;
       }
     | null = null;
+  /** SP-A-091 — Scout-passed queue for bounded Reviewer→Editor attempts (not first-fail stop). */
+  const pipelinePassers: {
+    item: PoolItem;
+    scout: Awaited<ReturnType<typeof scoutArticle>>;
+    diversityNote?: string;
+  }[] = [];
 
   const maxAttempts = mergedPool.length;
   let lastSkip = 'no rss candidate';
@@ -1164,10 +1195,15 @@ async function publishRssOnce(opts: {
         continue;
       }
 
-      // Non-streak: hand off to unified publish path below.
-      selectedScouted = { item, scout };
-      break;
-
+      // SP-A-091 — keep collecting Scout PASS until pipeline budget (3–5), then Editor path.
+      pipelinePassers.push({ item, scout });
+      console.log(
+        chalk.gray(
+          `Scout PASS → pipeline queue ${pipelinePassers.length}/${pipelineBudget} (freshness=${freshness.freshnessStatus})`,
+        ),
+      );
+      if (pipelinePassers.length >= pipelineBudget) break;
+      continue;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error(chalk.red(`RSS candidate error: ${msg}`));
@@ -1195,7 +1231,7 @@ async function publishRssOnce(opts: {
   }
 
   // SP-A-065F: diversity only selects the winner; publish uses one shared path.
-  if (!selectedScouted && roboticsStreak && diversityPassers.length) {
+  if (!pipelinePassers.length && roboticsStreak && diversityPassers.length) {
     const decision = pickDiversityWinner({
       passers: diversityPassers.map((p) => ({ item: p.item, score: p.score, focus: p.focus })),
       recent: recentArts,
@@ -1206,11 +1242,11 @@ async function publishRssOnce(opts: {
       ? diversityPassers.find((p) => p.item.url === decision.winner!.item.url)
       : undefined;
     if (full) {
-      selectedScouted = {
+      pipelinePassers.push({
         item: full.item,
         scout: full.scout,
         diversityNote: decision.reason,
-      };
+      });
     }
   } else if (!roboticsStreak) {
     diversityDecisionLog = 'n/a (no robotics streak)';
@@ -1218,7 +1254,14 @@ async function publishRssOnce(opts: {
     diversityDecisionLog = 'robotics streak but no Scout passers';
   }
 
-  if (selectedScouted) {
+  console.log(
+    chalk.gray(
+      `SP-A-091 pipeline attempts queued: ${pipelinePassers.length} (budget=${pipelineBudget})`,
+    ),
+  );
+
+  for (let pIdx = 0; pIdx < pipelinePassers.length; pIdx++) {
+    selectedScouted = pipelinePassers[pIdx];
     const item = selectedScouted.item;
     const scout = selectedScouted.scout;
     const itemMode: EditorialMode = item.scoutMode === 'ai_radar' ? 'ai_radar' : 'gadget';
@@ -1236,7 +1279,7 @@ async function publishRssOnce(opts: {
     });
     console.log(
       chalk.cyan(
-        `CHOSEN: focus=${chosenFocus} channel=${itemChannel} mode=${itemMode} score=${scout.score}`,
+        `CHOSEN (${pIdx + 1}/${pipelinePassers.length}): focus=${chosenFocus} channel=${itemChannel} mode=${itemMode} score=${scout.score}`,
       ),
     );
     try {
@@ -1244,7 +1287,7 @@ async function publishRssOnce(opts: {
       if (opts.cycle === 'article' && scout.score < 75) {
         console.log(chalk.yellow(`Article cycle: not worthy enough (wow ${scout.score} < 75)`));
         lastSkip = 'not worthy for article cycle';
-        return false;
+        continue;
       }
 
       const sourcePayload = {
@@ -1298,7 +1341,7 @@ async function publishRssOnce(opts: {
           );
           opts.urls.add(item.url);
           lastSkip = 'reviewer reject';
-          return false;
+          continue;
         }
       }
 
@@ -1315,7 +1358,7 @@ async function publishRssOnce(opts: {
         await markRejected(opts.journal, opts.journalPath, item, 'editor hard-reject', scout.score);
         opts.urls.add(item.url);
         lastSkip = 'editor hard-reject';
-        return false;
+        continue;
       }
 
       const wc = wordCount(draft.text);
@@ -1324,7 +1367,7 @@ async function publishRssOnce(opts: {
       if (wc < minWords) {
         console.log(chalk.yellow(`Draft too short (${wc} < ${minWords})`));
         lastSkip = 'draft too short';
-        return false;
+        continue;
       }
 
       let imageUrl = item.imageUrl;
@@ -1345,7 +1388,7 @@ async function publishRssOnce(opts: {
         await markRejected(opts.journal, opts.journalPath, item, `slug blocked: ${slug}`, scout.score);
         opts.urls.add(item.url);
         lastSkip = `slug blocked: ${slug}`;
-        return false;
+        continue;
       }
       const draftProductKey = normalizeProductIdentity(draft.title);
       const sourceProductKey = normalizeProductIdentity(item.title);
@@ -1367,7 +1410,7 @@ async function publishRssOnce(opts: {
         );
         opts.urls.add(item.url);
         lastSkip = 'product-identity duplicate';
-        return false;
+        continue;
       }
 
       if (!acquirePublishLock()) {
@@ -1394,7 +1437,7 @@ async function publishRssOnce(opts: {
           );
           opts.urls.add(item.url);
           lastSkip = 'cross-cycle product-identity';
-          return false;
+          continue;
         }
 
         const publishedAt = new Date().toISOString();
@@ -1484,7 +1527,7 @@ async function publishRssOnce(opts: {
             await markRejected(fresh.journal, opts.journalPath, item, err.message, scout.score);
             opts.urls.add(item.url);
             lastSkip = err.message;
-            return false;
+            continue;
           }
           throw err;
         }

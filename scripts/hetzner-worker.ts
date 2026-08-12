@@ -89,6 +89,10 @@ interface WorkerState {
   /** SP-A-074 — last successful retention cleanup (ISO). */
   lastRetentionAt?: string;
   lastRetentionStatus?: string;
+  /** SP-A-091 — last AUTO (non-Chief/Author) publication time */
+  lastAutoPublicationAt?: string;
+  freshnessStatus?: 'OK' | 'WARNING' | 'CRITICAL';
+  publicationsLast24h?: number;
 }
 
 function readState(): WorkerState {
@@ -206,6 +210,47 @@ async function maybeRetentionCleanup(): Promise<void> {
   log(`SP-A-074 retention cleanup finished: ${ok ? 'ok' : 'error'}`);
 }
 
+async function logFreshnessHealth(publishedThisTick: boolean): Promise<void> {
+  try {
+    const journalPath = path.join(DATA_DIR, 'factory-journal.json');
+    let journalEntries: Array<{ processedAt?: string; status?: string; reason?: string }> = [];
+    if (existsSync(journalPath)) {
+      const raw = JSON.parse(readFileSync(journalPath, 'utf8'));
+      journalEntries = Array.isArray(raw.entries) ? raw.entries : [];
+    }
+    let articles: Array<{ publishedAt?: string; agentId?: string | null }> = [];
+    if (process.env.ARTICLES_STORE === 'sqlite') {
+      const { getAllArticlesFromDb } = await import('../src/lib/data-store/articles-repo');
+      articles = getAllArticlesFromDb().map((a: { publishedAt?: string; agentId?: string }) => ({
+        publishedAt: a.publishedAt,
+        agentId: a.agentId,
+      }));
+    }
+    const { buildFreshnessReport, formatFreshnessReport } = await import(
+      '../src/lib/newsroom/freshness'
+    );
+    const report = buildFreshnessReport({ articles, journalEntries });
+    for (const line of formatFreshnessReport(report).split('\n')) {
+      log(line);
+    }
+    writeState({
+      lastAutoPublicationAt: report.lastAutoPublicationAt || undefined,
+      freshnessStatus: report.freshnessStatus,
+      publicationsLast24h: report.publicationsLast24h,
+      ...(publishedThisTick && report.lastAutoPublicationAt
+        ? { lastAutoPublicationAt: report.lastAutoPublicationAt }
+        : {}),
+    });
+    if (report.freshnessStatus === 'CRITICAL') {
+      log(
+        'FRESHNESS CRITICAL — next ticks will try more Scout-passed candidates (gates unchanged).',
+      );
+    }
+  } catch (err) {
+    log(`Freshness health skipped: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
 async function loopOnce(): Promise<void> {
   // Retention runs even when editorial mode is OFF so disk stays bounded
   // without requiring AUTO ticks — still only once per night.
@@ -315,21 +360,23 @@ async function loopOnce(): Promise<void> {
   // AUTO
   const state = readState();
   if (isDue(state.lastNewsAt, NEWS_INTERVAL_MS)) {
-    const { ok } = await runTick('news');
+    const { ok, published } = await runTick('news');
     writeState({
       lastRunAt: new Date().toISOString(),
       lastRunStatus: ok ? 'ok' : 'error',
       ...(ok ? { lastNewsAt: new Date().toISOString() } : {}),
     });
+    await logFreshnessHealth(published);
     return; // one cycle per poll tick keeps this simple and observable
   }
   if (isDue(state.lastArticleAt, ARTICLE_INTERVAL_MS)) {
-    const { ok } = await runTick('article');
+    const { ok, published } = await runTick('article');
     writeState({
       lastRunAt: new Date().toISOString(),
       lastRunStatus: ok ? 'ok' : 'error',
       ...(ok ? { lastArticleAt: new Date().toISOString() } : {}),
     });
+    await logFreshnessHealth(published);
   }
 }
 
