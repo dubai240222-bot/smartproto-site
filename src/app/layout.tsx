@@ -73,6 +73,11 @@ export default function RootLayout({
           <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
             <p className="font-serif text-sm font-bold text-[var(--text)]">SMARTPROTO</p>
             <p className="mt-1">Технологии раньше, чем они станут мейнстримом</p>
+            <p className="mt-3">
+              <a href="/scout" className="text-[var(--text)] transition hover:text-[var(--accent)]">
+                Прислать находку
+              </a>
+            </p>
             <p className="mt-4 text-[11px]">© {new Date().getFullYear()} SmartProto. Все права защищены.</p>
           </div>
         </footer>

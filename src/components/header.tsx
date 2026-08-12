@@ -222,6 +222,12 @@ export function Header({ articles }: { articles: Article[] }) {
           <Link href="/all" className="text-[var(--muted)] transition hover:text-[var(--accent)]">
             Архив
           </Link>
+          <Link
+            href="/scout"
+            className="text-[var(--muted)] transition hover:text-[var(--accent)]"
+          >
+            Прислать находку
+          </Link>
         </nav>
       </div>
     </header>

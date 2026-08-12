@@ -51,6 +51,12 @@ import {
   assertFinalAutoPublishAllowed,
 } from '../src/lib/ai/final-auto-commodity-gate';
 import {
+  loadQueuedReaderScoutForTick,
+  patchReaderScoutSubmission,
+  READER_SCOUT_AGENT_ID,
+  READER_SCOUT_SOURCE_NAME,
+} from '../src/lib/editorial/reader-scout';
+import {
   checkCycleCadence,
   getNewsIntervalMs,
   getNewsWarmupUntilIso,
@@ -107,7 +113,7 @@ interface JournalEntry {
   scoutScore?: number;
   reason?: string;
   slug?: string;
-  channel?: 'china-qwen' | 'rss' | 'ai-radar';
+  channel?: 'china-qwen' | 'rss' | 'ai-radar' | 'reader-scout';
   /** SP-A-050 — which independent cycle published this */
   cycle?: CycleType;
 }
@@ -367,7 +373,7 @@ async function loadState(journalPath: string, articlesPath: string) {
 async function markRejected(
   journal: JournalData,
   journalPath: string,
-  item: RssItem,
+  item: RssItem & { submissionId?: string; channelHint?: string },
   reason: string,
   scoutScore?: number,
   opts?: { permanent?: boolean },
@@ -389,8 +395,18 @@ async function markRejected(
     status: 'rejected',
     scoutScore,
     reason,
-    channel: 'rss',
+    channel: item.channelHint === 'reader-scout' ? 'reader-scout' : 'rss',
   });
+  // SP-A-090 — close Reader Scout queue item (no silent infinite retries).
+  const scoutSubId =
+    item.submissionId ||
+    (item.id.startsWith('reader-scout:') ? item.id.slice('reader-scout:'.length) : '');
+  if (scoutSubId) {
+    void patchReaderScoutSubmission(scoutSubId, {
+      status: permanent ? 'rejected' : 'queued',
+      rejectReason: reason.slice(0, 400),
+    });
+  }
   await writeFile(journalPath, JSON.stringify(journal, null, 2) + '\n', 'utf8');
 }
 
@@ -947,7 +963,8 @@ async function publishRssOnce(opts: {
   type PoolItem = RssItem & {
     scoutMode?: EditorialMode;
     primaryStatus?: string;
-    channelHint?: 'rss' | 'ai-radar';
+    channelHint?: 'rss' | 'ai-radar' | 'reader-scout';
+    submissionId?: string;
   };
   let mergedPool: PoolItem[] = scoutPool.pool.map((p) => ({
     ...p,
@@ -955,6 +972,46 @@ async function publishRssOnce(opts: {
     channelHint: 'rss' as const,
   }));
   let aiRadarBest: string = '(none)';
+
+  // SP-A-090 — Reader Scout finds seated ahead of AUTO parser / AI radar intake.
+  let readerItems: PoolItem[] = [];
+  try {
+    const queued = await loadQueuedReaderScoutForTick(4);
+    readerItems = queued
+      .filter((q) => q.url && !opts.urls.has(q.url))
+      .map((q) => ({
+        id: q.id,
+        title: q.title,
+        url: q.url,
+        text: q.text,
+        publishedAt: q.publishedAt,
+        sourceName: q.sourceName,
+        scoutMode: 'gadget' as EditorialMode,
+        channelHint: 'reader-scout' as const,
+        submissionId: q.submissionId,
+      }));
+    if (readerItems.length) {
+      console.log(
+        chalk.cyan(
+          `— Channel R: Reader Scout queue (${readerItems.length}) — priority > AUTO parsers —`,
+        ),
+      );
+      for (const r of readerItems) {
+        console.log(chalk.gray(`  [Reader Scout] ${r.title.slice(0, 80)}`));
+        void patchReaderScoutSubmission(r.submissionId!, {
+          status: 'processing',
+          attempts: 1,
+        });
+      }
+    }
+  } catch (err) {
+    console.log(
+      chalk.yellow(
+        `Reader Scout queue skipped: ${err instanceof Error ? err.message : String(err)}`,
+      ),
+    );
+  }
+
   const aiRadarEnabled = process.env.SMARTPROTO_AI_RADAR_ENABLED !== 'false';
   if (aiRadarEnabled) {
     try {
@@ -998,12 +1055,15 @@ async function publishRssOnce(opts: {
           primaryStatus: n.primaryStatus,
           channelHint: 'ai-radar' as const,
         }));
-      // Separate channel seats at front of shared Scout queue (not a second publish path).
-      mergedPool = [...aiItems, ...mergedPool].slice(0, scoutLimit + Math.min(aiItems.length, 3));
-      opts.metrics.candidatesCollected += aiCands.length;
+      // Reader Scout > AI radar > RSS parser seats (still max 1 publish; full gates apply).
+      mergedPool = [...readerItems, ...aiItems, ...mergedPool].slice(
+        0,
+        scoutLimit + Math.min(aiItems.length, 3) + readerItems.length,
+      );
+      opts.metrics.candidatesCollected += aiCands.length + readerItems.length;
       console.log(
         chalk.gray(
-          `Shared Scout pool after AI radar merge: ${mergedPool.length} (ai seats=${aiItems.length})`,
+          `Shared Scout pool after AI radar merge: ${mergedPool.length} (reader=${readerItems.length} ai seats=${aiItems.length})`,
         ),
       );
     } catch (err) {
@@ -1012,9 +1072,17 @@ async function publishRssOnce(opts: {
           `AI_RADAR collect skipped: ${err instanceof Error ? err.message : String(err)}`,
         ),
       );
+      if (readerItems.length) {
+        mergedPool = [...readerItems, ...mergedPool];
+        opts.metrics.candidatesCollected += readerItems.length;
+      }
     }
   } else {
     console.log(chalk.gray('AI_RADAR disabled (SMARTPROTO_AI_RADAR_ENABLED=false)'));
+    if (readerItems.length) {
+      mergedPool = [...readerItems, ...mergedPool];
+      opts.metrics.candidatesCollected += readerItems.length;
+    }
   }
 
   console.log(chalk.bold('TICK_TOP5:'));
@@ -1154,7 +1222,12 @@ async function publishRssOnce(opts: {
     const item = selectedScouted.item;
     const scout = selectedScouted.scout;
     const itemMode: EditorialMode = item.scoutMode === 'ai_radar' ? 'ai_radar' : 'gadget';
-    const itemChannel = item.channelHint === 'ai-radar' ? 'ai-radar' : 'rss';
+    const itemChannel =
+      item.channelHint === 'reader-scout'
+        ? 'reader-scout'
+        : item.channelHint === 'ai-radar'
+          ? 'ai-radar'
+          : 'rss';
     const chosenFocus = inferEditorialFocus({
       title: item.title,
       text: item.text || item.title,
@@ -1383,10 +1456,17 @@ async function publishRssOnce(opts: {
                 imageLabel: photoMeta.imageLabel,
               }
             : {}),
-          ...stampAuthorForPipeline('newsroom-scout', { sourceUrl: item.url, slug }),
+          ...stampAuthorForPipeline(
+            item.sourceName === READER_SCOUT_SOURCE_NAME ||
+              item.channelHint === 'reader-scout' ||
+              item.id.startsWith('reader-scout:')
+              ? READER_SCOUT_AGENT_ID
+              : 'newsroom-scout',
+            { sourceUrl: item.url, slug },
+          ),
         } as Article;
 
-        // SP-A-082 — final AUTO gate before articles.json + SQLite (RSS / AI radar).
+        // SP-A-082 — final AUTO gate before articles.json + SQLite (RSS / AI radar / Reader Scout).
         try {
           assertFinalAutoPublishAllowed({
             title: article.title,
@@ -1394,7 +1474,9 @@ async function publishRssOnce(opts: {
             content: article.content,
             tags: article.tags,
             category: article.category,
-            agentId: article.agentId || 'newsroom-scout',
+            agentId:
+              article.agentId ||
+              (item.channelHint === 'reader-scout' ? READER_SCOUT_AGENT_ID : 'newsroom-scout'),
           });
         } catch (err) {
           if (err instanceof FinalAutoGateError) {
@@ -1455,10 +1537,21 @@ async function publishRssOnce(opts: {
             ? `${scout.reason} [diversity: ${selectedScouted.diversityNote}]`
             : scout.reason,
           slug,
-          channel: 'rss',
+          channel: item.channelHint === 'reader-scout' ? 'reader-scout' : 'rss',
           cycle: opts.cycle,
         });
         await writeFile(opts.journalPath, JSON.stringify(fresh.journal, null, 2) + '\n', 'utf8');
+
+        const publishedScoutId =
+          item.submissionId ||
+          (item.id.startsWith('reader-scout:') ? item.id.slice('reader-scout:'.length) : '');
+        if (publishedScoutId) {
+          await patchReaderScoutSubmission(publishedScoutId, {
+            status: 'published',
+            articleSlug: slug,
+            rejectReason: undefined,
+          });
+        }
 
         opts.ids.add(slug);
         opts.urls.add(item.url);
