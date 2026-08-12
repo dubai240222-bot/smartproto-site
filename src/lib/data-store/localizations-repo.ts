@@ -120,3 +120,9 @@ export function listLocalizationsForArticle(articleId: string): ArticleLocalizat
     .all(articleId) as Row[];
   return rows.map(mapRow);
 }
+
+export function deleteLocalization(articleId: string, language: LocalizationLanguage): void {
+  getDb()
+    .prepare(`DELETE FROM article_localizations WHERE article_id = ? AND language = ?`)
+    .run(articleId, language);
+}

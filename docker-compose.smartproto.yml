@@ -71,6 +71,9 @@ services:
       SMARTPROTO_MAX_DELETE_PER_RUN: "${SMARTPROTO_MAX_DELETE_PER_RUN:-25}"
       SMARTPROTO_RETENTION_HOUR: "${SMARTPROTO_RETENTION_HOUR:-1}"
       SMARTPROTO_MEDIA_DIR: /app/public/media
+      # SP-A-098 — post-publish EN/TR localization (isolated; never blocks RU).
+      SMARTPROTO_TRANSLATE_ENABLED: "${SMARTPROTO_TRANSLATE_ENABLED:-true}"
+      OPENROUTER_TRANSLATE_MODEL: "${OPENROUTER_TRANSLATE_MODEL:-}"
     volumes:
       - ../data:/app/data
       - ../images:/app/public/media

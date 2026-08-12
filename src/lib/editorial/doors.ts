@@ -362,6 +362,7 @@ function estimateReadTime(text: string): string {
 async function publishArticle(article: Article): Promise<void> {
   if (process.env.ARTICLES_STORE === 'sqlite') {
     const { upsertArticle } = await import('@/lib/data-store/articles-repo');
+    // SP-A-098 translation is scheduled inside upsertArticle for new rows.
     upsertArticle(article as StoredArticle);
     return;
   }
@@ -376,11 +377,36 @@ async function publishArticle(article: Article): Promise<void> {
   } catch {
     list = [];
   }
+  const existed = list.some(
+    (a) => a.slug === article.slug || a.id === article.id || a.sourceUrl === article.sourceUrl,
+  );
   const next = list.filter(
     (a) => a.slug !== article.slug && a.id !== article.id && a.sourceUrl !== article.sourceUrl,
   );
   next.unshift(article);
   await fs.writeFile(articlesPath, `${JSON.stringify(next, null, 2)}\n`, 'utf8');
+  // SP-A-098 — JSON-mode Chief/Author publish (sqlite path covered by upsertArticle).
+  if (!existed) {
+    try {
+      const { schedulePostPublishTranslation } = await import('@/lib/i18n/post-publish-translate');
+      schedulePostPublishTranslation({
+        id: article.id,
+        slug: article.slug,
+        title: article.title,
+        summary: article.summary,
+        content: article.content,
+        category: article.category,
+        author: article.author,
+        authorDesk: article.authorDesk,
+      });
+    } catch (err) {
+      console.log(
+        `[spa098] doors schedule swallowed: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+    }
+  }
 }
 
 /* ─── Author Door ─── */

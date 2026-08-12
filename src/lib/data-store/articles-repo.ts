@@ -109,6 +109,8 @@ export function getArticleBySlugFromDb(slug: string): StoredArticle | undefined 
 export type UpsertArticleOptions = {
   /** Photo backfill / migration / explicit ops — skip SP-A-082 gate. */
   skipFinalAutoGate?: boolean;
+  /** Skip SP-A-098 post-publish EN/TR translation (backfill/migrate/re-edit). */
+  skipPostPublishTranslation?: boolean;
 };
 
 /**
@@ -117,10 +119,11 @@ export type UpsertArticleOptions = {
  * Re-publishing an existing slug updates it in place (no duplicate).
  *
  * SP-A-082: brand-new AUTO rows are blocked when the final commodity gate rejects.
+ * SP-A-098: brand-new publishes schedule isolated EN/TR translation (never throws).
  */
 export function upsertArticle(article: StoredArticle, opts?: UpsertArticleOptions): void {
+  const existing = getArticleBySlugFromDb(article.slug);
   if (!opts?.skipFinalAutoGate) {
-    const existing = getArticleBySlugFromDb(article.slug);
     if (!existing) {
       assertFinalAutoPublishAllowed({
         title: article.title,
@@ -166,6 +169,33 @@ export function upsertArticle(article: StoredArticle, opts?: UpsertArticleOption
     });
   });
   tx(article);
+
+  // SP-A-098 — only first-time publishes (not photo backfill / migrate / updates).
+  const shouldTranslate =
+    !existing &&
+    !opts?.skipFinalAutoGate &&
+    !opts?.skipPostPublishTranslation;
+  if (shouldTranslate) {
+    try {
+      const { schedulePostPublishTranslation } = require('@/lib/i18n/post-publish-translate');
+      schedulePostPublishTranslation({
+        id: article.id,
+        slug: article.slug,
+        title: article.title,
+        summary: article.summary,
+        content: article.content,
+        category: article.category,
+        author: article.author,
+        authorDesk: article.authorDesk,
+      });
+    } catch (err) {
+      console.log(
+        `[spa098] upsert schedule swallowed: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+    }
+  }
 }
 
 export function deleteArticleBySlug(slug: string): void {
