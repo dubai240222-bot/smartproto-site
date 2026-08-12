@@ -178,8 +178,13 @@ function main() {
         // stored gadget but infer still gadget — ok only if truly gadget
       }
       if (/^гаджеты$/i.test(inferred) && vKey !== 'gadget') wrongGadgetLive++;
-      if (prevAsset && spec.assetId === prevAsset) adjDup++;
-      prevAsset = spec.assetId;
+      // Adjacent duplicate only matters when the card actually renders fallback stock.
+      if (source === 'fallback') {
+        if (prevAsset && spec.assetId === prevAsset) adjDup++;
+        prevAsset = spec.assetId;
+      } else {
+        prevAsset = undefined;
+      }
 
       console.log('---');
       console.log(`ARTICLE: ${row.slug}`);

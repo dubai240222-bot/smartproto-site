@@ -388,7 +388,12 @@ export function resolveVisualCategory(opts: {
   ) {
     return 'ai_future';
   }
-  if (/\b(gadget|гаджет|earbuds|headphones|keyboard|mouse|monitor|смартфон|phone)\b/i.test(hay) || /гаджет/i.test(publicCat)) {
+  if (
+    /\b(gadget|гаджет|earbuds|headphones|keyboard|mouse|monitor|смартфон|smartphone|pixel|iphone|galaxy\s*s\d|phone)\b/i.test(
+      hay,
+    ) ||
+    /гаджет|смартфон/i.test(publicCat)
+  ) {
     return 'gadget';
   }
   // SP-A-084 — unknown → Future Tech / General, NEVER default Gadget.
