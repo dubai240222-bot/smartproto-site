@@ -14,6 +14,7 @@ import {
 } from '@/lib/visual-fallback';
 import { inferPublicCategory } from '@/lib/public-labels';
 import { displayHeroUrl } from '@/lib/homepage-editorial-mix';
+import { disclosureSources } from '@/lib/source-label';
 
 // SP-A-056: render per request (both storage modes) so a newly published
 // article — from SQLite on Hetzner, or freshly rebuilt JSON on Vercel — is
@@ -66,15 +67,6 @@ function formatInlineText(text: string): string {
     )
     .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-[var(--text)]">$1</strong>')
     .replace(/\*(.+?)\*/g, '<strong class="font-semibold text-[var(--text)]">$1</strong>');
-}
-
-function getDomain(url: string): string {
-  try {
-    const parsed = new URL(url);
-    return parsed.hostname.replace(/^www\./, '');
-  } catch {
-    return url;
-  }
 }
 
 interface HeadingItem {
@@ -346,27 +338,42 @@ export default async function ArticlePage({
                 </span>
               </div>
 
-              {/* 9. Source Block */}
-              {article.sourceUrl && (
-                <div className="mt-8 rounded border border-[var(--border)] bg-[var(--surface)] p-5">
-                  <h3 className="font-serif text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-                    Первоисточник
-                  </h3>
-                  <div className="mt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <span className="text-sm font-medium text-[var(--text)]">
-                      {getDomain(article.sourceUrl)}
-                    </span>
-                    <a
-                      href={article.sourceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent)] hover:underline"
-                    >
-                      Открыть оригинал ↗
-                    </a>
-                  </div>
-                </div>
-              )}
+              {/* 9. Sources disclosure (SP-A-095) — compact, closed by default */}
+              {(() => {
+                const sources = disclosureSources({ sourceUrl: article.sourceUrl });
+                if (!sources.length) return null;
+                return (
+                  <details className="source-disclosure mt-8 border-t border-[var(--border)] pt-4 text-sm text-[var(--muted)]">
+                    <summary className="cursor-pointer list-none select-none text-[13px] text-[var(--muted)] hover:text-[var(--text)] [&::-webkit-details-marker]:hidden">
+                      <span className="inline-flex items-center gap-1.5">
+                        Источники и подтверждения
+                        <span
+                          aria-hidden
+                          className="source-disclosure-chevron text-[10px] leading-none opacity-70"
+                        >
+                          ▾
+                        </span>
+                      </span>
+                    </summary>
+                    <ul className="mt-3 space-y-2.5 text-[13px] leading-relaxed">
+                      {sources.map((src) => (
+                        <li key={src.url}>
+                          <span className="text-[var(--text)]">Источник: {src.label}</span>
+                          <br />
+                          <a
+                            href={src.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[var(--muted)] underline-offset-2 hover:text-[var(--text)] hover:underline"
+                          >
+                            Оригинальная публикация ↗
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                );
+              })()}
             </div>
 
             {/* 10. Right rail — secondary/detail on desktop + related. */}

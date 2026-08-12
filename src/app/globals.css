@@ -177,6 +177,20 @@ html[data-theme="dark"] .home-editorial,
   color: var(--accent);
 }
 
+/* SP-A-095 — compact sources disclosure (closed by default) */
+.source-disclosure > summary {
+  outline: none;
+}
+.source-disclosure[open] > summary .source-disclosure-chevron {
+  display: inline-block;
+  transform: rotate(180deg);
+}
+.source-disclosure > summary:focus-visible {
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 /* SP-A-079 — visual fallback tones (kept under SPA-081 homepage CSS) */
 .visual-fallback {
   min-height: 100%;

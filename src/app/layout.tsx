@@ -73,11 +73,17 @@ export default function RootLayout({
           <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
             <p className="font-serif text-sm font-bold text-[var(--text)]">SMARTPROTO</p>
             <p className="mt-1">Технологии раньше, чем они станут мейнстримом</p>
-            <p className="mt-3">
-              <a href="/scout" className="text-[var(--text)] transition hover:text-[var(--accent)]">
-                Прислать находку
-              </a>
-            </p>
+            {/* SP-A-095 — public editorial paths. Email omitted until HQ configures one. */}
+            <div className="mt-4 space-y-1.5">
+              <p className="text-[11px] uppercase tracking-wide text-[var(--muted)]">
+                Редакция и сотрудничество
+              </p>
+              <p>
+                <a href="/scout" className="text-[var(--text)] transition hover:text-[var(--accent)]">
+                  Прислать находку → /scout
+                </a>
+              </p>
+            </div>
             <p className="mt-4 text-[11px]">© {new Date().getFullYear()} SmartProto. Все права защищены.</p>
           </div>
         </footer>
