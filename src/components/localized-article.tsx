@@ -11,14 +11,16 @@ import { LanguageSwitcher } from '@/components/language-switcher';
 import { articleSwitcherLinks, buildArticleLanguageAlternates } from '@/lib/i18n/article-alternates';
 import {
   LOCALE_UI,
+  formatBylineLocale,
+  formatPublishedAtLocale,
   localeHomePath,
   localizeCategoryLabel,
+  localizeReadTime,
   type LocalizationLanguage,
 } from '@/lib/i18n/locales';
 import { inferPublicCategory } from '@/lib/public-labels';
-import { formatPublishedAt } from '@/lib/article-utils';
 import { disclosureSources } from '@/lib/source-label';
-import { formatAuthorCredit, resolveAuthorForArticle } from '@/lib/authors';
+import { resolveAuthorForArticle } from '@/lib/authors';
 
 export const dynamic = 'force-dynamic';
 
@@ -76,6 +78,12 @@ export async function localizedArticleMetadata(
     title: `${loc.localizedTitle} | SmartProto`,
     description: loc.localizedExcerpt,
     alternates,
+    openGraph: {
+      title: loc.localizedTitle,
+      description: loc.localizedExcerpt,
+      locale: LOCALE_UI[language].ogLocale,
+      type: 'article',
+    },
   };
 }
 
@@ -103,6 +111,8 @@ export function LocalizedArticlePage({
     .filter((l) => l.localizedSlug !== loc.localizedSlug)
     .slice(0, 3);
 
+  const readTime = localizeReadTime(canon.readTime, language);
+
   return (
     <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -126,15 +136,16 @@ export function LocalizedArticlePage({
 
       <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-[var(--muted)]">
         <span>
-          {formatAuthorCredit(
+          {formatBylineLocale(
             resolveAuthorForArticle(canon).name,
-            formatPublishedAt(canon.publishedAt),
+            formatPublishedAtLocale(canon.publishedAt, language),
+            language,
           )}
         </span>
-        {canon.readTime ? (
+        {readTime ? (
           <span className="inline-flex items-center gap-1">
             <Clock className="h-3.5 w-3.5" />
-            {canon.readTime}
+            {readTime}
           </span>
         ) : null}
       </div>

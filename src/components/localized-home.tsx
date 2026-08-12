@@ -3,11 +3,12 @@ import { getAllArticles } from '@/data/articles';
 import { listPublishedLocalizations } from '@/data/localizations';
 import {
   LOCALE_UI,
+  formatPublishedAtLocale,
   localizeCategoryLabel,
+  localizeReadTime,
   type LocalizationLanguage,
 } from '@/lib/i18n/locales';
 import { inferPublicCategory } from '@/lib/public-labels';
-import { formatPublishedAt } from '@/lib/article-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,7 +35,7 @@ export function LocalizedHome({ language }: { language: LocalizationLanguage }) 
         SmartProto · {language.toUpperCase()}
       </p>
       <h1 className="mt-2 font-serif text-3xl font-bold tracking-tight text-[var(--text)]">
-        {ui.navNews}
+        {ui.homeFeed}
       </h1>
       <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">{ui.tagline}</p>
 
@@ -44,6 +45,7 @@ export function LocalizedHome({ language }: { language: LocalizationLanguage }) 
         <ul className="mt-8 divide-y divide-[var(--border)] border-t border-[var(--border)]">
           {rows.map(({ loc, canon }) => {
             const category = localizeCategoryLabel(inferPublicCategory(canon), language);
+            const readTime = localizeReadTime(canon.readTime, language);
             return (
               <li key={`${language}:${loc.localizedSlug}`} className="py-5">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--accent)]">
@@ -59,8 +61,8 @@ export function LocalizedHome({ language }: { language: LocalizationLanguage }) 
                   {loc.localizedExcerpt}
                 </p>
                 <p className="mt-2 text-[11px] text-[var(--muted)]">
-                  {formatPublishedAt(canon.publishedAt)}
-                  {canon.readTime ? ` · ${canon.readTime}` : ''}
+                  {formatPublishedAtLocale(canon.publishedAt, language)}
+                  {readTime ? ` · ${readTime}` : ''}
                 </p>
               </li>
             );

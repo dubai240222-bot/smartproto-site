@@ -4,9 +4,11 @@ import { LOCALE_UI } from '@/lib/i18n/locales';
 
 export const dynamic = 'force-dynamic';
 
+const ui = LOCALE_UI.tr;
+
 export const metadata: Metadata = {
-  title: 'SmartProto — Türkçe',
-  description: LOCALE_UI.tr.siteDescription,
+  title: ui.siteTitle,
+  description: ui.siteDescription,
   alternates: {
     canonical: '/tr',
     languages: {
@@ -15,6 +17,14 @@ export const metadata: Metadata = {
       en: '/en',
       tr: '/tr',
     },
+  },
+  openGraph: {
+    title: ui.siteTitle,
+    description: ui.siteDescription,
+    url: '/tr',
+    siteName: 'SmartProto',
+    locale: ui.ogLocale,
+    type: 'website',
   },
 };
 

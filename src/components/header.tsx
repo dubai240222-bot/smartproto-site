@@ -9,9 +9,9 @@ import type { Article } from '@/data/articles';
 import type { LocaleSearchItem } from '@/data/localizations';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { LanguageSwitcher, detectLocaleFromPath } from '@/components/language-switcher';
-import { formatPublishedAt } from '@/lib/article-utils';
 import {
   LOCALE_UI,
+  formatPublishedAtLocale,
   localeHomePath,
   localizeCategoryLabel,
   type AppLocale,
@@ -157,7 +157,7 @@ export function Header({
                 <div className="absolute right-0 top-full z-50 mt-2 max-h-[70vh] w-80 overflow-y-auto rounded-md border border-[var(--border)] bg-[var(--surface)] p-3 shadow-lg sm:w-96">
                   <div className="mb-2 flex items-center justify-between border-b border-[var(--border)] pb-2 text-xs text-[var(--muted)]">
                     <span>
-                      {searchResults.length}
+                      {ui.searchResults} ({searchResults.length})
                     </span>
                     <button
                       type="button"
@@ -192,7 +192,7 @@ export function Header({
                           {item.publishedAt ? (
                             <div className="mt-1.5 flex items-center gap-1 text-[10px] text-[var(--muted)]">
                               <Calendar className="h-3 w-3" />
-                              {formatPublishedAt(item.publishedAt)}
+                              {formatPublishedAtLocale(item.publishedAt, locale)}
                             </div>
                           ) : null}
                         </Link>

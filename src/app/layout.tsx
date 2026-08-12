@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { Header } from '@/components/header';
+import { HtmlLang } from '@/components/html-lang';
 import { LocaleSwitcherProvider } from '@/components/locale-switcher-context';
+import { SiteFooter } from '@/components/site-footer';
 import { getAllArticles } from '@/data/articles';
 import { toLocaleSearchItems } from '@/data/localizations';
 import { getPublicSiteUrl } from '@/lib/site-url';
@@ -13,7 +15,7 @@ const ruUi = LOCALE_UI.ru;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: 'SmartProto — Цифровая газета о технологиях',
+  title: ruUi.siteTitle,
   description: ruUi.siteDescription,
   icons: {
     icon: [
@@ -24,7 +26,7 @@ export const metadata: Metadata = {
     shortcut: '/favicon.ico',
   },
   openGraph: {
-    title: 'SmartProto — Цифровая газета о технологиях',
+    title: ruUi.siteTitle,
     description: ruUi.siteDescription,
     url: '/',
     siteName: 'SmartProto',
@@ -34,7 +36,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'SmartProto — Цифровая газета о технологиях',
+    title: ruUi.siteTitle,
     description: ruUi.siteDescription,
     images: ['/brand/smartproto-logo.png'],
   },
@@ -46,7 +48,9 @@ export default function RootLayout({
   children: ReactNode;
 }>) {
   const articles = getAllArticles();
-  const byId = new Map(articles.map((a) => [a.id, { category: a.category, publishedAt: a.publishedAt }]));
+  const byId = new Map(
+    articles.map((a) => [a.id, { category: a.category, publishedAt: a.publishedAt }]),
+  );
   const enItems = toLocaleSearchItems('en', byId);
   const trItems = toLocaleSearchItems('tr', byId);
 
@@ -68,6 +72,10 @@ export default function RootLayout({
                     document.documentElement.classList.remove('dark');
                     document.documentElement.setAttribute('data-theme', 'light');
                   }
+                  var p = location.pathname || '/';
+                  var lang = (p === '/en' || p.indexOf('/en/') === 0) ? 'en' : (p === '/tr' || p.indexOf('/tr/') === 0) ? 'tr' : 'ru';
+                  document.documentElement.lang = lang;
+                  document.documentElement.setAttribute('data-locale', lang);
                 } catch (e) {}
               })();
             `,
@@ -76,27 +84,10 @@ export default function RootLayout({
       </head>
       <body className="flex min-h-screen flex-col bg-[var(--bg)] text-[var(--text)] transition-colors duration-150">
         <LocaleSwitcherProvider>
+          <HtmlLang />
           <Header ruArticles={articles} enItems={enItems} trItems={trItems} />
           <div className="flex-1">{children}</div>
-          <footer className="mt-16 border-t border-[var(--border)] bg-[var(--surface)] py-8 text-xs text-[var(--muted)]">
-            <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
-              <p className="font-serif text-sm font-bold text-[var(--text)]">SMARTPROTO</p>
-              <p className="mt-1">{ruUi.tagline}</p>
-              <div className="mt-4 space-y-1.5">
-                <p className="text-[11px] uppercase tracking-wide text-[var(--muted)]">
-                  {ruUi.footerEditorial}
-                </p>
-                <p>
-                  <a href="/scout" className="text-[var(--text)] transition hover:text-[var(--accent)]">
-                    {ruUi.footerScout}
-                  </a>
-                </p>
-              </div>
-              <p className="mt-4 text-[11px]">
-                © {new Date().getFullYear()} SmartProto. {ruUi.footerRights}
-              </p>
-            </div>
-          </footer>
+          <SiteFooter />
         </LocaleSwitcherProvider>
       </body>
     </html>

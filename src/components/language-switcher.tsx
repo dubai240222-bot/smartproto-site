@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { AppLocale } from '@/lib/i18n/locales';
-import { isAppLocale, localeHomePath } from '@/lib/i18n/locales';
+import { isAppLocale, localeHomePath, LOCALE_UI } from '@/lib/i18n/locales';
 import { useLocaleSwitcher, type LocaleLinkMap } from '@/components/locale-switcher-context';
 
 function detectLocale(pathname: string): AppLocale {
@@ -43,6 +43,7 @@ export function LanguageSwitcher({
     : links;
 
   const items: AppLocale[] = ['ru', 'en', 'tr'];
+  const unavailable = LOCALE_UI[locale].localizationUnavailable;
 
   return (
     <nav
@@ -56,7 +57,7 @@ export function LanguageSwitcher({
           return (
             <span
               key={code}
-              title="Translation unavailable"
+              title={unavailable}
               className="cursor-not-allowed select-none px-1.5 py-0.5 uppercase text-[var(--muted)] opacity-40"
             >
               {code}
