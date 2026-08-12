@@ -291,7 +291,7 @@ async function ensureChiefArticlePhoto(opts: {
   }
 
   // 3) Honest thematic illustration by topic (never leave empty for Chief).
-  const thematic = getThematicFallback(opts.title, 'Технологии');
+  const thematic = getThematicFallback(opts.title, 'Технологии', opts.title);
   if (thematic) {
     const downloaded = await downloadImagesLocally(opts.slug, [{ url: thematic, role: 'hero' }]);
     if (downloaded.length) {
@@ -668,50 +668,38 @@ async function writeChiefDraft(opts: {
   reviewVerdict?: string;
   keyAspects?: string[];
 }): Promise<{ title: string; text: string; tags: string[] }> {
-  const client = getOpenRouterClient();
-  const completion = await client.chat.completions.create({
-    model: MODEL,
-    temperature: 0.4,
-    max_tokens: 1400,
-    messages: [
-      {
-        role: 'system',
-        content: [
-          'Ты технически подкованный живой журналист SmartProto (Chief Fast Lane).',
-          'Тон: умный, понятный, немного живой; лёгкая ирония OK. Без канцелярита, рекламы, clickbait, WOW.',
-          'Главное: почему это интересно человеку. Начинай с человеческого смысла, не с пресс-релиза.',
-          'НЕ: «Компания X представила…». ЛУЧШЕ: человеческий смысл → что произошло → кому доступно → польза → статус.',
-          '100–300 русских слов (простая история 100–180). Без цен и URL. Без выдуманных фактов.',
-          'Верни СТРОГО JSON: {"title":string,"text":string,"tags":string[]}',
-        ].join('\n'),
-      },
-      {
-        role: 'user',
-        content: [
-          'Chief Fast Lane — публикуй сразу (Scout threshold НЕ применяется).',
-          opts.note ? `NOTE главного редактора: ${opts.note}` : '',
-          `URL: ${opts.sourceUrl}`,
-          opts.reviewVerdict ? `Fact/sanity: ${opts.reviewVerdict}` : '',
-          opts.keyAspects?.length ? `Аспекты: ${opts.keyAspects.join(' · ')}` : '',
-          `Источник:\n${clampText(opts.sourceText, 10000)}`,
-        ]
-          .filter(Boolean)
-          .join('\n'),
-      },
-    ],
-  });
-  const raw = String(completion.choices[0]?.message?.content || '').trim();
-  const json = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
-  const parsed = JSON.parse(json) as Record<string, unknown>;
-  if (typeof parsed.title !== 'string' || !parsed.title.trim()) throw new Error('Chief draft missing title');
-  if (typeof parsed.text !== 'string' || !parsed.text.trim()) throw new Error('Chief draft missing text');
-  const tags = Array.isArray(parsed.tags)
-    ? parsed.tags.filter((t): t is string => typeof t === 'string' && Boolean(t.trim()))
-    : ['новости'];
+  // SP-A-088 — ONE Editor layer: Chief uses the same writeDraft / Editorial DNA as AUTO.
+  // No second prompt stack. Chief access preserved via chiefFastLane (skips hardReject).
+  const { writeDraft } = await import('@/lib/ai/editor');
+  const draft = await writeDraft(
+    {
+      format: 'article' as const,
+      mode: 'ai_radar' as const,
+      chiefFastLane: true,
+      title: opts.note?.trim() || 'Chief Fast Lane source',
+      sourceName: opts.sourceUrl,
+      sourceUrl: opts.sourceUrl,
+      text: [
+        opts.note ? `NOTE главного редактора: ${opts.note}` : '',
+        opts.keyAspects?.length ? `Аспекты: ${opts.keyAspects.join(' · ')}` : '',
+        opts.sourceText,
+      ]
+        .filter(Boolean)
+        .join('\n\n'),
+    },
+    {
+      technicalVerdict:
+        opts.reviewVerdict ||
+        'PASS: Chief Fast Lane — Scout bypass; human editorial override; write full SmartProto voice.',
+    },
+  );
+  if (draft.title.trim().toUpperCase() === 'REJECT') {
+    throw new Error('Chief Editor returned REJECT — source unusable for SmartProto voice.');
+  }
   return {
-    title: parsed.title.trim().replace(/!+/g, '').slice(0, 120),
-    text: parsed.text.trim(),
-    tags: tags.map((t) => t.trim()).slice(0, 8),
+    title: draft.title.trim().replace(/!+/g, '').slice(0, 120),
+    text: draft.text.trim(),
+    tags: draft.tags.map((t) => t.trim()).slice(0, 8),
   };
 }
 

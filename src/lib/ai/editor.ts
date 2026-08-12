@@ -78,9 +78,9 @@ const EDITORIAL_DEPTH = [
   'если он реально есть (70% меньше токенов → дешевле AI-агенты; one-shot demo → новый способ учить роботов;',
   'батарея работает там, где обычные замерзают). Сильный факт — ЦЕНТР статьи, не второй/третий абзац.',
   'Не выдумывай факты. Не раздувай пустую новость. Но не прячь сильный факт и не режь цифры/сравнение/смысл ради краткости.',
-  'ОБЪЁМ: норма 200–350 слов. Материалы короче ~200 слов на SmartProto не воспринимаются всерьёз — не сжимай обзор искусственно.',
-  '160–200 допустимо ТОЛЬКО если история совсем простая и полностью раскрыта без потери цифр/сравнения/смысла.',
-  'Запрещено искусственно сжимать до 100–180, если из-за этого теряются цифры, сравнение, human meaning, возможность, контекст или вывод.',
+  'ОБЪЁМ: нормальный материал ~180–300 слов, если тема заслуживает раскрытия (100–150 не целевой объём).',
+  'Коротко — только если сырья реально мало и история всё равно закрыта без потери цифр/сравнения/смысла.',
+  'Запрещено искусственно сжимать до 100–150, если из-за этого теряются цифры, сравнение, human meaning, возможность, контекст или вывод.',
   'Логика: hook с сильным фактом → что изменилось → цифры/сравнение → что даёт человеку → ближайшее будущее → лёгкий финал.',
 ].join(' ');
 
@@ -179,6 +179,9 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
     typeof (articleData as { sourceName?: unknown }).sourceName === 'string'
       ? (articleData as { sourceName: string }).sourceName
       : '';
+  const chiefLane =
+    (articleData as { chiefFastLane?: unknown }).chiefFastLane === true ||
+    (articleData as { chiefLane?: unknown }).chiefLane === true;
   const mode: EditorialMode =
     (articleData as { mode?: unknown }).mode === 'app'
       ? 'app'
@@ -192,23 +195,24 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
     typeof (reviewData as { technicalVerdict?: unknown }).technicalVerdict === 'string'
       ? (reviewData as { technicalVerdict: string }).technicalVerdict
       : '';
-  if (gate.reject || /^REJECT\b/i.test(reviewVerdict)) {
+  // SP-A-088 — Chief Fast Lane keeps human override access; AUTO still gated.
+  if (!chiefLane && (gate.reject || /^REJECT\b/i.test(reviewVerdict))) {
     return REJECT_DRAFT;
   }
 
   const formatInstructions =
     format === 'news'
       ? [
-          'ФОРМАТ: новость-обзор (SHORT REVIEW). Норма 200–300 слов; ниже 200 — только если история совсем простая и всё равно закрыта.',
+          'ФОРМАТ: новость-обзор (SHORT REVIEW). Норма ~180–300 слов; короче — только если история совсем простая и всё равно закрыта.',
           'Не пересказ источника: центр = самый яркий факт + почему это важно человеку.',
           'Структура: сильный факт сразу → что изменилось → цифра/сравнение → смысл для человека → короткий финал.',
           'FINISH THE THOUGHT: не оставляй «тяжёлый/компактный/долго» без цифры, если она есть во входных данных.',
           'БЕЗ цен, БЕЗ ссылок, БЕЗ «где купить». Без внутренних меток (Qwen/Gemini/Китай-отдел).',
         ]
       : [
-          'ФОРМАТ: полный редакционный обзор (FULL REVIEW). Норма 200–350 слов.',
-          'Цель: читатель за ~200–350 слов понимает, что произошло, почему это важно и что изменилось.',
-          'Ниже 200 слов — только если история совсем простая; иначе обязательно 200–350.',
+          'ФОРМАТ: полный редакционный обзор (FULL REVIEW). Норма ~180–300 слов.',
+          'Цель: читатель за ~180–300 слов понимает, что произошло, почему это важно и что изменилось.',
+          'Ниже ~180 слов — только если история совсем простая; иначе ориентир ~180–300.',
           'Не перевод и не сжатый пресс-релиз. Small story → big angle, если угол честно следует из фактов.',
           'Структура:',
           '1) hook = самый сильный факт (не прятать во 2–3 абзаце);',
@@ -235,14 +239,19 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
             ? 'Подготовь самостоятельный обзор о конкретном полезном мобильном приложении или notable-игре (App Store / Google Play OK).'
             : mode === 'ai_radar'
               ? 'Подготовь самостоятельный обзор о grounded AI / robotics / research capability (EVENT) — не перевод пресс-релиза и не витрину SKU.'
-              : 'Подготовь самостоятельный обзор о гаджете/товаре для быта или работы — не перевод анонса.',
+              : chiefLane
+                ? 'Chief Fast Lane: самостоятельный редакционный обзор по источнику — живой SmartProto-голос, не перевод и не пресс-релиз.'
+                : 'Подготовь самостоятельный редакционный обзор о технологии / устройстве / событии — не перевод анонса и не карточка товара.',
           mode === 'app'
             ? 'Если SEO-roundup / gambling / crypto / нет конкретного app — верни REJECT-черновик. Добавь тег «приложения».'
             : mode === 'ai_radar'
               ? 'Если нет явного capability/event — верни REJECT. Не раздувай commodity без новой способности.'
-              : 'Если тема off-topic / нет покупаемого продукта — верни REJECT-черновик.',
+              : chiefLane
+                ? 'Chief override: Scout не применяется. Пиши по фактам источника; REJECT только при полной невозможности понять тему.'
+                : 'Если тема off-topic / пустой commodity без новой способности — верни REJECT-черновик.',
           ...formatInstructions,
-          'SP-A-087: найди самый яркий честный факт и сделай его центром. Не пересказ. Норма 200–350 слов.',
+          'SP-A-088 ONE VOICE: тот же Editorial DNA для Chief и AUTO. Parser только шахтёр — автор = Editor.',
+          'SP-A-087: найди самый яркий честный факт и сделай его центром. Не пересказ. Норма ~180–300 слов.',
           'SP-A-085: закрой мысль цифрами/сравнением из входных данных; не поднимай габариты/вес/батарею без ответа.',
           'Верни СТРОГО JSON:',
           '{"title":string,"text":string,"tags":string[],"toneCheck":{"clickbait":bool,"hype":bool,"unsupportedClaims":bool,"limitationsIncluded":bool}}',
@@ -361,7 +370,7 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
     draft.title.trim().toUpperCase() !== 'REJECT' &&
     sourceRich &&
     draftWords > 0 &&
-    draftWords < 200
+    draftWords < 180
   ) {
     try {
       const depthRetry = await client.chat.completions.create({
@@ -374,8 +383,8 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
           {
             role: 'user',
             content: [
-              'Черновик слишком короткий (<200 слов) — на SmartProto такие тексты не воспринимают всерьёз.',
-              'SP-A-087: перепиши как самостоятельный обзор на 200–350 слов (цель ~220–300).',
+              'Черновик слишком короткий (<180 слов) — на SmartProto такие тексты не воспринимают всерьёз.',
+              'SP-A-087: перепиши как самостоятельный обзор на ~180–300 слов (цель ~200–280).',
               'Вынеси самый сильный факт в первый абзац; добавь сравнение, человеческий смысл и ближайшее будущее — только из входных данных.',
               'Без денежных сумм и URL. Тот же JSON с title, text, tags[], toneCheck.',
               '',

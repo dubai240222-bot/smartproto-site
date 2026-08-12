@@ -523,11 +523,18 @@ async function tryChinaPublishOnce(opts: {
 
     const framed = {
       ...articleData,
-      format: opts.format,
+      // SP-A-088: prefer full editorial review length for China AUTO (one voice with Chief)
+      format: 'article' as const,
+      mode:
+        /robot|ai|ии|llm|gpt|электромобил|автопилот|исследован/i.test(
+          `${dossier.productName || ''} ${articleData.text || ''}`,
+        )
+          ? ('ai_radar' as const)
+          : ('gadget' as const),
       title: dossier.productName || articleData.title,
+      // Parser = miner: pass facts only. Do NOT pre-frame as «новый гаджет» press card.
       text: [
-        `Новый гаджет / устройство (источник: ${c.sourceName}).`,
-        `Анонс / новая модель. По данным источника можно купить или оформить предзаказ, если указано в тексте.`,
+        'SOURCE PACK (parser/dossier facts — Editor пишет самостоятельный обзор, не перевод):',
         articleData.text,
       ].join('\n\n'),
     };
@@ -574,9 +581,10 @@ async function tryChinaPublishOnce(opts: {
     }
 
     const wc = wordCount(draft.text);
-    const minWords = opts.format === 'news' ? 40 : 120;
+    // SP-A-088: thin Editor output must not publish — same seriousness bar as Chief DNA
+    const minWords = 180;
     if (wc < minWords) {
-      console.log(chalk.yellow(`China draft too short for ${opts.format} (${wc} < ${minWords})`));
+      console.log(chalk.yellow(`China draft too short (${wc} < ${minWords})`));
       continue;
     }
 
@@ -1168,10 +1176,14 @@ async function publishRssOnce(opts: {
 
       const sourcePayload = {
         title: item.title,
-        text: item.text || item.title,
+        text: [
+          'SOURCE PACK (RSS/parser extract — Editor пишет самостоятельный обзор, не перевод):',
+          item.text || item.title,
+        ].join('\n\n'),
         url: item.url,
         sourceName: item.sourceName,
-        format: opts.format,
+        // SP-A-088: one editorial depth bar for AUTO (same DNA as Chief) — not a 40-word news cut
+        format: 'article' as const,
         mode: itemMode,
       };
 
@@ -1234,9 +1246,10 @@ async function publishRssOnce(opts: {
       }
 
       const wc = wordCount(draft.text);
-      const minWords = opts.format === 'news' ? 40 : 120;
+      // SP-A-088: one seriousness bar — thin Editor drafts do not publish
+      const minWords = 180;
       if (wc < minWords) {
-        console.log(chalk.yellow(`Draft too short for ${opts.format} (${wc} < ${minWords})`));
+        console.log(chalk.yellow(`Draft too short (${wc} < ${minWords})`));
         lastSkip = 'draft too short';
         return false;
       }
