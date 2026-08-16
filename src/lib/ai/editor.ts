@@ -22,6 +22,16 @@ const EDITOR_MODEL = process.env.OPENROUTER_EDITOR_MODEL ?? 'google/gemini-2.5-f
 const BANNED_CLICHE_RE =
   /дожил(?:и|а|о)?(?:\s+до\s+времени)?|вчера казалось фантастикой|вчера фантастика\s*[—–-]|ребята|друзья|вы\s+только\s+посмотрите|посмотрите|guys|look at this|просто\s+вау|\bвау\b|wow[!]?|вы\s+не\s+поверите|это\s+чудо|это\s+бомба|огонь[!]|обалдеть|офигенн|невероятн|революционн|потрясающ|фантастическ|гениальн|убийца\s+iphone|изменит\s+мир|переверн[её]т\s+рынок|вы\s+обязаны|все\s+захотят|мы\s+в\s+восторге|наконец[- ]то\s+свершилось|будущее\s+уже\s+наступил|ваш\s+спаситель|этот\s+малыш|просто\s+находка|это\s+же\s+не\s+просто|забудьте\s+про|вы\s+будете\s+в\s+восторге|берите,?\s+пока\s+есть|маст-?хэв|идеальный\s+выбор|стильный\s+аксессуар/i;
 
+/** Formula “imagine that” ledes — soft-retry in Editor; do not stamp every piece the same way. */
+const STOCK_OPENER_LEAD_RE =
+  /^(?:представьте(?:\s*,?\s*что)?|представь(?:те)?(?:\s+себе)?|а\s+что\s+если|что\s+если|забудьте\s+о(?:б)?|вообразите|imagine(?:\s+that)?|what\s+if)\b/i;
+
+/** True when the article body opens with a stock “Представьте / А что если / imagine” hook. */
+export function hasStockOpenerLead(text: string): boolean {
+  const lead = text.trim().replace(/^[\s"'«»„“”‘’`]+/, '');
+  return STOCK_OPENER_LEAD_RE.test(lead);
+}
+
 /**
  * SP-A-078 — CHIEF EDITORIAL DNA v1
  * Distilled from live chief-fast-lane articles. Principles only — do not copy phrases.
@@ -39,8 +49,9 @@ const CHIEF_EDITORIAL_DNA = [
   '5) лёгкий живой финал: тонкая улыбка / наблюдение / ирония (в большинстве подходящих тем).',
   '',
   'LEAD: цепляй за 1–2 предложения. Не «Компания X сообщила…».',
-  'Вход по ситуации: сцена, сравнение, необычная способность, боль которую убирают, цифра, вопрос «а что если…».',
-  'Разрешено: «Представьте…», «Забудьте о…», метафоры, мягкая ирония — НО не повторяй одну открывалку в каждой статье.',
+  'Варьируй открытие под историю: конкретный факт, новая способность, короткая сцена, контраст «было→стало», вопрос — только если звучит естественно.',
+  'ЗАПРЕТ штампованных открывалок в первом предложении: «Представьте, что…», «Представь себе…», «А что если…», «Забудьте о…» и похожие formula «imagine that» hooks.',
+  'Каждая статья — свой вход. Одна и та же открывалка на ленте = провал. Метафоры и лёгкая ирония ок внутри текста, не как заводской шаблон лида.',
   'TITLE: сильный факт ИЛИ новая человеческая возможность. Не «Компания X представила Y».',
   'ФИНАЛЬНЫЙ ЮМОР: тонкий умный финал где уместно. Серьёзные темы (тяжёлая болезнь / трагедия) — без юмора.',
   'Не заканчивай длинным охлаждающим опровержением и не ставь штамп «независимые испытания пока не проводились».',
@@ -206,6 +217,7 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
           'ФОРМАТ: новость-обзор (SHORT REVIEW). Норма ~180–300 слов; короче — только если история совсем простая и всё равно закрыта.',
           'Не пересказ источника: центр = самый яркий факт + почему это важно человеку.',
           'Структура: сильный факт сразу → что изменилось → цифра/сравнение → смысл для человека → короткий финал.',
+          'LEAD: не начинай с «Представьте…» / «А что если…» / «Забудьте о…» — варьируй вход (факт / сцена / контраст).',
           'FINISH THE THOUGHT: не оставляй «тяжёлый/компактный/долго» без цифры, если она есть во входных данных.',
           'БЕЗ цен, БЕЗ ссылок, БЕЗ «где купить». Без внутренних меток (Qwen/Gemini/Китай-отдел).',
         ]
@@ -215,7 +227,7 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
           'Ниже ~180 слов — только если история совсем простая; иначе ориентир ~180–300.',
           'Не перевод и не сжатый пресс-релиз. Small story → big angle, если угол честно следует из фактов.',
           'Структура:',
-          '1) hook = самый сильный факт (не прятать во 2–3 абзаце);',
+          '1) hook = самый сильный факт или живой вход без штампа «Представьте…» (не прятать во 2–3 абзаце);',
           '2) почему удивляет / что изменилось vs вчера;',
           '3) ключевые цифры смысла из источника + сравнение;',
           '4) что даёт человеку;',
@@ -363,11 +375,44 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
     draft = await parseEditorJson(typeof retryRaw === 'string' ? retryRaw.trim() : '');
   }
 
+  // Soft guidance: one rewrite if lead uses formula stock opener.
+  if (draft.title.trim().toUpperCase() !== 'REJECT' && hasStockOpenerLead(draft.text)) {
+    const retry = await client.chat.completions.create({
+      model: EDITOR_MODEL,
+      temperature: 0.35,
+      top_p: 0.85,
+      max_tokens: format === 'news' ? 1100 : 1500,
+      messages: [
+        { role: 'system', content: EDITOR_SYSTEM_PROMPT },
+        {
+          role: 'user',
+          content: [
+            'Черновик начинается штампованной открывалкой («Представьте…» / «А что если…» / «imagine…»).',
+            'Перепиши ЛИД: начни с конкретного факта, способности, сцены или контраста — без formula hook.',
+            'Остальной смысл и факты сохрани. Без цен и URL. Верни тот же JSON-формат.',
+            '',
+            'Входные данные:',
+            clampText(JSON.stringify(articleData, null, 2), 10000),
+            '',
+            'Слабый черновик:',
+            clampText(draft.text, 4000),
+          ].join('\n'),
+        },
+      ],
+    });
+    const retryRaw = retry.choices[0]?.message?.content;
+    draft = await parseEditorJson(typeof retryRaw === 'string' ? retryRaw.trim() : '');
+  }
+
   // SP-A-093: short-length expand (150–179) is handled by callers via expandShortDraft
   // so newsroom can log FIRST/RETRY/AFTER and enforce max 1 retry outside writeDraft.
 
   if (draft.title.trim().toUpperCase() === 'REJECT') {
     return { ...REJECT_DRAFT, tags: draft.tags.length ? draft.tags : REJECT_DRAFT.tags };
+  }
+
+  if (hasStockOpenerLead(draft.text)) {
+    throw new Error('Editor draft fails tone gate (stock opener lead after soft retry).');
   }
 
   if (containsBannedCliche(draft.title, draft.text) || /!/.test(draft.title)) {
