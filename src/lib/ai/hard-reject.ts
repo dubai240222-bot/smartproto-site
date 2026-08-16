@@ -339,7 +339,21 @@ const COMMODITY_LOW_WOW_PATTERNS: RegExp[] = [
 ];
 
 /**
- * SP-A-054 — editorial ALERT mode: interesting AI capability / invention / useful software
+ * SP-A-055 — robotics / humanoid / robot-hand flood. SmartProto is not a robot blog.
+ * Allow rare consumer home robots (vacuum/lawn/pet companion) with clear everyday use.
+ */
+const ROBOTICS_HEAVY_RE =
+  /\b(humanoid|robot\s*hand|robotic\s*hand|bipedal\s*robot|industrial\s*robot|manipulator|actuator|end[- ]effector|quadruped\s*robot|robotaxi|loyal\s*wingman|autonomous\s*vtol|bioflexbot|aibo|camera\s*robot)\b|гуманоид|робот[- ]?рук|промышленн\w*\s*робот|роботакси/i;
+const CONSUMER_HOME_ROBOT_OK_RE =
+  /\b(robot\s*vacuum|robotic\s*vacuum|lawn\s*mower\s*robot|robot\s*lawn|pet\s*robot|companion\s*robot|робот[- ]?пылесос|газонокосил)\b/i;
+
+export function isRoboticsHeavyTopic(title: string, text = ''): boolean {
+  const hay = `${title}\n${text}`;
+  if (CONSUMER_HOME_ROBOT_OK_RE.test(hay)) return false;
+  return ROBOTICS_HEAVY_RE.test(hay) || (/\brobot\b/i.test(hay) && !CONSUMER_HOME_ROBOT_OK_RE.test(hay));
+}
+
+/** SP-A-054 — editorial ALERT mode: interesting AI capability / invention / useful software
  * may pass without a buyable SKU (no prices/links in public copy).
  */
 const AI_OR_INVENTION_ALERT_RE =
@@ -441,7 +455,7 @@ const STRONG_CONSUMER_ANGLE: RegExp[] = [
 
 /** Preferred SmartProto categories (scout/reviewer guidance + local hints). SP-A-039-ALT */
 export const PREFERRED_GADGET_CATEGORIES =
-  'unusual smartphones, game controllers, wearables, smart rings, smart home, travel gadgets, AI hardware, home robots, cameras, audio gadgets, phone accessories, power banks/chargers, mini projectors, portable displays, car gadgets, translators, health/sleep devices, kitchen gadgets, children/education gadgets';
+  'unusual smartphones, wearables, smart rings, travel gadgets, useful apps, AI tools for people (not lab robots), cameras, audio, phone accessories, mini projectors, portable displays, health/sleep, kitchen, smart home, game controllers, translators — NOT a robotics-only site; humanoid/industrial/robot-hand stories are rare exceptions';
 
 /** Preferred app desks — life improvement / learning / rare finds / wonderful games. */
 export const PREFERRED_APP_CATEGORIES =
@@ -674,6 +688,16 @@ export function hardRejectTopic(
     };
   }
 
+  // SP-A-055: SmartProto is not a robotics blog — reject humanoid/lab/robot-hand flood.
+  if (isRoboticsHeavyTopic(title, text) && !hasStrongConsumerAngle(title, text)) {
+    return {
+      reject: true,
+      reason:
+        'Жёсткий reject: узкая робототехника/гуманоид/робот-рука без явной бытовой пользы — сайт не про роботов.',
+      rejectCode: 'ROBOTICS_NARROW',
+    };
+  }
+
   // SP-A-049 / SP-A-050: downrank ordinary monitors, power banks, merch, maker-tools.
   // Casio CRW-H001 / smart rings KEEP via isKeepWowException.
   if (isCommodityLowWow(title, text) && !hasStrongConsumerAngle(title, text)) {
@@ -769,7 +793,8 @@ export function looksBuyableGadget(title: string, text = '', sourceName = ''): b
     gate.rejectCode === 'NON_BUYABLE_RESEARCH' ||
     gate.rejectCode === 'NICHE_NO_CONSUMER_ANGLE' ||
     gate.rejectCode === 'COMMODITY_LOW_WOW' ||
-    gate.rejectCode === 'OVERPLAYED_MASS'
+    gate.rejectCode === 'OVERPLAYED_MASS' ||
+    gate.rejectCode === 'ROBOTICS_NARROW'
   ) {
     return false;
   }

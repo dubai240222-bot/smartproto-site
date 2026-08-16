@@ -36,7 +36,14 @@ export const SCOUT_SCORE_THRESHOLD = (() => {
 
 const SCOUT_MODEL = process.env.OPENROUTER_SCOUT_MODEL ?? 'deepseek/deepseek-v4-flash:latest';
 
-const SCOUT_SYSTEM_PROMPT_GADGET = SCOUT_SYSTEM_PROMPT_GADGET_V2;
+const SCOUT_SYSTEM_PROMPT_GADGET = [
+  SCOUT_SYSTEM_PROMPT_GADGET_V2,
+  '',
+  'PRIORITY: unusual gadgets/apps, полезные AI-инструменты для людей, wearables, travel, health — НЕ лента про роботов.',
+  'REJECT robotics flood: humanoid, robot hand, lab manipulator, industrial robot, robotaxi-as-main-story без бытового гаджета.',
+  'Home robot vacuum/lawn OK редко. Иначе сайт становится узким робо-блогом — это запрещено.',
+  'KEEP AI news если есть конкретное достижение/возможность и понятная польза человеку (модель, приложение, demo) — не «ещё одна робот-рука».',
+].join('\n');
 
 const SCOUT_SYSTEM_PROMPT_APP = [
   'Ты разведчик SmartProto — стол Mobile Apps: полезные мобильные приложения и редкие/замечательные игры.',

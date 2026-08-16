@@ -965,7 +965,11 @@ async function publishRssOnce(opts: {
 
   const sourceRank = (name: string) => discoveryRankFor(name);
   const looksAiCapability = (title: string, text: string) =>
-    /\b(ai|a\.i\.|artificial intelligence|chatgpt|gemini|claude|llm|gpt|agentic|autonom(?:y|ous)|superintelligence|agi|copilot|reasoning model|foundation model)\b|искусственн\w*\s+интеллект|\bии\b|нейросет/i.test(
+    /\b(ai|a\.i\.|artificial intelligence|chatgpt|gemini|claude|llm|gpt|agentic|superintelligence|agi|copilot|reasoning model|foundation model)\b|искусственн\w*\s+интеллект|\bии\b|нейросет/i.test(
+      `${title}\n${text}`,
+    ) && !/\b(humanoid|robot\s*hand|robotic\s*hand|industrial\s*robot|robotaxi|vtol|wingman)\b/i.test(`${title}\n${text}`);
+  const looksRobotics = (title: string, text: string) =>
+    /\b(humanoid|robot\s*hand|robotic|industrial\s*robot|robotaxi|bipedal|manipulator|bioflexbot|\brobot\b)\b|гуманоид|робот/i.test(
       `${title}\n${text}`,
     );
   const looksExplainer = (title: string) =>
@@ -990,7 +994,11 @@ async function publishRssOnce(opts: {
       if (ae !== be) return ae - be;
       return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
     }
-    // SP-A-054: boost grounded AI capability / useful AI tool stories.
+    // Demote robotics flood — site is not a robot blog.
+    const aRob = looksRobotics(a.title, a.text || '') ? 1 : 0;
+    const bRob = looksRobotics(b.title, b.text || '') ? 1 : 0;
+    if (aRob !== bRob) return aRob - bRob;
+    // Mild boost for software/model AI (not robots). SP-A-054: grounded AI capability / useful AI tools.
     const aAi = looksAiCapability(a.title, a.text || '') ? 0 : 1;
     const bAi = looksAiCapability(b.title, b.text || '') ? 0 : 1;
     if (aAi !== bAi) return aAi - bAi;

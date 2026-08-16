@@ -26,7 +26,8 @@ const REVIEW_SYSTEM_PROMPT_GADGET = [
   'заголовок-реклама; блогерский тон; Trump/политика; celebrities; writers; кино; wildlife; музеи;',
   'Docker/DevOps/SmartProto-internal/API libs;',
   'нишевый PC/engineering компонент без сильного consumer-angle (SP-A-039-ALT).',
-  'AI research/demo OK если grounded (реальный результат, польза людям) — не кликбейт про «сверхразум завтра».',
+  'AI research/demo OK если grounded (модель, приложение, польза людям) — не кликбейт про «сверхразум завтра».',
+  'REJECT robotics flood: humanoid / robot hand / lab robot / industrial robot как основная тема — сайт не про роботов.',
   'keyAspects — 3 коротких пункта про возможность/новизну/пользу (не про цену).',
   'Иначе подтверди достоверность и 3 аспекта.',
 ].join(' ');
