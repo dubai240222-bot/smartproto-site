@@ -3,7 +3,12 @@
  */
 import type { Metadata } from 'next';
 import { getLocalization } from '@/data/localizations';
+import { isTestLocalization } from '@/lib/i18n/post-publish-translate';
 import { localeArticlePath, type AppLocale } from '@/lib/i18n/locales';
+
+function isPublicPublished(loc: ReturnType<typeof getLocalization>): boolean {
+  return Boolean(loc && loc.translationStatus === 'published' && !isTestLocalization(loc));
+}
 
 export function buildArticleLanguageAlternates(opts: {
   articleId: string;
@@ -15,12 +20,12 @@ export function buildArticleLanguageAlternates(opts: {
   };
 
   const en = getLocalization(opts.articleId, 'en');
-  if (en?.translationStatus === 'published') {
-    languages.en = localeArticlePath('en', en.localizedSlug);
+  if (isPublicPublished(en)) {
+    languages.en = localeArticlePath('en', en!.localizedSlug);
   }
   const tr = getLocalization(opts.articleId, 'tr');
-  if (tr?.translationStatus === 'published') {
-    languages.tr = localeArticlePath('tr', tr.localizedSlug);
+  if (isPublicPublished(tr)) {
+    languages.tr = localeArticlePath('tr', tr!.localizedSlug);
   }
 
   return {
@@ -37,13 +42,7 @@ export function articleSwitcherLinks(opts: {
   const tr = getLocalization(opts.articleId, 'tr');
   return {
     ru: localeArticlePath('ru', opts.ruSlug),
-    en:
-      en?.translationStatus === 'published'
-        ? localeArticlePath('en', en.localizedSlug)
-        : null,
-    tr:
-      tr?.translationStatus === 'published'
-        ? localeArticlePath('tr', tr.localizedSlug)
-        : null,
+    en: isPublicPublished(en) ? localeArticlePath('en', en!.localizedSlug) : null,
+    tr: isPublicPublished(tr) ? localeArticlePath('tr', tr!.localizedSlug) : null,
   };
 }

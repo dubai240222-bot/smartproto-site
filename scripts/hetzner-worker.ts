@@ -46,6 +46,12 @@ const FORCED_DEADLINE_MS = Number(process.env.SMARTPROTO_FORCED_DEADLINE_MS || 1
 /** Temporary Scout floor for forced live visual check only. Production stays 70. */
 const FORCED_SCOUT_THRESHOLD = process.env.SMARTPROTO_FORCED_SCOUT_THRESHOLD || '25';
 const POLL_MS = 15_000;
+/** SP-A-098F — translate at most 1 missing RU→EN/TR pair every N ms (default 45m). */
+const TRANSLATE_DRIP_INTERVAL_MS = Number(
+  process.env.SMARTPROTO_TRANSLATE_DRIP_INTERVAL_MS || 45 * 60 * 1000,
+);
+const TRANSLATE_DRIP_ENABLED =
+  (process.env.SMARTPROTO_TRANSLATE_ENABLED ?? 'true').toLowerCase() !== 'false';
 
 /** SP-A-074 — nightly retention (~01:00 server local time). Default ON. */
 const RETENTION_ENABLED = (process.env.SMARTPROTO_RETENTION_ENABLED ?? 'true').toLowerCase() !== 'false';
@@ -93,6 +99,8 @@ interface WorkerState {
   lastAutoPublicationAt?: string;
   freshnessStatus?: 'OK' | 'WARNING' | 'CRITICAL';
   publicationsLast24h?: number;
+  /** SP-A-098F — last EN/TR backlog drip */
+  lastTranslateDripAt?: string;
 }
 
 function readState(): WorkerState {
@@ -210,6 +218,40 @@ async function maybeRetentionCleanup(): Promise<void> {
   log(`SP-A-074 retention cleanup finished: ${ok ? 'ok' : 'error'}`);
 }
 
+/**
+ * SP-A-098F — long-lived worker drip fills EN/TR for older RU articles.
+ * Max 1 article per interval (never a factory burst).
+ */
+function runTranslateDrip(): Promise<{ ok: boolean }> {
+  return new Promise((resolve) => {
+    log('SP-A-098F translation drip (limit=1)…');
+    const child = spawn('npx', ['tsx', 'scripts/spa098-translate-recent.ts', '--limit=1'], {
+      cwd: process.cwd(),
+      env: {
+        ...process.env,
+        ARTICLES_STORE: 'sqlite',
+        SMARTPROTO_DB_PATH: process.env.SMARTPROTO_DB_PATH || '/app/data/smartproto.db',
+        SMARTPROTO_TRANSLATE_ENABLED: 'true',
+      },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    child.stdout?.on('data', (buf: Buffer) => process.stdout.write(buf));
+    child.stderr?.on('data', (buf: Buffer) => process.stderr.write(buf));
+    child.on('exit', (code) => resolve({ ok: code === 0 }));
+    child.on('error', () => resolve({ ok: false }));
+  });
+}
+
+async function maybeTranslateDrip(): Promise<void> {
+  if (!TRANSLATE_DRIP_ENABLED) return;
+  if (process.env.ARTICLES_STORE !== 'sqlite') return;
+  const state = readState();
+  if (!isDue(state.lastTranslateDripAt, TRANSLATE_DRIP_INTERVAL_MS)) return;
+  const { ok } = await runTranslateDrip();
+  writeState({ lastTranslateDripAt: new Date().toISOString() });
+  log(`SP-A-098F translation drip finished: ${ok ? 'ok' : 'error'}`);
+}
+
 async function logFreshnessHealth(publishedThisTick: boolean): Promise<void> {
   try {
     const journalPath = path.join(DATA_DIR, 'factory-journal.json');
@@ -255,6 +297,8 @@ async function loopOnce(): Promise<void> {
   // Retention runs even when editorial mode is OFF so disk stays bounded
   // without requiring AUTO ticks — still only once per night.
   await maybeRetentionCleanup();
+  // Translation drip also runs in OFF so EN/TR catch up without a factory burst.
+  await maybeTranslateDrip();
 
   const mode = readMode();
 

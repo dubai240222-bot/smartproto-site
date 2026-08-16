@@ -1,58 +1,16 @@
 /**
- * SP-A-097F1 — seed controlled EN/TR test localizations into SQLite (or verify JSON).
- * Does NOT mass-translate. Uses fixture text only.
+ * SP-A-097F1 seed — fixtures cleared; this now purges leftover [TEST] rows in SQLite.
+ * Prefer: npx tsx scripts/spa098-purge-test-fixtures.ts
  */
-import { readFileSync } from 'node:fs';
-import path from 'node:path';
-import { getAllArticles } from '../src/data/articles';
-import fixture from '../src/data/article-localizations.json';
-import type { ArticleLocalization } from '../src/lib/data-store/localizations-repo';
-
 async function main() {
-  const useSqlite = process.env.ARTICLES_STORE === 'sqlite';
-  const articles = getAllArticles();
-  console.log(`articles=${articles.length} store=${useSqlite ? 'sqlite' : 'json'}`);
-
-  const rows = fixture as ArticleLocalization[];
-  let written = 0;
-
-  for (const row of rows) {
-    let articleId = row.articleId;
-    let canon = articles.find((a) => a.id === articleId || a.slug === articleId);
-    if (!canon) {
-      canon =
-        articles.find(
-          (a) => a.slug === 'these-3d-printed-objects-can-tell-you-if-they-re-being-used-properly',
-        ) || articles[0];
-      if (!canon) throw new Error('No canonical article available for fixture');
-      articleId = canon.id;
-      console.log(`remapped fixture articleId ${row.articleId} → ${articleId} (${canon.slug})`);
-    } else if (canon.id !== articleId) {
-      articleId = canon.id;
-    }
-
-    const loc: ArticleLocalization = {
-      ...row,
-      articleId,
-    };
-
-    if (useSqlite) {
-      const { upsertLocalization } = await import('../src/lib/data-store/localizations-repo');
-      upsertLocalization(loc);
-      written++;
-      console.log(`upserted ${loc.language} ${loc.localizedSlug} status=${loc.translationStatus}`);
-    } else {
-      console.log(`json-mode fixture present ${loc.language} ${loc.localizedSlug}`);
-    }
-  }
-
-  if (useSqlite) {
-    const { listPublishedLocalizations } = await import('../src/lib/data-store/localizations-repo');
-    console.log(`published_en=${listPublishedLocalizations('en').length}`);
-    console.log(`published_tr=${listPublishedLocalizations('tr').length}`);
-  }
-
-  console.log(`SEED OK written=${written}`);
+  console.log('SP-A-097F1 fixtures retired — running purge helper');
+  const { spawnSync } = await import('node:child_process');
+  const r = spawnSync(
+    'npx',
+    ['tsx', 'scripts/spa098-purge-test-fixtures.ts'],
+    { stdio: 'inherit', env: process.env, shell: process.platform === 'win32' },
+  );
+  process.exit(r.status ?? 1);
 }
 
 main().catch((e) => {

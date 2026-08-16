@@ -163,6 +163,8 @@ export async function translateArticleLanguage(
     getExisting?: (articleId: string, language: LocalizationLanguage) => ArticleLocalization | null;
     upsert?: (loc: ArticleLocalization) => void;
     slugTaken?: (language: LocalizationLanguage, slug: string) => boolean;
+    /** Re-attempt a prior rejected row (worker drip / controlled scripts). */
+    retryRejected?: boolean;
   },
 ): Promise<TranslateLanguageResult> {
   try {
@@ -189,13 +191,18 @@ export async function translateArticleLanguage(
       };
     }
     if (existing?.translationStatus === 'rejected') {
-      return {
-        language,
-        status: 'rejected',
-        aiCalls: 0,
-        reason: 'already_rejected',
-        localization: existing,
-      };
+      // Retry empty/failed attempts (tick process killed mid-flight left husks).
+      const emptyBody = !(existing.localizedContent || '').trim();
+      const hardFail = /\|error:|ai_fail|hard:/i.test(existing.translatorModel || '');
+      if (!emptyBody && !hardFail && !deps?.retryRejected) {
+        return {
+          language,
+          status: 'rejected',
+          aiCalls: 0,
+          reason: 'already_rejected',
+          localization: existing,
+        };
+      }
     }
 
     let aiCalls = 0;

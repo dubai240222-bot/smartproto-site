@@ -17,13 +17,13 @@ import { existsSync, readFileSync, writeFileSync, unlinkSync } from 'node:fs';
 import dotenv from 'dotenv';
 import chalk from 'chalk';
 import { fetchRssFeed, type RssItem } from '../src/lib/collectors/rss';
-import { extractArticleImage, passesImageQualityGate } from '../src/lib/collectors/image-extractor';
+import { extractArticleImage, passesImageQualityGate, getThematicFallback } from '../src/lib/collectors/image-extractor';
 import {
   discoveryRankFor,
   enabledRssSources,
 } from '../src/lib/collectors/source-registry';
 import { buildScoutPool } from '../src/lib/ai/candidate-prerank';
-import { resolveArticlePhotos } from '../src/lib/collectors/photo-scout';
+import { resolveArticlePhotos, downloadImagesLocally } from '../src/lib/collectors/photo-scout';
 import {
   inferEditorialFocus,
   pickDiversityWinner,
@@ -79,11 +79,22 @@ import {
  * SP-A-056 — on the Hetzner worker (ARTICLES_STORE=sqlite) also persist the
  * freshly published article straight to SQLite so the site sees it without
  * any git/Vercel step. No-op (and no better-sqlite3 import) everywhere else.
+ *
+ * SP-A-098F — await EN/TR translation here. The tick runs as a short-lived
+ * child of hetzner-worker; fire-and-forget inside upsert was killed on exit.
  */
 async function maybeSyncToSqlite(article: Record<string, unknown>): Promise<void> {
   if (process.env.ARTICLES_STORE !== 'sqlite') return;
-  const { upsertArticle } = await import('../src/lib/data-store/articles-repo');
-  upsertArticle(article as import('../src/lib/data-store/articles-repo').StoredArticle);
+  const { upsertArticle, getArticleBySlugFromDb } = await import(
+    '../src/lib/data-store/articles-repo'
+  );
+  const slug = String(article.slug || '');
+  const existing = slug ? getArticleBySlugFromDb(slug) : undefined;
+  const isNew = !existing;
+  upsertArticle(article as import('../src/lib/data-store/articles-repo').StoredArticle, {
+    // Translation is awaited below so the tick process stays alive for OpenRouter.
+    skipPostPublishTranslation: true,
+  });
   // Existing live columns (no schema change) — best-effort match labels.
   if (article.imageMatchLevel || article.imageLabel) {
     try {
@@ -95,12 +106,97 @@ async function maybeSyncToSqlite(article: Record<string, unknown>): Promise<void
         .run(
           (article.imageMatchLevel as string) || null,
           (article.imageLabel as string) || null,
-          String(article.slug || ''),
+          slug,
         );
     } catch {
       /* columns may be absent outside Hetzner */
     }
   }
+
+  if (
+    isNew &&
+    process.env.SMARTPROTO_TRANSLATE_ENABLED !== 'false' &&
+    article.id &&
+    article.title &&
+    article.content
+  ) {
+    try {
+      const { runPostPublishTranslation } = await import('../src/lib/i18n/post-publish-translate');
+      const report = await runPostPublishTranslation({
+        id: String(article.id),
+        slug,
+        title: String(article.title),
+        summary: String(article.summary || ''),
+        content: String(article.content),
+        category: article.category ? String(article.category) : undefined,
+        author: article.author ? String(article.author) : undefined,
+        authorDesk: article.authorDesk ? String(article.authorDesk) : undefined,
+      });
+      console.log(
+        chalk.cyan(
+          `[spa098] awaited translate article=${report.articleId} ai=${report.totalAiCalls} ` +
+            report.results.map((r) => `${r.language}:${r.status}`).join(' '),
+        ),
+      );
+    } catch (err) {
+      console.log(
+        chalk.yellow(
+          `[spa098] awaited translate failed (RU kept): ${
+            err instanceof Error ? err.message : String(err)
+          }`,
+        ),
+      );
+    }
+  }
+}
+
+/**
+ * Soft hero when photo-scout returns nothing: keep a quality-gated source/og
+ * image (downloaded locally), else thematic editorial stock. Prefer a soft
+ * banner over a blank card — never hotlink random marketplace junk.
+ */
+async function ensureSoftHeroImages(opts: {
+  slug: string;
+  title: string;
+  category?: string;
+  fallbackUrl?: string;
+  images: import('../src/lib/collectors/photo-scout').ScoutImage[];
+}): Promise<import('../src/lib/collectors/photo-scout').ScoutImage[]> {
+  if (opts.images.length) return opts.images;
+
+  const tryDownload = async (url: string, note: string) => {
+    try {
+      const downloaded = await downloadImagesLocally(opts.slug, [{ url, role: 'hero' }]);
+      if (downloaded.length) {
+        console.log(chalk.gray(`[photo-soft] ${note} → ${downloaded[0].url}`));
+        return downloaded;
+      }
+    } catch (err) {
+      console.log(
+        chalk.yellow(
+          `[photo-soft] ${note} download failed: ${
+            err instanceof Error ? err.message : String(err)
+          }`,
+        ),
+      );
+    }
+    return [] as import('../src/lib/collectors/photo-scout').ScoutImage[];
+  };
+
+  const fb = (opts.fallbackUrl || '').trim();
+  if (fb && /^https?:\/\//i.test(fb) && (await passesImageQualityGate(fb))) {
+    const got = await tryDownload(fb, 'source/og');
+    if (got.length) return got;
+  }
+
+  const thematic = getThematicFallback(opts.title, opts.category || '');
+  if (thematic) {
+    const got = await tryDownload(thematic, 'thematic');
+    if (got.length) return got;
+  }
+
+  console.log(chalk.yellow(`[photo-soft] no hero for ${opts.slug} — publishing without image`));
+  return [];
 }
 
 export type CycleType = 'news' | 'article';
@@ -769,11 +865,18 @@ async function tryChinaPublishOnce(opts: {
       } catch (err) {
         console.log(
           chalk.yellow(
-            `[photo-v2] failed: ${err instanceof Error ? err.message : String(err)} — publishing NO IMAGE`,
+            `[photo-v2] failed: ${err instanceof Error ? err.message : String(err)} — soft hero fallback`,
           ),
         );
       }
-      if (!images.length) imageUrl = ''; // never fall back to an unconfirmed hotlink
+      images = await ensureSoftHeroImages({
+        slug,
+        title: draft.title,
+        category: CHINA_CATEGORY,
+        fallbackUrl: imageUrl,
+        images,
+      });
+      if (!images.length) imageUrl = ''; // never publish an unconfirmed remote hotlink
 
       const article: Article = {
         id: slug,
@@ -1610,10 +1713,19 @@ async function publishRssOnce(opts: {
         } catch (err) {
           console.log(
             chalk.yellow(
-              `[photo-v2] failed: ${err instanceof Error ? err.message : String(err)} — publishing NO IMAGE`,
+              `[photo-v2] failed: ${err instanceof Error ? err.message : String(err)} — soft hero fallback`,
             ),
           );
         }
+
+        images = await ensureSoftHeroImages({
+          slug,
+          title: draft.title,
+          category: 'Гаджеты',
+          fallbackUrl: imageUrl,
+          images,
+        });
+        if (!images.length) imageUrl = '';
 
         const photoMeta = (opts as any)._lastPhotoMeta as
           | { imageMatchLevel?: string; imageLabel?: string }

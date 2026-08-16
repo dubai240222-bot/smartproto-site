@@ -4,6 +4,7 @@
 import jsonLocs from '@/data/article-localizations.json';
 import type { LocalizationLanguage, TranslationStatus } from '@/lib/i18n/locales';
 import type { ArticleLocalization } from '@/lib/data-store/localizations-repo';
+import { isTestLocalization } from '@/lib/i18n/post-publish-translate';
 
 const USE_SQLITE = process.env.ARTICLES_STORE === 'sqlite';
 
@@ -26,13 +27,19 @@ function fromJson(rows: JsonLoc[]): ArticleLocalization[] {
     articleId: r.articleId,
     language: r.language,
     localizedTitle: r.localizedTitle,
-    localizedExcerpt: r.localizedExcerpt,
-    localizedContent: r.localizedContent,
+    localizedExcerpt: r.localizedExcerpt || '',
+    localizedContent: r.localizedContent || '',
     localizedSlug: r.localizedSlug,
     translationStatus: r.translationStatus,
-    translatedAt: r.translatedAt,
-    translatorModel: r.translatorModel,
+    translatedAt: r.translatedAt || undefined,
+    translatorModel: r.translatorModel || undefined,
   }));
+}
+
+/** Hide architecture-validation stubs from public EN/TR surfaces. */
+function isPublicLocalization(l: ArticleLocalization): boolean {
+  if (l.translationStatus !== 'published') return false;
+  return !isTestLocalization(l);
 }
 
 export type { ArticleLocalization };
@@ -43,14 +50,16 @@ export function getPublishedLocalizationBySlug(
 ): ArticleLocalization | null {
   if (USE_SQLITE) {
     const { getPublishedLocalizationBySlug: fromDb } = require('@/lib/data-store/localizations-repo');
-    return fromDb(language, slug) as ArticleLocalization | null;
+    const hit = fromDb(language, slug) as ArticleLocalization | null;
+    if (!hit || !isPublicLocalization(hit)) return null;
+    return hit;
   }
   return (
     fromJson(staticLocs).find(
       (l) =>
         l.language === language &&
         l.localizedSlug === slug &&
-        l.translationStatus === 'published',
+        isPublicLocalization(l),
     ) || null
   );
 }
@@ -69,11 +78,9 @@ export function getLocalization(
 export function listPublishedLocalizations(language: LocalizationLanguage): ArticleLocalization[] {
   if (USE_SQLITE) {
     const { listPublishedLocalizations: fromDb } = require('@/lib/data-store/localizations-repo');
-    return fromDb(language) as ArticleLocalization[];
+    return (fromDb(language) as ArticleLocalization[]).filter(isPublicLocalization);
   }
-  return fromJson(staticLocs).filter(
-    (l) => l.language === language && l.translationStatus === 'published',
-  );
+  return fromJson(staticLocs).filter((l) => l.language === language && isPublicLocalization(l));
 }
 
 export function listLocalizationsForArticle(articleId: string): ArticleLocalization[] {
