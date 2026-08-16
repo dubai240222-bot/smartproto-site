@@ -1,7 +1,7 @@
 /**
  * SP-A-098G — Archive Translation Editor pick (cheap heuristics, no LLM).
  * Ranks RU archive needing EN/TR by human/evergreen/theme value + coverage balance.
- * One article/locale job at a time.
+ * Soft topic diversity vs recent archive jobs (no extra LLM). One article/locale job at a time.
  */
 import {
   detectHumanDoor,
@@ -43,11 +43,29 @@ export type ArchiveArticleInput = {
   publishedAt?: string;
 };
 
+/** Soft diversity buckets for archive drip (cheap, no LLM). */
+export type ArchiveTopic =
+  | 'ev_mobility'
+  | 'health'
+  | 'ai'
+  | 'gadgets'
+  | 'apps'
+  | 'energy_sat'
+  | 'smart_home'
+  | 'inventions'
+  | 'lifehacks'
+  | 'travel'
+  | 'robots'
+  | 'other';
+
 export type ArchiveTranslateJob<T extends ArchiveArticleInput = ArchiveArticleInput> = {
   article: T;
   language: LocalizationLanguage;
   score: number;
   factors: string[];
+  topic: ArchiveTopic;
+  valueScore: number;
+  diversityModifier: number;
 };
 
 export type CoverageSnapshot = {
@@ -60,8 +78,9 @@ export type CoverageSnapshot = {
   trCoveragePct: number;
 };
 
+/** Human/evergreen theme signals — robots excluded (category alone must not boost). */
 const THEME_VALUE_RE =
-  /\b(robot|робот|prosthetic|протез|assistive|home\s+dialysis|smart\s*home|умн\w*\s+дом|health(?:tech)?|медицин|app\b|приложен|invention|изобретен|prototype|прототип|mobility|электромобил|energy|solar|солнечн)\b/i;
+  /\b(prosthetic|протез|assistive|home\s+dialysis|smart\s*home|умн\w*\s+дом|health(?:tech)?|медицин|app\b|приложен|invention|изобретен|prototype|прототип|mobility|электромобил|energy|solar|солнечн)\b/i;
 
 const COMMODITY_REFRESH_RE =
   /\b(color|colour|colorway|оттенк|spec(?:s)?\s+refresh|обновлен\w*\s+характеристик|budget\s+phone|бюджетн\w*\s+смартфон|gaming\s+(mouse|keyboard)|игров\w*\s+(мышь|клавиатур))\b/i;
@@ -70,6 +89,125 @@ const MS_HOUR = 60 * 60 * 1000;
 const RECENT_REJECT_MS = 48 * MS_HOUR;
 /** Prefer lagging locale when coverage gap ≥ this fraction (5pp). */
 const COVERAGE_GAP = 0.05;
+/** Look back at this many recent archive translation jobs for soft saturation. */
+const RECENT_ARCHIVE_JOBS = 8;
+/** Localization ≥1h after RU publish ≈ archive drip (not post-publish pair). */
+const ARCHIVE_LAG_MS = MS_HOUR;
+/** Soft: each recent same-topic job nudges score (capped). Exceptional value still wins. */
+const DIVERSITY_PENALTY_PER = 5;
+const DIVERSITY_PENALTY_CAP = 15;
+const DIVERSITY_UNDERREP_BOOST = 4;
+
+const EV_MOBILITY_RE =
+  /\b(ev\b|electric\s+vehicle|e-?bike|e-?scooter|micromobility|автономн\w*\s+авто|электромобил|электросамокат|дрон|drone|vtol)\b/i;
+const HEALTH_RE =
+  /\b(health(?:tech)?|medical|hospital|patient|glucose|cgm|wellness|медицин|здоров|протез|prosthetic|assistive|dialysis)\b/i;
+const AI_RE =
+  /\b(ai|llm|chatgpt|claude|gemini|agentic|neural)\b|искусственн\w*\s+интеллект|\bии\b/i;
+const APPS_RE =
+  /\b(app\b|app\s+store|play\s+store|ios\s+app|android\s+app|mobile\s+app|приложен)\b/i;
+const ENERGY_SAT_RE =
+  /\b(solar|photovoltaic|home\s+battery|powerwall|starlink|satellite\s+(internet|phone|broadband)|солнечн|старлинк|спутник|энерг)\b/i;
+const SMART_HOME_RE =
+  /\b(smart\s*home|thermostat|doorbell|irrigation|bassinet|умн\w*\s+дом|полив)\b/i;
+const INVENTION_RE =
+  /\b(invention|prototype|first[- ]of[- ]its[- ]kind|изобретен|прототип)\b/i;
+const LIFEHACK_RE =
+  /\b(lifehack|life\s+hack|everyday\s+hack|kitchen\s+gadget|лайфхак|хитрост)\b/i;
+const TRAVEL_RE =
+  /\b(travel\s+(gadget|tech|kit)|portable\s+translator|luggage|путешеств|тревел)\b/i;
+const ROBOTS_RE =
+  /\b(robot|robotics|humanoid|manipulat|exoskeleton|робот)\b/i;
+const GADGET_RE =
+  /\b(gadget|phone|smartphone|earbuds|headphones|monitor|charger|wearable|camera|гаджет|смартфон|наушник)\b/i;
+
+export function classifyArchiveTopic(article: ArchiveArticleInput): ArchiveTopic {
+  const cat = (article.category || '').toLowerCase();
+  if (/робот|robot/i.test(cat)) return 'robots';
+  if (/здоров|health|медицин/i.test(cat)) return 'health';
+  if (/приложен|app/i.test(cat)) return 'apps';
+  if (/энерг|energy|solar/i.test(cat)) return 'energy_sat';
+  if (/дом|home/i.test(cat)) return 'smart_home';
+  if (/гаджет|gadget|новинк/i.test(cat)) return 'gadgets';
+  if (/изобрет/i.test(cat)) return 'inventions';
+
+  const hay = `${article.title}\n${article.summary || ''}\n${(article.tags || []).join(' ')}\n${(article.content || '').slice(0, 900)}`;
+  if (ROBOTS_RE.test(hay)) return 'robots';
+  if (EV_MOBILITY_RE.test(hay)) return 'ev_mobility';
+  if (HEALTH_RE.test(hay)) return 'health';
+  if (ENERGY_SAT_RE.test(hay)) return 'energy_sat';
+  if (SMART_HOME_RE.test(hay)) return 'smart_home';
+  if (APPS_RE.test(hay)) return 'apps';
+  if (TRAVEL_RE.test(hay)) return 'travel';
+  if (LIFEHACK_RE.test(hay)) return 'lifehacks';
+  if (INVENTION_RE.test(hay)) return 'inventions';
+  if (AI_RE.test(hay)) return 'ai';
+  if (GADGET_RE.test(hay)) return 'gadgets';
+  return 'other';
+}
+
+/**
+ * Recent archive drip themes from published localizations (translated well after RU publish).
+ * Cheap DB/memory scan — no LLM.
+ */
+export function collectRecentArchiveTopics(
+  articles: ArchiveArticleInput[],
+  getLocalization: (articleId: string, language: LocalizationLanguage) => LocSnapshot,
+  opts?: { limit?: number; now?: number },
+): ArchiveTopic[] {
+  const limit = Math.max(1, Math.min(opts?.limit ?? RECENT_ARCHIVE_JOBS, 10));
+  const now = opts?.now ?? Date.now();
+  const rows: { at: number; topic: ArchiveTopic }[] = [];
+
+  for (const a of articles) {
+    if (!a.id) continue;
+    const publishedMs = Date.parse(a.publishedAt || '');
+    for (const lang of ['en', 'tr'] as LocalizationLanguage[]) {
+      const loc = getLocalization(a.id, lang);
+      if (!isPublishedLocalization(loc)) continue;
+      const t = Date.parse(loc!.translatedAt || '');
+      if (!Number.isFinite(t) || t > now) continue;
+      if (Number.isFinite(publishedMs) && t - publishedMs < ARCHIVE_LAG_MS) continue;
+      rows.push({ at: t, topic: classifyArchiveTopic(a) });
+    }
+  }
+
+  rows.sort((x, y) => y.at - x.at);
+  return rows.slice(0, limit).map((r) => r.topic);
+}
+
+/** Soft diversity: prefer underrepresented topics when value is comparable. */
+export function archiveDiversityModifier(
+  topic: ArchiveTopic,
+  recentTopics: ArchiveTopic[],
+): { modifier: number; factor: string } {
+  if (!recentTopics.length) {
+    return { modifier: 0, factor: 'diversity:neutral_empty' };
+  }
+  const same = recentTopics.filter((t) => t === topic).length;
+  const saturated = same >= 2 || (same >= 1 && recentTopics.length >= 5 && same / recentTopics.length >= 0.4);
+
+  if (saturated) {
+    const penalty = -Math.min(DIVERSITY_PENALTY_CAP, same * DIVERSITY_PENALTY_PER);
+    return {
+      modifier: penalty,
+      factor: `diversity:soft_sat(${topic}×${same}/${recentTopics.length};${penalty})`,
+    };
+  }
+
+  if (same === 0) {
+    const dominant = recentTopics[0];
+    const domCount = recentTopics.filter((t) => t === dominant).length;
+    if (domCount >= 2 && topic !== dominant) {
+      return {
+        modifier: DIVERSITY_UNDERREP_BOOST,
+        factor: `diversity:underrep(+${DIVERSITY_UNDERREP_BOOST};vs_${dominant}×${domCount})`,
+      };
+    }
+  }
+
+  return { modifier: 0, factor: `diversity:ok(${topic}×${same}/${recentTopics.length})` };
+}
 
 export function isPublishedLocalization(loc: LocSnapshot): boolean {
   if (!loc || loc.translationStatus !== 'published') return false;
@@ -193,7 +331,10 @@ function scoreArticleValue(
   }
 
   const cat = (article.category || '').toLowerCase();
-  if (/здоров|health|робот|robot|приложен|app|наук|science|дом|home|изобрет|mobile|энерг/i.test(cat)) {
+  // cat:Роботы must NOT itself boost — soft diversity handles robot saturation.
+  if (/робот|robot/i.test(cat)) {
+    factors.push('cat_robots_no_boost');
+  } else if (/здоров|health|приложен|app|наук|science|дом|home|изобрет|mobile|энерг/i.test(cat)) {
     score += 8;
     factors.push(`cat:${article.category}`);
   }
@@ -238,7 +379,8 @@ function scoreArticleValue(
 }
 
 /**
- * Rank archive translation jobs: one locale per article, value + coverage, no dupes.
+ * Rank archive translation jobs: one locale per article, value + coverage + soft
+ * topic diversity vs recent archive jobs. No LLM / no extra AI calls.
  */
 export function pickArchiveTranslationJobs<T extends ArchiveArticleInput>(
   articles: T[],
@@ -247,6 +389,8 @@ export function pickArchiveTranslationJobs<T extends ArchiveArticleInput>(
     limit?: number;
     now?: number;
     coverage?: CoverageSnapshot;
+    /** Override recent archive themes (tests). Default: last ~5–10 archive jobs. */
+    recentTopics?: ArchiveTopic[];
   },
 ): ArchiveTranslateJob<T>[] {
   const limit = Math.max(1, Math.min(opts.limit ?? 1, 20));
@@ -254,6 +398,9 @@ export function pickArchiveTranslationJobs<T extends ArchiveArticleInput>(
   const coverage = opts.coverage ?? computeCoverage(articles, opts.getLocalization);
   const enFrac = coverage.ruTotal ? coverage.withEn / coverage.ruTotal : 0;
   const trFrac = coverage.ruTotal ? coverage.withTr / coverage.ruTotal : 0;
+  const recentTopics =
+    opts.recentTopics ??
+    collectRecentArchiveTopics(articles, opts.getLocalization, { limit: RECENT_ARCHIVE_JOBS, now });
 
   const scored: ArchiveTranslateJob<T>[] = [];
 
@@ -272,15 +419,23 @@ export function pickArchiveTranslationJobs<T extends ArchiveArticleInput>(
     if (!elig.ok) continue;
 
     // Other locale in-progress → still ok to translate the missing one.
-    const { score: valueScore, factors } = scoreArticleValue(article, now);
-    let score = valueScore;
-    const why = [...factors];
+    const { score: rawValue, factors } = scoreArticleValue(article, now);
+    const topic = classifyArchiveTopic(article);
+    const { modifier: diversityModifier, factor: divFactor } = archiveDiversityModifier(
+      topic,
+      recentTopics,
+    );
+    let valueScore = rawValue;
+    let score = rawValue;
+    const why = [...factors, `topic:${topic}`, divFactor];
 
     if (language === 'tr' && trFrac + COVERAGE_GAP < enFrac) {
       score += 10;
+      valueScore += 10;
       why.push(`coverage_balance:tr_behind(${coverage.trCoveragePct}%<${coverage.enCoveragePct}%)`);
     } else if (language === 'en' && enFrac + COVERAGE_GAP < trFrac) {
       score += 10;
+      valueScore += 10;
       why.push(`coverage_balance:en_behind(${coverage.enCoveragePct}%<${coverage.trCoveragePct}%)`);
     } else if (!enDone && !trDone) {
       why.push(language === 'en' ? 'en_first_neither' : 'tr_neither_lag');
@@ -290,8 +445,17 @@ export function pickArchiveTranslationJobs<T extends ArchiveArticleInput>(
       why.push('en_only_missing');
     }
 
+    score += diversityModifier;
     why.push(`lang:${language}`);
-    scored.push({ article, language, score, factors: why });
+    scored.push({
+      article,
+      language,
+      score,
+      factors: why,
+      topic,
+      valueScore,
+      diversityModifier,
+    });
   }
 
   scored.sort((a, b) => {

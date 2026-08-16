@@ -62,15 +62,21 @@ async function main() {
   if (dryRun) {
     console.log('--- DRY-RUN next archive candidates ---');
     console.log(
-      '| # | id | title | lang | score | why |',
+      '| # | Article | Topic | Missing locale | Value signal | Diversity modifier | Why picked |',
     );
     jobs.forEach((job, i) => {
-      const title = (job.article.title || '').replace(/\|/g, '/').slice(0, 60);
+      const title = (job.article.title || '').replace(/\|/g, '/').slice(0, 55);
+      const why = job.factors
+        .filter((f) => !f.startsWith('topic:') && !f.startsWith('diversity:'))
+        .join('; ');
       console.log(
-        `| ${i + 1} | ${job.article.id} | ${title} | ${job.language.toUpperCase()} | ${Math.round(job.score)} | ${job.factors.join('; ')} |`,
+        `| ${i + 1} | ${title} | ${job.topic} | ${job.language.toUpperCase()} | ${Math.round(job.valueScore)} | ${job.diversityModifier >= 0 ? '+' : ''}${job.diversityModifier} | ${why} |`,
       );
     });
-    console.log(`dedup_ok pairs=${pairs.size}`);
+    const topics = jobs.map((j) => j.topic);
+    const unique = new Set(topics);
+    console.log(`dedup_ok pairs=${pairs.size} topics_unique=${unique.size}/${topics.length}`);
+    console.log('AI calls=0 (dry-run, no translate)');
     return;
   }
 
