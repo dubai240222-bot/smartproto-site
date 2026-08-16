@@ -2,6 +2,8 @@
  * SP-A-054 — News cadence + temporary warmup ramp.
  *
  * Normal: ~25 min between news ticks (~2–3/hour, max 1/tick).
+ * Daily volume target: SMARTPROTO_NEWS_DAILY_TARGET (default 6) via daily-quota.ts
+ * (behind → Scout relax + skip China; at target → ease).
  * Warmup: 4× slower (~95–100 min) until SMARTPROTO_NEWS_WARMUP_UNTIL (ISO),
  * then automatically returns to normal. Articles stay ~3h.
  *

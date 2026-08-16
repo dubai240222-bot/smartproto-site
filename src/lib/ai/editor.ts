@@ -26,10 +26,44 @@ const BANNED_CLICHE_RE =
 const STOCK_OPENER_LEAD_RE =
   /^(?:представьте(?:\s*,?\s*что)?|представь(?:те)?(?:\s+себе)?|а\s+что\s+если|что\s+если|забудьте\s+о(?:б)?|вообразите|imagine(?:\s+that)?|what\s+if)\b/i;
 
+/** Mid-body stock transitions that make every piece feel like the same template. */
+const STOCK_SKELETON_PHRASE_RE =
+  /что\s+изменилось(?:\s+по\s+сравнению)?|для\s+обычного\s+человека\s+это\s+означает|в\s+ближайшем\s+будущем|на\s+практике\s+это\s+значит|почему\s+это\s+важно\s+прямо\s+сейчас/gi;
+
+const STYLE_MODES = [
+  'STYLE MODE — ALERT: открой самым сильным фактом; короткий рубленый ритм; 2–4 абзаца разной длины; без «учебника».',
+  'STYLE MODE — EXPLAIN: спокойно разложи механизм (что сделали → как работает → зачем); чередуй короткие и средние абзацы.',
+  'STYLE MODE — CONTRAST: вход через было→стало или ожидание→реальность; покажи разрыв со вчерашним способом.',
+  'STYLE MODE — HOW-IT-HELPS: центр = практическая польза человеку; факты и цифры служат пользе, не наоборот.',
+] as const;
+
 /** True when the article body opens with a stock “Представьте / А что если / imagine” hook. */
 export function hasStockOpenerLead(text: string): boolean {
   const lead = text.trim().replace(/^[\s"'«»„“”‘’`]+/, '');
   return STOCK_OPENER_LEAD_RE.test(lead);
+}
+
+/** Light check: same 3-paragraph skeleton + stock transitions → soft-retry. */
+export function looksFormulaicSkeleton(text: string): boolean {
+  const paras = text
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  if (paras.length === 3) {
+    const allShort = paras.every((p) => {
+      const sentences = p.split(/(?<=[.!?…])\s+/).filter((s) => s.trim().length > 0);
+      return sentences.length <= 2 && p.length < 320;
+    });
+    if (allShort) return true;
+  }
+  const stockHits = text.match(STOCK_SKELETON_PHRASE_RE);
+  return (stockHits?.length || 0) >= 2 && paras.length <= 4;
+}
+
+function pickStyleMode(seed: string): string {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  return STYLE_MODES[h % STYLE_MODES.length];
 }
 
 /**
@@ -49,9 +83,11 @@ const CHIEF_EDITORIAL_DNA = [
   '5) лёгкий живой финал: тонкая улыбка / наблюдение / ирония (в большинстве подходящих тем).',
   '',
   'LEAD: цепляй за 1–2 предложения. Не «Компания X сообщила…».',
-  'Варьируй открытие под историю: конкретный факт, новая способность, короткая сцена, контраст «было→стало», вопрос — только если звучит естественно.',
+  'Варьируй открытие И структуру: alert / explain / contrast / how-it-helps — не один и тот же каркас из трёх одинаковых абзацев.',
+  'Ритм абзацев: чередуй короткие и длинные; не штампуй «факт → что изменилось → для человека → будущее» слово в слово.',
   'ЗАПРЕТ штампованных открывалок в первом предложении: «Представьте, что…», «Представь себе…», «А что если…», «Забудьте о…» и похожие formula «imagine that» hooks.',
-  'Каждая статья — свой вход. Одна и та же открывалка на ленте = провал. Метафоры и лёгкая ирония ок внутри текста, не как заводской шаблон лида.',
+  'Избегай серийных переходов: «Что изменилось…», «Для обычного человека это означает…», «В ближайшем будущем…» — если звучат как заводской шаблон.',
+  'Каждая статья — свой вход и свой ритм. Одна и та же открывалка/скелет на ленте = провал. Метафоры и лёгкая ирония ок внутри текста, не как заводской шаблон лида.',
   'TITLE: сильный факт ИЛИ новая человеческая возможность. Не «Компания X представила Y».',
   'ФИНАЛЬНЫЙ ЮМОР: тонкий умный финал где уместно. Серьёзные темы (тяжёлая болезнь / трагедия) — без юмора.',
   'Не заканчивай длинным охлаждающим опровержением и не ставь штамп «независимые испытания пока не проводились».',
@@ -211,36 +247,39 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
     return REJECT_DRAFT;
   }
 
+  const styleMode = pickStyleMode(`${sourceTitle}|${sourceName}|${format}|${mode}`);
   const formatInstructions =
     format === 'news'
       ? [
           'ФОРМАТ: новость-обзор (SHORT REVIEW). Норма ~180–300 слов; короче — только если история совсем простая и всё равно закрыта.',
           'Не пересказ источника: центр = самый яркий факт + почему это важно человеку.',
-          'Структура: сильный факт сразу → что изменилось → цифра/сравнение → смысл для человека → короткий финал.',
-          'LEAD: не начинай с «Представьте…» / «А что если…» / «Забудьте о…» — варьируй вход (факт / сцена / контраст).',
+          'Не копируй один скелет: варьируй порядок блоков (факт / сцена / контраст / польза / цифра / финал) под STYLE MODE.',
+          'LEAD: не начинай с «Представьте…» / «А что если…» / «Забудьте о…» — варьируй вход (факт / сцена / контраст / польза).',
           'FINISH THE THOUGHT: не оставляй «тяжёлый/компактный/долго» без цифры, если она есть во входных данных.',
           'БЕЗ цен, БЕЗ ссылок, БЕЗ «где купить». Без внутренних меток (Qwen/Gemini/Китай-отдел).',
+          styleMode,
         ]
       : [
           'ФОРМАТ: полный редакционный обзор (FULL REVIEW). Норма ~180–300 слов.',
           'Цель: читатель за ~180–300 слов понимает, что произошло, почему это важно и что изменилось.',
           'Ниже ~180 слов — только если история совсем простая; иначе ориентир ~180–300.',
           'Не перевод и не сжатый пресс-релиз. Small story → big angle, если угол честно следует из фактов.',
-          'Структура:',
+          'Структура — гибкая (не штампуй одни и те же 6 пунктов слово в слово):',
           '1) hook = самый сильный факт или живой вход без штампа «Представьте…» (не прятать во 2–3 абзаце);',
-          '2) почему удивляет / что изменилось vs вчера;',
+          '2) почему удивляет / что изменилось vs вчера — ИЛИ сразу польза, если история про how-it-helps;',
           '3) ключевые цифры смысла из источника + сравнение;',
           '4) что даёт человеку;',
-          '5) ближайшее будущее / практический горизонт;',
+          '5) ближайшее будущее / практический горизонт (не обязательный штамп-абзац);',
           '6) лёгкий живой финал (без штампа «независимых испытаний» и без shop CTA).',
           'БЕЗ цен, БЕЗ outbound-ссылок. Без внутренних меток (Qwen/Gemini/Китай-отдел).',
+          styleMode,
         ];
 
   const client = getOpenRouterClient();
   const completion = await client.chat.completions.create({
     model: EDITOR_MODEL,
-    temperature: 0.4,
-    top_p: 0.85,
+    temperature: format === 'news' ? 0.55 : 0.45,
+    top_p: 0.9,
     max_tokens: format === 'news' ? 1100 : 1500,
     messages: [
       { role: 'system', content: EDITOR_SYSTEM_PROMPT },
@@ -390,6 +429,36 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
             'Черновик начинается штампованной открывалкой («Представьте…» / «А что если…» / «imagine…»).',
             'Перепиши ЛИД: начни с конкретного факта, способности, сцены или контраста — без formula hook.',
             'Остальной смысл и факты сохрани. Без цен и URL. Верни тот же JSON-формат.',
+            '',
+            'Входные данные:',
+            clampText(JSON.stringify(articleData, null, 2), 10000),
+            '',
+            'Слабый черновик:',
+            clampText(draft.text, 4000),
+          ].join('\n'),
+        },
+      ],
+    });
+    const retryRaw = retry.choices[0]?.message?.content;
+    draft = await parseEditorJson(typeof retryRaw === 'string' ? retryRaw.trim() : '');
+  }
+
+  // Soft guidance: one rewrite if body feels like the same 3-block factory skeleton.
+  if (draft.title.trim().toUpperCase() !== 'REJECT' && looksFormulaicSkeleton(draft.text)) {
+    const retry = await client.chat.completions.create({
+      model: EDITOR_MODEL,
+      temperature: 0.5,
+      top_p: 0.9,
+      max_tokens: format === 'news' ? 1100 : 1500,
+      messages: [
+        { role: 'system', content: EDITOR_SYSTEM_PROMPT },
+        {
+          role: 'user',
+          content: [
+            'Черновик звучит как один и тот же шаблон (одинаковый скелет абзацев / штампованные переходы).',
+            pickStyleMode(`${draft.title}|retry|${format}`),
+            'Перепиши: смени порядок блоков и ритм абзацев; убери серийные фразы вроде «Что изменилось…» / «Для обычного человека…».',
+            'Факты и цифры сохрани. Без цен и URL. Верни тот же JSON-формат.',
             '',
             'Входные данные:',
             clampText(JSON.stringify(articleData, null, 2), 10000),

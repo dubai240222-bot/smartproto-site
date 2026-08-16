@@ -74,6 +74,13 @@ import {
   formatFreshnessReport,
   type FreshnessReport,
 } from '../src/lib/newsroom/freshness';
+import {
+  applyQuotaScoutFloor,
+  formatNewsQuotaPolicy,
+  resolveNewsQuotaPolicy,
+  type NewsQuotaPolicy,
+} from '../src/lib/newsroom/daily-quota';
+import { resolveVisualFallback, getCategoryStock } from '../src/lib/visual-fallback';
 
 /**
  * SP-A-056 — on the Hetzner worker (ARTICLES_STORE=sqlite) also persist the
@@ -152,13 +159,15 @@ async function maybeSyncToSqlite(article: Record<string, unknown>): Promise<void
 
 /**
  * Soft hero when photo-scout returns nothing: keep a quality-gated source/og
- * image (downloaded locally), else thematic editorial stock. Prefer a soft
- * banner over a blank card — never hotlink random marketplace junk.
+ * image (downloaded locally), else thematic editorial stock, else curated
+ * brand/category stock (SP-A-084). Prefer a soft banner over a blank card —
+ * never hotlink random marketplace junk.
  */
 async function ensureSoftHeroImages(opts: {
   slug: string;
   title: string;
   category?: string;
+  tags?: string[];
   fallbackUrl?: string;
   images: import('../src/lib/collectors/photo-scout').ScoutImage[];
 }): Promise<import('../src/lib/collectors/photo-scout').ScoutImage[]> {
@@ -193,6 +202,34 @@ async function ensureSoftHeroImages(opts: {
   if (thematic) {
     const got = await tryDownload(thematic, 'thematic');
     if (got.length) return got;
+  }
+
+  // Curated brand/category stock (same pool as UI visual-fallback; download locally).
+  try {
+    const spec = resolveVisualFallback({
+      title: opts.title,
+      category: opts.category,
+      tags: opts.tags,
+      slug: opts.slug,
+    });
+    if (spec.imageUrl) {
+      const got = await tryDownload(spec.imageUrl, `stock:${spec.assetId || spec.kind}`);
+      if (got.length) return got;
+    }
+    const pool = getCategoryStock(spec.categoryKey);
+    for (const asset of pool.slice(0, 3)) {
+      if (asset.url === spec.imageUrl) continue;
+      const got = await tryDownload(asset.url, `stock-alt:${asset.id}`);
+      if (got.length) return got;
+    }
+  } catch (err) {
+    console.log(
+      chalk.yellow(
+        `[photo-soft] stock fallback error: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      ),
+    );
   }
 
   console.log(chalk.yellow(`[photo-soft] no hero for ${opts.slug} — publishing without image`));
@@ -594,9 +631,22 @@ async function tryChinaPublishOnce(opts: {
   articles: Article[];
   metrics: TickMetrics;
   lastPublish?: { title?: string; slug?: string; wowScore?: number };
+  /** Cap Qwen attempts this tick (quota: 0 skip / 1 ease / 3 default). */
+  chinaMaxAttempts?: number;
+  allowPublishWithoutImage?: boolean;
 }): Promise<boolean> {
   process.env.CHINA_DEPARTMENT_ENABLED = 'true';
   process.env.CHINA_ALLOW_RECOMMEND = 'true';
+
+  const chinaCap = Math.max(
+    0,
+    Math.min(opts.chinaMaxAttempts ?? CHINA_MAX_QWEN, CHINA_MAX_QWEN),
+  );
+  if (chinaCap <= 0) {
+    console.log(chalk.gray('China desk skipped this tick (quota policy).'));
+    opts.metrics.skipReason = 'china skipped (quota)';
+    return false;
+  }
 
   console.log(chalk.bold('— Channel A: China → Qwen —'));
   opts.metrics.collectorStarted = true;
@@ -625,11 +675,11 @@ async function tryChinaPublishOnce(opts: {
     .filter((x) => looksChinaConsumerGadget(x.candidate.title, x.candidate.summary))
     .filter((x) => !opts.urls.has(x.candidate.sourceUrl))
     .sort((a, b) => b.candidate.rawSignals.length - a.candidate.rawSignals.length)
-    .slice(0, CHINA_MAX_QWEN)
+    .slice(0, chinaCap)
     .map((x) => x.candidate);
 
   opts.metrics.candidatesCollected += consider.length;
-  console.log(`China CONSIDER gadget candidates: ${consider.length} (max Qwen ${CHINA_MAX_QWEN})`);
+  console.log(`China CONSIDER gadget candidates: ${consider.length} (max Qwen ${chinaCap})`);
   if (!consider.length) {
     console.log(chalk.gray('No China/Qwen candidate — fall through to RSS.'));
     opts.metrics.skipReason = 'no china candidate';
@@ -780,13 +830,17 @@ async function tryChinaPublishOnce(opts: {
 
     let imageUrl = (dossier.imageUrl || pageImage || c.imageUrl || '').trim();
     if (!imageUrl || /unsplash\.com/i.test(imageUrl)) {
-      console.log(chalk.yellow('No authentic imageUrl — skip China candidate'));
-      continue;
+      // Prefer soft thematic/stock later over burning the candidate — do not hard-skip.
+      console.log(
+        chalk.yellow(
+          'No authentic imageUrl yet — will try photo-scout + soft thematic/stock hero',
+        ),
+      );
+      imageUrl = '';
     }
-    // SP-A-060: reject reposted-screenshot-shaped images (Weibo/forum banners),
-    // publish without an image rather than with a bad one.
-    if (!(await passesImageQualityGate(imageUrl))) {
-      console.log(chalk.yellow('Image failed quality gate (screenshot/banner shape) — publishing without image'));
+    // SP-A-060: reject reposted-screenshot-shaped images (Weibo/forum banners).
+    if (imageUrl && !(await passesImageQualityGate(imageUrl))) {
+      console.log(chalk.yellow('Image failed quality gate (screenshot/banner shape) — soft hero path'));
       imageUrl = '';
     }
 
@@ -873,10 +927,23 @@ async function tryChinaPublishOnce(opts: {
         slug,
         title: draft.title,
         category: CHINA_CATEGORY,
+        tags: publicTags,
         fallbackUrl: imageUrl,
         images,
       });
-      if (!images.length) imageUrl = ''; // never publish an unconfirmed remote hotlink
+      if (!images.length) {
+        if (opts.cycle === 'news' && !opts.allowPublishWithoutImage) {
+          console.log(
+            chalk.yellow(
+              'China: no hero after soft fallback — skip candidate (prefer image over empty window)',
+            ),
+          );
+          continue;
+        }
+        imageUrl = ''; // never publish an unconfirmed remote hotlink
+      } else {
+        imageUrl = images[0].url;
+      }
 
       const article: Article = {
         id: slug,
@@ -1012,19 +1079,24 @@ async function publishRssOnce(opts: {
   articles: Article[];
   metrics: TickMetrics;
   lastPublish?: { title?: string; slug?: string; wowScore?: number };
+  quota?: NewsQuotaPolicy;
 }): Promise<boolean> {
   console.log(chalk.bold(`— Channel B: RSS / editorial office (${opts.cycle}) —`));
   opts.metrics.collectorStarted = true;
   // Production floors stay 70/75 when env unset. Explicit SCOUT_SCORE_THRESHOLD
   // (test-auto=40, forced probe <40) must win — Math.max(...) was ignoring it.
   const explicitScout = Boolean(process.env.SCOUT_SCORE_THRESHOLD?.trim());
-  const scoutFloor = explicitScout
+  let scoutFloor = explicitScout
     ? SCOUT_SCORE_THRESHOLD
     : opts.cycle === 'article'
       ? 75
       : 70;
   // SP-A-063 forced/live probe: dig past deal/opinion tops that score 0 forever.
   const probeMode = explicitScout && SCOUT_SCORE_THRESHOLD < 70;
+  // Daily news quota: slight floor relax when behind (not probe / not article).
+  if (opts.cycle === 'news' && opts.quota?.behind && !probeMode) {
+    scoutFloor = applyQuotaScoutFloor(scoutFloor, opts.quota);
+  }
 
   const candidates: RssItem[] = [];
   const perSource: Record<string, number> = {};
@@ -1118,9 +1190,6 @@ async function publishRssOnce(opts: {
 
   opts.metrics.candidatesCollected += candidates.length;
   console.log(`New gadget candidates after filters: ${candidates.length}`);
-  console.log(
-    `Scout threshold: ${scoutFloor} (cycle=${opts.cycle}${probeMode ? ', probe dig-deep' : ''})`,
-  );
 
   // SP-A-096 — empty RSS must not skip Staff Author / SAFE Reader Scout seats.
   if (candidates.length === 0) {
@@ -1151,6 +1220,23 @@ async function publishRssOnce(opts: {
     journalEntries: opts.journal.entries,
   });
   console.log(chalk.bold(formatFreshnessReport(freshness)));
+  const quota =
+    opts.quota ||
+    (opts.cycle === 'news'
+      ? resolveNewsQuotaPolicy({
+          articles: opts.articles.map((a) => ({
+            publishedAt: a.publishedAt,
+            agentId: a.agentId,
+            tags: a.tags,
+          })),
+          journalEntries: opts.journal.entries,
+          minutesSinceLastAuto: freshness.minutesSinceLastAutoPublication,
+          freshnessStatus: freshness.freshnessStatus,
+        })
+      : undefined);
+  if (quota) {
+    console.log(chalk.bold(formatNewsQuotaPolicy(quota)));
+  }
   if (freshness.freshnessStatus === 'WARNING') {
     console.log(
       chalk.yellow(
@@ -1165,7 +1251,22 @@ async function publishRssOnce(opts: {
     );
   }
   const pipelineBudget = freshness.pipelineCandidateBudget;
-  const scoutLimit = probeMode ? 16 : freshness.freshnessStatus === 'CRITICAL' ? 16 : 14;
+  // Cost-aware: when behind quota use fewer Scout calls (better prefilter + lower floor),
+  // not a wider empty window. Probe / CRITICAL still may widen slightly.
+  const scoutLimit = probeMode
+    ? 16
+    : opts.cycle === 'news' && quota?.behind
+      ? quota.scoutLimit
+      : freshness.freshnessStatus === 'CRITICAL'
+        ? 16
+        : 14;
+  console.log(
+    chalk.gray(
+      `Scout threshold: ${scoutFloor} (cycle=${opts.cycle}${probeMode ? ', probe dig-deep' : ''}${
+        quota?.behind ? `, quota-relax −${quota.scoutFloorRelax}` : ''
+      })`,
+    ),
+  );
   const scoutPool = buildScoutPool(candidates, { limit: scoutLimit, maxPerSource: 3 });
   console.log(
     chalk.gray(
@@ -1722,10 +1823,24 @@ async function publishRssOnce(opts: {
           slug,
           title: draft.title,
           category: 'Гаджеты',
+          tags: draft.tags,
           fallbackUrl: imageUrl,
           images,
         });
-        if (!images.length) imageUrl = '';
+        if (!images.length) {
+          if (opts.cycle === 'news' && !(opts.quota?.allowPublishWithoutImage)) {
+            console.log(
+              chalk.yellow(
+                'RSS: no hero after soft fallback — skip candidate (prefer image over empty window)',
+              ),
+            );
+            lastSkip = 'no hero after soft fallback';
+            continue;
+          }
+          imageUrl = '';
+        } else {
+          imageUrl = images[0].url;
+        }
 
         const photoMeta = (opts as any)._lastPhotoMeta as
           | { imageMatchLevel?: string; imageLabel?: string }
@@ -2068,7 +2183,37 @@ async function main(): Promise<void> {
     lastPublish,
   };
 
-  const chinaDone = await tryChinaPublishOnce(shared);
+  const freshnessPreview = buildFreshnessReport({
+    articles: articles.map((a) => ({ publishedAt: a.publishedAt, agentId: a.agentId })),
+    journalEntries: journal.entries,
+  });
+  const newsQuota =
+    options.cycle === 'news'
+      ? resolveNewsQuotaPolicy({
+          articles: articles.map((a) => ({
+            publishedAt: a.publishedAt,
+            agentId: a.agentId,
+            tags: a.tags,
+          })),
+          journalEntries: journal.entries,
+          minutesSinceLastAuto: freshnessPreview.minutesSinceLastAutoPublication,
+          freshnessStatus: freshnessPreview.freshnessStatus,
+        })
+      : undefined;
+  if (newsQuota) {
+    console.log(chalk.bold(formatNewsQuotaPolicy(newsQuota)));
+  }
+
+  let chinaDone = false;
+  if (newsQuota?.skipChina) {
+    console.log(chalk.gray('Quota behind — skip China desk; RSS news first.'));
+  } else {
+    chinaDone = await tryChinaPublishOnce({
+      ...shared,
+      chinaMaxAttempts: newsQuota?.chinaMaxAttempts ?? CHINA_MAX_QWEN,
+      allowPublishWithoutImage: newsQuota?.allowPublishWithoutImage ?? false,
+    });
+  }
   if (chinaDone) {
     console.log(chalk.bold(`Tick complete (internal desk / ${options.cycle}).`));
     if (metrics.skipReason === 'in progress') metrics.skipReason = 'none';
@@ -2093,6 +2238,7 @@ async function main(): Promise<void> {
     productIds: refreshed.productIds,
     journal: refreshed.journal,
     articles: refreshed.articles,
+    quota: newsQuota,
   });
 
   console.log(chalk.bold('Tick complete.'));

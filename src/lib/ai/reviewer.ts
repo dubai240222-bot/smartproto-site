@@ -38,6 +38,8 @@ const REVIEW_SYSTEM_PROMPT_GADGET = [
   'REJECT robotics flood: humanoid / robot hand / lab robot / industrial robot как основная тема — сайт не про роботов.',
   'Предпочитай разнообразие столов: gadgets / apps / AI capability / inventions — не flood robotics.',
   'SOFT FLAG лида: если текст начинается с «Представьте…» / «Представь себе…» / «А что если…» / imagine-that — отметь в technicalVerdict префиксом SOFT: (не REJECT), Editor должен сменить открытие.',
+  'SOFT FLAG шаблона: если текст выглядит как один заводской скелет из 3 одинаковых абзацев или штампует «Что изменилось… / Для обычного человека… / В ближайшем будущем…» — SOFT: formulaic skeleton (не REJECT).',
+  'Editor должен варьировать тон (alert / explain / contrast / how-it-helps) и ритм абзацев.',
   'keyAspects — 3 коротких пункта про возможность/новизну/пользу (не про цену).',
   'Иначе подтверди достоверность и 3 аспекта.',
 ].join(' ');
