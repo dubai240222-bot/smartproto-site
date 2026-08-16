@@ -6,8 +6,20 @@ export async function GET() {
   try {
     if (process.env.ARTICLES_STORE === 'sqlite') {
       const { countArticles } = await import('@/lib/data-store/articles-repo');
+      const { getAllArticles } = await import('@/data/articles');
+      const { getLocalization } = await import('@/data/localizations');
+      const { buildArchiveTranslationHealth } = await import(
+        '@/lib/i18n/archive-translate-health'
+      );
       const total = countArticles();
-      return NextResponse.json({ status: 'ok', store: 'sqlite', articles: total });
+      const articles = getAllArticles();
+      const archive = buildArchiveTranslationHealth(articles, getLocalization);
+      return NextResponse.json({
+        status: 'ok',
+        store: 'sqlite',
+        articles: total,
+        archive_translation: archive,
+      });
     }
     return NextResponse.json({ status: 'ok', store: 'json' });
   } catch (err) {

@@ -46,9 +46,9 @@ const FORCED_DEADLINE_MS = Number(process.env.SMARTPROTO_FORCED_DEADLINE_MS || 1
 /** Temporary Scout floor for forced live visual check only. Production stays 70. */
 const FORCED_SCOUT_THRESHOLD = process.env.SMARTPROTO_FORCED_SCOUT_THRESHOLD || '25';
 const POLL_MS = 15_000;
-/** SP-A-098F — translate at most 1 missing RU→EN/TR pair every N ms (default 45m). */
+/** SP-A-098G — archive translate at most 1 article/locale every ~4h (3–5h range). */
 const TRANSLATE_DRIP_INTERVAL_MS = Number(
-  process.env.SMARTPROTO_TRANSLATE_DRIP_INTERVAL_MS || 45 * 60 * 1000,
+  process.env.SMARTPROTO_TRANSLATE_DRIP_INTERVAL_MS || 4 * 60 * 60 * 1000,
 );
 const TRANSLATE_DRIP_ENABLED =
   (process.env.SMARTPROTO_TRANSLATE_ENABLED ?? 'true').toLowerCase() !== 'false';
@@ -99,7 +99,7 @@ interface WorkerState {
   lastAutoPublicationAt?: string;
   freshnessStatus?: 'OK' | 'WARNING' | 'CRITICAL';
   publicationsLast24h?: number;
-  /** SP-A-098F — last EN/TR backlog drip */
+  /** SP-A-098G — last archive EN/TR drip (shared cooldown with idle→archive) */
   lastTranslateDripAt?: string;
 }
 
@@ -219,12 +219,14 @@ async function maybeRetentionCleanup(): Promise<void> {
 }
 
 /**
- * SP-A-098F — long-lived worker drip fills EN/TR for older RU articles.
- * Max 1 article per interval (never a factory burst).
+ * SP-A-098G — archive translation drip: 1 article / 1 locale per job.
+ * Shared cooldown with idle→archive (published=0); never a factory burst.
  */
 function runTranslateDrip(): Promise<{ ok: boolean }> {
   return new Promise((resolve) => {
-    log('SP-A-098F translation drip (limit=1)…');
+    log(
+      `SP-A-098G archive translation drip (limit=1 locale, interval~${Math.round(TRANSLATE_DRIP_INTERVAL_MS / 3600000)}h)…`,
+    );
     const child = spawn('npx', ['tsx', 'scripts/spa098-translate-recent.ts', '--limit=1'], {
       cwd: process.cwd(),
       env: {
@@ -242,14 +244,14 @@ function runTranslateDrip(): Promise<{ ok: boolean }> {
   });
 }
 
-async function maybeTranslateDrip(): Promise<void> {
+async function maybeTranslateDrip(reason: 'schedule' | 'idle-no-publish' = 'schedule'): Promise<void> {
   if (!TRANSLATE_DRIP_ENABLED) return;
   if (process.env.ARTICLES_STORE !== 'sqlite') return;
   const state = readState();
   if (!isDue(state.lastTranslateDripAt, TRANSLATE_DRIP_INTERVAL_MS)) return;
   const { ok } = await runTranslateDrip();
   writeState({ lastTranslateDripAt: new Date().toISOString() });
-  log(`SP-A-098F translation drip finished: ${ok ? 'ok' : 'error'}`);
+  log(`SP-A-098G archive translation drip finished (${reason}): ${ok ? 'ok' : 'error'}`);
 }
 
 async function logFreshnessHealth(publishedThisTick: boolean): Promise<void> {
@@ -297,8 +299,8 @@ async function loopOnce(): Promise<void> {
   // Retention runs even when editorial mode is OFF so disk stays bounded
   // without requiring AUTO ticks — still only once per night.
   await maybeRetentionCleanup();
-  // Translation drip also runs in OFF so EN/TR catch up without a factory burst.
-  await maybeTranslateDrip();
+  // Archive drip on shared ~4h cooldown (also when mode OFF).
+  await maybeTranslateDrip('schedule');
 
   const mode = readMode();
 
@@ -308,12 +310,13 @@ async function loopOnce(): Promise<void> {
 
   if (mode === 'single') {
     log('Mode SINGLE — running exactly one cycle, then back to OFF.');
-    const { ok } = await runTick('news');
+    const { ok, published } = await runTick('news');
     writeState({
       lastRunAt: new Date().toISOString(),
       lastRunStatus: ok ? 'ok' : 'error',
       ...(ok ? { lastNewsAt: new Date().toISOString() } : {}),
     });
+    if (!published) await maybeTranslateDrip('idle-no-publish');
     writeMode('off');
     log('Single cycle done — mode set back to OFF.');
     return;
@@ -350,6 +353,7 @@ async function loopOnce(): Promise<void> {
       forcedPublished: nextCount,
       ...(ok ? { lastNewsAt: new Date().toISOString() } : {}),
     });
+    if (!published) await maybeTranslateDrip('idle-no-publish');
     if (nextCount >= target) {
       log(`FORCED target ${target} reached after this tick — switching to TEST-AUTO.`);
       writeState({ forcedPublished: 0 });
@@ -386,13 +390,14 @@ async function loopOnce(): Promise<void> {
       log(
         `Mode TEST-AUTO — tick ${tickNo}${TEST_AUTO_MAX_TICKS ? `/${TEST_AUTO_MAX_TICKS}` : ''} (${Math.round(TEST_AUTO_INTERVAL_MS / 60000)} min interval, scout=${TEST_AUTO_SCOUT_THRESHOLD}).`,
       );
-      const { ok } = await runTick('news', { lenient: true });
+      const { ok, published } = await runTick('news', { lenient: true });
       writeState({
         lastRunAt: new Date().toISOString(),
         lastRunStatus: ok ? 'ok' : 'error',
         testAutoTicks: tickNo,
         ...(ok ? { lastNewsAt: new Date().toISOString() } : {}),
       });
+      if (!published) await maybeTranslateDrip('idle-no-publish');
       if (TEST_AUTO_MAX_TICKS > 0 && tickNo >= TEST_AUTO_MAX_TICKS) {
         log(`TEST-AUTO max ticks ${TEST_AUTO_MAX_TICKS} reached after this tick — switching to OFF.`);
         writeMode('off');
@@ -411,6 +416,8 @@ async function loopOnce(): Promise<void> {
       ...(ok ? { lastNewsAt: new Date().toISOString() } : {}),
     });
     await logFreshnessHealth(published);
+    // Idle factory → one archive locale if shared ~4h cooldown allows (not additive).
+    if (!published) await maybeTranslateDrip('idle-no-publish');
     return; // one cycle per poll tick keeps this simple and observable
   }
   if (isDue(state.lastArticleAt, ARTICLE_INTERVAL_MS)) {
@@ -421,6 +428,7 @@ async function loopOnce(): Promise<void> {
       ...(ok ? { lastArticleAt: new Date().toISOString() } : {}),
     });
     await logFreshnessHealth(published);
+    if (!published) await maybeTranslateDrip('idle-no-publish');
   }
 }
 

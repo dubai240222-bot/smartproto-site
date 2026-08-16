@@ -5,10 +5,18 @@
  * Prefer awaiting `runPostPublishTranslation` inside the newsroom tick child
  * process — fire-and-forget dies when the tick process exits (Hetzner worker
  * spawns ticks as short-lived children).
+ *
+ * SP-A-098G — archive drip uses `runArchiveLocaleTranslation` (1 locale / job).
  */
 import type { CanonicalForTranslation } from '@/lib/i18n/translate-article';
 import { translateArticleLanguage } from '@/lib/i18n/translate-article';
 import type { LocalizationLanguage } from '@/lib/i18n/locales';
+import {
+  pickArchiveTranslationJobs,
+  pickArticlesNeedingTranslationRanked,
+  type ArchiveArticleInput,
+  type LocSnapshot,
+} from '@/lib/i18n/archive-translate-pick';
 
 const LANGS: LocalizationLanguage[] = ['en', 'tr'];
 
@@ -25,6 +33,7 @@ export type PostPublishTranslationReport = {
 
 /**
  * Run EN then TR sequentially (max 1 call each). Isolated errors.
+ * Used after NEW RU publish — both locales in the same tick process.
  */
 export async function runPostPublishTranslation(
   article: CanonicalForTranslation,
@@ -55,6 +64,39 @@ export async function runPostPublishTranslation(
     slug: article.slug,
     results,
     totalAiCalls: results.reduce((n, r) => n + (r.aiCalls || 0), 0),
+  };
+}
+
+/**
+ * SP-A-098G — translate exactly one locale (archive drip: 1 AI call / job).
+ */
+export async function runArchiveLocaleTranslation(
+  article: CanonicalForTranslation,
+  language: LocalizationLanguage,
+): Promise<PostPublishTranslationReport> {
+  let result: Awaited<ReturnType<typeof translateArticleLanguage>>;
+  try {
+    result = await translateArticleLanguage(article, language, { retryRejected: true });
+    console.log(
+      `[spa098g] archive translate ${language} article=${article.id} status=${result.status} ai=${result.aiCalls}` +
+        (result.reason ? ` reason=${result.reason}` : '') +
+        (result.localization ? ` slug=${result.localization.localizedSlug}` : ''),
+    );
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    console.log(`[spa098g] archive translate ${language} HARD-FAIL article=${article.id}: ${reason}`);
+    result = {
+      language,
+      status: 'rejected',
+      aiCalls: 0,
+      reason: `hard:${reason}`,
+    };
+  }
+  return {
+    articleId: article.id,
+    slug: article.slug,
+    results: [result],
+    totalAiCalls: result.aiCalls || 0,
   };
 }
 
@@ -94,40 +136,38 @@ export function schedulePostPublishTranslation(
 }
 
 /**
- * Pick newest RU articles missing a published EN (and/or TR) localization.
- * Used by the Hetzner worker drip — bounded, never a mass backlog burst.
+ * Pick archive jobs by value + EN/TR coverage (not newest-first only).
+ * Prefer `pickArchiveTranslationJobs` when the language is needed.
  */
 export function pickArticlesNeedingTranslation<
-  T extends { id: string; slug: string; title: string; summary: string; content: string; publishedAt?: string },
+  T extends {
+    id: string;
+    slug: string;
+    title: string;
+    summary: string;
+    content: string;
+    publishedAt?: string;
+    category?: string;
+    tags?: string[];
+  },
 >(
   articles: T[],
   opts: {
     getLocalization: (
       articleId: string,
       language: LocalizationLanguage,
-    ) => { translationStatus?: string; localizedTitle?: string; translatorModel?: string } | null;
+    ) => LocSnapshot;
     limit?: number;
   },
 ): T[] {
-  const limit = Math.max(1, Math.min(opts.limit ?? 1, 5));
-  const sorted = [...articles].sort((a, b) => {
-    const ta = Date.parse(a.publishedAt || '') || 0;
-    const tb = Date.parse(b.publishedAt || '') || 0;
-    return tb - ta;
-  });
-  const out: T[] = [];
-  for (const a of sorted) {
-    if (!a.id || !a.title || !a.content) continue;
-    const en = opts.getLocalization(a.id, 'en');
-    const tr = opts.getLocalization(a.id, 'tr');
-    const enDone = en?.translationStatus === 'published' && !isTestLocalization(en);
-    const trDone = tr?.translationStatus === 'published' && !isTestLocalization(tr);
-    if (enDone && trDone) continue;
-    out.push(a);
-    if (out.length >= limit) break;
-  }
-  return out;
+  return pickArticlesNeedingTranslationRanked(articles as ArchiveArticleInput[], {
+    getLocalization: opts.getLocalization,
+    limit: opts.limit,
+  }) as T[];
 }
+
+export { pickArchiveTranslationJobs };
+export type { ArchiveTranslateJob } from '@/lib/i18n/archive-translate-pick';
 
 export function isTestLocalization(loc: {
   localizedTitle?: string;
