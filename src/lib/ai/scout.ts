@@ -39,7 +39,8 @@ const SCOUT_MODEL = process.env.OPENROUTER_SCOUT_MODEL ?? 'deepseek/deepseek-v4-
 const SCOUT_SYSTEM_PROMPT_GADGET = [
   SCOUT_SYSTEM_PROMPT_GADGET_V2,
   '',
-  'PRIORITY: unusual gadgets/apps, полезные AI-инструменты для людей, wearables, travel, health — НЕ лента про роботов.',
+  'PRIORITY: unusual gadgets/apps, полезные AI-инструменты для людей, wearables, travel, health, inventions — НЕ лента про роботов.',
+  'DIVERSIFY desks: gadgets / apps / AI capability news / inventions — избегай серии robotics/research подряд.',
   'REJECT robotics flood: humanoid, robot hand, lab manipulator, industrial robot, robotaxi-as-main-story без бытового гаджета.',
   'Home robot vacuum/lawn OK редко. Иначе сайт становится узким робо-блогом — это запрещено.',
   'KEEP AI news если есть конкретное достижение/возможность и понятная польза человеку (модель, приложение, demo) — не «ещё одна робот-рука».',

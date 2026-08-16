@@ -1,6 +1,7 @@
 /**
  * SP-A-065F — Cross-tick diversity guard (lightweight).
  * Soft preference away from repeating robotics/research publishes — not a hard ban.
+ * Strengthened: trigger after 1 recent robotics publish (was 2); tighter margin.
  */
 
 export type EditorialFocus =
@@ -36,7 +37,7 @@ const CHINA_RE = /\b(china|chinese|xiaomi|huawei|oppo|vivo|iqoo|technode|shenzhe
 const UNUSUAL_RE =
   /\b(wristband|neuromuscular|gesture|foldable|translator|invention|unusual)\b|браслет|изобретен/i;
 const CONSUMER_RE =
-  /\b(gadget|keyboard|phone|smartphone|earbuds|headphones|monitor|charger|crowdfund)\b|гаджет|клавиатур|смартфон/i;
+  /\b(gadget|keyboard|phone|smartphone|earbuds|headphones|monitor|charger|crowdfund|app\b|wearable|camera)\b|гаджет|клавиатур|смартфон|приложен/i;
 
 export function inferEditorialFocus(input: {
   title?: string;
@@ -90,8 +91,8 @@ export function focusOfArticle(a: FocusArticleLike): EditorialFocus {
   });
 }
 
-/** True when the last 2 publishes are both robotics/research. */
-export function roboticsResearchStreak(recent: FocusArticleLike[], n = 2): boolean {
+/** True when the last n publishes are robotics/research (default n=1). */
+export function roboticsResearchStreak(recent: FocusArticleLike[], n = 1): boolean {
   if (recent.length < n) return false;
   return recent.slice(0, n).every((a) => focusOfArticle(a) === 'robotics_research');
 }
@@ -104,7 +105,7 @@ export interface DiversityPasser<T> {
 
 /**
  * Pick publish winner among Scout passers (≥ floor).
- * When robotics/research already filled last 2 publishes:
+ * When the last publish was robotics/research:
  * prefer other focus ≥ floor, unless robotics leads by ≥ advantageMargin.
  */
 export function pickDiversityWinner<T>(opts: {
@@ -112,15 +113,27 @@ export function pickDiversityWinner<T>(opts: {
   recent: FocusArticleLike[];
   advantageMargin?: number;
 }): { winner: DiversityPasser<T> | null; reason: string; streak: boolean } {
-  const margin = opts.advantageMargin ?? 10;
-  const streak = roboticsResearchStreak(opts.recent, 2);
+  const margin = opts.advantageMargin ?? 6;
+  const streak = roboticsResearchStreak(opts.recent, 1);
   const passers = [...opts.passers].sort((a, b) => b.score - a.score);
   if (!passers.length) return { winner: null, reason: 'no passers', streak };
 
   if (!streak) {
+    // Soft bias: if top is robotics and a broader desk is within margin, prefer breadth.
+    const best = passers[0];
+    if (best.focus === 'robotics_research') {
+      const other = passers.find((p) => p.focus !== 'robotics_research');
+      if (other && best.score - other.score < margin) {
+        return {
+          winner: other,
+          reason: `soft breadth — prefer ${other.focus} ${other.score} over close robotics ${best.score}`,
+          streak,
+        };
+      }
+    }
     return {
-      winner: passers[0],
-      reason: `no robotics streak — take highest passer (${passers[0].focus} ${passers[0].score})`,
+      winner: best,
+      reason: `no robotics streak — take highest passer (${best.focus} ${best.score})`,
       streak,
     };
   }
@@ -162,7 +175,7 @@ export function pickDiversityWinner<T>(opts: {
 export function simulateDiversitySequence(
   recentBefore: FocusArticleLike[],
   incoming: { title: string; text?: string; sourceName?: string; score: number }[],
-  advantageMargin = 10,
+  advantageMargin = 6,
 ): { before: EditorialFocus[]; picks: { title: string; focus: EditorialFocus; reason: string }[] } {
   const recent = [...recentBefore];
   const before = recent.slice(0, 5).map(focusOfArticle);

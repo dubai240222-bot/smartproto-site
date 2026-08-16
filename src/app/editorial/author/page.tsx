@@ -11,7 +11,7 @@ type State =
 
 export default function EditorialAuthorPage() {
   const [deskMode, setDeskMode] = useState<DeskMode>('choose');
-  const [token, setToken] = useState('');
+  const [pin, setPin] = useState('');
   const [authorName, setAuthorName] = useState('');
   const [title, setTitle] = useState('');
   const [type, setType] = useState<ColumnType>('AUTHOR_ARTICLE');
@@ -29,11 +29,11 @@ export default function EditorialAuthorPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${pin}`,
         },
         body: JSON.stringify({
           mode: 'propose_link',
-          token,
+          pin,
           authorName,
           url,
           note: note || undefined,
@@ -72,11 +72,11 @@ export default function EditorialAuthorPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${pin}`,
         },
         body: JSON.stringify({
           mode: 'author_column',
-          token,
+          pin,
           authorName,
           title,
           type,
@@ -173,14 +173,18 @@ export default function EditorialAuthorPage() {
           <form onSubmit={onSubmitLink} className="mt-6 space-y-4">
             <h2 className="text-lg font-medium">Предложить новость</h2>
             <label className="block text-[12px] text-[var(--muted)]">
-              Access token
+              PIN
               <input
-                type="password"
+                type="text"
+                name="pin"
                 required
-                autoComplete="off"
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                className="mt-1 w-full border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-[14px] outline-none focus:border-[var(--accent)]"
+                autoComplete="one-time-code"
+                inputMode="numeric"
+                enterKeyHint="done"
+                placeholder="······-······"
+                value={pin}
+                onChange={(e) => setPin(e.target.value)}
+                className="mt-1 w-full border border-[var(--border)] bg-[var(--surface)] px-3 py-3 text-[18px] tracking-widest outline-none focus:border-[var(--accent)]"
               />
             </label>
             <label className="block text-[12px] text-[var(--muted)]">
@@ -227,14 +231,18 @@ export default function EditorialAuthorPage() {
           <form onSubmit={onSubmitColumn} className="mt-6 space-y-4">
             <h2 className="text-lg font-medium">Авторская статья / колонка</h2>
             <label className="block text-[12px] text-[var(--muted)]">
-              Access token
+              PIN
               <input
-                type="password"
+                type="text"
+                name="pin"
                 required
-                autoComplete="off"
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                className="mt-1 w-full border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-[14px] outline-none focus:border-[var(--accent)]"
+                autoComplete="one-time-code"
+                inputMode="numeric"
+                enterKeyHint="done"
+                placeholder="······-······"
+                value={pin}
+                onChange={(e) => setPin(e.target.value)}
+                className="mt-1 w-full border border-[var(--border)] bg-[var(--surface)] px-3 py-3 text-[18px] tracking-widest outline-none focus:border-[var(--accent)]"
               />
             </label>
             <label className="block text-[12px] text-[var(--muted)]">

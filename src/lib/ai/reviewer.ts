@@ -36,6 +36,7 @@ const REVIEW_SYSTEM_PROMPT_GADGET = [
   'нишевый PC/engineering компонент без сильного consumer-angle (SP-A-039-ALT).',
   'AI research/demo OK если grounded (модель, приложение, польза людям) — не кликбейт про «сверхразум завтра».',
   'REJECT robotics flood: humanoid / robot hand / lab robot / industrial robot как основная тема — сайт не про роботов.',
+  'Предпочитай разнообразие столов: gadgets / apps / AI capability / inventions — не flood robotics.',
   'SOFT FLAG лида: если текст начинается с «Представьте…» / «Представь себе…» / «А что если…» / imagine-that — отметь в technicalVerdict префиксом SOFT: (не REJECT), Editor должен сменить открытие.',
   'keyAspects — 3 коротких пункта про возможность/новизну/пользу (не про цену).',
   'Иначе подтверди достоверность и 3 аспекта.',

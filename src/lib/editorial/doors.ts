@@ -13,34 +13,75 @@ import { stampAuthorForPipeline } from '@/lib/authors';
 import { toPublicCategory, toPublicTags } from '@/lib/public-labels';
 import type { StoredArticle } from '@/lib/data-store/articles-repo';
 
-/* ─── Auth (shared secret; no account system) ─── */
+/* ─── Auth (PIN primary; legacy token kept) ─── */
 
+/** Normalize PIN / token for compare — digits+hyphen PIN may omit spaces/hyphens. */
+export function normalizeEditorialPin(raw: string): string {
+  return String(raw || '')
+    .trim()
+    .replace(/\s+/g, '');
+}
+
+function pinDigits(raw: string): string {
+  return normalizeEditorialPin(raw).replace(/-/g, '');
+}
+
+function credentialsMatch(provided: string, expected: string, mode: 'pin' | 'token'): boolean {
+  if (!provided || !expected) return false;
+  if (mode === 'token') return provided === expected;
+  const a = pinDigits(provided);
+  const b = pinDigits(expected);
+  return a.length >= 6 && a === b;
+}
+
+/**
+ * Chief / Staff Author door auth.
+ * Primary: SMARTPROTO_NEWS_PIN (short numeric-ish PIN, e.g. 098765-543210).
+ * Legacy: EDITORIAL_DOOR_SECRET bearer/token still accepted when set.
+ */
 export function authorizeEditorialDoor(
   request: Request,
   body?: Record<string, unknown> | null,
 ): { ok: true } | { ok: false; status: number; error: string } {
-  const secret = (process.env.EDITORIAL_DOOR_SECRET || '').trim();
-  if (secret.length < 8) {
-    return { ok: false, status: 503, error: 'Editorial doors not configured (EDITORIAL_DOOR_SECRET).' };
+  const pinSecret = (process.env.SMARTPROTO_NEWS_PIN || '').trim();
+  const tokenSecret = (process.env.EDITORIAL_DOOR_SECRET || '').trim();
+  if (!pinSecret && tokenSecret.length < 8) {
+    return {
+      ok: false,
+      status: 503,
+      error: 'Editorial doors not configured (set SMARTPROTO_NEWS_PIN or EDITORIAL_DOOR_SECRET).',
+    };
   }
   const header = request.headers.get('authorization') || '';
   const bearer = header.match(/^Bearer\s+(.+)$/i)?.[1]?.trim() || '';
   const fromBody =
+    (typeof body?.pin === 'string' && body.pin) ||
     (typeof body?.token === 'string' && body.token) ||
     (typeof body?.accessToken === 'string' && body.accessToken) ||
     '';
   let fromQuery = '';
   try {
     const u = new URL(request.url);
-    fromQuery = (u.searchParams.get('token') || u.searchParams.get('accessToken') || '').trim();
+    fromQuery = (
+      u.searchParams.get('pin') ||
+      u.searchParams.get('token') ||
+      u.searchParams.get('accessToken') ||
+      ''
+    ).trim();
   } catch {
     /* ignore */
   }
-  const token = bearer || String(fromBody).trim() || fromQuery;
-  if (!token || token !== secret) {
-    return { ok: false, status: 401, error: 'Unauthorized. Provide a valid editorial access token.' };
+  const provided = normalizeEditorialPin(bearer || String(fromBody).trim() || fromQuery);
+  if (!provided) {
+    return { ok: false, status: 401, error: 'Unauthorized. Provide the editorial PIN.' };
   }
-  return { ok: true };
+  if (pinSecret && credentialsMatch(provided, pinSecret, 'pin')) {
+    return { ok: true };
+  }
+  if (tokenSecret.length >= 8 && credentialsMatch(provided, tokenSecret, 'token')) {
+    return { ok: true };
+  }
+  return { ok: false, status: 401, error: 'Unauthorized. Invalid PIN (or legacy token).' };
 }
 
 /* ─── Dedupe ─── */

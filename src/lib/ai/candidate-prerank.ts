@@ -19,8 +19,11 @@ export interface PreRankItem {
 
 const DEAL_OPINION_RE =
   /\b(on sale|deal|discount|% off|just \$\d+|here.?s why|i.?ve used|acquires?|acquisition|best \d+|roundup|gift guide|video friday|week in review)\b/i;
-const UNUSUAL_SIGNAL_RE =
-  /\b(humanoid|robot|drone|swarm|exoskeleton|wristband|gesture|neuromuscular|cry|bassinet|ultra-?thin|haptic|translator|on-device ai|prototype|breakthrough|foldable|hover|gimbal)\b|робот|браслет|люльк|рой\s+дрон/i;
+/** Broad desks — gadgets / apps / AI tools / inventions (not lab robots). */
+const BROAD_DESK_SIGNAL_RE =
+  /\b(gadget|wearable|smart\s*ring|earbuds?|headphones?|translator|foldable|wristband|gesture|neuromuscular|app\b|app\s+store|play\s+store|on-device ai|chatgpt|claude|gemini\s+app|ai\s+tool|invention|prototype\s+gadget|mini\s+projector|portable\s+display|game\s+controller|camera|keyboard|drone|swarm|cry|bassinet|ultra-?thin|haptic|hover|gimbal|breakthrough)\b|гаджет|браслет|приложен|изобретен|переводчик|люльк|рой\s+дрон/i;
+const ROBOTICS_SIGNAL_RE =
+  /\b(humanoid|robot(?:ics)?|exoskeleton|manipulat(?:or|ion)|robot\s*hand|lab\s+robot)\b|робот|манипулятор/i;
 const RESEARCH_SIGNAL_RE =
   /\b(mit|ieee|eth|wyss|csail|researchers?|university|lab\s+demo|peer[- ]reviewed)\b/i;
 
@@ -84,11 +87,17 @@ export function cheapPreRankScore(item: PreRankItem): number {
   else if (meta?.tier === 'B') score += 2;
   else if (meta?.tier === 'C') score -= 4;
 
-  if (meta?.focus.some((f) => f === 'robotics' || f === 'research' || f === 'ai' || f === 'china')) {
+  // Prefer AI / China / consumer desks over robotics-heavy discovery feeds.
+  if (meta?.focus.some((f) => f === 'ai' || f === 'china' || f === 'gadgets' || f === 'consumer')) {
     score += 8;
+  } else if (meta?.focus.some((f) => f === 'research')) {
+    score += 4;
+  } else if (meta?.focus.some((f) => f === 'robotics')) {
+    score += 2;
   }
 
-  if (UNUSUAL_SIGNAL_RE.test(hay)) score += 18;
+  if (BROAD_DESK_SIGNAL_RE.test(hay)) score += 18;
+  if (ROBOTICS_SIGNAL_RE.test(hay)) score += 4;
   if (RESEARCH_SIGNAL_RE.test(hay) || isAiOrInventionAlert(title, text)) score += 10;
   if (DEAL_OPINION_RE.test(title)) score -= 25;
   if (isOverplayedMassTopic(title, text) || looksCommodityRoutine(title, text)) score -= 30;

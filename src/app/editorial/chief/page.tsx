@@ -13,7 +13,7 @@ type JobView = {
 };
 
 export default function EditorialChiefPage() {
-  const [token, setToken] = useState('');
+  const [pin, setPin] = useState('');
   const [url, setUrl] = useState('');
   const [note, setNote] = useState('');
   const [job, setJob] = useState<JobView | null>(null);
@@ -21,13 +21,13 @@ export default function EditorialChiefPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!job?.id || !token) return;
+    if (!job?.id || !pin) return;
     if (['PUBLISHED', 'DUPLICATE', 'FAILED'].includes(job.status)) return;
     const timer = setInterval(async () => {
       try {
         const res = await fetch(
-          `/api/editorial/chief?jobId=${encodeURIComponent(job.id)}&token=${encodeURIComponent(token)}`,
-          { headers: { Authorization: `Bearer ${token}` } },
+          `/api/editorial/chief?jobId=${encodeURIComponent(job.id)}&pin=${encodeURIComponent(pin)}`,
+          { headers: { Authorization: `Bearer ${pin}` } },
         );
         const data = await res.json();
         if (data.job) setJob(data.job);
@@ -36,7 +36,7 @@ export default function EditorialChiefPage() {
       }
     }, 1500);
     return () => clearInterval(timer);
-  }, [job?.id, job?.status, token]);
+  }, [job?.id, job?.status, pin]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -48,9 +48,9 @@ export default function EditorialChiefPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${pin}`,
         },
-        body: JSON.stringify({ token, url, note: note || undefined }),
+        body: JSON.stringify({ pin, url, note: note || undefined }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -76,14 +76,18 @@ export default function EditorialChiefPage() {
 
         <form onSubmit={onSubmit} className="mt-8 space-y-4">
           <label className="block text-[12px] text-[var(--muted)]">
-            Access token
+            PIN
             <input
-              type="password"
+              type="text"
+              name="pin"
               required
-              autoComplete="off"
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              className="mt-1 w-full border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-[14px] outline-none focus:border-[var(--accent)]"
+              autoComplete="one-time-code"
+              inputMode="numeric"
+              enterKeyHint="done"
+              placeholder="······-······"
+              value={pin}
+              onChange={(e) => setPin(e.target.value)}
+              className="mt-1 w-full border border-[var(--border)] bg-[var(--surface)] px-3 py-3 text-[18px] tracking-widest outline-none focus:border-[var(--accent)]"
             />
           </label>
           <label className="block text-[12px] text-[var(--muted)]">

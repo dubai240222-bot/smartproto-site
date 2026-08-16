@@ -455,7 +455,7 @@ const STRONG_CONSUMER_ANGLE: RegExp[] = [
 
 /** Preferred SmartProto categories (scout/reviewer guidance + local hints). SP-A-039-ALT */
 export const PREFERRED_GADGET_CATEGORIES =
-  'unusual smartphones, wearables, smart rings, travel gadgets, useful apps, AI tools for people (not lab robots), cameras, audio, phone accessories, mini projectors, portable displays, health/sleep, kitchen, smart home, game controllers, translators — NOT a robotics-only site; humanoid/industrial/robot-hand stories are rare exceptions';
+  'unusual smartphones, wearables, smart rings, travel gadgets, useful apps, AI tools/capability news for people (not lab robots), cameras, audio, phone accessories, mini projectors, portable displays, health/sleep, kitchen, smart home, game controllers, translators, everyday inventions — mix desks broadly; NOT a robotics-only site; humanoid/industrial/robot-hand stories are rare exceptions';
 
 /** Preferred app desks — life improvement / learning / rare finds / wonderful games. */
 export const PREFERRED_APP_CATEGORIES =

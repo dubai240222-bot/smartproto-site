@@ -110,7 +110,21 @@ Then add HTTPS with Let’s Encrypt or Caddy.
 1. Leave Cloudflare proxy enabled for CDN caching.
 2. Optional: turn on Brotli, HTTP/3, and Auto Minify if they fit your setup.
 
-## 6) Useful checks
+## 6) Editorial Chief PIN
+
+Primary gate for `/editorial/chief` and `/editorial/author` is `SMARTPROTO_NEWS_PIN`
+(example in `.env.example`: `098765-543210`). Server-side only — never `NEXT_PUBLIC_*`.
+Legacy `EDITORIAL_DOOR_SECRET` still works when set.
+
+On Hetzner (`/opt/apps/smartproto/app/.env`), set the PIN then recreate:
+
+```bash
+cd /opt/apps/smartproto/app
+# ensure SMARTPROTO_NEWS_PIN=… in .env
+docker compose --env-file .env -f docker-compose.smartproto.yml -p smartproto up -d --build
+```
+
+## 7) Useful checks
 
 ```bash
 docker logs -f smartproto

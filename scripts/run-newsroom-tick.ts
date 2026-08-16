@@ -1357,11 +1357,11 @@ async function publishRssOnce(opts: {
   }
 
   const recentArts = (await loadState(opts.journalPath, opts.articlesPath)).articles.slice(0, 10);
-  const roboticsStreak = roboticsResearchStreak(recentArts, 2);
+  const roboticsStreak = roboticsResearchStreak(recentArts, 1);
   if (roboticsStreak) {
     console.log(
       chalk.yellow(
-        'SP-A-065F diversity: last 2 publishes are robotics/research — prefer other focus unless robotics leads by ≥10',
+        'SP-A-065F diversity: last publish is robotics/research — prefer other focus unless robotics leads by ≥6',
       ),
     );
   }

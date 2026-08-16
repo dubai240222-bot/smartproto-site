@@ -28,19 +28,36 @@ async function main() {
   console.log('SP-A-094 Staff Author Desk control');
   let failed = 0;
 
-  // Auth required
-  const prev = process.env.EDITORIAL_DOOR_SECRET;
+  // Auth required — PIN primary + legacy token
+  const prevPin = process.env.SMARTPROTO_NEWS_PIN;
+  const prevTok = process.env.EDITORIAL_DOOR_SECRET;
+  process.env.SMARTPROTO_NEWS_PIN = '098765-543210';
   process.env.EDITORIAL_DOOR_SECRET = 'spa094-test-secret-ok';
+
   const noTok = authorizeEditorialDoor(fakeReq(), {});
-  console.log(!noTok.ok ? 'OK no token rejected' : 'FAIL no token accepted');
+  console.log(!noTok.ok ? 'OK no credential rejected' : 'FAIL no credential accepted');
   if (noTok.ok) failed++;
+
+  const badPin = authorizeEditorialDoor(fakeReq('000000-000000'), { pin: '000000-000000' });
+  console.log(!badPin.ok ? 'OK bad PIN rejected' : 'FAIL bad PIN accepted');
+  if (badPin.ok) failed++;
+
+  const okPin = authorizeEditorialDoor(fakeReq('098765-543210'), { pin: '098765-543210' });
+  console.log(okPin.ok ? 'OK valid PIN' : 'FAIL valid PIN');
+  if (!okPin.ok) failed++;
+
+  const okPinNoHyphen = authorizeEditorialDoor(fakeReq(), { pin: '098765543210' });
+  console.log(okPinNoHyphen.ok ? 'OK PIN without hyphen' : 'FAIL PIN without hyphen');
+  if (!okPinNoHyphen.ok) failed++;
+
   const bad = authorizeEditorialDoor(fakeReq('wrong'), { token: 'wrong' });
   console.log(!bad.ok ? 'OK bad token rejected' : 'FAIL bad token accepted');
   if (bad.ok) failed++;
+
   const okAuth = authorizeEditorialDoor(fakeReq('spa094-test-secret-ok'), {
     token: 'spa094-test-secret-ok',
   });
-  console.log(okAuth.ok ? 'OK valid token' : 'FAIL valid token');
+  console.log(okAuth.ok ? 'OK legacy token still works' : 'FAIL legacy token');
   if (!okAuth.ok) failed++;
 
   // Types
@@ -126,8 +143,10 @@ async function main() {
   const still = (await listStaffAuthorLinks('queued')).find((s) => s.url === unique);
   console.log(!still ? 'OK cleanup' : 'WARN leftover queue item');
 
-  if (prev === undefined) delete process.env.EDITORIAL_DOOR_SECRET;
-  else process.env.EDITORIAL_DOOR_SECRET = prev;
+  if (prevPin === undefined) delete process.env.SMARTPROTO_NEWS_PIN;
+  else process.env.SMARTPROTO_NEWS_PIN = prevPin;
+  if (prevTok === undefined) delete process.env.EDITORIAL_DOOR_SECRET;
+  else process.env.EDITORIAL_DOOR_SECRET = prevTok;
 
   if (failed) {
     console.error(`spa094-control: FAIL (${failed})`);

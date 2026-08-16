@@ -1,6 +1,8 @@
 /**
  * SP-A-097F1 / SP-A-099 — locale dictionary for public chrome (RU / EN / TR).
- * RU remains the default unprefixed locale. No heavy i18n framework.
+ * RU remains the content-canonical / unprefixed locale (factory writes RU first).
+ * Public switcher / nav list order is EN → RU → TR (presentation only).
+ * No heavy i18n framework.
  */
 
 export type AppLocale = 'ru' | 'en' | 'tr';
@@ -8,6 +10,9 @@ export type LocalizationLanguage = 'en' | 'tr';
 export type TranslationStatus = 'draft' | 'qa' | 'published' | 'rejected';
 
 export const LOCALIZATION_LANGUAGES: LocalizationLanguage[] = ['en', 'tr'];
+
+/** Switcher / UI list order — not URL canonical order. */
+export const APP_LOCALE_UI_ORDER: AppLocale[] = ['en', 'ru', 'tr'];
 
 export function isAppLocale(v: string): v is AppLocale {
   return v === 'ru' || v === 'en' || v === 'tr';
