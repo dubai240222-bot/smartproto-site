@@ -39,7 +39,7 @@ const SCOUT_MODEL = process.env.OPENROUTER_SCOUT_MODEL ?? 'deepseek/deepseek-v4-
 const SCOUT_SYSTEM_PROMPT_GADGET = [
   SCOUT_SYSTEM_PROMPT_GADGET_V2,
   '',
-  'PRIORITY: unusual gadgets/apps, полезные AI-инструменты для людей, wearables, travel, health, inventions — НЕ лента про роботов.',
+  'PRIORITY: CAPABILITY→FREEDOM→PROOF→EARLY — EV/mobility, health-tech, energy/Starlink, apps, travel, inventions — НЕ лента про роботов.',
   'DIVERSIFY desks: gadgets / apps / AI capability news / inventions — избегай серии robotics/research подряд.',
   'REJECT robotics flood: humanoid, robot hand, lab manipulator, industrial robot, robotaxi-as-main-story без бытового гаджета.',
   'Home robot vacuum/lawn OK редко. Иначе сайт становится узким робо-блогом — это запрещено.',
@@ -48,11 +48,12 @@ const SCOUT_SYSTEM_PROMPT_GADGET = [
 
 const SCOUT_SYSTEM_PROMPT_APP = [
   'Ты разведчик SmartProto — стол Mobile Apps: полезные мобильные приложения и редкие/замечательные игры.',
+  'CORE: CAPABILITY→FREEDOM→PROOF→EARLY — новая возможность человеку, свобода от рутины, доказательство, ранний сигнал.',
   'HARD FILTER: одно конкретное приложение или игра, которое реально помогает жить/учиться/работать',
   'или это яркая novelty-игра. digital product OK (App Store / Google Play / TestFlight).',
   `Приоритет: ${PREFERRED_APP_CATEGORIES}.`,
   'Оценка 0–100 суммой A–E (желание попробовать / новизна / польза / визуал / потенциал).',
-  'REJECT всегда: SEO roundups («50 apps you need»), app deals, gambling, casino, crypto/NFT pumps,',
+  'REJECT всегда: SEO roundups («50 apps you need»), version/redesign/minor UI churn, app deals, gambling, casino, crypto/NFT pumps,',
   'generic listicles, enterprise fluff без consumer value, политика, celebrities.',
   'Games OK только если wonderful/notable — не ежедневный free-to-play спам.',
   'productType = "app" | "game" | "none". Не выдумывай цену/рейтинг если нет в тексте.',

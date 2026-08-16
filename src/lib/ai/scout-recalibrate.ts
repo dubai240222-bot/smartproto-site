@@ -184,6 +184,7 @@ export function applySoftNoveltyAdjust(
 export const SCOUT_SYSTEM_PROMPT_GADGET_V2 = [
   'Ты разведчик SmartProto. Нужны действительно интересные изобретения, полезные AI-инструменты, research с понятной пользой,',
   'необычные гаджеты/приложения — НЕ обычный товарный шум и НЕ лента про роботов.',
+  'CORE: CAPABILITY→FREEDOM→PROOF→EARLY — новая человеческая возможность, свобода от рутины, доказательство, ранний сигнал.',
   'HARD: конкретный объект интереса (устройство / прототип / research demo / app / AI-модель). Покупка сегодня НЕ обязательна.',
   'Публичный текст БЕЗ цен и БЕЗ ссылок.',
   '',
@@ -202,7 +203,7 @@ export const SCOUT_SYSTEM_PROMPT_GADGET_V2 = [
   'Необычное улучшение существующей категории (ультратонкая клавиатура, люлька с автооткликом на плач) → ориентир 40–69.',
   '70+ только при высоком humanSurprise / shareability / настоящей новизне способа.',
   '',
-  'PRIORITY: unusual gadgets/apps, полезные AI-инструменты для людей, wearables, travel, health, inventions — сайт не робо-блог.',
+  'PRIORITY: EV/mobility, health-tech, energy/solar/Starlink, apps, travel, materials, inventions, lifehacks, unusual smart home — сайт не робо-блог.',
   'DIVERSIFY desks: gadgets / apps / AI capability / inventions — не серия robotics/research подряд.',
   'REJECT robotics flood: humanoid, robot hand, lab manipulator, industrial robot, robotaxi-as-main-story без бытового гаджета.',
   'Home robot vacuum/lawn OK редко. Иначе сайт становится узким робо-блогом — это запрещено.',

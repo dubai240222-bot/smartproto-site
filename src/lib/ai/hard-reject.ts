@@ -455,11 +455,11 @@ const STRONG_CONSUMER_ANGLE: RegExp[] = [
 
 /** Preferred SmartProto categories (scout/reviewer guidance + local hints). SP-A-039-ALT */
 export const PREFERRED_GADGET_CATEGORIES =
-  'unusual smartphones, wearables, smart rings, travel gadgets, useful apps, AI tools/capability news for people (not lab robots), cameras, audio, phone accessories, mini projectors, portable displays, health/sleep, kitchen, smart home, game controllers, translators, everyday inventions — mix desks broadly; NOT a robotics-only site; humanoid/industrial/robot-hand stories are rare exceptions';
+  'CAPABILITY→FREEDOM→PROOF→EARLY: unusual gadgets, EV/mobility/charging, health-tech, consumer solar/energy, Starlink/sat, useful apps, travel tech, materials, inventions, lifehacks, unusual smart home, AI tools for people — NOT robotics-only; humanoid/robot-hand rare';
 
 /** Preferred app desks — life improvement / learning / rare finds / wonderful games. */
 export const PREFERRED_APP_CATEGORIES =
-  'useful mobile apps (learn better, life improvement, productivity, health, travel), novel AI apps for consumers, rare App Store / Play finds, wonderful or notable mobile games — NOT SEO roundups, gambling, or crypto pumps';
+  'CAPABILITY→FREEDOM→PROOF→EARLY: useful mobile apps (life/learn/health/travel), novel AI apps, rare App Store/Play finds, wonderful games — NOT SEO roundups, version/redesign churn, gambling, crypto';
 
 export function isNicheTechTopic(title: string, text = ''): boolean {
   const hay = `${title}\n${text}`;

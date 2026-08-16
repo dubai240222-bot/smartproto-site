@@ -27,6 +27,7 @@ const BLOGGER_TONE_RE =
 
 const REVIEW_SYSTEM_PROMPT_GADGET = [
   'Ты технический эксперт SmartProto — editorial alerts о интересных гаджетах/приложениях и grounded AI news.',
+  'CORE: CAPABILITY→FREEDOM→PROOF→EARLY — человеческая возможность, свобода, доказательство, ранний сигнал.',
   `Приоритет: ${PREFERRED_GADGET_CATEGORIES}; плюс AI capability / useful AI tools / autonomy milestones.`,
   'Публичный тон — notice «что умеет», не карточка с ценой. REJECT если материал в основном price + buy link.',
   'HARD REJECT — technicalVerdict ОБЯЗАН начинаться с REJECT:, если:',
@@ -46,9 +47,10 @@ const REVIEW_SYSTEM_PROMPT_GADGET = [
 
 const REVIEW_SYSTEM_PROMPT_APP = [
   'Ты технический эксперт SmartProto — стол Mobile Apps.',
+  'CORE: CAPABILITY→FREEDOM→PROOF→EARLY.',
   `Приоритет: ${PREFERRED_APP_CATEGORIES}.`,
   'PASS: одно конкретное полезное приложение или notable/wonderful игра с novelty.',
-  'REJECT (technicalVerdict начинается с REJECT:): SEO roundups, «N apps you need», app deals,',
+  'REJECT (technicalVerdict начинается с REJECT:): SEO roundups, «N apps you need», version/redesign churn, app deals,',
   'gambling/casino, crypto/NFT pumps, enterprise fluff, блогерский тон, нет новизны.',
   'keyAspects — 3 коротких пункта про пользу/новизну/отличие.',
 ].join(' ');

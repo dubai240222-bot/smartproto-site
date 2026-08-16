@@ -1,6 +1,7 @@
 /**
  * SP-A-065B — cheap deterministic pre-rank + topic dedupe before Scout.
  * Does NOT call AI. Goal: give discovery sources a fair shot in TOP 12–16.
+ * Theme seats: redistribute ~2–4 pool slots to underrepresented desks (same limit).
  */
 
 import { discoveryRankFor, sourceMetaByName } from '../collectors/source-registry';
@@ -9,6 +10,7 @@ import {
   looksSmartHomeRoutine,
 } from './scout-recalibrate';
 import { isAiOrInventionAlert, isOverplayedMassTopic } from './hard-reject';
+import { applyThemeSeats, classifyThemeSeat } from '../newsroom/theme-seats';
 
 export interface PreRankItem {
   title: string;
@@ -26,6 +28,9 @@ const ROBOTICS_SIGNAL_RE =
   /\b(humanoid|robot(?:ics)?|exoskeleton|manipulat(?:or|ion)|robot\s*hand|lab\s+robot)\b|робот|манипулятор/i;
 const RESEARCH_SIGNAL_RE =
   /\b(mit|ieee|eth|wyss|csail|researchers?|university|lab\s+demo|peer[- ]reviewed)\b/i;
+/** Soft boost for underrepresented theme seats (does not raise Scout AI budget). */
+const THEME_SIGNAL_RE =
+  /\b(ev\b|electric\s+vehicle|e-?bike|e-?scooter|charging|solid[- ]state\s+batter|health(?:tech)?|glucose|solar|starlink|direct[- ]to[- ]cell|satellite\s+internet|travel\s+gadget|lifehack|metamaterial|graphene)\b/i;
 
 /** Normalize title for near-duplicate detection. */
 export function topicKey(title: string): string {
@@ -87,8 +92,19 @@ export function cheapPreRankScore(item: PreRankItem): number {
   else if (meta?.tier === 'B') score += 2;
   else if (meta?.tier === 'C') score -= 4;
 
-  // Prefer AI / China / consumer desks over robotics-heavy discovery feeds.
-  if (meta?.focus.some((f) => f === 'ai' || f === 'china' || f === 'gadgets' || f === 'consumer')) {
+  // Prefer AI / China / consumer / mobility / health desks over robotics-heavy discovery feeds.
+  if (
+    meta?.focus.some(
+      (f) =>
+        f === 'ai' ||
+        f === 'china' ||
+        f === 'gadgets' ||
+        f === 'consumer' ||
+        f === 'mobility' ||
+        f === 'healthtech' ||
+        f === 'materials',
+    )
+  ) {
     score += 8;
   } else if (meta?.focus.some((f) => f === 'research')) {
     score += 4;
@@ -97,6 +113,7 @@ export function cheapPreRankScore(item: PreRankItem): number {
   }
 
   if (BROAD_DESK_SIGNAL_RE.test(hay)) score += 18;
+  if (THEME_SIGNAL_RE.test(hay) || classifyThemeSeat(title, text)) score += 10;
   if (ROBOTICS_SIGNAL_RE.test(hay)) score += 4;
   if (RESEARCH_SIGNAL_RE.test(hay) || isAiOrInventionAlert(title, text)) score += 10;
   if (DEAL_OPINION_RE.test(title)) score -= 25;
@@ -116,17 +133,20 @@ export interface ScoutPoolResult<T extends PreRankItem> {
   pool: T[];
   /** Debug: top cheap scores */
   rankedPreview: { title: string; sourceName: string; cheap: number }[];
+  themeSeatsFilled?: number;
+  themeSwaps?: { out: string; in: string; theme: string }[];
 }
 
 /**
- * Build Scout pool: dedupe → cheap rank → diversify sources → TOP limit (12–16).
+ * Build Scout pool: dedupe → cheap rank → diversify sources → theme seats → TOP limit (12–16).
  */
 export function buildScoutPool<T extends PreRankItem>(
   items: T[],
-  opts?: { limit?: number; maxPerSource?: number },
+  opts?: { limit?: number; maxPerSource?: number; themeSeats?: number },
 ): ScoutPoolResult<T> {
   const limit = Math.max(1, Math.min(opts?.limit ?? 14, 16));
   const maxPerSource = opts?.maxPerSource ?? 3;
+  const themeSeats = opts?.themeSeats ?? 3;
   const rawCount = items.length;
   const deduped = dedupeSimilarTopics(items);
   const ranked = [...deduped].sort((a, b) => {
@@ -154,14 +174,21 @@ export function buildScoutPool<T extends PreRankItem>(
     }
   }
 
+  const seated = applyThemeSeats(pool, ranked, {
+    seatCount: themeSeats,
+    maxPerSource,
+  });
+
   return {
     rawCount,
     afterDedupe: deduped.length,
-    pool,
+    pool: seated.pool,
     rankedPreview: ranked.slice(0, 20).map((it) => ({
       title: it.title,
       sourceName: it.sourceName,
       cheap: cheapPreRankScore(it),
     })),
+    themeSeatsFilled: seated.seatsFilled,
+    themeSwaps: seated.swaps,
   };
 }

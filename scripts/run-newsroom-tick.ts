@@ -30,10 +30,12 @@ import {
   roboticsResearchStreak,
   type DiversityPasser,
 } from '../src/lib/newsroom/diversity-guard';
+import { applyAppSeats } from '../src/lib/newsroom/theme-seats';
+import { listSafeAppSources, appSourceRequiresKeyword } from '../src/lib/collectors/app-sources';
 import { scoutArticle, SCOUT_SCORE_THRESHOLD } from '../src/lib/ai/scout';
 import { reviewArticle } from '../src/lib/ai/reviewer';
 import { writeDraft, expandShortDraft, type DraftFormat } from '../src/lib/ai/editor';
-import { hardRejectTopic, looksBuyableGadget, isAiOrInventionAlert } from '../src/lib/ai/hard-reject';
+import { hardRejectTopic, looksBuyableGadget, looksUsefulApp, isAiOrInventionAlert } from '../src/lib/ai/hard-reject';
 import {
   collectAiRadarCandidates,
   normalizeAiRadarCandidates,
@@ -1270,11 +1272,67 @@ async function publishRssOnce(opts: {
   const scoutPool = buildScoutPool(candidates, { limit: scoutLimit, maxPerSource: 3 });
   console.log(
     chalk.gray(
-      `Scout pool: raw=${scoutPool.rawCount} afterDedupe=${scoutPool.afterDedupe} scout=${scoutPool.pool.length} (limit=${scoutLimit})`,
+      `Scout pool: raw=${scoutPool.rawCount} afterDedupe=${scoutPool.afterDedupe} scout=${scoutPool.pool.length} (limit=${scoutLimit})` +
+        (scoutPool.themeSeatsFilled
+          ? ` themeSeats=${scoutPool.themeSeatsFilled}`
+          : ''),
     ),
   );
   for (const row of scoutPool.rankedPreview.slice(0, 8)) {
     console.log(chalk.gray(`  pre-rank ${row.cheap}: [${row.sourceName}] ${row.title.slice(0, 70)}`));
+  }
+  if (scoutPool.themeSwaps?.length) {
+    for (const s of scoutPool.themeSwaps) {
+      console.log(chalk.gray(`  theme-seat ${s.theme}: −${s.out} +${s.in}`));
+    }
+  }
+
+  // App seats: 1–2 swaps from APP_SOURCES (same Scout limit; scoutMode=app). Not additive.
+  const APP_SEATS = 2;
+  const appCandidates: RssItem[] = [];
+  try {
+    for (const src of listSafeAppSources().slice(0, 4)) {
+      if (appCandidates.length >= 8) break;
+      const items = await fetchRssFeed(src.feedUrl, {
+        limit: 12,
+        sourceName: src.name,
+        skipPageImageFetch: true,
+      });
+      for (const item of items) {
+        if (!item.url || !item.title) continue;
+        if (opts.urls.has(item.url) || opts.ids.has(item.id)) continue;
+        if (!looksUsefulApp(item.title, item.text || '', src.name)) continue;
+        if (appSourceRequiresKeyword(src.name)) {
+          const hay = `${item.title}\n${item.text || ''}`;
+          if (!/\b(app|ios|android|game|play store|app store)\b/i.test(hay)) continue;
+        }
+        appCandidates.push(item);
+        if (appCandidates.length >= 8) break;
+      }
+    }
+  } catch (err) {
+    console.log(
+      chalk.yellow(
+        `App seats collect skipped: ${err instanceof Error ? err.message : String(err)}`,
+      ),
+    );
+  }
+  const appSeated = applyAppSeats(scoutPool.pool, appCandidates, { seatCount: APP_SEATS });
+  const appSeatUrls = new Set(
+    appSeated.swaps.map((s) => {
+      const hit = appCandidates.find((a) => a.title.slice(0, 60) === s.in);
+      return hit?.url;
+    }).filter(Boolean) as string[],
+  );
+  if (appSeated.seatsFilled) {
+    console.log(
+      chalk.cyan(
+        `App seats: swapped ${appSeated.seatsFilled}/${APP_SEATS} (pool still ${appSeated.pool.length})`,
+      ),
+    );
+    for (const s of appSeated.swaps) {
+      console.log(chalk.gray(`  app-seat −${s.out} +${s.in}`));
+    }
   }
 
   // SP-A-065C/065D — separate AI radar intake → shared Scout (normalized EVENT RECORD).
@@ -1285,9 +1343,9 @@ async function publishRssOnce(opts: {
     submissionId?: string;
     staffAuthorName?: string;
   };
-  let mergedPool: PoolItem[] = scoutPool.pool.map((p) => ({
+  let mergedPool: PoolItem[] = appSeated.pool.map((p) => ({
     ...p,
-    scoutMode: 'gadget' as EditorialMode,
+    scoutMode: (appSeatUrls.has(p.url) ? 'app' : 'gadget') as EditorialMode,
     channelHint: 'rss' as const,
   }));
   let aiRadarBest: string = '(none)';
@@ -1489,7 +1547,12 @@ async function publishRssOnce(opts: {
 
   for (let i = 0; i < maxAttempts; i++) {
     const item = mergedPool[i];
-    const mode: EditorialMode = item.scoutMode === 'ai_radar' ? 'ai_radar' : 'gadget';
+    const mode: EditorialMode =
+      item.scoutMode === 'ai_radar'
+        ? 'ai_radar'
+        : item.scoutMode === 'app'
+          ? 'app'
+          : 'gadget';
     console.log(
       chalk.cyan(
         `Pick (${i + 1}/${maxAttempts}): [${item.channelHint || 'rss'}/${mode}][${item.sourceName}] ${item.title}`,
@@ -1602,7 +1665,12 @@ async function publishRssOnce(opts: {
     selectedScouted = pipelinePassers[pIdx];
     const item = selectedScouted.item;
     const scout = selectedScouted.scout;
-    const itemMode: EditorialMode = item.scoutMode === 'ai_radar' ? 'ai_radar' : 'gadget';
+    const itemMode: EditorialMode =
+      item.scoutMode === 'ai_radar'
+        ? 'ai_radar'
+        : item.scoutMode === 'app'
+          ? 'app'
+          : 'gadget';
     const itemChannel =
       item.channelHint === 'staff-author-link'
         ? 'staff-author-link'
