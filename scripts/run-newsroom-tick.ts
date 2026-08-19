@@ -83,6 +83,7 @@ import {
   type NewsQuotaPolicy,
 } from '../src/lib/newsroom/daily-quota';
 import { resolveVisualFallback, getCategoryStock } from '../src/lib/visual-fallback';
+import { assignLibraryHeroToSlug } from '../src/lib/photo-library';
 
 /**
  * SP-A-056 — on the Hetzner worker (ARTICLES_STORE=sqlite) also persist the
@@ -228,6 +229,23 @@ async function ensureSoftHeroImages(opts: {
     console.log(
       chalk.yellow(
         `[photo-soft] stock fallback error: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      ),
+    );
+  }
+
+  // SP-A-101 — global library rotation (sequential templates, no topic matching).
+  try {
+    const lib = await assignLibraryHeroToSlug(opts.slug);
+    if (lib?.imageUrl) {
+      console.log(chalk.gray(`[photo-soft] library ${lib.assetId} → ${lib.imageUrl}`));
+      return [{ url: lib.imageUrl, role: 'hero' as const, sourceUrl: lib.assetId }];
+    }
+  } catch (err) {
+    console.log(
+      chalk.yellow(
+        `[photo-soft] library fallback error: ${
           err instanceof Error ? err.message : String(err)
         }`,
       ),

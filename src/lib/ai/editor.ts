@@ -183,6 +183,47 @@ function containsPublicPriceOrLink(title: string, text: string): boolean {
   return PUBLIC_PRICE_OR_LINK_RE.test(`${title}\n${text}`);
 }
 
+/**
+ * SP-A-054 helper: before final policy gate, deterministically remove forbidden bits
+ * (public URLs + explicit price/shop patterns). This keeps Chief/Author submissions
+ * from failing only because the source pack contains "Источник: <url>".
+ *
+ * Important: this does NOT relax policy; it enforces it mechanically.
+ */
+function sanitizePublicDraftForPolicy(title: string, text: string): { title: string; text: string } {
+  const safeTitle = title || '';
+  const safeText = text || '';
+
+  // 1) Strip URLs (any http(s) or www tokens).
+  const urlRe = /\bhttps?:\/\/[^\s)\]]+|\bwww\.[^\s)\]]+/gi;
+
+  // 2) Strip known shop domains (JD/Amazon/AliExpress/Temu) if they appear as plain tokens.
+  const shopDomainRe = /\b(?:jd\.com|amazon\.\w+|aliexpress|temu\.com)\b/gi;
+
+  // 3) Strip explicit price/card patterns.
+  const moneySymbolRe = /(?:¥|￥|\$|€|£|₽)\s*\d[\d\s.,]{0,12}/gi;
+  const moneyWordRe =
+    /(?:\b(?:цена|стоимость)\s*[:\-]?\s*\d[\d\s.,]{0,12}|\bpriced?\s+at\s*\d[\d\s.,]{0,12})/gi;
+  const currencyMentionRe =
+    /\b\d[\d\s.,]{0,12}\s*(?:USD|EUR|RUB|yuan|йен|руб)\b/gi;
+
+  // 4) Strip explicit "buy here/on" phrasing.
+  const buyPhraseRe = /\bкупить\s+(?:здесь|на|по)\b/gi;
+
+  const strip = (s: string) =>
+    s
+      .replace(urlRe, ' ')
+      .replace(shopDomainRe, ' ')
+      .replace(moneySymbolRe, ' ')
+      .replace(moneyWordRe, ' ')
+      .replace(currencyMentionRe, ' ')
+      .replace(buyPhraseRe, ' ')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+
+  return { title: strip(safeTitle), text: strip(safeText) };
+}
+
 function parseToneCheck(value: unknown): ToneCheck | null {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
   const o = value as Record<string, unknown>;
@@ -480,6 +521,11 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
     return { ...REJECT_DRAFT, tags: draft.tags.length ? draft.tags : REJECT_DRAFT.tags };
   }
 
+  // SP-A-054 enforcement: if the model echoed forbidden URL/price-like patterns,
+  // deterministically sanitize before we throw.
+  const sanitized = sanitizePublicDraftForPolicy(draft.title, draft.text);
+  draft = { ...draft, title: sanitized.title || draft.title, text: sanitized.text || draft.text };
+
   if (hasStockOpenerLead(draft.text)) {
     throw new Error('Editor draft fails tone gate (stock opener lead after soft retry).');
   }
@@ -573,12 +619,14 @@ export async function expandShortDraft(
         : draft.tags,
       toneCheck: parsed.toneCheck || draft.toneCheck,
     };
-    if (containsBannedCliche(next.title, next.text) || /!/.test(next.title)) return draft;
-    if (containsPublicPriceOrLink(next.title, next.text)) return draft;
+    const sanitizedNext = sanitizePublicDraftForPolicy(next.title, next.text);
+    const candidate = { ...next, title: sanitizedNext.title || next.title, text: sanitizedNext.text || next.text };
+    if (containsBannedCliche(candidate.title, candidate.text) || /!/.test(candidate.title)) return draft;
+    if (containsPublicPriceOrLink(candidate.title, candidate.text)) return draft;
     if (next.toneCheck.clickbait || next.toneCheck.hype || next.toneCheck.unsupportedClaims) {
       return draft;
     }
-    return next;
+    return candidate;
   } catch {
     return draft;
   }
