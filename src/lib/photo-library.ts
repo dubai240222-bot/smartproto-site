@@ -5,7 +5,7 @@
  * No topic matching — pure sequential rotation through a curated pool.
  */
 
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { CATEGORY_STOCK, type VisualCategoryKey } from './visual-fallback';
 
@@ -391,37 +391,125 @@ export function heroNeedsLibraryReplacement(
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
+function libraryCacheDir(
+  mediaRoot = process.env.SMARTPROTO_MEDIA_DIR || path.resolve(process.cwd(), 'public', 'media'),
+): string {
+  return path.join(mediaRoot, 'library');
+}
+
+function libraryCachePath(
+  assetId: string,
+  mediaRoot?: string,
+): string {
+  const safe = assetId.replace(/[^a-zA-Z0-9._-]+/g, '-');
+  return path.join(libraryCacheDir(mediaRoot), `${safe}.jpg`);
+}
+
+/** Pre-download all library templates to /media/library/ for reliable copy. */
+export async function syncPhotoLibraryCache(opts?: {
+  mediaRoot?: string;
+  limit?: number;
+}): Promise<{ ok: number; fail: number }> {
+  const mediaRoot = opts?.mediaRoot;
+  const dir = libraryCacheDir(mediaRoot);
+  mkdirSync(dir, { recursive: true });
+  let ok = 0;
+  let fail = 0;
+  const max = opts?.limit ?? PHOTO_LIBRARY.length;
+
+  for (const asset of PHOTO_LIBRARY.slice(0, max)) {
+    const dest = libraryCachePath(asset.id, mediaRoot);
+    if (existsSync(dest) && statSync(dest).size > 5000) {
+      ok++;
+      continue;
+    }
+    try {
+      const res = await fetch(asset.url, {
+        signal: AbortSignal.timeout(20000),
+        headers: { 'User-Agent': UA },
+      });
+      if (!res.ok) {
+        fail++;
+        continue;
+      }
+      const buf = Buffer.from(await res.arrayBuffer());
+      if (buf.length < 2500) {
+        fail++;
+        continue;
+      }
+      writeFileSync(dest, buf);
+      ok++;
+    } catch {
+      fail++;
+    }
+    await new Promise((r) => setTimeout(r, 400));
+  }
+  return { ok, fail };
+}
+
+function copyCachedLibraryToSlug(
+  slug: string,
+  asset: PhotoLibraryAsset,
+  mediaRoot = process.env.SMARTPROTO_MEDIA_DIR || path.resolve(process.cwd(), 'public', 'media'),
+): string | null {
+  const cache = libraryCachePath(asset.id, mediaRoot);
+  if (!existsSync(cache)) return null;
+  try {
+    const dir = path.join(mediaRoot, slug);
+    mkdirSync(dir, { recursive: true });
+    const dest = path.join(dir, 'hero.jpg');
+    const buf = readFileSync(cache);
+    writeFileSync(dest, buf);
+    return `/api/media/${slug}/hero.jpg`;
+  } catch {
+    return null;
+  }
+}
+
 /** Download library asset bytes to article slug folder as hero.jpg|.webp */
 export async function downloadLibraryAssetToSlug(
   slug: string,
   asset: PhotoLibraryAsset,
   mediaRoot = process.env.SMARTPROTO_MEDIA_DIR || path.resolve(process.cwd(), 'public', 'media'),
 ): Promise<string | null> {
-  try {
-    const res = await fetch(asset.url, {
-      signal: AbortSignal.timeout(15000),
-      headers: { 'User-Agent': UA },
-    });
-    if (!res.ok) return null;
-    const buf = Buffer.from(await res.arrayBuffer());
-    if (buf.length < 2500 || buf.length > 8 * 1024 * 1024) return null;
-    const head = buf.slice(0, 256).toString('utf8');
-    if (/^\s*<svg|^\s*<!DOCTYPE|^\s*<html/i.test(head)) return null;
+  const cached = copyCachedLibraryToSlug(slug, asset, mediaRoot);
+  if (cached) return cached;
 
-    const isJpeg = buf[0] === 0xff && buf[1] === 0xd8;
-    const isPng = buf[0] === 0x89 && buf[1] === 0x50;
-    const isWebp = buf.slice(0, 4).toString() === 'RIFF' && buf.slice(8, 12).toString() === 'WEBP';
-    if (!isJpeg && !isPng && !isWebp) return null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(asset.url, {
+        signal: AbortSignal.timeout(15000),
+        headers: { 'User-Agent': UA },
+      });
+      if (!res.ok) continue;
+      const buf = Buffer.from(await res.arrayBuffer());
+      if (buf.length < 2500 || buf.length > 8 * 1024 * 1024) continue;
+      const head = buf.slice(0, 256).toString('utf8');
+      if (/^\s*<svg|^\s*<!DOCTYPE|^\s*<html/i.test(head)) continue;
 
-    const ext = isPng ? 'png' : isWebp ? 'webp' : 'jpg';
-    const dir = path.join(mediaRoot, slug);
-    mkdirSync(dir, { recursive: true });
-    const filename = `hero.${ext}`;
-    writeFileSync(path.join(dir, filename), buf);
-    return `/api/media/${slug}/${filename}`;
-  } catch {
-    return null;
+      const isJpeg = buf[0] === 0xff && buf[1] === 0xd8;
+      const isPng = buf[0] === 0x89 && buf[1] === 0x50;
+      const isWebp = buf.slice(0, 4).toString() === 'RIFF' && buf.slice(8, 12).toString() === 'WEBP';
+      if (!isJpeg && !isPng && !isWebp) continue;
+
+      const ext = isPng ? 'png' : isWebp ? 'webp' : 'jpg';
+      const dir = path.join(mediaRoot, slug);
+      mkdirSync(dir, { recursive: true });
+      const filename = `hero.${ext}`;
+      writeFileSync(path.join(dir, filename), buf);
+      // Also cache for future copies.
+      try {
+        mkdirSync(libraryCacheDir(mediaRoot), { recursive: true });
+        writeFileSync(libraryCachePath(asset.id, mediaRoot), buf);
+      } catch {
+        /* ignore */
+      }
+      return `/api/media/${slug}/${filename}`;
+    } catch {
+      await new Promise((r) => setTimeout(r, 600 * (attempt + 1)));
+    }
   }
+  return null;
 }
 
 /** Assign next library template to an article slug; persists cycle state. */
