@@ -54,6 +54,8 @@ services:
       ARTICLES_STORE: sqlite
       SMARTPROTO_DB_PATH: /app/data/smartproto.db
       SMARTPROTO_DATA_DIR: /app/data
+      # Same bind as web: ../images → /app/public/media (Neakasa scrub deletes here).
+      SMARTPROTO_MEDIA_DIR: /app/public/media
       SMARTPROTO_FACTORY_ENABLED: "true"
       CHINA_DEPARTMENT_ENABLED: "true"
       CHINA_ALLOW_RECOMMEND: "true"

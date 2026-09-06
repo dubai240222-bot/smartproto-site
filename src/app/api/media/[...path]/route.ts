@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { isRemovedSlug } from '@/lib/removed-slugs';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,11 +19,22 @@ const MIME: Record<string, string> = {
  * every request (no Next.js static-asset cache), so a freshly downloaded
  * image is live immediately after Direct Publisher writes it — no container
  * restart required.
+ *
+ * SP-A-100F — refuse media for removed-slugs (e.g. Neakasa e-bike hero) even
+ * if the on-disk file still exists before worker scrub deletes it.
  */
 export async function GET(_req: Request, ctx: { params: Promise<{ path: string[] }> }) {
   const { path: segments } = await ctx.params;
   const rel = segments.join('/');
   if (rel.includes('..')) return new NextResponse('Not found', { status: 404 });
+
+  const slug = segments[0] || '';
+  if (slug && isRemovedSlug(slug)) {
+    return new NextResponse('Not found', {
+      status: 404,
+      headers: { 'Cache-Control': 'no-store' },
+    });
+  }
 
   const filePath = path.join(MEDIA_ROOT, rel);
   const ext = path.extname(filePath).toLowerCase();

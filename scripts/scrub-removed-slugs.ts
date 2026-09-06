@@ -4,7 +4,10 @@
  *   npx tsx scripts/scrub-removed-slugs.ts
  *
  * Durable companion to `src/data/removed-slugs.json` (UI already filters).
- * Also deletes on-disk hero files so /api/media/<slug>/hero.jpg cannot resurface.
+ * Deletes on-disk media dirs (compose: ../images → /app/public/media) so
+ * /api/media/<slug>/hero.jpg cannot resurface — Neakasa e-bike incident.
+ *
+ * Env: SMARTPROTO_MEDIA_DIR (default public/media), SMARTPROTO_DB_PATH.
  */
 import 'dotenv/config';
 import { existsSync, rmSync } from 'node:fs';
@@ -21,7 +24,9 @@ const MEDIA_ROOT =
 function scrubMedia(slug: string): boolean {
   const dir = path.join(MEDIA_ROOT, slug);
   if (!existsSync(dir)) return false;
+  // Remove whole slug dir (hero.jpg + any gallery) — wrong product photos included.
   rmSync(dir, { recursive: true, force: true });
+  console.log(`[scrub] deleted media dir ${dir}`);
   return true;
 }
 
