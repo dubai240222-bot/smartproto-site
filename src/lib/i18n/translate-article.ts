@@ -80,6 +80,7 @@ function isOpinionish(category?: string): boolean {
 async function callTranslateOnce(
   article: CanonicalForTranslation,
   language: LocalizationLanguage,
+  opts?: { chiefArticle?: boolean },
 ): Promise<{ title: string; summary: string; content: string; model: string }> {
   const client = getOpenRouterClient();
   const langName = language === 'en' ? 'English' : 'Turkish';
@@ -90,6 +91,9 @@ async function callTranslateOnce(
     `Translate the finished Russian editorial article into ${langName}.`,
     `This is localization, NOT a new article and NOT rewriting.`,
     `Preserve ALL facts, numbers, names, companies, product names, meaning, structure, human angle, and light irony if present.`,
+    opts?.chiefArticle
+      ? `CHIEF EDITOR article (human override): mirror the RU editorial angle, irony, and voice faithfully — same meaning in ${langName}, not a generic rewrite.`
+      : '',
     `Preserve authorship/voice. Do NOT invent facts, comparisons, specs, or conclusions.`,
     opinion
       ? `This is an author COLUMN/OPINION: preserve the author's argument and voice; do not flatten into generic newsroom prose.`
@@ -165,6 +169,11 @@ export async function translateArticleLanguage(
     slugTaken?: (language: LocalizationLanguage, slug: string) => boolean;
     /** Re-attempt a prior rejected row (worker drip / controlled scripts). */
     retryRejected?: boolean;
+    /** Chief revise / re-sync — overwrite published localization from fresh RU canonical. */
+    forceRetranslate?: boolean;
+    /** Keep existing EN/TR URL slug when re-syncing Chief content. */
+    preserveLocalizedSlug?: boolean;
+    chiefArticle?: boolean;
   },
 ): Promise<TranslateLanguageResult> {
   try {
@@ -181,7 +190,7 @@ export async function translateArticleLanguage(
       });
 
     const existing = getExisting(article.id, language);
-    if (existing?.translationStatus === 'published') {
+    if (existing?.translationStatus === 'published' && !deps?.forceRetranslate) {
       return {
         language,
         status: 'published',
@@ -208,7 +217,7 @@ export async function translateArticleLanguage(
     let aiCalls = 0;
     let translated: { title: string; summary: string; content: string; model: string };
     try {
-      translated = await callTranslateOnce(article, language);
+      translated = await callTranslateOnce(article, language, { chiefArticle: deps?.chiefArticle });
       aiCalls = 1;
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
@@ -232,7 +241,10 @@ export async function translateArticleLanguage(
     }
 
     const desired = slugifyLocalizedTitle(translated.title, language, article.id);
-    const slug = uniqueSlug(language, desired, article.id, slugTaken);
+    const slug =
+      deps?.preserveLocalizedSlug && existing?.localizedSlug
+        ? existing.localizedSlug
+        : uniqueSlug(language, desired, article.id, slugTaken);
 
     const qaCandidate: ArticleLocalization = {
       articleId: article.id,

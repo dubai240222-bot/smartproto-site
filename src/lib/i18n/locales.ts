@@ -28,6 +28,11 @@ export function localeArticlePath(locale: AppLocale, slug: string): string {
   return `/${locale}/articles/${slug}`;
 }
 
+export function localeScoutPath(locale: AppLocale): string {
+  if (locale === 'ru') return '/scout';
+  return `/${locale}/scout`;
+}
+
 const DATE_LOCALES: Record<AppLocale, string> = {
   ru: 'ru-RU',
   en: 'en-US',
@@ -58,19 +63,44 @@ export type LocaleUi = {
   homeFeed: string;
   emptyHome: string;
   emptyCategory: string;
+  homeRailTitle: string;
+  homeGridTitle: string;
+  homeQuickTitle: string;
+  homePastTitle: string;
+  homeAllLink: string;
+  homeArchiveLink: string;
+  homePastPagerLabel: string;
+  homeCategoryLabel: string;
+  homeCategoryCount: string;
   localizationUnavailable: string;
   footerEditorial: string;
   footerScout: string;
   footerRights: string;
   siteDescription: string;
   siteTitle: string;
+  scoutTitle: string;
+  scoutIntro: string;
+  scoutUrlLabel: string;
+  scoutWhyLabel: string;
+  scoutWhyPlaceholder: string;
+  scoutNameLabel: string;
+  scoutEmailLabel: string;
+  scoutSubmit: string;
+  scoutSubmitting: string;
+  scoutFootnote: string;
+  scoutDoneNote: string;
+  scoutSendAnother: string;
+  scoutErrorNetwork: string;
+  scoutDoneMessage: string;
+  archivePageTitle: string;
+  archivePageCount: string;
 };
 
 export const LOCALE_UI: Record<AppLocale, LocaleUi> = {
   ru: {
     htmlLang: 'ru',
     ogLocale: 'ru_RU',
-    tagline: 'Технологии раньше, чем они станут мейнстримом',
+    tagline: 'Увидеть завтра до того, как оно станет обычным.',
     searchPlaceholder: 'Поиск по SmartProto',
     searchEmpty: 'Ничего не найдено',
     searchResults: 'Результаты',
@@ -90,6 +120,15 @@ export const LOCALE_UI: Record<AppLocale, LocaleUi> = {
     homeFeed: 'Лента',
     emptyHome: 'Пока нет материалов.',
     emptyCategory: 'В этой рубрике пока нет материалов.',
+    homeRailTitle: 'Новинки технологий',
+    homeGridTitle: 'Лента',
+    homeQuickTitle: 'Коротко',
+    homePastTitle: 'Лента новостей',
+    homeAllLink: 'Все →',
+    homeArchiveLink: 'Архив →',
+    homePastPagerLabel: 'Прошлые новости',
+    homeCategoryLabel: 'Рубрика',
+    homeCategoryCount: 'материалов',
     localizationUnavailable: 'Перевод недоступен',
     footerEditorial: 'Редакция и сотрудничество',
     footerScout: 'Прислать находку → /scout',
@@ -97,11 +136,29 @@ export const LOCALE_UI: Record<AppLocale, LocaleUi> = {
     siteDescription:
       'SmartProto — интернет-издание о ранних технологиях, прототипах, инженерных решениях и научных открытиях.',
     siteTitle: 'SmartProto — Цифровая газета о технологиях',
+    scoutTitle: 'Нашли интересную технологию?',
+    scoutIntro:
+      'Пришлите ссылку — редакция SmartProto проверит её и, если тема подходит, подготовит материал. Вы не публикуете статью: только передаёте находку «живому» редакционному конвейеру.',
+    scoutUrlLabel: 'URL',
+    scoutWhyLabel: 'Почему это интересно?',
+    scoutWhyPlaceholder: 'Коротко: что нового для человека / почему стоит разобрать',
+    scoutNameLabel: 'Имя / псевдоним',
+    scoutEmailLabel: 'Email',
+    scoutSubmit: 'Отправить в редакцию',
+    scoutSubmitting: 'Отправляем…',
+    scoutFootnote:
+      'Находка проходит обычную проверку редакции (безопасность, дедуп, Scout, Editor, фото). Прямой publish недоступен. Email не публикуется.',
+    scoutDoneNote: 'Публикация не гарантируется.',
+    scoutSendAnother: 'Прислать ещё одну ссылку',
+    scoutErrorNetwork: 'Сеть недоступна. Попробуйте ещё раз.',
+    scoutDoneMessage: 'Спасибо. Находка передана в редакцию SmartProto.',
+    archivePageTitle: 'Архив новостей',
+    archivePageCount: 'материалов',
   },
   en: {
     htmlLang: 'en',
     ogLocale: 'en_US',
-    tagline: 'Technology before it becomes mainstream',
+    tagline: 'See tomorrow before it becomes ordinary.',
     searchPlaceholder: 'Search SmartProto',
     searchEmpty: 'No results',
     searchResults: 'Results',
@@ -121,6 +178,15 @@ export const LOCALE_UI: Record<AppLocale, LocaleUi> = {
     homeFeed: 'Latest',
     emptyHome: 'No published English stories yet.',
     emptyCategory: 'No stories in this section yet.',
+    homeRailTitle: 'Tech highlights',
+    homeGridTitle: 'Feed',
+    homeQuickTitle: 'Brief',
+    homePastTitle: 'News feed',
+    homeAllLink: 'All →',
+    homeArchiveLink: 'Archive →',
+    homePastPagerLabel: 'Past stories',
+    homeCategoryLabel: 'Section',
+    homeCategoryCount: 'stories',
     localizationUnavailable: 'Translation unavailable',
     footerEditorial: 'Editorial & collaboration',
     footerScout: 'Tip a find → /scout',
@@ -128,11 +194,29 @@ export const LOCALE_UI: Record<AppLocale, LocaleUi> = {
     siteDescription:
       'SmartProto covers early technology, prototypes, engineering, and scientific discoveries.',
     siteTitle: 'SmartProto — Technology newspaper',
+    scoutTitle: 'Found an interesting technology?',
+    scoutIntro:
+      'Send a link — the SmartProto editorial team will review it and, if the topic fits, prepare a story. You are not publishing an article: only passing the find to a live editorial pipeline.',
+    scoutUrlLabel: 'URL',
+    scoutWhyLabel: 'Why is this interesting?',
+    scoutWhyPlaceholder: 'Briefly: what is new for people / why it is worth covering',
+    scoutNameLabel: 'Name / alias',
+    scoutEmailLabel: 'Email',
+    scoutSubmit: 'Send to editorial',
+    scoutSubmitting: 'Sending…',
+    scoutFootnote:
+      'Finds go through the usual editorial checks (safety, dedupe, Scout, Editor, photos). Direct publish is not available. Email is not published.',
+    scoutDoneNote: 'Publication is not guaranteed.',
+    scoutSendAnother: 'Submit another link',
+    scoutErrorNetwork: 'Network unavailable. Please try again.',
+    scoutDoneMessage: 'Thank you. Your find was sent to the SmartProto editorial team.',
+    archivePageTitle: 'News archive',
+    archivePageCount: 'stories',
   },
   tr: {
     htmlLang: 'tr',
     ogLocale: 'tr_TR',
-    tagline: 'Teknoloji ana akım olmadan önce',
+    tagline: 'Yarını sıradanlaşmadan önce gör.',
     searchPlaceholder: 'SmartProto’da ara',
     searchEmpty: 'Sonuç yok',
     searchResults: 'Sonuçlar',
@@ -152,6 +236,15 @@ export const LOCALE_UI: Record<AppLocale, LocaleUi> = {
     homeFeed: 'Son yazılar',
     emptyHome: 'Henüz yayınlanmış Türkçe içerik yok.',
     emptyCategory: 'Bu bölümde henüz yazı yok.',
+    homeRailTitle: 'Teknoloji öne çıkanlar',
+    homeGridTitle: 'Akış',
+    homeQuickTitle: 'Kısa',
+    homePastTitle: 'Haber akışı',
+    homeAllLink: 'Tümü →',
+    homeArchiveLink: 'Arşiv →',
+    homePastPagerLabel: 'Eski yazılar',
+    homeCategoryLabel: 'Bölüm',
+    homeCategoryCount: 'yazı',
     localizationUnavailable: 'Çeviri yok',
     footerEditorial: 'Editöryel ve iş birliği',
     footerScout: 'Bulgu gönder → /scout',
@@ -159,6 +252,24 @@ export const LOCALE_UI: Record<AppLocale, LocaleUi> = {
     siteDescription:
       'SmartProto; erken teknoloji, prototipler, mühendislik ve bilimsel keşifler hakkında yayın yapar.',
     siteTitle: 'SmartProto — Teknoloji gazetesi',
+    scoutTitle: 'İlginç bir teknoloji mi buldunuz?',
+    scoutIntro:
+      'Bir bağlantı gönderin — SmartProto editoryal ekibi inceler; konu uygunsa haber hazırlanır. Makaleyi siz yayımlamazsınız: bulguyu canlı editoryal hatta iletirsiniz.',
+    scoutUrlLabel: 'URL',
+    scoutWhyLabel: 'Neden ilginç?',
+    scoutWhyPlaceholder: 'Kısaca: insanlar için ne yenilik / neden ele alınmalı',
+    scoutNameLabel: 'Ad / takma ad',
+    scoutEmailLabel: 'E-posta',
+    scoutSubmit: 'Editoryale gönder',
+    scoutSubmitting: 'Gönderiliyor…',
+    scoutFootnote:
+      'Bulgular olağan editoryal kontrolden geçer (güvenlik, dedup, Scout, Editor, foto). Doğrudan yayın yok. E-posta yayımlanmaz.',
+    scoutDoneNote: 'Yayın garanti edilmez.',
+    scoutSendAnother: 'Başka bir bağlantı gönder',
+    scoutErrorNetwork: 'Ağ kullanılamıyor. Tekrar deneyin.',
+    scoutDoneMessage: 'Teşekkürler. Bulgunuz SmartProto editoryal ekibine iletildi.',
+    archivePageTitle: 'Haber arşivi',
+    archivePageCount: 'yazı',
   },
 };
 

@@ -13,7 +13,9 @@ import {
   resolveVisualFallback,
 } from '@/lib/visual-fallback';
 import { inferPublicCategory } from '@/lib/public-labels';
-import { displayHeroUrl } from '@/lib/homepage-editorial-mix';
+import { displayHeroUrl, isWeakHeroUrl } from '@/lib/homepage-editorial-mix';
+import { getArticleMediaSlides } from '@/lib/article-media';
+import { ArticleGallery, ArticleHeroImage } from '@/components/article-gallery';
 import { disclosureSources } from '@/lib/source-label';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { articleSwitcherLinks, buildArticleLanguageAlternates } from '@/lib/i18n/article-alternates';
@@ -263,44 +265,36 @@ export default async function ArticlePage({
             </span>
           </div>
 
-          {/* 5. Hero image — real photo when present; compact editorial fallback when not. */}
+          {/* 5. Hero / gallery — real photos when present; editorial fallback when not. */}
           {(() => {
-            const hero = article.images?.find((i) => i.role === 'hero')?.url || article.imageUrl;
-            const extras = (article.images || []).filter((i) => i.role !== 'hero');
+            const slides = getArticleMediaSlides(article, (url) => {
+              if (!url || isWeakHeroUrl(url)) return undefined;
+              return url;
+            });
+            if (slides.length >= 2) {
+              return (
+                <ArticleGallery slides={slides} fallbackAlt={article.title} priority />
+              );
+            }
+            const hero = slides[0];
+            if (hero) {
+              return (
+                <ArticleHeroImage slide={hero} fallbackAlt={article.title} priority />
+              );
+            }
             return (
-              <>
-                <div className={hero ? 'my-8' : 'my-5'}>
-                  <MediaPlaceholder
-                    slug={article.slug}
-                    category={article.category}
-                    title={article.title}
-                    tags={article.tags}
-                    summary={article.summary}
-                    agentId={article.agentId}
-                    imageUrl={hero ? displayHeroUrl(article) || hero : undefined}
-                    description={hero ? 'Иллюстрация к материалу' : undefined}
-                    aspectRatio={hero ? 'aspect-[16/8]' : 'aspect-[16/7]'}
-                    compactFallback={!hero}
-                  />
-                </div>
-                {/* Mobile: secondary/detail sequentially under hero (desktop uses right rail). */}
-                {extras.length > 0 && (
-                  <div className="mb-8 space-y-4 lg:hidden">
-                    {extras.map((img) => (
-                      <div
-                        key={img.url}
-                        className="overflow-hidden rounded border border-[var(--border)] bg-[var(--surface)]"
-                      >
-                        <img
-                          src={img.url}
-                          alt={article.title}
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
+              <div className="my-5">
+                <MediaPlaceholder
+                  slug={article.slug}
+                  category={article.category}
+                  title={article.title}
+                  tags={article.tags}
+                  summary={article.summary}
+                  agentId={article.agentId}
+                  compactFallback
+                  aspectRatio="aspect-[16/7]"
+                />
+              </div>
             );
           })()}
 
@@ -386,21 +380,11 @@ export default async function ArticlePage({
               })()}
             </div>
 
-            {/* 10. Right rail — secondary/detail on desktop + related. */}
+            {/* 10. Right rail — related only (gallery lives in main column). */}
             {(() => {
-              const extraImages = (article.images || []).filter((i) => i.role !== 'hero');
-              if (!extraImages.length && relatedArticles.length === 0) return null;
+              if (relatedArticles.length === 0) return null;
               return (
                 <aside className="lg:sticky lg:top-20 lg:self-start">
-                  {extraImages.length > 0 && (
-                    <div className="mb-8 hidden space-y-4 lg:block">
-                      {extraImages.map((img) => (
-                        <div key={img.url} className="overflow-hidden rounded border border-[var(--border)] bg-[var(--surface)]">
-                          <img src={img.url} alt={article.title} className="h-full w-full object-cover" />
-                        </div>
-                      ))}
-                    </div>
-                  )}
                   {relatedArticles.length > 0 && (
                     <>
                       <h2 className="font-serif text-lg font-bold text-[var(--text)] mb-4">

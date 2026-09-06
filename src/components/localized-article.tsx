@@ -19,7 +19,9 @@ import {
   localizeReadTime,
   type LocalizationLanguage,
 } from '@/lib/i18n/locales';
-import { displayHeroUrl } from '@/lib/homepage-editorial-mix';
+import { isWeakHeroUrl } from '@/lib/homepage-editorial-mix';
+import { getArticleMediaSlides } from '@/lib/article-media';
+import { ArticleGallery, ArticleHeroImage } from '@/components/article-gallery';
 import { inferPublicCategory } from '@/lib/public-labels';
 import { getPublicSiteUrl } from '@/lib/site-url';
 import { disclosureSources } from '@/lib/source-label';
@@ -171,11 +173,21 @@ export function LocalizedArticlePage({
         ) : null}
       </div>
 
-      {/* SP-A-100F: same story → same media from canonical RU article. */}
+      {/* SP-A-100F / SP-A-102: canonical RU media set → EN/TR gallery. */}
       {(() => {
-        const hero = canonicalHeroUrl(canon);
+        const slides = getArticleMediaSlides(canon, (url) => {
+          if (!url || isWeakHeroUrl(url)) return undefined;
+          return url;
+        });
+        if (slides.length >= 2) {
+          return <ArticleGallery slides={slides} fallbackAlt={loc.localizedTitle} priority />;
+        }
+        const hero = slides[0];
+        if (hero) {
+          return <ArticleHeroImage slide={hero} fallbackAlt={loc.localizedTitle} priority />;
+        }
         return (
-          <div className={hero ? 'my-8' : 'my-5'}>
+          <div className="my-5">
             <MediaPlaceholder
               slug={canon.slug}
               category={canon.category}
@@ -183,9 +195,8 @@ export function LocalizedArticlePage({
               tags={canon.tags}
               summary={loc.localizedExcerpt || canon.summary}
               agentId={canon.agentId}
-              imageUrl={hero ? displayHeroUrl(canon) || hero : undefined}
-              aspectRatio={hero ? 'aspect-[16/8]' : 'aspect-[16/7]'}
-              compactFallback={!hero}
+              compactFallback
+              aspectRatio="aspect-[16/7]"
             />
           </div>
         );

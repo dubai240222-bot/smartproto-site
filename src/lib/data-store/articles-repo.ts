@@ -16,8 +16,11 @@ export { FinalAutoGateError };
 
 export interface ArticleImage {
   url: string;
-  role: 'hero' | 'secondary' | 'detail';
+  role: 'hero' | 'secondary' | 'detail' | 'gallery';
   sourceUrl?: string;
+  caption?: string;
+  credit?: string;
+  sortOrder?: number;
 }
 
 export interface StoredArticle {

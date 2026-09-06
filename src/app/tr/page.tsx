@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { LocalizedHome } from '@/components/localized-home';
+import { EditorialHome } from '@/components/editorial-home';
 import { LOCALE_UI } from '@/lib/i18n/locales';
 
 export const dynamic = 'force-dynamic';
@@ -28,6 +28,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default function TurkishHomePage() {
-  return <LocalizedHome language="tr" />;
+export default async function TurkishHomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ category?: string; page?: string }>;
+}) {
+  const params = await searchParams;
+  return <EditorialHome locale="tr" searchParams={params} />;
 }

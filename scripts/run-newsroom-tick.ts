@@ -24,6 +24,7 @@ import {
 } from '../src/lib/collectors/source-registry';
 import { buildScoutPool } from '../src/lib/ai/candidate-prerank';
 import { resolveArticlePhotos, downloadImagesLocally } from '../src/lib/collectors/photo-scout';
+import { runVisualDesk } from '../src/lib/visual-desk';
 import {
   inferEditorialFocus,
   pickDiversityWinner,
@@ -65,6 +66,8 @@ import {
   STAFF_AUTHOR_LINK_AGENT_ID,
   STAFF_AUTHOR_LINK_SOURCE_NAME,
 } from '../src/lib/editorial/doors';
+import { extractProductFingerprint } from '../src/lib/editorial/product-fingerprint';
+import { pickPublishHero, orderImagesForArticle } from '../src/lib/article-media';
 import {
   checkCycleCadence,
   getNewsIntervalMs,
@@ -75,9 +78,11 @@ import {
   buildFreshnessReport,
   formatFreshnessReport,
   type FreshnessReport,
+  type FreshnessStatus,
 } from '../src/lib/newsroom/freshness';
 import {
   applyQuotaScoutFloor,
+  applyStarvationScoutFloor,
   formatNewsQuotaPolicy,
   resolveNewsQuotaPolicy,
   type NewsQuotaPolicy,
@@ -460,6 +465,17 @@ function normalizeProductIdentity(text: string): string {
     .trim();
 }
 
+function finalizeArticleImages(
+  images: import('../src/lib/collectors/photo-scout').ScoutImage[],
+  fallbackUrl?: string,
+  title?: string,
+): { images: import('../src/lib/collectors/photo-scout').ScoutImage[]; imageUrl: string } {
+  const hero = pickPublishHero(images, { fallbackUrl, title });
+  if (!hero?.url) return { images: [], imageUrl: '' };
+  const ordered = orderImagesForArticle(images, hero);
+  return { images: ordered as import('../src/lib/collectors/photo-scout').ScoutImage[], imageUrl: hero.url };
+}
+
 function summaryOf(text: string): string {
   const t = text.trim();
   if (t.length <= 200) return t;
@@ -520,6 +536,7 @@ async function loadState(journalPath: string, articlesPath: string) {
   const urls = new Set<string>();
   const ids = new Set<string>();
   const productIds = new Set<string>();
+  const productFingerprints = new Set<string>();
   let journal: JournalData = { processedUrls: [], processedIds: [], entries: [] };
   let articles: Article[] = [];
 
@@ -536,6 +553,8 @@ async function loadState(journalPath: string, articlesPath: string) {
         const slugId = normalizeProductIdentity((a.slug || '').replace(/-/g, ' '));
         if (nameId) productIds.add(nameId);
         if (slugId) productIds.add(slugId);
+        const fp = extractProductFingerprint(a.title || '', a.summary || '', a.sourceUrl || '');
+        if (fp) productFingerprints.add(fp);
       }
     }
   } catch {
@@ -571,7 +590,7 @@ async function loadState(journalPath: string, articlesPath: string) {
     if (nameId) productIds.add(nameId);
   }
 
-  return { urls, ids, productIds, journal, articles };
+  return { urls, ids, productIds, productFingerprints, journal, articles };
 }
 
 async function markRejected(
@@ -647,6 +666,7 @@ async function tryChinaPublishOnce(opts: {
   urls: Set<string>;
   ids: Set<string>;
   productIds: Set<string>;
+  productFingerprints: Set<string>;
   journal: JournalData;
   articles: Article[];
   metrics: TickMetrics;
@@ -719,7 +739,7 @@ async function tryChinaPublishOnce(opts: {
     let sourceBody = c.summary || '';
     let pageImage = c.imageUrl || '';
     try {
-      const page = await extractArticlePlainText(c.sourceUrl, { maxChars: 3200 });
+      const page = await extractArticlePlainText(c.sourceUrl, { maxChars: 6000 });
       if (page.text.length > sourceBody.length) sourceBody = page.text;
       if (page.imageUrl) pageImage = page.imageUrl;
     } catch {
@@ -761,7 +781,7 @@ async function tryChinaPublishOnce(opts: {
         dossier.prototypeOrSale ? `Статус: ${dossier.prototypeOrSale}` : '',
         dossier.unknownFacts.length ? `Неизвестно: ${dossier.unknownFacts.join('; ')}` : '',
         dossier.warningFlags.length ? `Оговорки: ${dossier.warningFlags.join('; ')}` : '',
-        sourceBody.slice(0, 2800),
+        sourceBody.slice(0, 4500),
       ]
         .filter(Boolean)
         .join('\n\n'),
@@ -910,26 +930,28 @@ async function tryChinaPublishOnce(opts: {
         opts.cycle === 'news' ? 'новость' : 'обзор',
       ]);
 
-      // SP-A-064 Photo Intelligence V2: entity → multi-source mine → AI editor → local files.
-      // Wrong-product photo is worse than no photo.
+      // SP-A-VD1 Visual Desk: entity → tiered mine → Photo Editor → warehouse dedup → gap report.
       let images: import('../src/lib/collectors/photo-scout').ScoutImage[] = [];
       try {
-        const report = await resolveArticlePhotos({
+        const visual = await runVisualDesk({
           slug,
           title: draft.title,
           text: draft.text,
           sourceUrl: c.sourceUrl,
           fallbackUrl: imageUrl || undefined,
+          visualBrief: draft.visual_brief,
+          recentArticles: fresh.articles.slice(0, 25),
         });
+        const report = visual.report;
         console.log(
           chalk.gray(
-            `[photo-v2] entity=${report.entity.brand || report.entity.company || '?'} ` +
-              `object=${report.entity.object || '?'} candidates=${report.candidatesFound} ` +
-              `selected=${report.selected.length} match=${report.imageMatchLevel || 'n/a'} ` +
-              `notes=${report.notes.join('; ')}`,
+            `[visual-desk] entity=${report.entity.brand || report.entity.company || '?'} ` +
+              `gap=${visual.gap.status} selected=${visual.gap.selected} ` +
+              `pending=${visual.gap.visualPendingMs}ms ` +
+              `notes=${visual.gap.notes.slice(-3).join('; ')}`,
           ),
         );
-        images = report.selected;
+        images = visual.images;
         if (report.imageMatchLevel) {
           (opts as any)._lastPhotoMeta = {
             imageMatchLevel: report.imageMatchLevel,
@@ -939,7 +961,7 @@ async function tryChinaPublishOnce(opts: {
       } catch (err) {
         console.log(
           chalk.yellow(
-            `[photo-v2] failed: ${err instanceof Error ? err.message : String(err)} — soft hero fallback`,
+            `[visual-desk] failed: ${err instanceof Error ? err.message : String(err)} — soft hero fallback`,
           ),
         );
       }
@@ -962,7 +984,9 @@ async function tryChinaPublishOnce(opts: {
         }
         imageUrl = ''; // never publish an unconfirmed remote hotlink
       } else {
-        imageUrl = images[0].url;
+        const finalized = finalizeArticleImages(images, imageUrl, draft.title);
+        images = finalized.images;
+        imageUrl = finalized.imageUrl;
       }
 
       const article: Article = {
@@ -976,7 +1000,7 @@ async function tryChinaPublishOnce(opts: {
         sourceUrl: c.sourceUrl,
         publishedAt,
         readTime: `${Math.max(1, Math.ceil(wordCount(draft.text) / 150))} мин`,
-        ...(images.length ? { imageUrl: images[0].url, images } : {}),
+        ...(images.length ? { imageUrl, images } : {}),
         ...stampAuthorForPipeline('china-qwen', { sourceUrl: c.sourceUrl, slug }),
       };
 
@@ -1095,6 +1119,7 @@ async function publishRssOnce(opts: {
   urls: Set<string>;
   ids: Set<string>;
   productIds: Set<string>;
+  productFingerprints: Set<string>;
   journal: JournalData;
   articles: Article[];
   metrics: TickMetrics;
@@ -1118,6 +1143,8 @@ async function publishRssOnce(opts: {
     scoutFloor = applyQuotaScoutFloor(scoutFloor, opts.quota);
   }
 
+  // Freshness will be computed below; starvation floor applied after report is ready.
+
   const candidates: RssItem[] = [];
   const perSource: Record<string, number> = {};
   for (const src of SOURCES) {
@@ -1139,6 +1166,8 @@ async function publishRssOnce(opts: {
         if (opts.ids.has(slug) || isRemovedSlug(slug)) continue;
         const productKey = normalizeProductIdentity(item.title);
         if (productKey && opts.productIds.has(productKey)) continue;
+        const fp = extractProductFingerprint(item.title, item.text || '', item.url);
+        if (fp && opts.productFingerprints.has(fp)) continue;
         // looksBuyableGadget already applies hardReject + SP-A-049 commodity + feed soften.
         // Do not re-hardReject here — that undoes Yanko/New Atlas soften and empties the pool.
         if (!looksBuyableGadget(item.title, item.text || '', name)) {
@@ -1257,6 +1286,20 @@ async function publishRssOnce(opts: {
   if (quota) {
     console.log(chalk.bold(formatNewsQuotaPolicy(quota)));
   }
+  if (opts.cycle === 'news' && !probeMode) {
+    const beforeStarve = scoutFloor;
+    scoutFloor = applyStarvationScoutFloor(scoutFloor, {
+      freshnessStatus: freshness.freshnessStatus,
+      minutesSinceLastAuto: freshness.minutesSinceLastAutoPublication,
+    });
+    if (scoutFloor < beforeStarve) {
+      console.log(
+        chalk.yellow(
+          `STARVATION Scout floor: ${beforeStarve} → ${scoutFloor} (freshness=${freshness.freshnessStatus})`,
+        ),
+      );
+    }
+  }
   if (freshness.freshnessStatus === 'WARNING') {
     console.log(
       chalk.yellow(
@@ -1272,13 +1315,13 @@ async function publishRssOnce(opts: {
   }
   const pipelineBudget = freshness.pipelineCandidateBudget;
   // Cost-aware: when behind quota use fewer Scout calls (better prefilter + lower floor),
-  // not a wider empty window. Probe / CRITICAL still may widen slightly.
+  // not a wider empty window. CRITICAL/WARNING starvation overrides quota shrink (SP-A-091).
   const scoutLimit = probeMode
     ? 16
-    : opts.cycle === 'news' && quota?.behind
-      ? quota.scoutLimit
-      : freshness.freshnessStatus === 'CRITICAL'
-        ? 16
+    : freshness.freshnessStatus === 'CRITICAL' || freshness.freshnessStatus === 'WARNING'
+      ? 16
+      : opts.cycle === 'news' && quota?.behind
+        ? quota.scoutLimit
         : 14;
   console.log(
     chalk.gray(
@@ -1582,10 +1625,15 @@ async function publishRssOnce(opts: {
       console.log(chalk.gray('Scout...'));
       opts.metrics.aiStarted = true;
       opts.metrics.sentToGemini += 1;
-      const scout = await scoutArticle(item.title, item.text || item.title, mode);
+      const scout = await scoutArticle(item.title, item.text || item.title, mode, {
+        sourceName: item.sourceName,
+        sourceUrl: item.url,
+      });
       console.log(`Scout: score=${scout.score} interesting=${scout.interesting} — ${scout.reason}`);
 
-      if (!scout.interesting || scout.score < scoutFloor) {
+      // Gate on effective scoutFloor only. `interesting` is baked to env SCOUT_SCORE_THRESHOLD
+      // (often 70) and would undo quota/starvation relax — that starved AUTO for days.
+      if (scout.score < scoutFloor) {
         console.log(chalk.yellow(`Scout reject (score ${scout.score} < ${scoutFloor}).`));
         await markRejected(opts.journal, opts.journalPath, item, scout.reason, scout.score, {
           permanent: false,
@@ -1822,20 +1870,24 @@ async function publishRssOnce(opts: {
       }
       const draftProductKey = normalizeProductIdentity(draft.title);
       const sourceProductKey = normalizeProductIdentity(item.title);
+      const draftFp = extractProductFingerprint(draft.title, draft.text, item.url);
+      const sourceFp = extractProductFingerprint(item.title, item.text || '', item.url);
       if (
         (draftProductKey && opts.productIds.has(draftProductKey)) ||
-        (sourceProductKey && opts.productIds.has(sourceProductKey))
+        (sourceProductKey && opts.productIds.has(sourceProductKey)) ||
+        (draftFp && opts.productFingerprints.has(draftFp)) ||
+        (sourceFp && opts.productFingerprints.has(sourceFp))
       ) {
         console.log(
           chalk.yellow(
-            `Skipped product-identity duplicate: ${draftProductKey || sourceProductKey}`,
+            `Skipped product-identity duplicate: ${draftProductKey || sourceProductKey || draftFp || sourceFp}`,
           ),
         );
         await markRejected(
           opts.journal,
           opts.journalPath,
           item,
-          `product-identity duplicate: ${draftProductKey || sourceProductKey}`,
+          `product-identity duplicate: ${draftProductKey || sourceProductKey || draftFp || sourceFp}`,
           scout.score,
         );
         opts.urls.add(item.url);
@@ -1854,6 +1906,8 @@ async function publishRssOnce(opts: {
         if (
           (draftProductKey && fresh.productIds.has(draftProductKey)) ||
           (sourceProductKey && fresh.productIds.has(sourceProductKey)) ||
+          (draftFp && fresh.productFingerprints.has(draftFp)) ||
+          (sourceFp && fresh.productFingerprints.has(sourceFp)) ||
           fresh.urls.has(item.url) ||
           fresh.ids.has(slug)
         ) {
@@ -1872,25 +1926,27 @@ async function publishRssOnce(opts: {
 
         const publishedAt = new Date().toISOString();
 
-        // SP-A-064 Photo Intelligence V2: entity → multi-source mine → AI editor → local files.
+        // SP-A-VD1 Visual Desk: tiered mine → Photo Editor → warehouse → gap JSON.
         let images: import('../src/lib/collectors/photo-scout').ScoutImage[] = [];
         try {
-          const report = await resolveArticlePhotos({
+          const visual = await runVisualDesk({
             slug,
             title: draft.title,
             text: draft.text,
             sourceUrl: item.url,
             fallbackUrl: imageUrl,
+            visualBrief: draft.visual_brief,
+            recentArticles: fresh.articles.slice(0, 25),
           });
+          const report = visual.report;
           console.log(
             chalk.gray(
-              `[photo-v2] entity=${report.entity.brand || report.entity.company || '?'} ` +
-                `object=${report.entity.object || '?'} candidates=${report.candidatesFound} ` +
-                `selected=${report.selected.length} match=${report.imageMatchLevel || 'n/a'} ` +
-                `notes=${report.notes.join('; ')}`,
+              `[visual-desk] entity=${report.entity.brand || report.entity.company || '?'} ` +
+                `gap=${visual.gap.status} selected=${visual.gap.selected}/${visual.gap.targetMax} ` +
+                `pending=${visual.gap.visualPendingMs}ms`,
             ),
           );
-          images = report.selected;
+          images = visual.images;
           if (report.imageMatchLevel) {
             (opts as any)._lastPhotoMeta = {
               imageMatchLevel: report.imageMatchLevel,
@@ -1900,7 +1956,7 @@ async function publishRssOnce(opts: {
         } catch (err) {
           console.log(
             chalk.yellow(
-              `[photo-v2] failed: ${err instanceof Error ? err.message : String(err)} — soft hero fallback`,
+              `[visual-desk] failed: ${err instanceof Error ? err.message : String(err)} — soft hero fallback`,
             ),
           );
         }
@@ -1925,7 +1981,9 @@ async function publishRssOnce(opts: {
           }
           imageUrl = '';
         } else {
-          imageUrl = images[0].url;
+          const finalized = finalizeArticleImages(images, imageUrl, draft.title);
+          images = finalized.images;
+          imageUrl = finalized.imageUrl;
         }
 
         const photoMeta = (opts as any)._lastPhotoMeta as
@@ -1945,7 +2003,7 @@ async function publishRssOnce(opts: {
           sourceUrl: item.url,
           publishedAt,
           readTime: estimateReadTime(draft.text),
-          ...(images.length ? { imageUrl: images[0].url, images } : {}),
+          ...(images.length ? { imageUrl, images } : {}),
           ...(photoMeta?.imageMatchLevel
             ? {
                 imageMatchLevel: photoMeta.imageMatchLevel,
@@ -1995,6 +2053,8 @@ async function publishRssOnce(opts: {
                 : item.channelHint === 'reader-scout'
                   ? READER_SCOUT_AGENT_ID
                   : 'newsroom-scout'),
+            // Source English title often carries repairable/capability cues lost in RU draft.
+            extra: item.title,
           });
         } catch (err) {
           if (err instanceof FinalAutoGateError) {
@@ -2101,6 +2161,8 @@ async function publishRssOnce(opts: {
         opts.urls.add(item.url);
         if (draftProductKey) opts.productIds.add(draftProductKey);
         if (sourceProductKey) opts.productIds.add(sourceProductKey);
+        if (draftFp) opts.productFingerprints.add(draftFp);
+        if (sourceFp) opts.productFingerprints.add(sourceFp);
         if (opts.lastPublish) {
           opts.lastPublish.title = draft.title;
           opts.lastPublish.slug = slug;
@@ -2129,24 +2191,31 @@ async function publishRssOnce(opts: {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error(chalk.red(`RSS candidate error: ${msg}`));
-      if (!opts.journal.processedUrls.includes(item.url)) {
-        opts.journal.processedUrls.push(item.url);
+      // Soft editor/model schema glitches — do not permanently burn the URL.
+      const softEditor =
+        /toneCheck|tags|not valid JSON|empty response|missing or empty/i.test(msg);
+      if (!softEditor) {
+        if (!opts.journal.processedUrls.includes(item.url)) {
+          opts.journal.processedUrls.push(item.url);
+        }
+        if (!opts.journal.processedIds.includes(item.id)) {
+          opts.journal.processedIds.push(item.id);
+        }
+        opts.urls.add(item.url);
       }
-      if (!opts.journal.processedIds.includes(item.id)) {
-        opts.journal.processedIds.push(item.id);
-      }
-      opts.urls.add(item.url);
       opts.journal.entries.push({
         id: item.id,
         url: item.url,
         title: item.title,
         processedAt: new Date().toISOString(),
-        status: 'error',
+        status: softEditor ? 'queued' : 'error',
         reason: msg,
         channel: 'rss',
+        scoutScore: scout.score,
       });
       await writeFile(opts.journalPath, JSON.stringify(opts.journal, null, 2) + '\n', 'utf8');
       lastSkip = `rss error: ${msg}`;
+      continue;
     }
   }
 
@@ -2212,7 +2281,7 @@ async function main(): Promise<void> {
   const articlesPath = path.resolve(root, 'src', 'data', 'articles.json');
   const draftsDir = path.resolve(root, 'drafts');
 
-  const { urls, ids, productIds, journal, articles } = await loadState(journalPath, articlesPath);
+  const { urls, ids, productIds, productFingerprints, journal, articles } = await loadState(journalPath, articlesPath);
   const metrics = emptyTickMetrics(
     factoryEnabled ? 'factory on' : 'factory off (forced)',
     'in progress',
@@ -2263,6 +2332,7 @@ async function main(): Promise<void> {
     urls,
     ids,
     productIds,
+    productFingerprints,
     journal,
     articles,
     metrics,
@@ -2322,6 +2392,7 @@ async function main(): Promise<void> {
     urls: refreshed.urls,
     ids: refreshed.ids,
     productIds: refreshed.productIds,
+    productFingerprints: refreshed.productFingerprints,
     journal: refreshed.journal,
     articles: refreshed.articles,
     quota: newsQuota,

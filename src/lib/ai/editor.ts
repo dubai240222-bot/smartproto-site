@@ -8,11 +8,20 @@ export interface ToneCheck {
   limitationsIncluded: boolean;
 }
 
+/** SP-A-VD1 — optional hints for Photo Miner (same Editor call when present). */
+export interface VisualBrief {
+  subject?: string;
+  scenes?: string[];
+  avoid?: string[];
+  preferredTiers?: string[];
+}
+
 export interface DraftResult {
   title: string;
   text: string;
   tags: string[];
   toneCheck: ToneCheck;
+  visual_brief?: VisualBrief;
 }
 
 const EDITOR_MODEL = process.env.OPENROUTER_EDITOR_MODEL ?? 'google/gemini-2.5-flash-lite';
@@ -112,23 +121,35 @@ const FINISH_THE_THOUGHT = [
 ].join(' ');
 
 /**
- * SP-A-087 — Editorial depth: not a translation / press-release cut —
- * find the brightest honest angle and build a self-contained review around it.
+ * SP-A-087 + Story Depth — preserve useful facts; explain mechanism; complete story.
+ * NOT a word-count quota. NO generic filler padding.
  */
+const STORY_DEPTH = [
+  'STORY DEPTH: не агрессивно сжимай source. PRESERVE USEFUL INFORMATION — убирай шум, не глубину.',
+  'SmartProto — не RSS-summary и не механический перевод первых абзацев. Перескажи, объясни, структурируй.',
+  'Не добавляй generic filler ради длины. Не выбрасывай механизм, цифры, материалы, испытания, ограничения — если они есть во входе.',
+  'Тест универсальности: если заменить название изобретения — абзац останется тем же? → filler, удали или сделай конкретным.',
+  'Тест «Я понял историю?»: после текста читатель должен суметь ответить (если source даёт факты):',
+  'WHAT — что конкретно появилось; WHAT\'S NEW — что необычного; HOW — как работает (понятно, не только spec);',
+  'WHY — какую проблему решают; HUMAN CAPABILITY — что человек теперь может иначе;',
+  'DETAILS — цифры/материалы/размеры/датчики/software/испытания (только подтверждённые);',
+  'PROOF — prototype / paper / product / demo / test / concept (не смешивать стадии);',
+  'LIMITS — что неизвестно, не проверено, только заявление производителя;',
+  'WHY SHOULD I CARE — конкретная практическая значимость, не философия про «технологии меняют жизнь».',
+  'Тип истории: FLASH (фактов мало) / NORMAL (есть нормальный source) / DEEP (research, specs, tests) — не делай их одинаковой длины.',
+  'Ориентир (не квота): содержательная новость часто 250–500+ слов; 180 ок если фактов мало; 650 ок если история богатая.',
+  'Сохраняй интересные мелочи: почему выбрали материал, где стоит мотор, как складывается, что показали на испытании.',
+].join(' ');
+
 const EDITORIAL_DEPTH = [
-  'SP-A-087 EDITORIAL DEPTH: SmartProto НЕ переводит источник и НЕ сокращает пресс-релиз.',
+  'SP-A-087 EDITORIAL DEPTH: SmartProto НЕ переводит источник и НЕ сокращает пресс-релиз до abstract.',
   'Найди САМУЮ ЯРКУЮ И ВАЖНУЮ часть события и построй вокруг неё самостоятельный интересный обзор.',
-  'Не спрашивай «как пересказать источник?». Спрашивай: «какую самую интересную историю можно честно рассказать на его основе?»',
-  'Перед текстом ответь себе: 1) самый сильный факт; 2) почему удивляет; 3) что изменилось vs вчера;',
-  '4) что даёт человеку; 5) с чем сравнить; 6) как влияет на ближайшее будущее.',
-  'SOURCE может быть скучным — ARTICLE не должен. Small story → big angle: вытащи большой смысл,',
-  'если он реально есть (70% меньше токенов → дешевле AI-агенты; one-shot demo → новый способ учить роботов;',
-  'батарея работает там, где обычные замерзают). Сильный факт — ЦЕНТР статьи, не второй/третий абзац.',
-  'Не выдумывай факты. Не раздувай пустую новость. Но не прячь сильный факт и не режь цифры/сравнение/смысл ради краткости.',
-  'ОБЪЁМ: нормальный материал ~180–300 слов, если тема заслуживает раскрытия (100–150 не целевой объём).',
-  'Коротко — только если сырья реально мало и история всё равно закрыта без потери цифр/сравнения/смысла.',
-  'Запрещено искусственно сжимать до 100–150, если из-за этого теряются цифры, сравнение, human meaning, возможность, контекст или вывод.',
-  'Логика: hook с сильным фактом → что изменилось → цифры/сравнение → что даёт человеку → ближайшее будущее → лёгкий финал.',
+  'Не спрашивай «как уместить в 120 слов?». Спрашивай: «какую полную понятную историю можно честно рассказать на основе source?»',
+  'SOURCE может быть скучным — ARTICLE не должен. Small story → big angle только если угол честно следует из фактов.',
+  'Сильный факт — ЦЕНТР статьи, не второй/третий абзац. Не выдумывай факты. Не раздувай пустую новость.',
+  'Не режь цифры, механизм, контекст, proof и limits ради краткости, если они есть в source pack.',
+  STORY_DEPTH,
+  'Логика (гибкая, не штамп): hook → что нового → как работает → детали/цифры → human capability → limits → лёгкий финал.',
 ].join(' ');
 
 const EDITOR_SYSTEM_PROMPT = [
@@ -250,6 +271,20 @@ const REJECT_DRAFT: DraftResult = {
   },
 };
 
+export function countDraftWords(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+/** Rich source pack → Editor should write NORMAL/DEEP, not flash summary. */
+export function isRichSourceText(text: string): boolean {
+  return countDraftWords(text) >= 280;
+}
+
+export function isThinSourceText(text: string): boolean {
+  const w = countDraftWords(text);
+  return w > 0 && w < 120;
+}
+
 export type DraftFormat = 'news' | 'article';
 
 export async function writeDraft(articleData: object, reviewData: object): Promise<DraftResult> {
@@ -292,27 +327,22 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
   const formatInstructions =
     format === 'news'
       ? [
-          'ФОРМАТ: новость-обзор (SHORT REVIEW). Норма ~180–300 слов; короче — только если история совсем простая и всё равно закрыта.',
-          'Не пересказ источника: центр = самый яркий факт + почему это важно человеку.',
-          'Не копируй один скелет: варьируй порядок блоков (факт / сцена / контраст / польза / цифра / финал) под STYLE MODE.',
-          'LEAD: не начинай с «Представьте…» / «А что если…» / «Забудьте о…» — варьируй вход (факт / сцена / контраст / польза).',
-          'FINISH THE THOUGHT: не оставляй «тяжёлый/компактный/долго» без цифры, если она есть во входных данных.',
-          'БЕЗ цен, БЕЗ ссылок, БЕЗ «где купить». Без внутренних меток (Qwen/Gemini/Китай-отдел).',
+          'ФОРМАТ: новость-обзор (SHORT REVIEW). Полная мини-история, не telegram-flash.',
+          'Если source богатый — раскрой механизм и ключевые детали; не останавливайся на заголовке + 2 факта.',
+          'FLASH (~180 слов) — только если фактов в source действительно мало и история закрыта.',
+          'Не пересказ: центр = самый яркий факт + почему важно + как работает (если есть во входе).',
+          'Не копируй один скелет: варьируй порядок блоков под STYLE MODE.',
+          'LEAD: не «Представьте…» / «А что если…». FINISH THE THOUGHT: цифры из source.',
+          'БЕЗ цен, БЕЗ ссылок. Без generic filler.',
           styleMode,
         ]
       : [
-          'ФОРМАТ: полный редакционный обзор (FULL REVIEW). Норма ~180–300 слов.',
-          'Цель: читатель за ~180–300 слов понимает, что произошло, почему это важно и что изменилось.',
-          'Ниже ~180 слов — только если история совсем простая; иначе ориентир ~180–300.',
-          'Не перевод и не сжатый пресс-релиз. Small story → big angle, если угол честно следует из фактов.',
-          'Структура — гибкая (не штампуй одни и те же 6 пунктов слово в слово):',
-          '1) hook = самый сильный факт или живой вход без штампа «Представьте…» (не прятать во 2–3 абзаце);',
-          '2) почему удивляет / что изменилось vs вчера — ИЛИ сразу польза, если история про how-it-helps;',
-          '3) ключевые цифры смысла из источника + сравнение;',
-          '4) что даёт человеку;',
-          '5) ближайшее будущее / практический горизонт (не обязательный штамп-абзац);',
-          '6) лёгкий живой финал (без штампа «независимых испытаний» и без shop CTA).',
-          'БЕЗ цен, БЕЗ outbound-ссылок. Без внутренних меток (Qwen/Gemini/Китай-отдел).',
+          'ФОРМАТ: полный редакционный обзор (FULL REVIEW). Самостоятельная журналистская история, не abstract.',
+          'Цель: читатель понимает WHAT / WHAT\'S NEW / HOW / WHY / human capability / proof / limits — по фактам source.',
+          'Не агрессивно сжимай: сохрани полезные детали (механизм, материалы, цифры, испытания, ограничения).',
+          'NORMAL/DEEP source → часто 250–500+ слов естественно; не иск искусственной краткости.',
+          'Структура гибкая (не штамп): hook → новизна → как работает → детали → польза человеку → limits → финал.',
+          'БЕЗ цен, БЕЗ outbound-ссылок. Без шаблонных абзацев про «развитие отрасли».',
           styleMode,
         ];
 
@@ -321,7 +351,7 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
     model: EDITOR_MODEL,
     temperature: format === 'news' ? 0.55 : 0.45,
     top_p: 0.9,
-    max_tokens: format === 'news' ? 1100 : 1500,
+    max_tokens: format === 'news' ? 1400 : 2200,
     messages: [
       { role: 'system', content: EDITOR_SYSTEM_PROMPT },
       {
@@ -343,7 +373,14 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
                 : 'Если тема off-topic / пустой commodity без новой способности — верни REJECT-черновик.',
           ...formatInstructions,
           'SP-A-088 ONE VOICE: тот же Editorial DNA для Chief и AUTO. Parser только шахтёр — автор = Editor.',
-          'SP-A-087: найди самый яркий честный факт и сделай его центром. Не пересказ. Норма ~180–300 слов.',
+          'SP-A-087: strongest fact = center. Story depth, not compressed abstract. No generic filler padding.',
+          ...(isRichSourceText(sourceText)
+            ? [
+                'RICH SOURCE: во входе много деталей — пиши NORMAL/DEEP story; сохрани механизм, цифры, контекст, limits.',
+              ]
+            : isThinSourceText(sourceText)
+              ? ['THIN SOURCE: фактов мало — FLASH ok; не выдумывай детали и не добивай filler.']
+              : []),
           'SP-A-085: закрой мысль цифрами/сравнением из входных данных; не поднимай габариты/вес/батарею без ответа.',
           'Верни СТРОГО JSON:',
           '{"title":string,"text":string,"tags":string[],"toneCheck":{"clickbait":bool,"hype":bool,"unsupportedClaims":bool,"limitationsIncluded":bool}}',
@@ -352,7 +389,7 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
           'Строго по фактам источника. Суперлативы производителя — только через «Производитель утверждает…».',
           'tags: 4–8; тематика + бренд если есть; БЕЗ тегов Китай/Qwen/Gemini/China Department.',
           'toneCheck: честно оцени свой текст (clickbait/hype/unsupportedClaims должны быть false;',
-          'limitationsIncluded=true если есть явные оговорки).',
+          'limitationsIncluded=true если есть явные оговорки). toneCheck — СТРОГО 4 поля, без других ключей.',
           '',
           'Статья:',
           clampText(JSON.stringify(articleData, null, 2), 10000),
@@ -371,10 +408,45 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
 
     const jsonText = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
 
+    function unescapeJsonString(s: string): string {
+      return s.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+    }
+
+    function salvageTruncatedJson(raw: string): DraftResult | null {
+      const titleMatch = raw.match(/"title"\s*:\s*"((?:\\.|[^"\\])*)"/);
+      const textMatch = raw.match(/"text"\s*:\s*"((?:\\.|[^"\\])*)"/);
+      if (!titleMatch?.[1] || !textMatch?.[1]) return null;
+      const tagsMatch = raw.match(/"tags"\s*:\s*\[([\s\S]*?)\]/);
+      let tags = ['технологии', 'инновации', 'наука', 'исследование'];
+      if (tagsMatch?.[1]) {
+        try {
+          const parsed = JSON.parse(`[${tagsMatch[1]}]`) as unknown[];
+          if (Array.isArray(parsed) && parsed.length) {
+            tags = parsed.filter((t) => typeof t === 'string' && t.trim()).map((t) => (t as string).trim());
+          }
+        } catch {
+          /* default tags */
+        }
+      }
+      return {
+        title: unescapeJsonString(titleMatch[1]).trim(),
+        text: unescapeJsonString(textMatch[1]).trim(),
+        tags,
+        toneCheck: {
+          clickbait: false,
+          hype: false,
+          unsupportedClaims: false,
+          limitationsIncluded: true,
+        },
+      };
+    }
+
     let parsed: unknown;
     try {
       parsed = JSON.parse(jsonText);
     } catch {
+      const salvaged = salvageTruncatedJson(jsonText);
+      if (salvaged) return salvaged;
       throw new Error(`Editor model output is not valid JSON: ${rawText}`);
     }
 
@@ -432,7 +504,7 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
       model: EDITOR_MODEL,
       temperature: 0.25,
       top_p: 0.8,
-      max_tokens: format === 'news' ? 1100 : 1500,
+      max_tokens: format === 'news' ? 1400 : 2200,
       messages: [
         { role: 'system', content: EDITOR_SYSTEM_PROMPT },
         {
@@ -461,7 +533,7 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
       model: EDITOR_MODEL,
       temperature: 0.35,
       top_p: 0.85,
-      max_tokens: format === 'news' ? 1100 : 1500,
+      max_tokens: format === 'news' ? 1400 : 2200,
       messages: [
         { role: 'system', content: EDITOR_SYSTEM_PROMPT },
         {
@@ -490,7 +562,7 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
       model: EDITOR_MODEL,
       temperature: 0.5,
       top_p: 0.9,
-      max_tokens: format === 'news' ? 1100 : 1500,
+      max_tokens: format === 'news' ? 1400 : 2200,
       messages: [
         { role: 'system', content: EDITOR_SYSTEM_PROMPT },
         {
@@ -565,24 +637,24 @@ export async function expandShortDraft(
       model: EDITOR_MODEL,
       temperature: 0.35,
       top_p: 0.85,
-      max_tokens: format === 'news' ? 1200 : 1600,
+      max_tokens: format === 'news' ? 1400 : 2200,
       messages: [
         { role: 'system', content: EDITOR_SYSTEM_PROMPT },
         {
           role: 'user',
           content: [
             'SP-A-093 BOUNDED EXPAND RETRY:',
-            'Материал почти готов, но слишком короткий.',
-            'Доведи его до полноценного обзора 180–300 слов.',
-            'Не добавляй неподтверждённых фактов.',
-            'Используй только source pack / входные данные.',
+            'Черновик слишком короткий, но source содержит больше фактов.',
+            'Расширь историю: HOW, детали, human capability, proof/limits — только из source pack.',
+            'Не добавляй generic filler. Не выдумывай характеристики.',
             'Раскрой:',
             '- strongest fact;',
+            '- how it works (если есть во входе);',
             '- useful context/comparison;',
-            '- human meaning;',
+            '- human capability;',
             '- FINISH THE THOUGHT;',
+            '- limits/proof stage;',
             '- живой финал, если уместно.',
-            'Не раздувай текст пустыми словами.',
             'Без цен и URL. Верни СТРОГО JSON:',
             '{"title":string,"text":string,"tags":string[],"toneCheck":{"clickbait":bool,"hype":bool,"unsupportedClaims":bool,"limitationsIncluded":bool}}',
             '',

@@ -11,6 +11,7 @@ import { getOpenRouterClient, parseJsonObject, clampText } from './shared';
 import {
   hardRejectTopic,
   evaluateTopicLocal,
+  looksBuyableGadget,
   PREFERRED_APP_CATEGORIES,
   type EditorialMode,
   type NoveltyAssessment,
@@ -96,10 +97,18 @@ export async function scoutArticle(
   title: string,
   text: string,
   mode: EditorialMode = 'gadget',
+  opts: { sourceName?: string; sourceUrl?: string } = {},
 ): Promise<ScoutResult> {
-  const gate = hardRejectTopic(title, text, { mode });
+  const sourceName = opts.sourceName || '';
+  const sourceUrl = opts.sourceUrl || '';
+  const gate = hardRejectTopic(title, text, { mode, sourceName });
   // Hard short-circuit definitive bans. NOT_ACTUALLY_NEW may still reach the model.
-  if (gate.reject && gate.rejectCode !== 'NOT_ACTUALLY_NEW') {
+  // NO_PRODUCT on product-heavy feeds: prefilter already softened — let Scout model decide.
+  const softenNoProduct =
+    gate.rejectCode === 'NO_PRODUCT' &&
+    (looksBuyableGadget(title, text, sourceName) ||
+      /\/product\/|thegadgetflow\.com\/product/i.test(sourceUrl));
+  if (gate.reject && gate.rejectCode !== 'NOT_ACTUALLY_NEW' && !softenNoProduct) {
     return {
       ...evaluateTopicLocal(title, text),
       interesting: false,
@@ -123,54 +132,65 @@ export async function scoutArticle(
         : 'interesting=true если score>=75 и есть конкретный гаджет/app/AI-достижение/изобретение с пользой (покупка НЕ обязательна), isActuallyNew, noveltyEvidence не пуст.';
 
   const client = getOpenRouterClient();
-  const completion = await client.chat.completions.create({
-    model: SCOUT_MODEL,
-    temperature: 0.1,
-    top_p: 0.9,
-    max_tokens: 1600,
-    include_reasoning: false,
-    reasoning: { max_tokens: 0 },
-    extra_body: {
+  const messages = [
+    { role: 'system' as const, content: systemPrompt },
+    {
+      role: 'user' as const,
+      content: [
+        `Заголовок: ${title}`,
+        '',
+        `Текст: ${clampText(text, 8000)}`,
+        '',
+        'Верни только JSON:',
+        mode === 'app'
+          ? [
+              '{"interesting":boolean,"score":number,"reason":string,"productType":string,"isActuallyNew":boolean,',
+              '"noveltyEvidence":string[],"existingAlternatives":string,"functionalDifference":string,',
+              '"marketSaturation":"low"|"medium"|"high","rejectCode":string|null,',
+              '"parts":{"a":number,"b":number,"c":number,"d":number,"e":number}}',
+              `score=a+b+c+d+e. ${passHint}`,
+            ].join('\n')
+          : [
+              '{"interesting":boolean,"score":number,"reason":string,"productType":string,"status":"AVAILABLE"|"ANNOUNCED"|"PROTOTYPE"|"RESEARCH"|"CONCEPT"|"CROWDFUNDING",',
+              '"isActuallyNew":boolean,"noveltyEvidence":string[],"existingAlternatives":string,"functionalDifference":string,',
+              '"marketSaturation":"low"|"medium"|"high","rejectCode":string|null,',
+              '"parts":{"humanSurprise":number,"visualDemonstrability":number,"everydayRelevance":number,"novelty":number,"shareability":number,"credibility":number}}',
+              'score = sum(parts) with caps 30+20+15+15+10+10. ' + passHint,
+            ].join('\n'),
+        'high+пустой functionalDifference / только косметика → rejectCode=NOT_ACTUALLY_NEW. productType или "none". reason: 1 фраза RU.',
+      ].join('\n'),
+    },
+  ];
+
+  let completion: Awaited<ReturnType<typeof client.chat.completions.create>> | null = null;
+  let content = '';
+  for (const maxTokens of [1600, 2800]) {
+    completion = await client.chat.completions.create({
+      model: SCOUT_MODEL,
+      temperature: 0.1,
+      top_p: 0.9,
+      max_tokens: maxTokens,
       include_reasoning: false,
       reasoning: { max_tokens: 0 },
-    },
-    messages: [
-      { role: 'system', content: systemPrompt },
-      {
-        role: 'user',
-        content: [
-          `Заголовок: ${title}`,
-          '',
-          `Текст: ${clampText(text, 8000)}`,
-          '',
-          'Верни только JSON:',
-          mode === 'app'
-            ? [
-                '{"interesting":boolean,"score":number,"reason":string,"productType":string,"isActuallyNew":boolean,',
-                '"noveltyEvidence":string[],"existingAlternatives":string,"functionalDifference":string,',
-                '"marketSaturation":"low"|"medium"|"high","rejectCode":string|null,',
-                '"parts":{"a":number,"b":number,"c":number,"d":number,"e":number}}',
-                `score=a+b+c+d+e. ${passHint}`,
-              ].join('\n')
-            : [
-                '{"interesting":boolean,"score":number,"reason":string,"productType":string,"status":"AVAILABLE"|"ANNOUNCED"|"PROTOTYPE"|"RESEARCH"|"CONCEPT"|"CROWDFUNDING",',
-                '"isActuallyNew":boolean,"noveltyEvidence":string[],"existingAlternatives":string,"functionalDifference":string,',
-                '"marketSaturation":"low"|"medium"|"high","rejectCode":string|null,',
-                '"parts":{"humanSurprise":number,"visualDemonstrability":number,"everydayRelevance":number,"novelty":number,"shareability":number,"credibility":number}}',
-                'score = sum(parts) with caps 30+20+15+15+10+10. ' + passHint,
-              ].join('\n'),
-          'high+пустой functionalDifference / только косметика → rejectCode=NOT_ACTUALLY_NEW. productType или "none". reason: 1 фраза RU.',
-        ].join('\n'),
+      extra_body: {
+        include_reasoning: false,
+        reasoning: { max_tokens: 0 },
       },
-    ],
-  } as any);
+      messages,
+    } as any);
+    const choice = completion.choices[0];
+    const raw = choice?.message?.content;
+    if (raw && typeof raw === 'string' && raw.trim()) {
+      content = raw;
+      break;
+    }
+  }
 
-  const choice = completion.choices[0];
-  const content = choice?.message?.content;
-  if (!content || typeof content !== 'string' || content.trim() === '') {
+  const choice = completion?.choices[0];
+  if (!content) {
     const finishReason = choice?.finish_reason ?? 'unknown';
-    const msg = choice?.message as any;
-    const choiceObj = choice as any;
+    const msg = choice?.message as Record<string, unknown> | undefined;
+    const choiceObj = choice as Record<string, unknown> | undefined;
     const hasReasoning = Boolean(
       msg?.reasoning ||
         msg?.reasoning_content ||

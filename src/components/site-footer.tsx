@@ -1,8 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { detectLocaleFromPath } from '@/components/language-switcher';
-import { LOCALE_UI } from '@/lib/i18n/locales';
+import { LOCALE_UI, localeScoutPath } from '@/lib/i18n/locales';
 
 export function SiteFooter() {
   const pathname = usePathname() || '/';
@@ -19,9 +20,12 @@ export function SiteFooter() {
             {ui.footerEditorial}
           </p>
           <p>
-            <a href="/scout" className="text-[var(--text)] transition hover:text-[var(--accent)]">
-              {ui.footerScout}
-            </a>
+            <Link
+              href={localeScoutPath(locale)}
+              className="text-[var(--text)] transition hover:text-[var(--accent)]"
+            >
+              {ui.navScout}
+            </Link>
           </p>
         </div>
         <p className="mt-4 text-[11px]">

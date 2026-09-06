@@ -52,6 +52,14 @@ function haystack(input: FinalAutoGateInput): string {
     .slice(0, 8000);
 }
 
+/** Subject of the piece — title/summary/tags. Full body often mentions phones as comparison. */
+function subjectHaystack(input: FinalAutoGateInput): string {
+  return [input.title, input.summary, input.category, ...(input.tags || []), input.extra]
+    .filter(Boolean)
+    .join('\n')
+    .slice(0, 2000);
+}
+
 /**
  * Strong new human capability — the ONLY way ordinary hardware-shaped text may pass.
  * Spec bumps (DPI, Hz, buttons, megapixels, lighter lens, +10%) do NOT qualify.
@@ -100,8 +108,21 @@ const ORDINARY_COMMODITY_RE: RegExp[] = [
 const NOT_ORDINARY_PERIPHERAL_RE =
   /\b(replace|replaces|вместо|без\s+необходимости|отказаться\s+от)\b[\s\S]{0,50}\b(mouse|мыши|мышь|keyboard|клавиатур)|не\s+может\s+(пользоваться\s+)?рук|assistive|эмг|emg\s+bracelet|жестов\w*\s+браслет|brain[- ]computer|bci\b/i;
 
+/**
+ * Repairable / modular / user-serviceable products are not “ordinary refresh”
+ * commodity — e.g. headphones with swappable batteries (Sennheiser Momentum 5).
+ */
+const REPAIRABLE_OR_MODULAR_RE =
+  /\b(replaceable|swappable|user[- ]?replaceable|user[- ]?serviceable|modular|repairable|right\s+to\s+repair|аккумулятор\w*\s+на\s+замен|замен\w*\s+аккумулятор|сменн\w*\s+(батаре|аккумулятор)|модульн|ремонтопригод|не\s+на\s+свалк)\b/i;
+
+/** Smart glasses / AR wearables are capability products, not ordinary phone/audio SKUs. */
+const SMART_GLASSES_RE =
+  /\b(smart\s+glasses|ar\s+glasses|xr\s+glasses|ai\s+glasses|умн\w*\s+очк|очк\w*\s+с\s+(ai|ии|камер))\b/i;
+
 function isOrdinaryCommodityHardware(hay: string): boolean {
   if (NOT_ORDINARY_PERIPHERAL_RE.test(hay)) return false;
+  if (REPAIRABLE_OR_MODULAR_RE.test(hay)) return false;
+  if (SMART_GLASSES_RE.test(hay)) return false;
   return ORDINARY_COMMODITY_RE.some((re) => re.test(hay));
 }
 
@@ -125,11 +146,13 @@ export function finalAutoCommodityGate(input: FinalAutoGateInput): FinalAutoGate
   }
 
   const hay = haystack(input);
+  const subject = subjectHaystack(input);
   const title = input.title || '';
 
-  const commodity = isOrdinaryCommodityHardware(hay);
+  // Commodity = what the piece is ABOUT (title/summary), not every phone word in the body.
+  const commodity = isOrdinaryCommodityHardware(subject);
   const capability = hasStrongHumanCapability(hay);
-  const specBump = SPEC_BUMP_ONLY_RE.test(hay);
+  const specBump = SPEC_BUMP_ONLY_RE.test(subject);
 
   if (commodity && capability) {
     // Real assistive / exo / clinic→home stories about hardware-shaped topics may pass.

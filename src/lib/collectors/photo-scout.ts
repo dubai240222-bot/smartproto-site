@@ -25,12 +25,32 @@ import {
   extractPhotoEntityHeuristic,
   type PhotoEntity,
 } from './photo-entity';
+import {
+  dedupePhotoCandidates,
+  extractSubjectTokens,
+  mineArticleBodyFigures,
+  normalizeImageUrlForDedup,
+  sanitizeCaption,
+} from './article-image-miner';
 import { getOpenRouterClient, parseJsonObject, clampText } from '../ai/shared';
+
+/** Hero + up to this many additional gallery images (SP-A-102). */
+export const MAX_GALLERY_IMAGES = 5;
+
+type PhotoPick = {
+  url: string;
+  role: ScoutImage['role'];
+  caption?: string;
+  sortOrder?: number;
+};
 
 export interface ScoutImage {
   url: string;
-  role: 'hero' | 'secondary' | 'detail';
+  role: 'hero' | 'secondary' | 'detail' | 'gallery';
   sourceUrl: string;
+  caption?: string;
+  credit?: string;
+  sortOrder?: number;
   /** SP-A-065F */
   matchLevel?: 'exact' | 'safe_series' | 'safe_brand' | 'category' | 'research' | 'none';
   label?: string;
@@ -93,13 +113,16 @@ function stripTags(html: string): string {
 async function fetchHtml(url: string, timeoutMs = 8000): Promise<string | null> {
   try {
     const res = await fetch(url, {
-      headers: { 'User-Agent': UA, Accept: 'text/html,application/xhtml+xml' },
+      headers: {
+        'User-Agent': UA,
+        Accept: 'text/html,application/xhtml+xml,text/css,*/*;q=0.8',
+      },
       signal: AbortSignal.timeout(timeoutMs),
       redirect: 'follow',
     });
     if (!res.ok) return null;
     const ctype = res.headers.get('content-type') || '';
-    if (ctype && !/html|xml|text\/plain/i.test(ctype) && !ctype.includes('octet-stream')) {
+    if (ctype && !/html|xml|text\/plain|text\/css|javascript|octet-stream/i.test(ctype)) {
       // still try — some CDNs mislabel
     }
     return await res.text();
@@ -206,6 +229,66 @@ function mineImagesFromHtml(html: string, pageUrl: string, tier: CandidateTier):
     push(rawSrc, `${alt} ${before} ${after}`);
   }
 
+  mineArticleBodyFigures(html, pageUrl, (raw, context) => push(raw, context));
+
+  // Inline CSS background-image (manufacturer heroes often live here, not in og:image).
+  const bgRe = /background(?:-image)?\s*:\s*url\((['"]?)([^)'"]+)\1\)/gi;
+  let bg: RegExpExecArray | null;
+  while ((bg = bgRe.exec(html)) !== null) {
+    const raw = bg[2];
+    if (!raw || !/\.(jpe?g|png|webp)(\?|$)/i.test(raw)) continue;
+    if (/logo|icon|favicon|sprite|seal|plugin|cookie/i.test(raw)) continue;
+    const around = html.slice(Math.max(0, bg.index - 120), bg.index + 80).toLowerCase();
+    const ctx =
+      /hero|home-hero|slide|banner|product|drop|patient|vizz/.test(raw + around)
+        ? `css-hero ${raw}`
+        : `css-bg ${raw}`;
+    if (/css-hero|hero|home-hero|upload/i.test(ctx + raw)) {
+      push(raw, ctx);
+    }
+  }
+
+  return out;
+}
+
+/** Pull hero backgrounds from linked stylesheets (e.g. LENZ .hero-main-block). */
+async function mineLinkedStylesheetHeroes(
+  html: string,
+  pageUrl: string,
+  tier: CandidateTier,
+): Promise<PhotoCandidate[]> {
+  const out: PhotoCandidate[] = [];
+  const hrefs: string[] = [];
+  const linkRe =
+    /<link[^>]+rel=["'][^"']*stylesheet[^"']*["'][^>]+href=["']([^"']+)["']|<link[^>]+href=["']([^"']+)["'][^>]+rel=["'][^"']*stylesheet[^"']*["']/gi;
+  let m: RegExpExecArray | null;
+  while ((m = linkRe.exec(html)) !== null) {
+    const href = resolveUrl(m[1] || m[2] || '', pageUrl);
+    if (href && !hrefs.includes(href)) hrefs.push(href);
+    if (hrefs.length >= 6) break;
+  }
+  for (const cssUrl of hrefs) {
+    // eslint-disable-next-line no-await-in-loop
+    const css = await fetchHtml(cssUrl, 6000);
+    if (!css) continue;
+    const bgRe = /background(?:-image)?\s*:\s*url\((['"]?)([^)'"]+)\1\)/gi;
+    let bg: RegExpExecArray | null;
+    while ((bg = bgRe.exec(css)) !== null) {
+      const raw = bg[2];
+      if (!raw || !/\.(jpe?g|png|webp)(\?|$)/i.test(raw)) continue;
+      if (/logo|icon|favicon|sprite|seal|plugin|cookie/i.test(raw)) continue;
+      const around = css.slice(Math.max(0, bg.index - 80), bg.index + 40).toLowerCase();
+      if (!/hero|home-hero|banner|slide|cover|product/i.test(raw + around)) continue;
+      const url = resolveUrl(raw, cssUrl);
+      if (!url) continue;
+      out.push({
+        url,
+        context: `stylesheet-hero ${raw}`.toLowerCase().slice(0, 500),
+        pageUrl,
+        tier,
+      });
+    }
+  }
   return out;
 }
 
@@ -363,12 +446,26 @@ export async function minePhotoCandidates(opts: {
   }
   for (const p of pages) {
     raw.push(...mineImagesFromHtml(p.html, p.url, p.tier));
+    // eslint-disable-next-line no-await-in-loop
+    raw.push(...(await mineLinkedStylesheetHeroes(p.html, p.url, p.tier)));
   }
+
+  // Prefer CSS/product heroes over social OG brand cards (1200x630 CARE banners).
+  raw.sort((a, b) => {
+    const score = (c: PhotoCandidate) => {
+      const u = c.url.toLowerCase() + ' ' + c.context;
+      let s = 0;
+      if (/home-hero|hero-main|stylesheet-hero|css-hero|product|eyedrop|eye-drop|vizz/i.test(u)) s += 20;
+      if (/hero|slide|patient|drop/i.test(u)) s += 8;
+      if (/1200x630|og:|twitter|gb_home|care\b/i.test(u)) s -= 12;
+      return s + (10 - (TIER_RANK[c.tier] || 5));
+    };
+    return score(b) - score(a);
+  });
 
   // Dedup + soft entity filter + quality gate
   const seen = new Set<string>();
   const kept: PhotoCandidate[] = [];
-  raw.sort((a, b) => TIER_RANK[a.tier] - TIER_RANK[b.tier]);
 
   for (const c of raw) {
     const key = c.url.split('?')[0];
@@ -400,18 +497,24 @@ interface EditorPick {
   hero?: string | null;
   secondary?: string | null;
   detail?: string | null;
+  gallery?: (string | null)[] | null;
   rejected?: { url: string; reason: string }[];
   reason?: string;
 }
 
 /**
- * AI Photo Editor — selects ≤3 URLs from mined candidates. May return none.
+ * AI Photo Editor — selects hero + up to MAX_GALLERY_IMAGES informative photos in one call.
  */
 export async function editPhotoSelection(opts: {
   entity: PhotoEntity;
   title: string;
   candidates: PhotoCandidate[];
-}): Promise<{ picks: { url: string; role: ScoutImage['role'] }[]; rejected: { url: string; reason: string }[]; reason: string }> {
+  visualBrief?: { subject?: string; scenes?: string[]; avoid?: string[]; preferredTiers?: string[] };
+}): Promise<{
+  picks: PhotoPick[];
+  rejected: { url: string; reason: string }[];
+  reason: string;
+}> {
   if (!opts.candidates.length) {
     return { picks: [], rejected: [], reason: 'no candidates' };
   }
@@ -441,12 +544,13 @@ export async function editPhotoSelection(opts: {
         {
           role: 'system',
           content: [
-            'You are the SmartProto Photo Editor. Pick at most 3 product photos.',
-            'WRONG IMAGE is worse than NO IMAGE. If unsure the photo shows THIS exact product, reject all (hero/secondary/detail = null).',
-            'Return ONLY compact JSON: {"hero":url|null,"secondary":url|null,"detail":url|null,"rejected":[{"url":"...","reason":"..."}],"reason":"..."}',
-            'hero = best clear full view; secondary = other angle/use; detail = meaningful close-up only.',
-            'Reject: UI/social screenshots, SVG, banners, price tables, overlays, watermarks, wrong generation/model, near-duplicates.',
-            'Prefer official/newsroom/lab tiers. URLs MUST be copied exactly from candidates. Do not invent URLs.',
+            'You are the SmartProto Photo Editor for tech/invention news. Pick informative photos that help readers understand the story.',
+            `Return at most 1 hero + up to ${MAX_GALLERY_IMAGES - 1} DISTINCT gallery images (different angles/scenes — not duplicates).`,
+            'WRONG IMAGE is worse than NO IMAGE. If unsure a photo matches THIS story subject, reject it.',
+            'Return ONLY compact JSON: {"hero":url|null,"gallery":[url,...]|[],"secondary":url|null,"detail":url|null,"rejected":[{"url":"...","reason":"..."}],"reason":"..."}',
+            'hero = best main view; gallery = additional informative shots (interior, mechanism, demo, diagram, lab, usage) — each must add new information.',
+            'Reject: UI/social screenshots, SVG, banners, price tables, logos, avatars, related-story thumbs, near-duplicates, watermarks.',
+            'Prefer official/newsroom/lab/source-article tiers. URLs MUST be copied exactly from candidates. Do not invent URLs.',
             'Keep rejected list short (max 6 items) to avoid truncation.',
           ].join(' '),
         },
@@ -455,6 +559,7 @@ export async function editPhotoSelection(opts: {
           content: clampText(
             JSON.stringify({
               articleTitle: opts.title,
+              visualBrief: opts.visualBrief || undefined,
               entity: {
                 company: opts.entity.company,
                 brand: opts.entity.brand,
@@ -479,13 +584,41 @@ export async function editPhotoSelection(opts: {
     const raw = completion.choices[0]?.message?.content || '';
     const parsed = parseJsonObject<EditorPick>(raw);
     const allowed = new Set(opts.candidates.map((c) => c.url));
-    const roles: ScoutImage['role'][] = ['hero', 'secondary', 'detail'];
-    const picks: { url: string; role: ScoutImage['role'] }[] = [];
-    for (const role of roles) {
-      const u = parsed[role];
-      if (typeof u === 'string' && allowed.has(u) && looksLikeRasterPhoto(u) && !picks.some((p) => p.url === u)) {
-        picks.push({ url: u, role });
-      }
+    const captionByUrl = new Map(opts.candidates.map((c) => [c.url, c.context.slice(0, 200)]));
+
+    const addPick = (
+      picks: { url: string; role: ScoutImage['role']; caption?: string; sortOrder?: number }[],
+      url: unknown,
+      role: ScoutImage['role'],
+      sortOrder?: number,
+    ) => {
+      if (typeof url !== 'string' || !allowed.has(url) || !looksLikeRasterPhoto(url)) return;
+      if (picks.some((p) => normalizeImageUrlForDedup(p.url) === normalizeImageUrlForDedup(url))) return;
+      const ctx = captionByUrl.get(url);
+      picks.push({
+        url,
+        role,
+        sortOrder,
+        caption: sanitizeCaption(ctx) || undefined,
+      });
+    };
+
+    const picks: { url: string; role: ScoutImage['role']; caption?: string; sortOrder?: number }[] = [];
+    addPick(picks, parsed.hero, 'hero');
+
+    const galleryList = Array.isArray(parsed.gallery) ? parsed.gallery : [];
+    let galleryIdx = 0;
+    for (const g of galleryList) {
+      if (galleryIdx >= MAX_GALLERY_IMAGES - 1) break;
+      const before = picks.length;
+      addPick(picks, g, 'gallery', galleryIdx);
+      if (picks.length > before) galleryIdx += 1;
+    }
+
+    // Legacy secondary/detail slots if AI still returns them and gallery is thin.
+    if (picks.filter((p) => p.role !== 'hero').length < 2) {
+      addPick(picks, parsed.secondary, 'secondary');
+      addPick(picks, parsed.detail, 'detail');
     }
     const rejected = Array.isArray(parsed.rejected)
       ? parsed.rejected
@@ -509,25 +642,45 @@ export async function editPhotoSelection(opts: {
     console.log(
       `[photo-editor] AI failed, conservative heuristic: ${err instanceof Error ? err.message : String(err)}`,
     );
-    // Conservative: only top-tier raster URLs that look like product shots, max 2.
-    const safe = opts.candidates.filter(
+    const tokens = [
+      opts.entity.brand,
+      opts.entity.company,
+      opts.entity.model,
+      opts.entity.object,
+      ...opts.entity.aliases,
+      ...opts.entity.matchTokens,
+    ]
+      .filter(Boolean)
+      .map((t) => String(t).toLowerCase())
+      .filter((t) => t.length >= 3);
+
+    const matchesEntity = (c: { url: string; context: string; pageUrl?: string }) => {
+      const hay = `${c.url} ${c.context} ${c.pageUrl || ''}`.toLowerCase();
+      return tokens.some((t) => hay.includes(t));
+    };
+
+    const sourceArticle = opts.candidates.filter(
       (c) =>
         looksLikeRasterPhoto(c.url) &&
-        (c.tier === 'official' ||
-          c.tier === 'newsroom' ||
-          c.tier === 'trusted_media' ||
-          c.tier === 'source_article') &&
-        /product|upload|wp-content|brightspot|neuromotor|wristband|keyboard|bassinet|irrigation|rainpoint|altar|aero/i.test(
-          c.url + c.context,
-        ),
+        (c.tier === 'source_article' || c.tier === 'official') &&
+        matchesEntity(c),
     );
-    const picks = (safe.length ? safe : opts.candidates.filter((c) => looksLikeRasterPhoto(c.url)))
-      .slice(0, 2)
-      .map((c, i) => ({
-        url: c.url,
-        role: (['hero', 'secondary'] as ScoutImage['role'][])[i],
-      }));
-    return { picks, rejected: [], reason: 'conservative heuristic after AI error' };
+    const sourceOg = sourceArticle.find((c) => /og|hero|product/i.test(c.context)) || sourceArticle[0];
+    if (sourceOg) {
+      return {
+        picks: [{ url: sourceOg.url, role: 'hero' }],
+        rejected: opts.candidates
+          .filter((c) => c.url !== sourceOg.url)
+          .slice(0, 10)
+          .map((c) => ({ url: c.url, reason: 'heuristic: no entity match' })),
+        reason: 'conservative heuristic: verified source/entity hero only',
+      };
+    }
+    return {
+      picks: [],
+      rejected: opts.candidates.slice(0, 10).map((c) => ({ url: c.url, reason: 'heuristic: uncertain' })),
+      reason: 'conservative heuristic: no verified hero — skip random image',
+    };
   }
 }
 
@@ -539,11 +692,18 @@ function maybeDownscaleNote(buf: Buffer): { buf: Buffer; ext: string } {
 
 export async function downloadImagesLocally(
   slug: string,
-  candidates: { url: string; role: ScoutImage['role'] }[],
+  candidates: {
+    url: string;
+    role: ScoutImage['role'];
+    caption?: string;
+    credit?: string;
+    sortOrder?: number;
+  }[],
   mediaRoot = process.env.SMARTPROTO_MEDIA_DIR || path.resolve(process.cwd(), 'public', 'media'),
 ): Promise<ScoutImage[]> {
   const dir = path.join(mediaRoot, slug);
   const out: ScoutImage[] = [];
+  let galleryIndex = 0;
   for (const c of candidates) {
     try {
       const res = await fetch(c.url, {
@@ -569,10 +729,25 @@ export async function downloadImagesLocally(
       let ext = isPng ? 'png' : isWebp ? 'webp' : isGif ? 'gif' : 'jpg';
       // eslint-disable-next-line no-await-in-loop
       await mkdir(dir, { recursive: true });
-      const filename = `${c.role}.${ext}`;
+      let filename: string;
+      if (c.role === 'hero') {
+        filename = `hero.${ext}`;
+      } else if (c.role === 'gallery') {
+        galleryIndex += 1;
+        filename = `gallery-${String(galleryIndex).padStart(2, '0')}.${ext}`;
+      } else {
+        filename = `${c.role}.${ext}`;
+      }
       // eslint-disable-next-line no-await-in-loop
       await writeFile(path.join(dir, filename), buf);
-      out.push({ url: `/api/media/${slug}/${filename}`, role: c.role, sourceUrl: c.url });
+      out.push({
+        url: `/api/media/${slug}/${filename}`,
+        role: c.role,
+        sourceUrl: c.url,
+        caption: c.caption,
+        credit: c.credit,
+        sortOrder: c.sortOrder,
+      });
     } catch {
       continue;
     }
@@ -678,6 +853,8 @@ export async function resolveArticlePhotos(opts: {
   html?: string;
   /** Cap follow-up page fetches for research mode (default 2). */
   maxResearchPages?: number;
+  /** SP-A-VD1 — from Editor visual_brief (no extra LLM). */
+  visualBrief?: { subject?: string; scenes?: string[]; avoid?: string[]; preferredTiers?: string[] };
 }): Promise<PhotoPipelineReport> {
   let entity = await extractPhotoEntity({
     title: opts.title,
@@ -757,10 +934,12 @@ export async function resolveArticlePhotos(opts: {
     notes.push(`research budget: maxPages≈${opts.maxResearchPages ?? 2}`);
   }
 
-  let edited = await editPhotoSelection({
+  let edited: { picks: PhotoPick[]; rejected: { url: string; reason: string }[]; reason: string } =
+    await editPhotoSelection({
     entity,
     title: opts.title,
     candidates: mined.candidates,
+    visualBrief: opts.visualBrief,
   });
   notes.push(edited.reason);
 
@@ -811,9 +990,19 @@ export async function resolveArticlePhotos(opts: {
     notes.push('post-filter removed screenshot/UI picks — NO IMAGE');
   }
 
-  const selected = edited.picks.length
-    ? await downloadImagesLocally(opts.slug, edited.picks)
-    : [];
+  // Heuristic gallery fill disabled — Editorial Quality Stop (no cap=5 padding).
+
+  const finalPicks: typeof edited.picks = [];
+  const seenKeys = new Set<string>();
+  for (const p of edited.picks) {
+    const key = normalizeImageUrlForDedup(p.url);
+    if (seenKeys.has(key)) continue;
+    seenKeys.add(key);
+    finalPicks.push(p);
+    if (finalPicks.length >= MAX_GALLERY_IMAGES) break;
+  }
+
+  const selected = finalPicks.length ? await downloadImagesLocally(opts.slug, finalPicks) : [];
   notes.push(`downloaded=${selected.length}`);
 
   let imageMatchLevel: ScoutImage['matchLevel'] = selected.length

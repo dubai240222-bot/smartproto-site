@@ -515,13 +515,26 @@ export async function downloadLibraryAssetToSlug(
 /** Assign next library template to an article slug; persists cycle state. */
 export async function assignLibraryHeroToSlug(
   slug: string,
-  opts?: { avoidIds?: Iterable<string> },
+  opts?: { avoidIds?: Iterable<string>; maxAttempts?: number },
 ): Promise<{ imageUrl: string; assetId: string; state: PhotoLibraryCycleState } | null> {
-  const { asset, state } = pickNextLibraryAsset(opts);
-  const imageUrl = await downloadLibraryAssetToSlug(slug, asset);
-  if (!imageUrl) return null;
-  writePhotoLibraryCycle(state);
-  return { imageUrl, assetId: asset.id, state };
+  let state = readPhotoLibraryCycle();
+  const avoid = new Set(opts?.avoidIds || []);
+  const maxAttempts = Math.min(opts?.maxAttempts ?? 40, PHOTO_LIBRARY.length);
+
+  for (let i = 0; i < maxAttempts; i++) {
+    const { asset, state: nextState } = pickNextLibraryAsset({ avoidIds: avoid, state });
+    const imageUrl = await downloadLibraryAssetToSlug(slug, asset);
+    if (imageUrl) {
+      writePhotoLibraryCycle(nextState);
+      return { imageUrl, assetId: asset.id, state: nextState };
+    }
+    // Burn broken slot so rotation does not stall on one missing cache URL.
+    avoid.add(asset.id);
+    state = nextState;
+    writePhotoLibraryCycle(state);
+  }
+
+  return null;
 }
 
 export function librarySize(): number {

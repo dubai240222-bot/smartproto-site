@@ -6,6 +6,13 @@ import { formatAuthorByline, resolveAuthorForArticle } from '@/lib/authors';
 import { MediaPlaceholder, MediaThumb } from '@/components/media-placeholder';
 import { inferPublicCategory } from '@/lib/public-labels';
 import { displayHeroUrl } from '@/lib/homepage-editorial-mix';
+import type { HomeStory } from '@/lib/editorial-home-data';
+import {
+  formatPublishedAtLocale,
+  localizeCategoryLabel,
+  localeHomePath,
+  type AppLocale,
+} from '@/lib/i18n/locales';
 
 export function CategoryTags({
   category,
@@ -14,6 +21,7 @@ export function CategoryTags({
   title,
   tags,
   summary,
+  locale = 'ru',
 }: {
   category: string;
   className?: string;
@@ -22,12 +30,14 @@ export function CategoryTags({
   title?: string;
   tags?: string[];
   summary?: string;
+  locale?: AppLocale;
 }) {
   // SP-A-050: never show КИТАЙ / Qwen / factory marks on cards.
   // SP-A-084: re-infer when stored category is universal «Гаджеты».
   const publicCat = inferPublicCategory({ category, title, tags, summary });
-  const parts = publicCat ? [publicCat] : [];
+  const parts = publicCat ? [localizeCategoryLabel(publicCat, locale)] : [];
   if (parts.length === 0) return null;
+  const home = localeHomePath(locale);
 
   if (tone === 'hash') {
     return (
@@ -35,7 +45,7 @@ export function CategoryTags({
         {parts.map((tag) => (
           <Link
             key={tag}
-            href={`/?category=${encodeURIComponent(tag)}`}
+            href={`${home}?category=${encodeURIComponent(publicCat || tag)}`}
             className="text-[11px] font-normal text-[var(--muted)]/70 transition-colors hover:text-[var(--accent)]"
           >
             #{tag.toLowerCase().replace(/\s+/g, '')}
@@ -51,7 +61,7 @@ export function CategoryTags({
         <span key={tag} className="inline-flex items-center">
           {idx > 0 && <span className="mr-1.5 text-[var(--muted)]/40">·</span>}
           <Link
-            href={`/?category=${encodeURIComponent(tag)}`}
+            href={`${home}?category=${encodeURIComponent(publicCat || tag)}`}
             className="text-[10px] font-normal uppercase tracking-wide text-[var(--muted)]/55 transition-colors hover:text-[var(--muted)]"
           >
             {tag}
@@ -92,18 +102,49 @@ function hasHeroImage(article: Article): boolean {
 /* SP-A-066 — Homepage editorial levels: LEAD / CARD / QUICK                  */
 /* -------------------------------------------------------------------------- */
 
+function resolveHomeStory(
+  story: HomeStory | undefined,
+  legacyArticle: Article | undefined,
+): HomeStory | null {
+  if (story) return story;
+  if (!legacyArticle) return null;
+  return {
+    article: legacyArticle,
+    title: legacyArticle.title,
+    summary: legacyArticle.summary,
+    href: `/articles/${legacyArticle.slug}`,
+  };
+}
+
+function formatStoryTime(publishedAt: string, locale: AppLocale): string {
+  return locale === 'ru'
+    ? formatPublishedAt(publishedAt)
+    : formatPublishedAtLocale(publishedAt, locale);
+}
+
 /** LEAD: large hero story — shorter image, skip weak logo tiles. */
-export function LeadStory({ article }: { article: Article }) {
+export function LeadStory({
+  story,
+  locale = 'ru',
+  article: legacyArticle,
+}: {
+  story?: HomeStory;
+  locale?: AppLocale;
+  article?: Article;
+}) {
+  const resolved = resolveHomeStory(story, legacyArticle);
+  if (!resolved) return null;
+  const { article, title, summary, href } = resolved;
   const hero = displayHeroUrl(article);
   return (
     <article className="group space-y-1.5">
-      <Link href={`/articles/${article.slug}`} className="block overflow-hidden" aria-label={article.title}>
+      <Link href={href} className="block overflow-hidden" aria-label={title}>
         <MediaPlaceholder
           slug={article.slug}
           category={article.category}
-          title={article.title}
+          title={title}
           tags={article.tags}
-          summary={article.summary}
+          summary={summary}
           agentId={article.agentId}
           imageUrl={hero}
           aspectRatio="aspect-[2/1] sm:aspect-[21/9]"
@@ -113,36 +154,48 @@ export function LeadStory({ article }: { article: Article }) {
       </Link>
       <div className="flex flex-wrap items-baseline justify-between gap-2 pt-0.5">
         <time className="text-[11px] font-normal tabular-nums text-[var(--muted)]">
-          {formatPublishedAt(article.publishedAt)}
+          {formatStoryTime(article.publishedAt, locale)}
         </time>
         <CategoryTags
           category={article.category}
-          title={article.title}
+          title={title}
           tags={article.tags}
-          summary={article.summary}
+          summary={summary}
           tone="hash"
+          locale={locale}
         />
       </div>
       <h1 className="text-[1.25rem] font-semibold leading-[1.2] tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-[1.65rem] lg:text-[1.85rem]">
-        <Link href={`/articles/${article.slug}`}>{article.title}</Link>
+        <Link href={href}>{title}</Link>
       </h1>
       <p className="line-clamp-2 text-[13px] font-normal leading-snug text-[var(--muted)] sm:text-sm">
-        {article.summary}
+        {summary}
       </p>
     </article>
   );
 }
 
 /** LEAD rail / past feed: compact row with small thumb. */
-export function LeadRailItem({ article }: { article: Article }) {
+export function LeadRailItem({
+  story,
+  locale = 'ru',
+  article: legacyArticle,
+}: {
+  story?: HomeStory;
+  locale?: AppLocale;
+  article?: Article;
+}) {
+  const resolved = resolveHomeStory(story, legacyArticle);
+  if (!resolved) return null;
+  const { article, title, href } = resolved;
   const hero = displayHeroUrl(article);
   return (
     <article className="group flex items-start gap-2.5 border-b border-[var(--border)] py-2 last:border-b-0 last:pb-0 first:pt-0">
-      <Link href={`/articles/${article.slug}`} className="shrink-0" aria-label={article.title}>
+      <Link href={href} className="shrink-0" aria-label={title}>
         <MediaThumb
           imageUrl={hero}
           slug={article.slug}
-          title={article.title}
+          title={title}
           category={article.category}
           tags={article.tags}
           summary={article.summary}
@@ -152,11 +205,11 @@ export function LeadRailItem({ article }: { article: Article }) {
       </Link>
       <div className="min-w-0 flex-1">
         <time className="mb-0.5 block text-[10px] font-normal tabular-nums text-[var(--muted)]">
-          {formatPublishedAt(article.publishedAt)}
+          {formatStoryTime(article.publishedAt, locale)}
         </time>
         <h2 className="text-[13px] font-medium leading-snug tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-[14px]">
-          <Link href={`/articles/${article.slug}`} className="line-clamp-3">
-            {article.title}
+          <Link href={href} className="line-clamp-3">
+            {title}
           </Link>
         </h2>
       </div>
@@ -165,18 +218,29 @@ export function LeadRailItem({ article }: { article: Article }) {
 }
 
 /** CARD: equal grid cell — skip weak logos; denser meta. */
-export function GridStoryCard({ article }: { article: Article }) {
+export function GridStoryCard({
+  story,
+  locale = 'ru',
+  article: legacyArticle,
+}: {
+  story?: HomeStory;
+  locale?: AppLocale;
+  article?: Article;
+}) {
+  const resolved = resolveHomeStory(story, legacyArticle);
+  if (!resolved) return null;
+  const { article, title, summary, href } = resolved;
   const hero = displayHeroUrl(article);
 
   return (
     <article className="group flex flex-col">
-      <Link href={`/articles/${article.slug}`} className="block" aria-label={article.title}>
+      <Link href={href} className="block" aria-label={title}>
         <MediaPlaceholder
           slug={article.slug}
           category={article.category}
-          title={article.title}
+          title={title}
           tags={article.tags}
-          summary={article.summary}
+          summary={summary}
           agentId={article.agentId}
           imageUrl={hero}
           aspectRatio="aspect-[16/10]"
@@ -185,35 +249,47 @@ export function GridStoryCard({ article }: { article: Article }) {
         />
       </Link>
       <time className="mt-1.5 text-[10px] font-normal tabular-nums text-[var(--muted)]">
-        {formatPublishedAt(article.publishedAt)}
+        {formatStoryTime(article.publishedAt, locale)}
       </time>
       <h3 className="mt-0.5 text-[13px] font-medium leading-snug tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-[14px]">
-        <Link href={`/articles/${article.slug}`} className="line-clamp-3">
-          {article.title}
+        <Link href={href} className="line-clamp-3">
+          {title}
         </Link>
       </h3>
       <CategoryTags
         category={article.category}
-        title={article.title}
+        title={title}
         tags={article.tags}
-        summary={article.summary}
+        summary={summary}
         tone="hash"
         className="mt-1"
+        locale={locale}
       />
     </article>
   );
 }
 
 /** QUICK: short note with small photo. */
-export function QuickNewsBlock({ article }: { article: Article }) {
+export function QuickNewsBlock({
+  story,
+  locale = 'ru',
+  article: legacyArticle,
+}: {
+  story?: HomeStory;
+  locale?: AppLocale;
+  article?: Article;
+}) {
+  const resolved = resolveHomeStory(story, legacyArticle);
+  if (!resolved) return null;
+  const { article, title, href } = resolved;
   const hero = displayHeroUrl(article);
   return (
     <article className="group flex h-full gap-2.5 border border-[var(--border)] bg-[var(--surface)] p-2 sm:p-2.5">
-      <Link href={`/articles/${article.slug}`} className="shrink-0" aria-label={article.title}>
+      <Link href={href} className="shrink-0" aria-label={title}>
         <MediaThumb
           imageUrl={hero}
           slug={article.slug}
-          title={article.title}
+          title={title}
           category={article.category}
           tags={article.tags}
           summary={article.summary}
@@ -223,11 +299,11 @@ export function QuickNewsBlock({ article }: { article: Article }) {
       </Link>
       <div className="min-w-0 flex-1">
         <time className="mb-1 block text-[10px] font-normal tabular-nums text-[var(--muted)]">
-          {formatPublishedAt(article.publishedAt)}
+          {formatStoryTime(article.publishedAt, locale)}
         </time>
         <h3 className="text-[13px] font-medium leading-snug tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-sm">
-          <Link href={`/articles/${article.slug}`} className="line-clamp-3">
-            {article.title}
+          <Link href={href} className="line-clamp-3">
+            {title}
           </Link>
         </h3>
       </div>
@@ -440,38 +516,57 @@ export function ArsTechnicaCard({ article }: { article: Article }) {
 /* 4. Quick Update Item: Minimal Chronological Feed Row (No heavy card)       */
 /* -------------------------------------------------------------------------- */
 /** Category / archive list row — denser editorial, same DNA as LeadRailItem. */
-export function QuickUpdateItem({ article }: { article: Article }) {
+export function QuickUpdateItem({
+  story,
+  locale = 'ru',
+  article: legacyArticle,
+}: {
+  story?: HomeStory;
+  locale?: AppLocale;
+  article?: Article;
+}) {
+  const resolved = story ?? (legacyArticle
+    ? {
+        article: legacyArticle,
+        title: legacyArticle.title,
+        summary: legacyArticle.summary,
+        href: `/articles/${legacyArticle.slug}`,
+      }
+    : null);
+  if (!resolved) return null;
+  const { article, title, summary, href } = resolved;
   const hero = displayHeroUrl(article);
   return (
     <article className="group flex items-start gap-3 border-b border-[var(--border)] py-3 last:border-b-0 sm:gap-4">
       <div className="min-w-0 flex-1 space-y-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
           <time className="text-[10px] font-normal tabular-nums text-[var(--muted)]">
-            {formatPublishedAt(article.publishedAt)}
+            {formatStoryTime(article.publishedAt, locale)}
           </time>
           <CategoryTags
             category={article.category}
-            title={article.title}
+            title={title}
             tags={article.tags}
-            summary={article.summary}
+            summary={summary}
             tone="hash"
+            locale={locale}
           />
         </div>
         <h3 className="text-[14px] font-medium leading-snug tracking-tight text-[var(--text)] transition-colors group-hover:text-[var(--accent)] sm:text-[15px]">
-          <Link href={`/articles/${article.slug}`}>{article.title}</Link>
+          <Link href={href}>{title}</Link>
         </h3>
         <p className="line-clamp-2 max-w-3xl text-[12px] font-normal leading-snug text-[var(--muted)] sm:text-[13px]">
-          {article.summary}
+          {summary}
         </p>
       </div>
-      <Link href={`/articles/${article.slug}`} className="shrink-0" aria-label={article.title}>
+      <Link href={href} className="shrink-0" aria-label={title}>
         <MediaThumb
           imageUrl={hero}
           slug={article.slug}
-          title={article.title}
+          title={title}
           category={article.category}
           tags={article.tags}
-          summary={article.summary}
+          summary={summary}
           agentId={article.agentId}
           className="h-[72px] w-[96px] sm:h-[88px] sm:w-[120px]"
         />

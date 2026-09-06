@@ -14,6 +14,7 @@ import {
   formatPublishedAtLocale,
   localeHomePath,
   localizeCategoryLabel,
+  localeScoutPath,
   type AppLocale,
 } from '@/lib/i18n/locales';
 
@@ -85,7 +86,11 @@ export function Header({
   }, [locale]);
 
   const newsHref = locale === 'ru' ? '/all' : homeHref;
-  const scoutHref = '/scout';
+  const scoutHref = localeScoutPath(locale);
+  const archiveHref = locale === 'ru' ? '/all' : `${homeHref}#past-news`;
+
+  /** Canonical RU category query keys — filter logic is shared across locales. */
+  const navCategories = ['Гаджеты', 'ИИ', 'Роботы', 'Open Source', 'Наука'] as const;
 
   return (
     <header className="border-b border-[var(--border)] bg-[var(--surface)] text-[var(--text)] transition-colors">
@@ -246,28 +251,21 @@ export function Header({
           >
             {ui.navNews}
           </Link>
-          {locale === 'ru' ? (
-            <>
-              <Link href="/?category=Гаджеты" className="transition hover:text-[var(--accent)]">
-                Гаджеты
-              </Link>
-              <Link href="/?category=ИИ" className="transition hover:text-[var(--accent)]">
-                ИИ
-              </Link>
-              <Link href="/?category=Роботы" className="transition hover:text-[var(--accent)]">
-                Роботы
-              </Link>
-              <Link href="/?category=Open Source" className="transition hover:text-[var(--accent)]">
-                Open Source
-              </Link>
-              <Link href="/?category=Наука" className="transition hover:text-[var(--accent)]">
-                Наука
-              </Link>
-              <Link href="/all" className="text-[var(--muted)] transition hover:text-[var(--accent)]">
-                {ui.navArchive}
-              </Link>
-            </>
-          ) : null}
+          {navCategories.map((cat) => (
+            <Link
+              key={cat}
+              href={`${homeHref}?category=${encodeURIComponent(cat)}`}
+              className="transition hover:text-[var(--accent)]"
+            >
+              {localizeCategoryLabel(cat, locale)}
+            </Link>
+          ))}
+          <Link
+            href={archiveHref}
+            className="text-[var(--muted)] transition hover:text-[var(--accent)]"
+          >
+            {ui.navArchive}
+          </Link>
           <Link
             href={scoutHref}
             className="text-[var(--muted)] transition hover:text-[var(--accent)]"

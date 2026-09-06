@@ -8,8 +8,10 @@ import { getAllArticles, type Article } from '@/data/articles';
 import { getOpenRouterClient, clampText } from '@/lib/ai/shared';
 import { extractArticlePlainText } from '@/lib/collectors/article-text';
 import { getThematicFallback } from '@/lib/collectors/image-extractor';
-import { downloadImagesLocally, resolveArticlePhotos } from '@/lib/collectors/photo-scout';
+import { downloadImagesLocally } from '@/lib/collectors/photo-scout';
+import { runVisualDesk } from '@/lib/visual-desk';
 import { stampAuthorForPipeline } from '@/lib/authors';
+import { syncChiefArticleLocalizations } from '@/lib/i18n/chief-localization-sync';
 import { toPublicCategory, toPublicTags } from '@/lib/public-labels';
 import type { StoredArticle } from '@/lib/data-store/articles-repo';
 
@@ -193,6 +195,107 @@ export function findPublishedDuplicate(opts: {
   return null;
 }
 
+const SMARTPROTO_ARTICLE_PATH = /^(?:\/(?:en|tr))?\/articles\/([a-z0-9][a-z0-9-]*)/i;
+
+function smartprotoHostnames(): Set<string> {
+  const hosts = new Set(['smartproto.net', 'www.smartproto.net', 'smartproto.site', 'www.smartproto.site']);
+  try {
+    const base = siteBase();
+    hosts.add(new URL(base).hostname.toLowerCase().replace(/^www\./, ''));
+    hosts.add(new URL(base).hostname.toLowerCase());
+  } catch {
+    /* ignore */
+  }
+  return hosts;
+}
+
+/** Parse /articles/{slug} on our site (RU/EN/TR). */
+export function parseSmartprotoArticleSlug(rawUrl: string): string | null {
+  const trimmed = String(rawUrl || '').trim();
+  if (!trimmed) return null;
+  try {
+    const u = new URL(trimmed);
+    const host = u.hostname.toLowerCase();
+    const bare = host.replace(/^www\./, '');
+    const allowed = smartprotoHostnames();
+    if (!allowed.has(host) && !allowed.has(bare)) return null;
+    const m = u.pathname.match(SMARTPROTO_ARTICLE_PATH);
+    return m?.[1] || null;
+  } catch {
+    return null;
+  }
+}
+
+/** Chief should update an existing row — never leave a stale duplicate slug. */
+export function findChiefUpdateTarget(opts: {
+  url?: string;
+  replaceSlug?: string;
+  title?: string;
+  text?: string;
+  articles?: Article[];
+}): DuplicateHit | null {
+  const articles = opts.articles ?? getAllArticles();
+  const replaceSlug = String(opts.replaceSlug || '').trim();
+  if (replaceSlug) {
+    const hit = articles.find((a) => a.slug === replaceSlug);
+    if (hit) {
+      return {
+        slug: hit.slug,
+        title: hit.title,
+        sourceUrl: hit.sourceUrl,
+        reason: 'replace_slug',
+      };
+    }
+  }
+
+  const ownSlug = parseSmartprotoArticleSlug(opts.url || '');
+  if (ownSlug) {
+    const hit = articles.find((a) => a.slug === ownSlug);
+    if (hit) {
+      return {
+        slug: hit.slug,
+        title: hit.title,
+        sourceUrl: hit.sourceUrl,
+        reason: 'own_site_url',
+      };
+    }
+  }
+
+  const strict = findPublishedDuplicate({ ...opts, articles });
+  if (strict) return strict;
+
+  const draftId = normalizeProductIdentity(
+    `${opts.title || ''} ${(opts.text || '').slice(0, 900)}`,
+  );
+  if (draftId.length < 24) return null;
+
+  let best: { hit: DuplicateHit; score: number } | null = null;
+  for (const a of articles) {
+    const blob = normalizeProductIdentity(
+      `${a.title} ${a.summary || ''} ${(a.content || '').slice(0, 500)}`,
+    );
+    if (blob.length < 24) continue;
+    const titleScore = tokenOverlap(
+      normalizeProductIdentity(a.title || ''),
+      normalizeProductIdentity(opts.title || ''),
+    );
+    const bodyScore = tokenOverlap(blob, draftId);
+    const score = Math.max(bodyScore, titleScore * 0.85);
+    if (score >= 0.68 && (!best || score > best.score)) {
+      best = {
+        score,
+        hit: {
+          slug: a.slug,
+          title: a.title,
+          sourceUrl: a.sourceUrl,
+          reason: 'same_story',
+        },
+      };
+    }
+  }
+  return best?.hit ?? null;
+}
+
 function extractCanonicalUrl(html: string, baseUrl: string): string {
   const m =
     html.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i) ||
@@ -262,6 +365,27 @@ function extractSourcePhotoUrls(html: string, baseUrl: string, extra?: string): 
     }
   };
   push(extra);
+
+  // Prefer in-page hero backgrounds / product action photos over weak social OG banners.
+  // LENZ etc. put the real product shot in CSS background-image, while og:image is brand CARE stock.
+  const heroBg = [
+    /background(?:-image)?\s*:\s*url\((['"]?)([^)'"]+)\1\)/gi,
+    /style=["'][^"']*background(?:-image)?\s*:\s*url\((['"]?)([^)'"]+)\1\)/gi,
+  ];
+  for (const re of heroBg) {
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(html)) !== null) {
+      const u = m[2] || m[1];
+      if (!u) continue;
+      if (!/\.(jpe?g|png|webp)(\?|$)/i.test(u)) continue;
+      if (/logo|icon|favicon|sprite|seal|plugin/i.test(u)) continue;
+      // Prefer hero / home-hero / product-sized uploads.
+      if (/hero|home-hero|slide|product|drop|patient|woman|vizz|upload/i.test(u)) {
+        push(u);
+      }
+    }
+  }
+
   const patterns = [
     /<meta[^>]+property=["']og:image(?::secure_url)?["'][^>]+content=["']([^"']+)["']/gi,
     /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image(?::secure_url)?["']/gi,
@@ -271,6 +395,64 @@ function extractSourcePhotoUrls(html: string, baseUrl: string, extra?: string): 
   for (const re of patterns) {
     let m: RegExpExecArray | null;
     while ((m = re.exec(html)) !== null) push(m[1]);
+  }
+
+  // Deprioritize obvious brand/social OG cards when a real hero candidate exists.
+  const heroes = out.filter((u) => /hero|home-hero|slide|product|drop|vizz/i.test(u));
+  const rest = out.filter((u) => !heroes.includes(u));
+  return [...heroes, ...rest];
+}
+
+async function extractLinkedStylesheetHeroUrls(html: string, baseUrl: string): Promise<string[]> {
+  const out: string[] = [];
+  const push = (raw: string | undefined, cssBase: string) => {
+    const t = (raw || '').trim();
+    if (!t || !/\.(jpe?g|png|webp)(\?|$)/i.test(t)) return;
+    if (/logo|icon|favicon|sprite|seal|plugin|cookie/i.test(t)) return;
+    try {
+      const abs = new URL(t, cssBase).toString();
+      if (/^https?:\/\//i.test(abs) && !out.includes(abs)) out.push(abs);
+    } catch {
+      /* ignore */
+    }
+  };
+  const hrefs: string[] = [];
+  const linkRe =
+    /<link[^>]+rel=["'][^"']*stylesheet[^"']*["'][^>]+href=["']([^"']+)["']|<link[^>]+href=["']([^"']+)["'][^>]+rel=["'][^"']*stylesheet[^"']*["']/gi;
+  let m: RegExpExecArray | null;
+  while ((m = linkRe.exec(html)) !== null) {
+    try {
+      const abs = new URL(m[1] || m[2] || '', baseUrl).toString();
+      if (!hrefs.includes(abs)) hrefs.push(abs);
+    } catch {
+      /* ignore */
+    }
+    if (hrefs.length >= 6) break;
+  }
+  for (const cssUrl of hrefs) {
+    try {
+      const res = await fetch(cssUrl, {
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          Accept: 'text/css,*/*;q=0.8',
+        },
+        signal: AbortSignal.timeout(6000),
+        redirect: 'follow',
+      });
+      if (!res.ok) continue;
+      const css = await res.text();
+      const bgRe = /background(?:-image)?\s*:\s*url\((['"]?)([^)'"]+)\1\)/gi;
+      let bg: RegExpExecArray | null;
+      while ((bg = bgRe.exec(css)) !== null) {
+        const raw = bg[2];
+        const around = css.slice(Math.max(0, bg.index - 80), bg.index + 40).toLowerCase();
+        if (!/hero|home-hero|banner|slide|cover|product/i.test(`${raw} ${around}`)) continue;
+        push(raw, cssUrl);
+      }
+    } catch {
+      /* ignore stylesheet fetch errors */
+    }
   }
   return out;
 }
@@ -288,12 +470,15 @@ async function ensureChiefArticlePhoto(opts: {
   kind: ChiefPhotoKind;
   remoteUrl: string;
 } | null> {
-  // 1) Exact / close photo from source article (og:image, twitter:image, extract fallback).
-  const sourceCandidates = extractSourcePhotoUrls(opts.html || '', opts.sourceUrl, opts.fallbackUrl);
+  // 1) Source photos: CSS hero backgrounds first, then og/twitter (brand OG cards often mismatch product).
+  const html = opts.html || '';
+  const cssHeroes = html ? await extractLinkedStylesheetHeroUrls(html, opts.sourceUrl) : [];
+  const metaPhotos = extractSourcePhotoUrls(html, opts.sourceUrl, opts.fallbackUrl);
+  const sourceCandidates = [...cssHeroes, ...metaPhotos.filter((u) => !cssHeroes.includes(u))];
   if (sourceCandidates.length) {
     const downloaded = await downloadImagesLocally(
       opts.slug,
-      sourceCandidates.slice(0, 2).map((url, i) => ({
+      sourceCandidates.slice(0, 3).map((url, i) => ({
         url,
         role: (i === 0 ? 'hero' : 'secondary') as 'hero' | 'secondary',
       })),
@@ -310,7 +495,7 @@ async function ensureChiefArticlePhoto(opts: {
 
   // 2) Web / photo-scout close match (exact product / research demo when available).
   try {
-    const report = await resolveArticlePhotos({
+    const visual = await runVisualDesk({
       slug: opts.slug,
       title: opts.title,
       text: opts.text,
@@ -318,13 +503,14 @@ async function ensureChiefArticlePhoto(opts: {
       fallbackUrl: opts.fallbackUrl,
       html: opts.html,
       maxResearchPages: 2,
+      recentArticles: getAllArticles().slice(0, 25),
     });
-    if (report.selected?.length) {
+    if (visual.images?.length) {
       return {
-        images: report.selected,
-        imageUrl: report.selected[0].url,
+        images: visual.images,
+        imageUrl: visual.images[0].url,
         kind: 'WEB_PHOTO',
-        remoteUrl: report.selected[0].sourceUrl || report.selected[0].url,
+        remoteUrl: visual.images[0].sourceUrl || visual.images[0].url,
       };
     }
   } catch {
@@ -351,7 +537,15 @@ async function ensureChiefArticlePhoto(opts: {
   return null;
 }
 
-/* ─── Publish helpers ─── */
+function chiefPreviewFromImages(
+  images: NonNullable<Article['images']>,
+): { url: string; role: string; caption?: string }[] {
+  return images.map((i) => ({
+    url: i.url.startsWith('http') ? i.url : `${siteBase()}${i.url.startsWith('/') ? '' : '/'}${i.url}`,
+    role: i.role,
+    caption: i.caption,
+  }));
+}
 
 const MODEL = process.env.OPENROUTER_EDITOR_MODEL ?? 'google/gemini-2.5-flash-lite';
 
@@ -378,7 +572,7 @@ function slugifyTitle(title: string, prefix: string): string {
 }
 
 function uniqueSlug(base: string, existing: Set<string>): string {
-  let slug = base || `article-${Date.now()}`;
+  const slug = base || `article-${Date.now()}`;
   if (!existing.has(slug)) return slug;
   for (let i = 2; i < 50; i++) {
     const c = `${base}-${i}`;
@@ -400,11 +594,11 @@ function estimateReadTime(text: string): string {
   return `${Math.max(1, Math.ceil(words / 150))} мин`;
 }
 
-async function publishArticle(article: Article): Promise<void> {
+async function publishArticle(article: Article, opts?: import('@/lib/data-store/articles-repo').UpsertArticleOptions): Promise<void> {
   if (process.env.ARTICLES_STORE === 'sqlite') {
     const { upsertArticle } = await import('@/lib/data-store/articles-repo');
     // SP-A-098 translation is scheduled inside upsertArticle for new rows.
-    upsertArticle(article as StoredArticle);
+    upsertArticle(article as StoredArticle, opts);
     return;
   }
   const articlesPath =
@@ -967,6 +1161,7 @@ export type ChiefJobStatus =
   | 'EDITING'
   | 'READY'
   | 'PUBLISHED'
+  | 'UPDATED'
   | 'FAILED';
 
 export type ChiefJob = {
@@ -974,14 +1169,21 @@ export type ChiefJob = {
   status: ChiefJobStatus;
   url: string;
   note?: string;
+  /** Explicit slug to overwrite (fix old article in place). */
+  replaceSlug?: string;
   message?: string;
   articleSlug?: string;
   articleUrl?: string;
   duplicateSlug?: string;
   duplicateTitle?: string;
+  updateReason?: string;
   /** SP-A-077 — how the required Chief hero was resolved */
   photoKind?: ChiefPhotoKind;
   photoUrl?: string;
+  /** SP-A-102 — total images attached (hero + gallery). */
+  imageCount?: number;
+  /** SP-A-VD1 — read-only preview for Chief review before/after publish. */
+  previewImages?: { url: string; role: string; caption?: string }[];
   updatedAt: string;
   createdAt: string;
 };
@@ -1022,7 +1224,7 @@ function patchJob(job: ChiefJob, p: Partial<ChiefJob>): ChiefJob {
   return next;
 }
 
-export function createChiefJob(url: string, note?: string): ChiefJob {
+export function createChiefJob(url: string, note?: string, replaceSlug?: string): ChiefJob {
   const id = `chief-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
   const now = new Date().toISOString();
   const job: ChiefJob = {
@@ -1030,6 +1232,7 @@ export function createChiefJob(url: string, note?: string): ChiefJob {
     status: 'CHECKING',
     url: url.trim(),
     note: note?.trim() || undefined,
+    replaceSlug: replaceSlug?.trim() || undefined,
     createdAt: now,
     updatedAt: now,
     message: 'URL validation / duplicate check…',
@@ -1080,17 +1283,91 @@ async function writeChiefDraft(opts: {
   };
 }
 
+async function chiefApplyDraftToExistingSlug(
+  existingSlug: string,
+  opts: {
+    draft: { title: string; text: string; tags: string[] };
+    photo: {
+      images: NonNullable<Article['images']>;
+      imageUrl: string;
+      kind: ChiefPhotoKind;
+    };
+    sourceUrl: string;
+    updateReason: string;
+  },
+): Promise<Article> {
+  const existing = getAllArticles().find((a) => a.slug === existingSlug);
+  if (!existing) throw new Error(`Article not found: ${existingSlug}`);
+
+  const updated: Article = {
+    ...existing,
+    title: opts.draft.title,
+    content: opts.draft.text,
+    summary: summaryOf(opts.draft.text),
+    readTime: estimateReadTime(opts.draft.text),
+    sourceUrl: opts.sourceUrl || existing.sourceUrl,
+    imageUrl: opts.photo.imageUrl,
+    images: opts.photo.images,
+    tags: Array.from(
+      new Set(toPublicTags([...(existing.tags || []), ...opts.draft.tags, 'chief-revise'])),
+    ).slice(0, 10),
+    agentId: existing.agentId || 'chief-fast-lane',
+  };
+
+  await publishArticle(updated, {
+    skipFinalAutoGate: true,
+    skipPostPublishTranslation: true,
+  });
+  await syncChiefArticleLocalizations({
+    id: updated.id,
+    slug: updated.slug,
+    title: updated.title,
+    summary: updated.summary,
+    content: updated.content,
+    category: updated.category,
+    author: updated.author,
+    authorDesk: updated.authorDesk,
+  });
+  return updated;
+}
+
 /** Immediate pipeline — does not wait for AUTO cycle; does not call Scout. */
 export async function runChiefFastLane(jobId: string): Promise<ChiefJob> {
   let job = await getChiefJob(jobId);
   if (!job) throw new Error(`Unknown chief job: ${jobId}`);
-  if (['PUBLISHED', 'DUPLICATE', 'FAILED'].includes(job.status)) return job;
+  if (['PUBLISHED', 'UPDATED', 'DUPLICATE', 'FAILED'].includes(job.status)) return job;
 
   try {
     job = patchJob(job, { status: 'CHECKING', message: 'Validating URL…' });
     const url = job.url.trim();
     if (!/^https?:\/\//i.test(url)) {
       return patchJob(job, { status: 'FAILED', message: 'URL must start with http(s)://' });
+    }
+
+    const ownSlugOnly = parseSmartprotoArticleSlug(url);
+    if (ownSlugOnly && job.note?.trim()) {
+      const chiefNote = job.note.trim();
+      job = patchJob(job, { status: 'EDITING', message: `Updating our article ${ownSlugOnly}…` });
+      const result = await reviseChiefPublishedArticle({ slugOrUrl: ownSlugOnly, note: chiefNote });
+      if (!result.ok) {
+        return patchJob(job, { status: 'FAILED', message: result.message });
+      }
+      return patchJob(job, {
+        status: 'UPDATED',
+        message: `Updated existing (${ownSlugOnly}) · EN ${result.i18n?.en || '—'} · TR ${result.i18n?.tr || '—'}`,
+        articleSlug: result.slug,
+        articleUrl: result.articleUrl,
+        duplicateSlug: result.slug,
+        duplicateTitle: result.title,
+        updateReason: 'own_site_url',
+      });
+    }
+    if (ownSlugOnly && !job.note?.trim()) {
+      return patchJob(job, {
+        status: 'FAILED',
+        message:
+          'Ссылка на SmartProto — добавьте NOTE (желание шефа) или используйте вкладку «Исправить опубликованную».',
+      });
     }
 
     const page = await extractArticlePlainText(url, { maxChars: 8000, timeoutMs: 12000 });
@@ -1112,18 +1389,10 @@ export async function runChiefFastLane(jobId: string): Promise<ChiefJob> {
     }
     const canonical = html ? extractCanonicalUrl(html, url) : normalizeUrl(url);
 
-    const dup =
-      findPublishedDuplicate({ url: canonical || url }) || findPublishedDuplicate({ url });
-    if (dup) {
-      return patchJob(job, {
-        status: 'DUPLICATE',
-        message: 'ALREADY PUBLISHED',
-        duplicateSlug: dup.slug,
-        duplicateTitle: dup.title,
-        articleSlug: dup.slug,
-        articleUrl: `${siteBase()}/articles/${dup.slug}`,
-      });
-    }
+    const preTarget = findChiefUpdateTarget({
+      url: canonical || url,
+      replaceSlug: job.replaceSlug,
+    });
 
     // SP-A-077 — Chief may get thin extractor output (e.g. ForkLog). Enrich from HTML
     // for this door only; AUTO extract path unchanged.
@@ -1174,27 +1443,30 @@ export async function runChiefFastLane(jobId: string): Promise<ChiefJob> {
       keyAspects: [],
     });
 
-    const afterDraftDup = findPublishedDuplicate({
-      url: canonical || url,
-      title: draft.title,
-      text: draft.text,
-    });
-    if (afterDraftDup) {
-      return patchJob(job, {
-        status: 'DUPLICATE',
-        message: 'ALREADY PUBLISHED',
-        duplicateSlug: afterDraftDup.slug,
-        duplicateTitle: afterDraftDup.title,
-        articleSlug: afterDraftDup.slug,
-        articleUrl: `${siteBase()}/articles/${afterDraftDup.slug}`,
+    const updateTarget =
+      findChiefUpdateTarget({
+        url: canonical || url,
+        replaceSlug: job.replaceSlug,
+        title: draft.title,
+        text: draft.text,
+      }) || preTarget;
+
+    const targetSlug = updateTarget?.slug;
+    if (updateTarget) {
+      job = patchJob(job, {
+        status: 'EDITING',
+        message: `Updating existing (${updateTarget.slug}) — ${updateTarget.reason}…`,
+        duplicateSlug: updateTarget.slug,
+        duplicateTitle: updateTarget.title,
+        updateReason: updateTarget.reason,
       });
     }
 
     job = patchJob(job, { status: 'EDITING', message: 'Photo (required for Chief)…' });
-    const existing = new Set(getAllArticles().map((a) => a.slug));
-    const slug = uniqueSlug(slugifyTitle(draft.title, 'chief'), existing);
+    const publishSlug =
+      targetSlug || uniqueSlug(slugifyTitle(draft.title, 'chief'), new Set(getAllArticles().map((a) => a.slug)));
     const photo = await ensureChiefArticlePhoto({
-      slug,
+      slug: publishSlug,
       title: draft.title,
       text: draft.text,
       sourceUrl: url,
@@ -1208,15 +1480,47 @@ export async function runChiefFastLane(jobId: string): Promise<ChiefJob> {
       });
     }
 
+    if (targetSlug) {
+      job = patchJob(job, {
+        status: 'READY',
+        message: `Updating ${targetSlug} with ${photo.kind}…`,
+        photoKind: photo.kind,
+        photoUrl: photo.imageUrl,
+        previewImages: chiefPreviewFromImages(photo.images),
+        imageCount: photo.images?.length || 1,
+      });
+      const updated = await chiefApplyDraftToExistingSlug(targetSlug, {
+        draft,
+        photo,
+        sourceUrl: canonical || url,
+        updateReason: updateTarget!.reason,
+      });
+      return patchJob(job, {
+        status: 'UPDATED',
+        message: `Updated existing (${updateTarget!.reason}) · ${targetSlug}`,
+        articleSlug: updated.slug,
+        articleUrl: `${siteBase()}/articles/${updated.slug}`,
+        duplicateSlug: updated.slug,
+        duplicateTitle: updated.title,
+        photoKind: photo.kind,
+        photoUrl: photo.imageUrl,
+        updateReason: updateTarget!.reason,
+        previewImages: chiefPreviewFromImages(photo.images),
+        imageCount: photo.images?.length || 1,
+      });
+    }
+
     job = patchJob(job, {
       status: 'READY',
       message: `Publishing with ${photo.kind}…`,
       photoKind: photo.kind,
       photoUrl: photo.imageUrl,
+      previewImages: chiefPreviewFromImages(photo.images),
+      imageCount: photo.images?.length || 1,
     });
     const article: Article = {
-      id: slug,
-      slug,
+      id: publishSlug,
+      slug: publishSlug,
       title: draft.title,
       category: toPublicCategory('Технологии'),
       tags: Array.from(new Set(toPublicTags([...draft.tags, 'chief']))).slice(0, 10),
@@ -1227,17 +1531,29 @@ export async function runChiefFastLane(jobId: string): Promise<ChiefJob> {
       readTime: estimateReadTime(draft.text),
       imageUrl: photo.imageUrl,
       images: photo.images,
-      ...stampAuthorForPipeline('newsroom-scout', { sourceUrl: url, slug }),
+      ...stampAuthorForPipeline('newsroom-scout', { sourceUrl: url, slug: publishSlug }),
       agentId: 'chief-fast-lane',
     };
-    await publishArticle(article);
+    await publishArticle(article, { skipFinalAutoGate: true, skipPostPublishTranslation: true });
+    const i18n = await syncChiefArticleLocalizations({
+      id: article.id,
+      slug: article.slug,
+      title: article.title,
+      summary: article.summary,
+      content: article.content,
+      category: article.category,
+      author: article.author,
+      authorDesk: article.authorDesk,
+    });
     return patchJob(job, {
       status: 'PUBLISHED',
-      message: `Published (${photo.kind})`,
-      articleSlug: slug,
-      articleUrl: `${siteBase()}/articles/${slug}`,
+      message: `Published (${photo.kind}) · ${photo.images?.length || 1} image(s) · i18n ${i18n.results.map((r) => `${r.language}:${r.status}`).join(', ') || 'skipped'}`,
+      articleSlug: publishSlug,
+      articleUrl: `${siteBase()}/articles/${publishSlug}`,
       photoKind: photo.kind,
       photoUrl: photo.imageUrl,
+      imageCount: photo.images?.length || (photo.imageUrl ? 1 : 0),
+      previewImages: chiefPreviewFromImages(photo.images),
     });
   } catch (err) {
     return patchJob(job, {
@@ -1245,4 +1561,256 @@ export async function runChiefFastLane(jobId: string): Promise<ChiefJob> {
       message: err instanceof Error ? err.message : String(err),
     });
   }
+}
+
+/* ─── Chief revise published article (same slug, new text per chief note) ─── */
+
+function parseArticleSlugOrUrl(raw: string): string {
+  const trimmed = String(raw || '').trim();
+  const fromPath = trimmed.match(/\/articles\/([^/?#]+)/i)?.[1];
+  if (fromPath) return fromPath;
+  return trimmed.replace(/^\/+/, '').replace(/^articles\//i, '');
+}
+
+function countWords(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+async function writeChiefRevision(input: {
+  title: string;
+  text: string;
+  sourceUrl: string;
+  note: string;
+}): Promise<{ title: string; text: string; tags: string[] }> {
+  const client = getOpenRouterClient();
+  const completion = await client.chat.completions.create({
+    model: MODEL,
+    temperature: 0.62,
+    max_tokens: 2000,
+    messages: [
+      {
+        role: 'system',
+        content: [
+          'Ты главный редактор SmartProto. Переписываешь УЖЕ опубликованную статью по указанию шефа.',
+          'NOTE шефа — главный приоритет: тон, угол, длина, ирония, структура.',
+          'Факты только из текущего текста/источника; не выдумывай цифры, цитаты, имена.',
+          'БЕЗ цен, shop-CTA, outbound-ссылок в теле. Без восклицательных заголовков.',
+          'Если шеф просит ~N слов — попади в диапазон N±40.',
+          'Верни СТРОГО JSON: {"title":string,"text":string,"tags":string[]}',
+        ].join('\n'),
+      },
+      {
+        role: 'user',
+        content: [
+          `ЖЕЛАНИЕ ШЕФА:\n${clampText(input.note, 2500)}`,
+          input.sourceUrl ? `Источник: ${input.sourceUrl}` : '',
+          `Текущий заголовок:\n${clampText(input.title, 200)}`,
+          `Текущий текст:\n${clampText(input.text, 12000)}`,
+        ]
+          .filter(Boolean)
+          .join('\n\n'),
+      },
+    ],
+  });
+  const raw = String(completion.choices[0]?.message?.content || '').trim();
+  try {
+    const json = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+    const parsed = JSON.parse(json) as Record<string, unknown>;
+    let title =
+      typeof parsed.title === 'string' && parsed.title.trim()
+        ? parsed.title.trim().replace(/!+/g, '').slice(0, 120)
+        : input.title.trim();
+    let text =
+      typeof parsed.text === 'string' && parsed.text.trim()
+        ? parsed.text.trim()
+        : input.text.trim();
+    const tags = Array.isArray(parsed.tags)
+      ? parsed.tags.filter((t): t is string => typeof t === 'string' && Boolean(t.trim())).slice(0, 8)
+      : ['chief-revise'];
+
+    const targetMatch = input.note.match(/(\d{2,4})\s*слов/i);
+    const targetWords = targetMatch ? Number(targetMatch[1]) : 0;
+    const minWords = targetWords > 0 ? targetWords - 40 : 280;
+    if (countWords(text) < minWords) {
+      const expand = await client.chat.completions.create({
+        model: MODEL,
+        temperature: 0.45,
+        max_tokens: 2200,
+        messages: [
+          {
+            role: 'system',
+            content:
+              'Расширь текст до запрошенной длины без новых фактов. Сохрани иронию и голос. JSON: {"title":string,"text":string,"tags":string[]}',
+          },
+          {
+            role: 'user',
+            content: [
+              `Цель: ${targetWords || 330} слов (минимум ${minWords}).`,
+              `NOTE шефа: ${clampText(input.note, 1500)}`,
+              `Текущий заголовок: ${title}`,
+              `Текущий текст:\n${clampText(text, 8000)}`,
+            ].join('\n\n'),
+          },
+        ],
+      });
+      const expandRaw = String(expand.choices[0]?.message?.content || '').trim();
+      const expandJson = expandRaw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+      const expanded = JSON.parse(expandJson) as Record<string, unknown>;
+      if (typeof expanded.title === 'string' && expanded.title.trim()) {
+        title = expanded.title.trim().replace(/!+/g, '').slice(0, 120);
+      }
+      if (typeof expanded.text === 'string' && expanded.text.trim()) {
+        text = expanded.text.trim();
+      }
+    }
+
+    return { title, text, tags };
+  } catch {
+    return { title: input.title.trim(), text: input.text.trim(), tags: ['chief-revise'] };
+  }
+}
+
+export type ChiefRevisionResult =
+  | {
+      ok: true;
+      status: 'REVISED';
+      slug: string;
+      articleUrl: string;
+      title: string;
+      wordCount: number;
+      i18n?: { en?: string; tr?: string };
+    }
+  | { ok: false; status: 'NOT_FOUND' | 'FAILED'; message: string };
+
+/** Chief editorial override — rewrite published article in place (slug unchanged). */
+export async function reviseChiefPublishedArticle(input: {
+  slugOrUrl: string;
+  note: string;
+}): Promise<ChiefRevisionResult> {
+  const slug = parseArticleSlugOrUrl(input.slugOrUrl);
+  const note = String(input.note || '').trim();
+  if (!slug) {
+    return { ok: false, status: 'FAILED', message: 'Slug or article URL is required.' };
+  }
+  if (!note || note.length < 15) {
+    return {
+      ok: false,
+      status: 'FAILED',
+      message: 'NOTE (желание шефа) обязателен — опишите угол и тон переписывания.',
+    };
+  }
+
+  const existing = getAllArticles().find((a) => a.slug === slug);
+  if (!existing) {
+    return { ok: false, status: 'NOT_FOUND', message: `Статья не найдена: ${slug}` };
+  }
+  if (!existing.content?.trim() || existing.content.trim().length < 40) {
+    return { ok: false, status: 'FAILED', message: 'У статьи слишком короткий текст для переписывания.' };
+  }
+
+  try {
+    const revised = await writeChiefRevision({
+      title: existing.title,
+      text: existing.content,
+      sourceUrl: existing.sourceUrl,
+      note,
+    });
+
+    const updated: Article = {
+      ...existing,
+      title: revised.title,
+      content: revised.text,
+      summary: summaryOf(revised.text),
+      readTime: estimateReadTime(revised.text),
+      tags: Array.from(new Set(toPublicTags([...(existing.tags || []), ...revised.tags, 'chief-revise']))).slice(
+        0,
+        10,
+      ),
+      agentId: existing.agentId || 'chief-fast-lane',
+    };
+
+    await publishArticle(updated, {
+      skipFinalAutoGate: true,
+      skipPostPublishTranslation: true,
+    });
+
+    const i18n = await syncChiefArticleLocalizations({
+      id: updated.id,
+      slug: updated.slug,
+      title: updated.title,
+      summary: updated.summary,
+      content: updated.content,
+      category: updated.category,
+      author: updated.author,
+      authorDesk: updated.authorDesk,
+    });
+
+    return {
+      ok: true,
+      status: 'REVISED',
+      slug,
+      articleUrl: `${siteBase()}/articles/${slug}`,
+      title: revised.title,
+      wordCount: countWords(revised.text),
+      i18n: {
+        en: i18n.results.find((r) => r.language === 'en')?.status,
+        tr: i18n.results.find((r) => r.language === 'tr')?.status,
+      },
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      status: 'FAILED',
+      message: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
+/** SP-A-VD1 — Chief removes a bad gallery/hero asset from a published article (RU/EN/TR share one set). */
+export async function removeChiefVisualAsset(opts: {
+  slugOrUrl: string;
+  imageUrl: string;
+}): Promise<
+  | { ok: true; slug: string; removed: string; remaining: number; articleUrl: string }
+  | { ok: false; status: string; message: string }
+> {
+  const slug = parseArticleSlugOrUrl(opts.slugOrUrl);
+  const targetUrl = String(opts.imageUrl || '').trim();
+  if (!slug || !targetUrl) {
+    return { ok: false, status: 'FAILED', message: 'slug and imageUrl are required.' };
+  }
+
+  const existing = getAllArticles().find((a) => a.slug === slug);
+  if (!existing) {
+    return { ok: false, status: 'NOT_FOUND', message: `Статья не найдена: ${slug}` };
+  }
+
+  const norm = (u: string) => u.replace(/^https?:\/\/[^/]+/i, '').split('?')[0];
+  const images = (existing.images || []).filter((i) => norm(i.url) !== norm(targetUrl));
+  if (images.length === (existing.images || []).length) {
+    return { ok: false, status: 'NOT_FOUND', message: 'Изображение не найдено в статье.' };
+  }
+
+  const hero = images.find((i) => i.role === 'hero') || images[0];
+  const updated: Article = {
+    ...existing,
+    images: images.length ? images : undefined,
+    imageUrl: hero?.url || existing.imageUrl,
+  };
+  if (!images.length) {
+    delete (updated as { imageUrl?: string }).imageUrl;
+  }
+
+  await publishArticle(updated, {
+    skipFinalAutoGate: true,
+    skipPostPublishTranslation: true,
+  });
+
+  return {
+    ok: true,
+    slug,
+    removed: targetUrl,
+    remaining: images.length,
+    articleUrl: `${siteBase()}/articles/${slug}`,
+  };
 }

@@ -171,6 +171,26 @@ export function applyQuotaScoutFloor(baseFloor: number, policy: NewsQuotaPolicy)
   return Math.max(floorMin, baseFloor - policy.scoutFloorRelax);
 }
 
+/**
+ * When AUTO is starved (CRITICAL / long gap), drop the Scout floor further so
+ * mid-band interesting gadgets (55–61) can reach Reviewer/Editor. Still above
+ * junk; commodity final gate stays intact for mouse/phone refresh SKUs.
+ */
+export function applyStarvationScoutFloor(
+  baseFloor: number,
+  opts: {
+    freshnessStatus?: 'OK' | 'WARNING' | 'CRITICAL';
+    minutesSinceLastAuto?: number | null;
+  },
+): number {
+  const starved =
+    opts.freshnessStatus === 'CRITICAL' ||
+    (opts.minutesSinceLastAuto != null && opts.minutesSinceLastAuto >= 360);
+  if (!starved) return baseFloor;
+  // Floor 55: recent ticks showed 55-score e-scooters / glasses dying at 62.
+  return Math.min(baseFloor, 55);
+}
+
 export function formatNewsQuotaPolicy(p: NewsQuotaPolicy): string {
   return [
     'NEWS_DAILY_QUOTA',

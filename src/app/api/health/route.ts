@@ -11,14 +11,28 @@ export async function GET() {
       const { buildArchiveTranslationHealth } = await import(
         '@/lib/i18n/archive-translate-health'
       );
+      const { buildAutoPublishHealth } = await import('@/lib/newsroom/auto-publish-health');
       const total = countArticles();
       const articles = getAllArticles();
       const archive = buildArchiveTranslationHealth(articles, getLocalization);
+      const autoPublish = buildAutoPublishHealth({
+        articles: articles.map((a) => ({
+          slug: a.slug,
+          publishedAt: a.publishedAt,
+          agentId: a.agentId,
+        })),
+      });
+      const overallStatus =
+        autoPublish.auto_publish_stale && autoPublish.worker_mode !== 'off'
+          ? 'degraded'
+          : 'ok';
       return NextResponse.json({
-        status: 'ok',
+        status: overallStatus,
         store: 'sqlite',
         articles: total,
         archive_translation: archive,
+        auto_publish: autoPublish,
+        warnings: autoPublish.auto_publish_stale ? ['AUTO_PUBLISH_STALE'] : [],
       });
     }
     return NextResponse.json({ status: 'ok', store: 'json' });

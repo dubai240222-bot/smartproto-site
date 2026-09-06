@@ -13,7 +13,14 @@ export interface Article {
   publishedAt: string;
   readTime: string;
   imageUrl?: string;
-  images?: { url: string; role: 'hero' | 'secondary' | 'detail'; sourceUrl?: string }[];
+  images?: {
+    url: string;
+    role: 'hero' | 'secondary' | 'detail' | 'gallery';
+    sourceUrl?: string;
+    caption?: string;
+    credit?: string;
+    sortOrder?: number;
+  }[];
   author?: string;
   authorDesk?: string;
   agentId?: string;

@@ -63,11 +63,15 @@ export async function extractArticlePlainText(
     const imageUrl = metaContent(html, 'og:image') || metaContent(html, 'twitter:image') || '';
 
     const articleMatch =
-      html.match(/id=["']paragraph["'][^>]*>([\s\S]*?)<div[^>]+class=["'][^"']*(?:news|related|footer|copyright)/i) ||
-      html.match(/id=["']paragraph["'][^>]*>([\s\S]*?)$/i) ||
-      html.match(/class=["'][^"']*post_content[^"']*["'][^>]*>([\s\S]*?)<\/div>/i) ||
-      html.match(/<article\b[^>]*>([\s\S]*?)<\/article>/i) ||
-      html.match(/<div[^>]+class=["'][^"']*(?:article|post|content|entry)[^"']*["'][^>]*>([\s\S]*?)<\/div>/i);
+      /techxplore\.com/i.test(url)
+        ? html.match(/<div[^>]+class=["'][^"']*article-main[^"']*["'][^>]*>([\s\S]*?)<\/div>\s*<(?:aside|footer|div[^>]+class=["'][^"']*(?:related|newsletter))/i) ||
+          html.match(/<div[^>]+id=["']article-main["'][^>]*>([\s\S]*?)<\/div>/i) ||
+          html.match(/<div[^>]+class=["'][^"']*article__content[^"']*["'][^>]*>([\s\S]*?)<\/div>/i)
+        : html.match(/id=["']paragraph["'][^>]*>([\s\S]*?)<div[^>]+class=["'][^"']*(?:news|related|footer|copyright)/i) ||
+          html.match(/id=["']paragraph["'][^>]*>([\s\S]*?)$/i) ||
+          html.match(/class=["'][^"']*post_content[^"']*["'][^>]*>([\s\S]*?)<\/div>/i) ||
+          html.match(/<article\b[^>]*>([\s\S]*?)<\/article>/i) ||
+          html.match(/<div[^>]+class=["'][^"']*(?:article|post|content|entry)[^"']*["'][^>]*>([\s\S]*?)<\/div>/i);
     const chunk = articleMatch?.[1] || html;
     const desc = metaContent(html, 'og:description') || metaContent(html, 'description');
     const body = cleanHtml(chunk).slice(0, maxChars);
