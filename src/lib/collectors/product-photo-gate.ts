@@ -1,12 +1,13 @@
 /**
- * SP-A-100F / Neakasa incident — deterministic product↔photo family gate.
+ * SP-A-100F2 — Product↔photo family gate (Neakasa / Hypershell incidents).
  * Reject heroes whose visual family clashes with the article subject
- * (e.g. pet feeder story + e-bike / motorcycle photo).
- * No extra LLM call. Timeout-friendly: pure sync regex.
+ * (pet feeder + e-bike, exoskeleton + motorcycle, etc.).
+ * No extra LLM. Pure sync regex.
  */
 
 export type ProductPhotoFamily =
   | 'pet_feeder'
+  | 'exoskeleton'
   | 'vehicle'
   | 'phone'
   | 'audio'
@@ -18,9 +19,11 @@ export type ProductPhotoFamily =
 
 const FAMILY_PATTERNS: Record<Exclude<ProductPhotoFamily, 'other'>, RegExp> = {
   pet_feeder:
-    /\b(pet\s*feeder|cat\s*feeder|dog\s*feeder|wet\s*meal|fresh[- ]made|автокормуш|кормушк|влажн\w*\s+корм|сублимирован|neakasa|neakasa\s*riko|riko)\b|для\s+кошк|для\s+собак|кормлен\w*\s+питомц/i,
+    /\b(pet\s*feeder|cat\s*feeder|dog\s*feeder|wet\s*meal|wet\s*food|fresh[- ]made|автокормуш|кормушк|влажн\w*\s+корм|сублимирован|neakasa|neakasa\s*riko)\b|для\s+кошк|для\s+собак|кормлен\w*\s+питомц/i,
+  exoskeleton:
+    /\b(exoskeleton|exo[- ]?suit|powered\s*suit|экзоскелет|hypershell|halo\s*exo)\b/i,
   vehicle:
-    /\b(e-?bike|ebike|electric\s*bike|motorbike|motorcycle|scooter|moped|fat[- ]?tire|велосипед|электровелосипед|мотоцикл|скутер|aotos|ride\s+the\s+future|motos?)\b/i,
+    /\b(e-?bike|ebike|electric\s*bike|electric\s*moto|motorbike|motorcycle|scooter|moped|fat[- ]?tire|велосипед|электровелосипед|мотоцикл|скутер|aotos|ride\s+the\s+future|motos?)\b/i,
   phone:
     /\b(smartphone|смартфон|iphone|galaxy\s*z?\s*fold|pixel\s*\d|бюджетн\w*\s+телефон)\b/i,
   audio:
@@ -34,25 +37,35 @@ const FAMILY_PATTERNS: Record<Exclude<ProductPhotoFamily, 'other'>, RegExp> = {
   drone: /\b(drone|квадрокоптер|dji\s*mini|fpv)\b/i,
 };
 
-/** Families that must never be paired (article family → forbidden photo families). */
+/** Article family → forbidden photo families. */
 const CLASH: Partial<Record<ProductPhotoFamily, ProductPhotoFamily[]>> = {
-  pet_feeder: ['vehicle', 'phone', 'audio', 'drone', 'camera'],
-  vehicle: ['pet_feeder', 'phone', 'audio', 'wearable'],
-  phone: ['vehicle', 'pet_feeder', 'drone'],
-  audio: ['vehicle', 'pet_feeder'],
+  pet_feeder: ['vehicle', 'exoskeleton', 'phone', 'audio', 'drone', 'camera'],
+  exoskeleton: ['vehicle', 'pet_feeder', 'phone', 'audio', 'drone'],
+  vehicle: ['pet_feeder', 'exoskeleton', 'phone', 'audio', 'wearable'],
+  phone: ['vehicle', 'pet_feeder', 'exoskeleton', 'drone'],
+  audio: ['vehicle', 'pet_feeder', 'exoskeleton'],
   wearable: ['vehicle', 'pet_feeder'],
-  drone: ['pet_feeder', 'phone'],
+  drone: ['pet_feeder', 'phone', 'exoskeleton'],
   camera: ['pet_feeder', 'vehicle'],
   robot: ['pet_feeder', 'vehicle'],
 };
 
 export function inferProductPhotoFamily(...parts: string[]): ProductPhotoFamily {
   const hay = parts.filter(Boolean).join('\n');
-  for (const [family, re] of Object.entries(FAMILY_PATTERNS) as [
-    Exclude<ProductPhotoFamily, 'other'>,
-    RegExp,
-  ][]) {
-    if (re.test(hay)) return family;
+  // Prefer more specific families first (exoskeleton / pet_feeder before robot).
+  const order: Exclude<ProductPhotoFamily, 'other'>[] = [
+    'pet_feeder',
+    'exoskeleton',
+    'vehicle',
+    'drone',
+    'camera',
+    'phone',
+    'audio',
+    'wearable',
+    'robot',
+  ];
+  for (const family of order) {
+    if (FAMILY_PATTERNS[family].test(hay)) return family;
   }
   return 'other';
 }
@@ -77,10 +90,7 @@ export function gateProductPhotoMatch(opts: {
   photoContext?: string;
 }): ProductPhotoGateResult {
   const articleFamily = inferProductPhotoFamily(opts.articleTitle, opts.articleText || '');
-  const photoFamily = inferProductPhotoFamily(
-    opts.photoUrl,
-    opts.photoContext || '',
-  );
+  const photoFamily = inferProductPhotoFamily(opts.photoUrl, opts.photoContext || '');
 
   if (articleFamily === 'other' || photoFamily === 'other') {
     return { ok: true, articleFamily, photoFamily };
