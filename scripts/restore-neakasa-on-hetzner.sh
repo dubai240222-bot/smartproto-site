@@ -7,7 +7,7 @@ APP_DIR="${APP_DIR:-/opt/apps/smartproto/app}"
 DB="${SMARTPROTO_DB_PATH:-/opt/apps/smartproto/data/smartproto.db}"
 MEDIA="${SMARTPROTO_MEDIA_DIR:-/opt/apps/smartproto/images}"
 SLUG="${1:-neakasa-riko-fresh-made-wet-meal-feeder}"
-HERO_URL="${2:-https://cdn.shopify.com/s/files/1/0600/4736/0185/files/neakasa_riko_main_2.webp}"
+HERO_URL="${2:-https://cdn.shopify.com/s/files/1/0600/4736/0185/files/neakasa_riko_main_2.webp"
 
 cd "$APP_DIR"
 
