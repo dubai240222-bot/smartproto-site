@@ -47,6 +47,16 @@ const FORCED_DEADLINE_MS = Number(process.env.SMARTPROTO_FORCED_DEADLINE_MS || 1
 /** Temporary Scout floor for forced live visual check only. Production stays 70. */
 const FORCED_SCOUT_THRESHOLD = process.env.SMARTPROTO_FORCED_SCOUT_THRESHOLD || '25';
 const POLL_MS = 15_000;
+/** SP-A-098F — translate at most 1 missing RU→EN/TR pair every N ms (default 45m). */
+const TRANSLATE_DRIP_INTERVAL_MS = Number(
+  process.env.SMARTPROTO_TRANSLATE_DRIP_INTERVAL_MS || 45 * 60 * 1000,
+);
+const TRANSLATE_DRIP_ENABLED =
+  (process.env.SMARTPROTO_TRANSLATE_ENABLED ?? 'true').toLowerCase() !== 'false';
+
+/** SP-A-074 — nightly retention (~01:00 server local time). Default ON. */
+const RETENTION_ENABLED = (process.env.SMARTPROTO_RETENTION_ENABLED ?? 'true').toLowerCase() !== 'false';
+const RETENTION_HOUR = Number(process.env.SMARTPROTO_RETENTION_HOUR ?? 1);
 
 mkdirSync(DATA_DIR, { recursive: true });
 
@@ -83,6 +93,15 @@ interface WorkerState {
   forcedPublished?: number;
   testAutoTicks?: number;
   testAutoSetAt?: string;
+  /** SP-A-074 — last successful retention cleanup (ISO). */
+  lastRetentionAt?: string;
+  lastRetentionStatus?: string;
+  /** SP-A-091 — last AUTO (non-Chief/Author) publication time */
+  lastAutoPublicationAt?: string;
+  freshnessStatus?: 'OK' | 'WARNING' | 'CRITICAL';
+  publicationsLast24h?: number;
+  /** SP-A-098F — last EN/TR backlog drip */
+  lastTranslateDripAt?: string;
 }
 
 function readState(): WorkerState {
@@ -152,7 +171,136 @@ function isDue(lastIso: string | undefined, intervalMs: number): boolean {
   return Date.now() - last >= intervalMs;
 }
 
+function retentionDueToday(lastRetentionAt?: string, now = new Date()): boolean {
+  if (now.getHours() !== RETENTION_HOUR) return false;
+  if (!lastRetentionAt) return true;
+  const last = new Date(lastRetentionAt);
+  if (!Number.isFinite(last.getTime())) return true;
+  return (
+    last.getFullYear() !== now.getFullYear() ||
+    last.getMonth() !== now.getMonth() ||
+    last.getDate() !== now.getDate()
+  );
+}
+
+/** SP-A-074 — once/day cleanup; independent of AUTO news ticks (no hourly spam). */
+function runRetentionCleanup(): Promise<{ ok: boolean }> {
+  return new Promise((resolve) => {
+    log(
+      `SP-A-074 retention cleanup (hour=${RETENTION_HOUR}, days=${process.env.SMARTPROTO_RETENTION_DAYS || 10}, min=${process.env.SMARTPROTO_MIN_ARTICLES || 100}, max=${process.env.SMARTPROTO_MAX_DELETE_PER_RUN || 25})…`,
+    );
+    const child = spawn('npx', ['tsx', 'scripts/run-retention-cleanup.ts', '--execute'], {
+      cwd: process.cwd(),
+      env: {
+        ...process.env,
+        ARTICLES_STORE: 'sqlite',
+        SMARTPROTO_DB_PATH: process.env.SMARTPROTO_DB_PATH || '/app/data/smartproto.db',
+        SMARTPROTO_MEDIA_DIR: process.env.SMARTPROTO_MEDIA_DIR || '/app/public/media',
+        SMARTPROTO_DATA_DIR: process.env.SMARTPROTO_DATA_DIR || DATA_DIR,
+      },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    child.stdout?.on('data', (buf: Buffer) => process.stdout.write(buf));
+    child.stderr?.on('data', (buf: Buffer) => process.stderr.write(buf));
+    child.on('exit', (code) => resolve({ ok: code === 0 }));
+    child.on('error', () => resolve({ ok: false }));
+  });
+}
+
+async function maybeRetentionCleanup(): Promise<void> {
+  if (!RETENTION_ENABLED) return;
+  const state = readState();
+  if (!retentionDueToday(state.lastRetentionAt)) return;
+  const { ok } = await runRetentionCleanup();
+  writeState({
+    lastRetentionAt: new Date().toISOString(),
+    lastRetentionStatus: ok ? 'ok' : 'error',
+  });
+  log(`SP-A-074 retention cleanup finished: ${ok ? 'ok' : 'error'}`);
+}
+
+/**
+ * SP-A-098F — long-lived worker drip fills EN/TR for older RU articles.
+ * Max 1 article per interval (never a factory burst).
+ */
+function runTranslateDrip(): Promise<{ ok: boolean }> {
+  return new Promise((resolve) => {
+    log('SP-A-098F translation drip (limit=1)…');
+    const child = spawn('npx', ['tsx', 'scripts/spa098-translate-recent.ts', '--limit=1'], {
+      cwd: process.cwd(),
+      env: {
+        ...process.env,
+        ARTICLES_STORE: 'sqlite',
+        SMARTPROTO_DB_PATH: process.env.SMARTPROTO_DB_PATH || '/app/data/smartproto.db',
+        SMARTPROTO_TRANSLATE_ENABLED: 'true',
+      },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    child.stdout?.on('data', (buf: Buffer) => process.stdout.write(buf));
+    child.stderr?.on('data', (buf: Buffer) => process.stderr.write(buf));
+    child.on('exit', (code) => resolve({ ok: code === 0 }));
+    child.on('error', () => resolve({ ok: false }));
+  });
+}
+
+async function maybeTranslateDrip(): Promise<void> {
+  if (!TRANSLATE_DRIP_ENABLED) return;
+  if (process.env.ARTICLES_STORE !== 'sqlite') return;
+  const state = readState();
+  if (!isDue(state.lastTranslateDripAt, TRANSLATE_DRIP_INTERVAL_MS)) return;
+  const { ok } = await runTranslateDrip();
+  writeState({ lastTranslateDripAt: new Date().toISOString() });
+  log(`SP-A-098F translation drip finished: ${ok ? 'ok' : 'error'}`);
+}
+
+async function logFreshnessHealth(publishedThisTick: boolean): Promise<void> {
+  try {
+    const journalPath = path.join(DATA_DIR, 'factory-journal.json');
+    let journalEntries: Array<{ processedAt?: string; status?: string; reason?: string }> = [];
+    if (existsSync(journalPath)) {
+      const raw = JSON.parse(readFileSync(journalPath, 'utf8'));
+      journalEntries = Array.isArray(raw.entries) ? raw.entries : [];
+    }
+    let articles: Array<{ publishedAt?: string; agentId?: string | null }> = [];
+    if (process.env.ARTICLES_STORE === 'sqlite') {
+      const { getAllArticlesFromDb } = await import('../src/lib/data-store/articles-repo');
+      articles = getAllArticlesFromDb().map((a: { publishedAt?: string; agentId?: string }) => ({
+        publishedAt: a.publishedAt,
+        agentId: a.agentId,
+      }));
+    }
+    const { buildFreshnessReport, formatFreshnessReport } = await import(
+      '../src/lib/newsroom/freshness'
+    );
+    const report = buildFreshnessReport({ articles, journalEntries });
+    for (const line of formatFreshnessReport(report).split('\n')) {
+      log(line);
+    }
+    writeState({
+      lastAutoPublicationAt: report.lastAutoPublicationAt || undefined,
+      freshnessStatus: report.freshnessStatus,
+      publicationsLast24h: report.publicationsLast24h,
+      ...(publishedThisTick && report.lastAutoPublicationAt
+        ? { lastAutoPublicationAt: report.lastAutoPublicationAt }
+        : {}),
+    });
+    if (report.freshnessStatus === 'CRITICAL') {
+      log(
+        'FRESHNESS CRITICAL — next ticks will try more Scout-passed candidates (gates unchanged).',
+      );
+    }
+  } catch (err) {
+    log(`Freshness health skipped: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
 async function loopOnce(): Promise<void> {
+  // Retention runs even when editorial mode is OFF so disk stays bounded
+  // without requiring AUTO ticks — still only once per night.
+  await maybeRetentionCleanup();
+  // Translation drip also runs in OFF so EN/TR catch up without a factory burst.
+  await maybeTranslateDrip();
+
   const mode = readMode();
 
   if (mode === 'off') {
@@ -257,21 +405,23 @@ async function loopOnce(): Promise<void> {
   // AUTO
   const state = readState();
   if (isDue(state.lastNewsAt, NEWS_INTERVAL_MS)) {
-    const { ok } = await runTick('news');
+    const { ok, published } = await runTick('news');
     writeState({
       lastRunAt: new Date().toISOString(),
       lastRunStatus: ok ? 'ok' : 'error',
       ...(ok ? { lastNewsAt: new Date().toISOString() } : {}),
     });
+    await logFreshnessHealth(published);
     return; // one cycle per poll tick keeps this simple and observable
   }
   if (isDue(state.lastArticleAt, ARTICLE_INTERVAL_MS)) {
-    const { ok } = await runTick('article');
+    const { ok, published } = await runTick('article');
     writeState({
       lastRunAt: new Date().toISOString(),
       lastRunStatus: ok ? 'ok' : 'error',
       ...(ok ? { lastArticleAt: new Date().toISOString() } : {}),
     });
+    await logFreshnessHealth(published);
   }
 }
 

@@ -158,7 +158,8 @@ export default async function HomePage({
   const requestedPage = Math.max(1, parseInt(params.page || '1', 10) || 1);
 
   const sortedArticles = sortArticlesByPublishedDate(getAllArticles());
-  // Strict chronological order: newest first across lead, rail, grid, quick, past.
+  // SP-A-081 — restore ForkLog-like LEAD/RAIL/GRID/QUICK/PAST from e88c7b1 (SPA-066).
+  // Strict chronology + inherent no-repeat: each slug appears in exactly one front/past slot.
   const leadStory = sortedArticles[0];
   const restOrdered = sortedArticles.slice(1);
 
@@ -166,6 +167,7 @@ export default async function HomePage({
   const gridStories = restOrdered.slice(5, 9);
   const quickNews = restOrdered.slice(9, 13);
 
+  // Past / «Вся лента» continues after the 14 front slots (never restarts at article #1).
   const pastPool = restOrdered.slice(FRONT_SLOT_COUNT - 1);
   const totalPast = pastPool.length;
   const totalPages = Math.max(1, Math.ceil(totalPast / PAST_PAGE_SIZE));

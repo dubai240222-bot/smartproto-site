@@ -17,13 +17,13 @@ import { existsSync, readFileSync, writeFileSync, unlinkSync } from 'node:fs';
 import dotenv from 'dotenv';
 import chalk from 'chalk';
 import { fetchRssFeed, type RssItem } from '../src/lib/collectors/rss';
-import { extractArticleImage, passesImageQualityGate } from '../src/lib/collectors/image-extractor';
+import { extractArticleImage, passesImageQualityGate, getThematicFallback } from '../src/lib/collectors/image-extractor';
 import {
   discoveryRankFor,
   enabledRssSources,
 } from '../src/lib/collectors/source-registry';
 import { buildScoutPool } from '../src/lib/ai/candidate-prerank';
-import { resolveArticlePhotos } from '../src/lib/collectors/photo-scout';
+import { resolveArticlePhotos, downloadImagesLocally } from '../src/lib/collectors/photo-scout';
 import {
   inferEditorialFocus,
   pickDiversityWinner,
@@ -32,7 +32,7 @@ import {
 } from '../src/lib/newsroom/diversity-guard';
 import { scoutArticle, SCOUT_SCORE_THRESHOLD } from '../src/lib/ai/scout';
 import { reviewArticle } from '../src/lib/ai/reviewer';
-import { writeDraft, type DraftFormat } from '../src/lib/ai/editor';
+import { writeDraft, expandShortDraft, type DraftFormat } from '../src/lib/ai/editor';
 import { hardRejectTopic, looksBuyableGadget, isAiOrInventionAlert } from '../src/lib/ai/hard-reject';
 import {
   collectAiRadarCandidates,
@@ -47,21 +47,61 @@ import {
   dossierPublishable,
 } from '../src/lib/ai/china-publish-gate';
 import {
+  FinalAutoGateError,
+  assertFinalAutoPublishAllowed,
+} from '../src/lib/ai/final-auto-commodity-gate';
+import {
+  loadQueuedReaderScoutForTick,
+  patchReaderScoutSubmission,
+  READER_SCOUT_AGENT_ID,
+  READER_SCOUT_SEATS_PER_TICK,
+  READER_SCOUT_SOURCE_NAME,
+} from '../src/lib/editorial/reader-scout';
+import {
+  loadQueuedStaffAuthorLinksForTick,
+  patchStaffAuthorLink,
+  STAFF_AUTHOR_LINK_AGENT_ID,
+  STAFF_AUTHOR_LINK_SOURCE_NAME,
+} from '../src/lib/editorial/doors';
+import {
   checkCycleCadence,
   getNewsIntervalMs,
   getNewsWarmupUntilIso,
   isNewsWarmupActive,
 } from '../src/lib/newsroom/cadence';
+import {
+  buildFreshnessReport,
+  formatFreshnessReport,
+  type FreshnessReport,
+} from '../src/lib/newsroom/freshness';
+import {
+  applyQuotaScoutFloor,
+  formatNewsQuotaPolicy,
+  resolveNewsQuotaPolicy,
+  type NewsQuotaPolicy,
+} from '../src/lib/newsroom/daily-quota';
+import { resolveVisualFallback, getCategoryStock } from '../src/lib/visual-fallback';
 
 /**
  * SP-A-056 — on the Hetzner worker (ARTICLES_STORE=sqlite) also persist the
  * freshly published article straight to SQLite so the site sees it without
  * any git/Vercel step. No-op (and no better-sqlite3 import) everywhere else.
+ *
+ * SP-A-098F — await EN/TR translation here. The tick runs as a short-lived
+ * child of hetzner-worker; fire-and-forget inside upsert was killed on exit.
  */
 async function maybeSyncToSqlite(article: Record<string, unknown>): Promise<void> {
   if (process.env.ARTICLES_STORE !== 'sqlite') return;
-  const { upsertArticle } = await import('../src/lib/data-store/articles-repo');
-  upsertArticle(article as import('../src/lib/data-store/articles-repo').StoredArticle);
+  const { upsertArticle, getArticleBySlugFromDb } = await import(
+    '../src/lib/data-store/articles-repo'
+  );
+  const slug = String(article.slug || '');
+  const existing = slug ? getArticleBySlugFromDb(slug) : undefined;
+  const isNew = !existing;
+  upsertArticle(article as import('../src/lib/data-store/articles-repo').StoredArticle, {
+    // Translation is awaited below so the tick process stays alive for OpenRouter.
+    skipPostPublishTranslation: true,
+  });
   // Existing live columns (no schema change) — best-effort match labels.
   if (article.imageMatchLevel || article.imageLabel) {
     try {
@@ -73,12 +113,127 @@ async function maybeSyncToSqlite(article: Record<string, unknown>): Promise<void
         .run(
           (article.imageMatchLevel as string) || null,
           (article.imageLabel as string) || null,
-          String(article.slug || ''),
+          slug,
         );
     } catch {
       /* columns may be absent outside Hetzner */
     }
   }
+
+  if (
+    isNew &&
+    process.env.SMARTPROTO_TRANSLATE_ENABLED !== 'false' &&
+    article.id &&
+    article.title &&
+    article.content
+  ) {
+    try {
+      const { runPostPublishTranslation } = await import('../src/lib/i18n/post-publish-translate');
+      const report = await runPostPublishTranslation({
+        id: String(article.id),
+        slug,
+        title: String(article.title),
+        summary: String(article.summary || ''),
+        content: String(article.content),
+        category: article.category ? String(article.category) : undefined,
+        author: article.author ? String(article.author) : undefined,
+        authorDesk: article.authorDesk ? String(article.authorDesk) : undefined,
+      });
+      console.log(
+        chalk.cyan(
+          `[spa098] awaited translate article=${report.articleId} ai=${report.totalAiCalls} ` +
+            report.results.map((r) => `${r.language}:${r.status}`).join(' '),
+        ),
+      );
+    } catch (err) {
+      console.log(
+        chalk.yellow(
+          `[spa098] awaited translate failed (RU kept): ${
+            err instanceof Error ? err.message : String(err)
+          }`,
+        ),
+      );
+    }
+  }
+}
+
+/**
+ * Soft hero when photo-scout returns nothing: keep a quality-gated source/og
+ * image (downloaded locally), else thematic editorial stock, else curated
+ * brand/category stock (SP-A-084). Prefer a soft banner over a blank card —
+ * never hotlink random marketplace junk.
+ */
+async function ensureSoftHeroImages(opts: {
+  slug: string;
+  title: string;
+  category?: string;
+  tags?: string[];
+  fallbackUrl?: string;
+  images: import('../src/lib/collectors/photo-scout').ScoutImage[];
+}): Promise<import('../src/lib/collectors/photo-scout').ScoutImage[]> {
+  if (opts.images.length) return opts.images;
+
+  const tryDownload = async (url: string, note: string) => {
+    try {
+      const downloaded = await downloadImagesLocally(opts.slug, [{ url, role: 'hero' }]);
+      if (downloaded.length) {
+        console.log(chalk.gray(`[photo-soft] ${note} → ${downloaded[0].url}`));
+        return downloaded;
+      }
+    } catch (err) {
+      console.log(
+        chalk.yellow(
+          `[photo-soft] ${note} download failed: ${
+            err instanceof Error ? err.message : String(err)
+          }`,
+        ),
+      );
+    }
+    return [] as import('../src/lib/collectors/photo-scout').ScoutImage[];
+  };
+
+  const fb = (opts.fallbackUrl || '').trim();
+  if (fb && /^https?:\/\//i.test(fb) && (await passesImageQualityGate(fb))) {
+    const got = await tryDownload(fb, 'source/og');
+    if (got.length) return got;
+  }
+
+  const thematic = getThematicFallback(opts.title, opts.category || '');
+  if (thematic) {
+    const got = await tryDownload(thematic, 'thematic');
+    if (got.length) return got;
+  }
+
+  // Curated brand/category stock (same pool as UI visual-fallback; download locally).
+  try {
+    const spec = resolveVisualFallback({
+      title: opts.title,
+      category: opts.category,
+      tags: opts.tags,
+      slug: opts.slug,
+    });
+    if (spec.imageUrl) {
+      const got = await tryDownload(spec.imageUrl, `stock:${spec.assetId || spec.kind}`);
+      if (got.length) return got;
+    }
+    const pool = getCategoryStock(spec.categoryKey);
+    for (const asset of pool.slice(0, 3)) {
+      if (asset.url === spec.imageUrl) continue;
+      const got = await tryDownload(asset.url, `stock-alt:${asset.id}`);
+      if (got.length) return got;
+    }
+  } catch (err) {
+    console.log(
+      chalk.yellow(
+        `[photo-soft] stock fallback error: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      ),
+    );
+  }
+
+  console.log(chalk.yellow(`[photo-soft] no hero for ${opts.slug} — publishing without image`));
+  return [];
 }
 
 export type CycleType = 'news' | 'article';
@@ -103,7 +258,7 @@ interface JournalEntry {
   scoutScore?: number;
   reason?: string;
   slug?: string;
-  channel?: 'china-qwen' | 'rss' | 'ai-radar';
+  channel?: 'china-qwen' | 'rss' | 'ai-radar' | 'reader-scout' | 'staff-author-link';
   /** SP-A-050 — which independent cycle published this */
   cycle?: CycleType;
 }
@@ -302,6 +457,45 @@ function wordCount(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
 
+/** SP-A-093 — one expand when 150–179 words; <150 or still <180 after retry → fail. */
+async function ensureDraftMinWords(opts: {
+  draft: Awaited<ReturnType<typeof writeDraft>>;
+  sourcePayload: object;
+  review: object;
+  minWords?: number;
+  expandFrom?: number;
+  label?: string;
+  metrics?: { sentToGemini?: number; draftsCreated?: number };
+}): Promise<{ draft: Awaited<ReturnType<typeof writeDraft>>; ok: boolean; retried: boolean; wordsFirst: number; wordsAfter: number }> {
+  const minWords = opts.minWords ?? 180;
+  const expandFrom = opts.expandFrom ?? 150;
+  const label = opts.label || 'Draft';
+  let draft = opts.draft;
+  const wordsFirst = wordCount(draft.text);
+  if (wordsFirst >= minWords) {
+    return { draft, ok: true, retried: false, wordsFirst, wordsAfter: wordsFirst };
+  }
+  if (wordsFirst < expandFrom) {
+    console.log(chalk.yellow(`${label} too short (${wordsFirst} < ${minWords}) — below expand band, no retry`));
+    return { draft, ok: false, retried: false, wordsFirst, wordsAfter: wordsFirst };
+  }
+  console.log(
+    chalk.cyan(
+      `SP-A-093 expand retry: ${label} ${wordsFirst} words (band ${expandFrom}–${minWords - 1}) — one bounded expand`,
+    ),
+  );
+  if (opts.metrics) opts.metrics.sentToGemini = (opts.metrics.sentToGemini || 0) + 1;
+  draft = await expandShortDraft(opts.sourcePayload, opts.review, draft);
+  if (opts.metrics) opts.metrics.draftsCreated = (opts.metrics.draftsCreated || 0) + 1;
+  const wordsAfter = wordCount(draft.text);
+  console.log(chalk.gray(`SP-A-093 expand result: ${wordsFirst} → ${wordsAfter} words`));
+  if (wordsAfter < minWords) {
+    console.log(chalk.yellow(`${label} still too short after expand (${wordsAfter} < ${minWords})`));
+    return { draft, ok: false, retried: true, wordsFirst, wordsAfter };
+  }
+  return { draft, ok: true, retried: true, wordsFirst, wordsAfter };
+}
+
 async function loadState(journalPath: string, articlesPath: string) {
   const urls = new Set<string>();
   const ids = new Set<string>();
@@ -363,7 +557,7 @@ async function loadState(journalPath: string, articlesPath: string) {
 async function markRejected(
   journal: JournalData,
   journalPath: string,
-  item: RssItem,
+  item: RssItem & { submissionId?: string; channelHint?: string },
   reason: string,
   scoutScore?: number,
   opts?: { permanent?: boolean },
@@ -385,8 +579,41 @@ async function markRejected(
     status: 'rejected',
     scoutScore,
     reason,
-    channel: 'rss',
+    channel:
+      item.channelHint === 'staff-author-link'
+        ? 'staff-author-link'
+        : item.channelHint === 'reader-scout'
+          ? 'reader-scout'
+          : 'rss',
   });
+  // SP-A-090 / SP-A-094 — close queue items (no silent infinite retries).
+  if (
+    item.channelHint === 'staff-author-link' ||
+    item.id.startsWith('staff-author-link:')
+  ) {
+    const alinkId =
+      item.submissionId ||
+      (item.id.startsWith('staff-author-link:')
+        ? item.id.slice('staff-author-link:'.length)
+        : '');
+    if (alinkId) {
+      void patchStaffAuthorLink(alinkId, {
+        status: permanent ? 'rejected' : 'queued',
+        rejectReason: reason.slice(0, 400),
+      });
+    }
+  } else {
+    const scoutSubId =
+      item.submissionId ||
+      (item.id.startsWith('reader-scout:') ? item.id.slice('reader-scout:'.length) : '');
+    if (scoutSubId && (item.channelHint === 'reader-scout' || item.id.startsWith('reader-scout:'))) {
+      // SP-A-096 — soft retries stay in SAFE editorial queue, never re-enter unmoderated.
+      void patchReaderScoutSubmission(scoutSubId, {
+        status: permanent ? 'rejected' : 'queued_editorial',
+        rejectReason: reason.slice(0, 400),
+      });
+    }
+  }
   await writeFile(journalPath, JSON.stringify(journal, null, 2) + '\n', 'utf8');
 }
 
@@ -404,9 +631,22 @@ async function tryChinaPublishOnce(opts: {
   articles: Article[];
   metrics: TickMetrics;
   lastPublish?: { title?: string; slug?: string; wowScore?: number };
+  /** Cap Qwen attempts this tick (quota: 0 skip / 1 ease / 3 default). */
+  chinaMaxAttempts?: number;
+  allowPublishWithoutImage?: boolean;
 }): Promise<boolean> {
   process.env.CHINA_DEPARTMENT_ENABLED = 'true';
   process.env.CHINA_ALLOW_RECOMMEND = 'true';
+
+  const chinaCap = Math.max(
+    0,
+    Math.min(opts.chinaMaxAttempts ?? CHINA_MAX_QWEN, CHINA_MAX_QWEN),
+  );
+  if (chinaCap <= 0) {
+    console.log(chalk.gray('China desk skipped this tick (quota policy).'));
+    opts.metrics.skipReason = 'china skipped (quota)';
+    return false;
+  }
 
   console.log(chalk.bold('— Channel A: China → Qwen —'));
   opts.metrics.collectorStarted = true;
@@ -435,11 +675,11 @@ async function tryChinaPublishOnce(opts: {
     .filter((x) => looksChinaConsumerGadget(x.candidate.title, x.candidate.summary))
     .filter((x) => !opts.urls.has(x.candidate.sourceUrl))
     .sort((a, b) => b.candidate.rawSignals.length - a.candidate.rawSignals.length)
-    .slice(0, CHINA_MAX_QWEN)
+    .slice(0, chinaCap)
     .map((x) => x.candidate);
 
   opts.metrics.candidatesCollected += consider.length;
-  console.log(`China CONSIDER gadget candidates: ${consider.length} (max Qwen ${CHINA_MAX_QWEN})`);
+  console.log(`China CONSIDER gadget candidates: ${consider.length} (max Qwen ${chinaCap})`);
   if (!consider.length) {
     console.log(chalk.gray('No China/Qwen candidate — fall through to RSS.'));
     opts.metrics.skipReason = 'no china candidate';
@@ -519,11 +759,18 @@ async function tryChinaPublishOnce(opts: {
 
     const framed = {
       ...articleData,
-      format: opts.format,
+      // SP-A-088: prefer full editorial review length for China AUTO (one voice with Chief)
+      format: 'article' as const,
+      mode:
+        /robot|ai|ии|llm|gpt|электромобил|автопилот|исследован/i.test(
+          `${dossier.productName || ''} ${articleData.text || ''}`,
+        )
+          ? ('ai_radar' as const)
+          : ('gadget' as const),
       title: dossier.productName || articleData.title,
+      // Parser = miner: pass facts only. Do NOT pre-frame as «новый гаджет» press card.
       text: [
-        `Новый гаджет / устройство (источник: ${c.sourceName}).`,
-        `Анонс / новая модель. По данным источника можно купить или оформить предзаказ, если указано в тексте.`,
+        'SOURCE PACK (parser/dossier facts — Editor пишет самостоятельный обзор, не перевод):',
         articleData.text,
       ].join('\n\n'),
     };
@@ -569,22 +816,31 @@ async function tryChinaPublishOnce(opts: {
       continue;
     }
 
-    const wc = wordCount(draft.text);
-    const minWords = opts.format === 'news' ? 40 : 120;
-    if (wc < minWords) {
-      console.log(chalk.yellow(`China draft too short for ${opts.format} (${wc} < ${minWords})`));
+    const wcGate = await ensureDraftMinWords({
+      draft,
+      sourcePayload: framed,
+      review: reviewData,
+      label: 'China draft',
+      metrics: opts.metrics,
+    });
+    draft = wcGate.draft;
+    if (!wcGate.ok) {
       continue;
     }
 
     let imageUrl = (dossier.imageUrl || pageImage || c.imageUrl || '').trim();
     if (!imageUrl || /unsplash\.com/i.test(imageUrl)) {
-      console.log(chalk.yellow('No authentic imageUrl — skip China candidate'));
-      continue;
+      // Prefer soft thematic/stock later over burning the candidate — do not hard-skip.
+      console.log(
+        chalk.yellow(
+          'No authentic imageUrl yet — will try photo-scout + soft thematic/stock hero',
+        ),
+      );
+      imageUrl = '';
     }
-    // SP-A-060: reject reposted-screenshot-shaped images (Weibo/forum banners),
-    // publish without an image rather than with a bad one.
-    if (!(await passesImageQualityGate(imageUrl))) {
-      console.log(chalk.yellow('Image failed quality gate (screenshot/banner shape) — publishing without image'));
+    // SP-A-060: reject reposted-screenshot-shaped images (Weibo/forum banners).
+    if (imageUrl && !(await passesImageQualityGate(imageUrl))) {
+      console.log(chalk.yellow('Image failed quality gate (screenshot/banner shape) — soft hero path'));
       imageUrl = '';
     }
 
@@ -663,11 +919,31 @@ async function tryChinaPublishOnce(opts: {
       } catch (err) {
         console.log(
           chalk.yellow(
-            `[photo-v2] failed: ${err instanceof Error ? err.message : String(err)} — publishing NO IMAGE`,
+            `[photo-v2] failed: ${err instanceof Error ? err.message : String(err)} — soft hero fallback`,
           ),
         );
       }
-      if (!images.length) imageUrl = ''; // never fall back to an unconfirmed hotlink
+      images = await ensureSoftHeroImages({
+        slug,
+        title: draft.title,
+        category: CHINA_CATEGORY,
+        tags: publicTags,
+        fallbackUrl: imageUrl,
+        images,
+      });
+      if (!images.length) {
+        if (opts.cycle === 'news' && !opts.allowPublishWithoutImage) {
+          console.log(
+            chalk.yellow(
+              'China: no hero after soft fallback — skip candidate (prefer image over empty window)',
+            ),
+          );
+          continue;
+        }
+        imageUrl = ''; // never publish an unconfirmed remote hotlink
+      } else {
+        imageUrl = images[0].url;
+      }
 
       const article: Article = {
         id: slug,
@@ -679,10 +955,41 @@ async function tryChinaPublishOnce(opts: {
         content: draft.text,
         sourceUrl: c.sourceUrl,
         publishedAt,
-        readTime: `${Math.max(1, Math.ceil(wc / 150))} мин`,
+        readTime: `${Math.max(1, Math.ceil(wordCount(draft.text) / 150))} мин`,
         ...(images.length ? { imageUrl: images[0].url, images } : {}),
         ...stampAuthorForPipeline('china-qwen', { sourceUrl: c.sourceUrl, slug }),
       };
+
+      // SP-A-082 — final AUTO gate before articles.json + SQLite (covers china soft gadget bar).
+      try {
+        assertFinalAutoPublishAllowed({
+          title: article.title,
+          summary: article.summary,
+          content: article.content,
+          tags: article.tags,
+          category: article.category,
+          agentId: article.agentId || 'china-qwen',
+        });
+      } catch (err) {
+        if (err instanceof FinalAutoGateError) {
+          console.log(chalk.yellow(`China blocked by final gate: ${err.message}`));
+          fresh.journal.entries.push({
+            id: slug,
+            url: c.sourceUrl,
+            title: draft.title,
+            processedAt: publishedAt,
+            status: 'rejected',
+            reason: err.message,
+            slug,
+            channel: 'china-qwen',
+            cycle: opts.cycle,
+          });
+          await writeFile(opts.journalPath, JSON.stringify(fresh.journal, null, 2) + '\n', 'utf8');
+          opts.urls.add(c.sourceUrl);
+          continue;
+        }
+        throw err;
+      }
 
       const deduped = filterRemovedArticles(
         fresh.articles.filter(
@@ -772,19 +1079,24 @@ async function publishRssOnce(opts: {
   articles: Article[];
   metrics: TickMetrics;
   lastPublish?: { title?: string; slug?: string; wowScore?: number };
+  quota?: NewsQuotaPolicy;
 }): Promise<boolean> {
   console.log(chalk.bold(`— Channel B: RSS / editorial office (${opts.cycle}) —`));
   opts.metrics.collectorStarted = true;
   // Production floors stay 70/75 when env unset. Explicit SCOUT_SCORE_THRESHOLD
   // (test-auto=40, forced probe <40) must win — Math.max(...) was ignoring it.
   const explicitScout = Boolean(process.env.SCOUT_SCORE_THRESHOLD?.trim());
-  const scoutFloor = explicitScout
+  let scoutFloor = explicitScout
     ? SCOUT_SCORE_THRESHOLD
     : opts.cycle === 'article'
       ? 75
       : 70;
   // SP-A-063 forced/live probe: dig past deal/opinion tops that score 0 forever.
   const probeMode = explicitScout && SCOUT_SCORE_THRESHOLD < 70;
+  // Daily news quota: slight floor relax when behind (not probe / not article).
+  if (opts.cycle === 'news' && opts.quota?.behind && !probeMode) {
+    scoutFloor = applyQuotaScoutFloor(scoutFloor, opts.quota);
+  }
 
   const candidates: RssItem[] = [];
   const perSource: Record<string, number> = {};
@@ -828,7 +1140,11 @@ async function publishRssOnce(opts: {
 
   const sourceRank = (name: string) => discoveryRankFor(name);
   const looksAiCapability = (title: string, text: string) =>
-    /\b(ai|a\.i\.|artificial intelligence|chatgpt|gemini|claude|llm|gpt|agentic|autonom(?:y|ous)|superintelligence|agi|copilot|reasoning model|foundation model)\b|искусственн\w*\s+интеллект|\bии\b|нейросет/i.test(
+    /\b(ai|a\.i\.|artificial intelligence|chatgpt|gemini|claude|llm|gpt|agentic|superintelligence|agi|copilot|reasoning model|foundation model)\b|искусственн\w*\s+интеллект|\bии\b|нейросет/i.test(
+      `${title}\n${text}`,
+    ) && !/\b(humanoid|robot\s*hand|robotic\s*hand|industrial\s*robot|robotaxi|vtol|wingman)\b/i.test(`${title}\n${text}`);
+  const looksRobotics = (title: string, text: string) =>
+    /\b(humanoid|robot\s*hand|robotic|industrial\s*robot|robotaxi|bipedal|manipulator|bioflexbot|\brobot\b)\b|гуманоид|робот/i.test(
       `${title}\n${text}`,
     );
   const looksExplainer = (title: string) =>
@@ -853,7 +1169,11 @@ async function publishRssOnce(opts: {
       if (ae !== be) return ae - be;
       return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
     }
-    // SP-A-054: boost grounded AI capability / useful AI tool stories.
+    // Demote robotics flood — site is not a robot blog.
+    const aRob = looksRobotics(a.title, a.text || '') ? 1 : 0;
+    const bRob = looksRobotics(b.title, b.text || '') ? 1 : 0;
+    if (aRob !== bRob) return aRob - bRob;
+    // Mild boost for software/model AI (not robots). SP-A-054: grounded AI capability / useful AI tools.
     const aAi = looksAiCapability(a.title, a.text || '') ? 0 : 1;
     const bAi = looksAiCapability(b.title, b.text || '') ? 0 : 1;
     if (aAi !== bAi) return aAi - bAi;
@@ -870,18 +1190,23 @@ async function publishRssOnce(opts: {
 
   opts.metrics.candidatesCollected += candidates.length;
   console.log(`New gadget candidates after filters: ${candidates.length}`);
-  console.log(
-    `Scout threshold: ${scoutFloor} (cycle=${opts.cycle}${probeMode ? ', probe dig-deep' : ''})`,
-  );
 
+  // SP-A-096 — empty RSS must not skip Staff Author / SAFE Reader Scout seats.
   if (candidates.length === 0) {
-    console.log('No RSS candidate — tick idle exit 0.');
-    opts.metrics.skipReason = 'no rss candidate';
-    return false;
+    console.log(
+      chalk.gray(
+        'No RSS candidate — continuing for Staff Author / Reader Scout seats if any.',
+      ),
+    );
   }
 
   if (opts.dryRun) {
     const item = candidates[0];
+    if (!item) {
+      console.log(chalk.cyan('Dry-run: no RSS candidate'));
+      opts.metrics.reason = 'dry-run empty';
+      return false;
+    }
     console.log(chalk.cyan(`Dry-run pick: [${item.sourceName}] ${item.title}`));
     opts.metrics.reason = 'dry-run rss pick';
     return true;
@@ -889,7 +1214,59 @@ async function publishRssOnce(opts: {
 
   // SP-A-065B: cheap pre-rank + topic dedupe → Scout TOP 12–16 (not only first 4).
   // Probe/forced already digs deep; production now uses the same wider Scout window.
-  const scoutLimit = probeMode ? 16 : 14;
+  // SP-A-091 — freshness CRITICAL slightly widens Scout window (still bounded; no gate weaken).
+  const freshness: FreshnessReport = buildFreshnessReport({
+    articles: opts.articles.map((a) => ({ publishedAt: a.publishedAt, agentId: a.agentId })),
+    journalEntries: opts.journal.entries,
+  });
+  console.log(chalk.bold(formatFreshnessReport(freshness)));
+  const quota =
+    opts.quota ||
+    (opts.cycle === 'news'
+      ? resolveNewsQuotaPolicy({
+          articles: opts.articles.map((a) => ({
+            publishedAt: a.publishedAt,
+            agentId: a.agentId,
+            tags: a.tags,
+          })),
+          journalEntries: opts.journal.entries,
+          minutesSinceLastAuto: freshness.minutesSinceLastAutoPublication,
+          freshnessStatus: freshness.freshnessStatus,
+        })
+      : undefined);
+  if (quota) {
+    console.log(chalk.bold(formatNewsQuotaPolicy(quota)));
+  }
+  if (freshness.freshnessStatus === 'WARNING') {
+    console.log(
+      chalk.yellow(
+        'FRESHNESS WARNING — expanding bounded candidate pipeline (quality floors unchanged).',
+      ),
+    );
+  } else if (freshness.freshnessStatus === 'CRITICAL') {
+    console.log(
+      chalk.red(
+        'FRESHNESS CRITICAL — editorial starvation; trying more Scout-passed candidates (not junk).',
+      ),
+    );
+  }
+  const pipelineBudget = freshness.pipelineCandidateBudget;
+  // Cost-aware: when behind quota use fewer Scout calls (better prefilter + lower floor),
+  // not a wider empty window. Probe / CRITICAL still may widen slightly.
+  const scoutLimit = probeMode
+    ? 16
+    : opts.cycle === 'news' && quota?.behind
+      ? quota.scoutLimit
+      : freshness.freshnessStatus === 'CRITICAL'
+        ? 16
+        : 14;
+  console.log(
+    chalk.gray(
+      `Scout threshold: ${scoutFloor} (cycle=${opts.cycle}${probeMode ? ', probe dig-deep' : ''}${
+        quota?.behind ? `, quota-relax −${quota.scoutFloorRelax}` : ''
+      })`,
+    ),
+  );
   const scoutPool = buildScoutPool(candidates, { limit: scoutLimit, maxPerSource: 3 });
   console.log(
     chalk.gray(
@@ -904,7 +1281,9 @@ async function publishRssOnce(opts: {
   type PoolItem = RssItem & {
     scoutMode?: EditorialMode;
     primaryStatus?: string;
-    channelHint?: 'rss' | 'ai-radar';
+    channelHint?: 'rss' | 'ai-radar' | 'reader-scout' | 'staff-author-link';
+    submissionId?: string;
+    staffAuthorName?: string;
   };
   let mergedPool: PoolItem[] = scoutPool.pool.map((p) => ({
     ...p,
@@ -912,6 +1291,86 @@ async function publishRssOnce(opts: {
     channelHint: 'rss' as const,
   }));
   let aiRadarBest: string = '(none)';
+
+  // SP-A-094 — Staff Author links seated above Reader Scout / AUTO (below Chief).
+  let staffAuthorItems: PoolItem[] = [];
+  try {
+    const queued = await loadQueuedStaffAuthorLinksForTick(4);
+    staffAuthorItems = queued
+      .filter((q) => q.url && !opts.urls.has(q.url))
+      .map((q) => ({
+        id: q.id,
+        title: q.title,
+        url: q.url,
+        text: q.text,
+        publishedAt: q.publishedAt,
+        sourceName: q.sourceName,
+        scoutMode: 'gadget' as EditorialMode,
+        channelHint: 'staff-author-link' as const,
+        submissionId: q.submissionId,
+        staffAuthorName: q.authorName,
+      }));
+    if (staffAuthorItems.length) {
+      console.log(
+        chalk.cyan(
+          `— Channel A: Staff Author links (${staffAuthorItems.length}) — priority > Reader Scout / AUTO —`,
+        ),
+      );
+      for (const r of staffAuthorItems) {
+        console.log(chalk.gray(`  [Staff Author] ${r.title.slice(0, 80)}`));
+        void patchStaffAuthorLink(r.submissionId!, {
+          status: 'processing',
+          attempts: 1,
+        });
+      }
+    }
+  } catch (err) {
+    console.log(
+      chalk.yellow(
+        `Staff Author queue skipped: ${err instanceof Error ? err.message : String(err)}`,
+      ),
+    );
+  }
+
+  // SP-A-090/096 — SAFE Reader Scout only; bounded seats (must not starve AUTO / AI budget).
+  let readerItems: PoolItem[] = [];
+  try {
+    const queued = await loadQueuedReaderScoutForTick(READER_SCOUT_SEATS_PER_TICK);
+    readerItems = queued
+      .filter((q) => q.url && !opts.urls.has(q.url))
+      .map((q) => ({
+        id: q.id,
+        title: q.title,
+        url: q.url,
+        text: q.text,
+        publishedAt: q.publishedAt,
+        sourceName: q.sourceName,
+        scoutMode: 'gadget' as EditorialMode,
+        channelHint: 'reader-scout' as const,
+        submissionId: q.submissionId,
+      }));
+    if (readerItems.length) {
+      console.log(
+        chalk.cyan(
+          `— Channel R: Reader Scout SAFE queue (${readerItems.length}/${READER_SCOUT_SEATS_PER_TICK}) — priority > AUTO parsers —`,
+        ),
+      );
+      for (const r of readerItems) {
+        console.log(chalk.gray(`  [Reader Scout] ${r.title.slice(0, 80)}`));
+        void patchReaderScoutSubmission(r.submissionId!, {
+          status: 'processing',
+          attempts: 1,
+        });
+      }
+    }
+  } catch (err) {
+    console.log(
+      chalk.yellow(
+        `Reader Scout queue skipped: ${err instanceof Error ? err.message : String(err)}`,
+      ),
+    );
+  }
+
   const aiRadarEnabled = process.env.SMARTPROTO_AI_RADAR_ENABLED !== 'false';
   if (aiRadarEnabled) {
     try {
@@ -955,12 +1414,19 @@ async function publishRssOnce(opts: {
           primaryStatus: n.primaryStatus,
           channelHint: 'ai-radar' as const,
         }));
-      // Separate channel seats at front of shared Scout queue (not a second publish path).
-      mergedPool = [...aiItems, ...mergedPool].slice(0, scoutLimit + Math.min(aiItems.length, 3));
-      opts.metrics.candidatesCollected += aiCands.length;
+      // Staff Author > Reader Scout > AI radar > RSS (still max 1 publish; full gates apply).
+      mergedPool = [...staffAuthorItems, ...readerItems, ...aiItems, ...mergedPool].slice(
+        0,
+        scoutLimit +
+          Math.min(aiItems.length, 3) +
+          readerItems.length +
+          staffAuthorItems.length,
+      );
+      opts.metrics.candidatesCollected +=
+        aiCands.length + readerItems.length + staffAuthorItems.length;
       console.log(
         chalk.gray(
-          `Shared Scout pool after AI radar merge: ${mergedPool.length} (ai seats=${aiItems.length})`,
+          `Shared Scout pool after AI radar merge: ${mergedPool.length} (staff=${staffAuthorItems.length} reader=${readerItems.length} ai seats=${aiItems.length})`,
         ),
       );
     } catch (err) {
@@ -969,9 +1435,17 @@ async function publishRssOnce(opts: {
           `AI_RADAR collect skipped: ${err instanceof Error ? err.message : String(err)}`,
         ),
       );
+      if (staffAuthorItems.length || readerItems.length) {
+        mergedPool = [...staffAuthorItems, ...readerItems, ...mergedPool];
+        opts.metrics.candidatesCollected += readerItems.length + staffAuthorItems.length;
+      }
     }
   } else {
     console.log(chalk.gray('AI_RADAR disabled (SMARTPROTO_AI_RADAR_ENABLED=false)'));
+    if (staffAuthorItems.length || readerItems.length) {
+      mergedPool = [...staffAuthorItems, ...readerItems, ...mergedPool];
+      opts.metrics.candidatesCollected += readerItems.length + staffAuthorItems.length;
+    }
   }
 
   console.log(chalk.bold('TICK_TOP5:'));
@@ -984,11 +1458,11 @@ async function publishRssOnce(opts: {
   }
 
   const recentArts = (await loadState(opts.journalPath, opts.articlesPath)).articles.slice(0, 10);
-  const roboticsStreak = roboticsResearchStreak(recentArts, 2);
+  const roboticsStreak = roboticsResearchStreak(recentArts, 1);
   if (roboticsStreak) {
     console.log(
       chalk.yellow(
-        'SP-A-065F diversity: last 2 publishes are robotics/research — prefer other focus unless robotics leads by ≥10',
+        'SP-A-065F diversity: last publish is robotics/research — prefer other focus unless robotics leads by ≥6',
       ),
     );
   }
@@ -1002,6 +1476,12 @@ async function publishRssOnce(opts: {
         diversityNote?: string;
       }
     | null = null;
+  /** SP-A-091 — Scout-passed queue for bounded Reviewer→Editor attempts (not first-fail stop). */
+  const pipelinePassers: {
+    item: PoolItem;
+    scout: Awaited<ReturnType<typeof scoutArticle>>;
+    diversityNote?: string;
+  }[] = [];
 
   const maxAttempts = mergedPool.length;
   let lastSkip = 'no rss candidate';
@@ -1053,10 +1533,15 @@ async function publishRssOnce(opts: {
         continue;
       }
 
-      // Non-streak: hand off to unified publish path below.
-      selectedScouted = { item, scout };
-      break;
-
+      // SP-A-091 — keep collecting Scout PASS until pipeline budget (3–5), then Editor path.
+      pipelinePassers.push({ item, scout });
+      console.log(
+        chalk.gray(
+          `Scout PASS → pipeline queue ${pipelinePassers.length}/${pipelineBudget} (freshness=${freshness.freshnessStatus})`,
+        ),
+      );
+      if (pipelinePassers.length >= pipelineBudget) break;
+      continue;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error(chalk.red(`RSS candidate error: ${msg}`));
@@ -1084,7 +1569,7 @@ async function publishRssOnce(opts: {
   }
 
   // SP-A-065F: diversity only selects the winner; publish uses one shared path.
-  if (!selectedScouted && roboticsStreak && diversityPassers.length) {
+  if (!pipelinePassers.length && roboticsStreak && diversityPassers.length) {
     const decision = pickDiversityWinner({
       passers: diversityPassers.map((p) => ({ item: p.item, score: p.score, focus: p.focus })),
       recent: recentArts,
@@ -1095,11 +1580,11 @@ async function publishRssOnce(opts: {
       ? diversityPassers.find((p) => p.item.url === decision.winner!.item.url)
       : undefined;
     if (full) {
-      selectedScouted = {
+      pipelinePassers.push({
         item: full.item,
         scout: full.scout,
         diversityNote: decision.reason,
-      };
+      });
     }
   } else if (!roboticsStreak) {
     diversityDecisionLog = 'n/a (no robotics streak)';
@@ -1107,11 +1592,25 @@ async function publishRssOnce(opts: {
     diversityDecisionLog = 'robotics streak but no Scout passers';
   }
 
-  if (selectedScouted) {
+  console.log(
+    chalk.gray(
+      `SP-A-091 pipeline attempts queued: ${pipelinePassers.length} (budget=${pipelineBudget})`,
+    ),
+  );
+
+  for (let pIdx = 0; pIdx < pipelinePassers.length; pIdx++) {
+    selectedScouted = pipelinePassers[pIdx];
     const item = selectedScouted.item;
     const scout = selectedScouted.scout;
     const itemMode: EditorialMode = item.scoutMode === 'ai_radar' ? 'ai_radar' : 'gadget';
-    const itemChannel = item.channelHint === 'ai-radar' ? 'ai-radar' : 'rss';
+    const itemChannel =
+      item.channelHint === 'staff-author-link'
+        ? 'staff-author-link'
+        : item.channelHint === 'reader-scout'
+          ? 'reader-scout'
+          : item.channelHint === 'ai-radar'
+            ? 'ai-radar'
+            : 'rss';
     const chosenFocus = inferEditorialFocus({
       title: item.title,
       text: item.text || item.title,
@@ -1120,7 +1619,7 @@ async function publishRssOnce(opts: {
     });
     console.log(
       chalk.cyan(
-        `CHOSEN: focus=${chosenFocus} channel=${itemChannel} mode=${itemMode} score=${scout.score}`,
+        `CHOSEN (${pIdx + 1}/${pipelinePassers.length}): focus=${chosenFocus} channel=${itemChannel} mode=${itemMode} score=${scout.score}`,
       ),
     );
     try {
@@ -1128,15 +1627,19 @@ async function publishRssOnce(opts: {
       if (opts.cycle === 'article' && scout.score < 75) {
         console.log(chalk.yellow(`Article cycle: not worthy enough (wow ${scout.score} < 75)`));
         lastSkip = 'not worthy for article cycle';
-        return false;
+        continue;
       }
 
       const sourcePayload = {
         title: item.title,
-        text: item.text || item.title,
+        text: [
+          'SOURCE PACK (RSS/parser extract — Editor пишет самостоятельный обзор, не перевод):',
+          item.text || item.title,
+        ].join('\n\n'),
         url: item.url,
         sourceName: item.sourceName,
-        format: opts.format,
+        // SP-A-088: one editorial depth bar for AUTO (same DNA as Chief) — not a 40-word news cut
+        format: 'article' as const,
         mode: itemMode,
       };
 
@@ -1178,13 +1681,13 @@ async function publishRssOnce(opts: {
           );
           opts.urls.add(item.url);
           lastSkip = 'reviewer reject';
-          return false;
+          continue;
         }
       }
 
       console.log(chalk.gray(`Editor (${opts.format})...`));
       opts.metrics.sentToGemini += 1;
-      const draft = await writeDraft(sourcePayload, review);
+      let draft = await writeDraft(sourcePayload, review);
       opts.metrics.draftsCreated += 1;
       if (
         draft.title.trim().toUpperCase() === 'REJECT' ||
@@ -1195,15 +1698,20 @@ async function publishRssOnce(opts: {
         await markRejected(opts.journal, opts.journalPath, item, 'editor hard-reject', scout.score);
         opts.urls.add(item.url);
         lastSkip = 'editor hard-reject';
-        return false;
+        continue;
       }
 
-      const wc = wordCount(draft.text);
-      const minWords = opts.format === 'news' ? 40 : 120;
-      if (wc < minWords) {
-        console.log(chalk.yellow(`Draft too short for ${opts.format} (${wc} < ${minWords})`));
+      const wcGate = await ensureDraftMinWords({
+        draft,
+        sourcePayload,
+        review,
+        label: 'Draft',
+        metrics: opts.metrics,
+      });
+      draft = wcGate.draft;
+      if (!wcGate.ok) {
         lastSkip = 'draft too short';
-        return false;
+        continue;
       }
 
       let imageUrl = item.imageUrl;
@@ -1224,7 +1732,7 @@ async function publishRssOnce(opts: {
         await markRejected(opts.journal, opts.journalPath, item, `slug blocked: ${slug}`, scout.score);
         opts.urls.add(item.url);
         lastSkip = `slug blocked: ${slug}`;
-        return false;
+        continue;
       }
       const draftProductKey = normalizeProductIdentity(draft.title);
       const sourceProductKey = normalizeProductIdentity(item.title);
@@ -1246,7 +1754,7 @@ async function publishRssOnce(opts: {
         );
         opts.urls.add(item.url);
         lastSkip = 'product-identity duplicate';
-        return false;
+        continue;
       }
 
       if (!acquirePublishLock()) {
@@ -1273,7 +1781,7 @@ async function publishRssOnce(opts: {
           );
           opts.urls.add(item.url);
           lastSkip = 'cross-cycle product-identity';
-          return false;
+          continue;
         }
 
         const publishedAt = new Date().toISOString();
@@ -1306,9 +1814,32 @@ async function publishRssOnce(opts: {
         } catch (err) {
           console.log(
             chalk.yellow(
-              `[photo-v2] failed: ${err instanceof Error ? err.message : String(err)} — publishing NO IMAGE`,
+              `[photo-v2] failed: ${err instanceof Error ? err.message : String(err)} — soft hero fallback`,
             ),
           );
+        }
+
+        images = await ensureSoftHeroImages({
+          slug,
+          title: draft.title,
+          category: 'Гаджеты',
+          tags: draft.tags,
+          fallbackUrl: imageUrl,
+          images,
+        });
+        if (!images.length) {
+          if (opts.cycle === 'news' && !(opts.quota?.allowPublishWithoutImage)) {
+            console.log(
+              chalk.yellow(
+                'RSS: no hero after soft fallback — skip candidate (prefer image over empty window)',
+              ),
+            );
+            lastSkip = 'no hero after soft fallback';
+            continue;
+          }
+          imageUrl = '';
+        } else {
+          imageUrl = images[0].url;
         }
 
         const photoMeta = (opts as any)._lastPhotoMeta as
@@ -1335,8 +1866,60 @@ async function publishRssOnce(opts: {
                 imageLabel: photoMeta.imageLabel,
               }
             : {}),
-          ...stampAuthorForPipeline('newsroom-scout', { sourceUrl: item.url, slug }),
+          ...(() => {
+            const isStaffLink =
+              item.sourceName === STAFF_AUTHOR_LINK_SOURCE_NAME ||
+              item.channelHint === 'staff-author-link' ||
+              item.id.startsWith('staff-author-link:');
+            const isReader =
+              item.sourceName === READER_SCOUT_SOURCE_NAME ||
+              item.channelHint === 'reader-scout' ||
+              item.id.startsWith('reader-scout:');
+            const pipelineId = isStaffLink
+              ? STAFF_AUTHOR_LINK_AGENT_ID
+              : isReader
+                ? READER_SCOUT_AGENT_ID
+                : 'newsroom-scout';
+            const stamped = stampAuthorForPipeline(pipelineId, { sourceUrl: item.url, slug });
+            // SP-A-094: staff journalist name wins over AUTO rotation when provided.
+            if (isStaffLink && item.staffAuthorName?.trim()) {
+              return {
+                ...stamped,
+                author: item.staffAuthorName.trim(),
+                authorDesk: 'Staff Author / Journalist',
+                agentId: STAFF_AUTHOR_LINK_AGENT_ID,
+              };
+            }
+            return stamped;
+          })(),
         } as Article;
+
+        // SP-A-082 — final AUTO gate (Staff Author links still pass commodity — not author-door bypass).
+        try {
+          assertFinalAutoPublishAllowed({
+            title: article.title,
+            summary: article.summary,
+            content: article.content,
+            tags: article.tags,
+            category: article.category,
+            agentId:
+              article.agentId ||
+              (item.channelHint === 'staff-author-link'
+                ? STAFF_AUTHOR_LINK_AGENT_ID
+                : item.channelHint === 'reader-scout'
+                  ? READER_SCOUT_AGENT_ID
+                  : 'newsroom-scout'),
+          });
+        } catch (err) {
+          if (err instanceof FinalAutoGateError) {
+            console.log(chalk.yellow(`RSS blocked by final gate: ${err.message}`));
+            await markRejected(fresh.journal, opts.journalPath, item, err.message, scout.score);
+            opts.urls.add(item.url);
+            lastSkip = err.message;
+            continue;
+          }
+          throw err;
+        }
 
         const deduped = filterRemovedArticles(
           fresh.articles.filter(
@@ -1386,10 +1969,47 @@ async function publishRssOnce(opts: {
             ? `${scout.reason} [diversity: ${selectedScouted.diversityNote}]`
             : scout.reason,
           slug,
-          channel: 'rss',
+          channel:
+            item.channelHint === 'staff-author-link'
+              ? 'staff-author-link'
+              : item.channelHint === 'reader-scout'
+                ? 'reader-scout'
+                : 'rss',
           cycle: opts.cycle,
         });
         await writeFile(opts.journalPath, JSON.stringify(fresh.journal, null, 2) + '\n', 'utf8');
+
+        if (
+          item.channelHint === 'staff-author-link' ||
+          item.id.startsWith('staff-author-link:')
+        ) {
+          const alinkId =
+            item.submissionId ||
+            (item.id.startsWith('staff-author-link:')
+              ? item.id.slice('staff-author-link:'.length)
+              : '');
+          if (alinkId) {
+            await patchStaffAuthorLink(alinkId, {
+              status: 'published',
+              articleSlug: slug,
+              rejectReason: undefined,
+            });
+          }
+        }
+
+        const publishedScoutId =
+          item.submissionId ||
+          (item.id.startsWith('reader-scout:') ? item.id.slice('reader-scout:'.length) : '');
+        if (
+          publishedScoutId &&
+          (item.channelHint === 'reader-scout' || item.id.startsWith('reader-scout:'))
+        ) {
+          await patchReaderScoutSubmission(publishedScoutId, {
+            status: 'published',
+            articleSlug: slug,
+            rejectReason: undefined,
+          });
+        }
 
         opts.ids.add(slug);
         opts.urls.add(item.url);
@@ -1563,7 +2183,37 @@ async function main(): Promise<void> {
     lastPublish,
   };
 
-  const chinaDone = await tryChinaPublishOnce(shared);
+  const freshnessPreview = buildFreshnessReport({
+    articles: articles.map((a) => ({ publishedAt: a.publishedAt, agentId: a.agentId })),
+    journalEntries: journal.entries,
+  });
+  const newsQuota =
+    options.cycle === 'news'
+      ? resolveNewsQuotaPolicy({
+          articles: articles.map((a) => ({
+            publishedAt: a.publishedAt,
+            agentId: a.agentId,
+            tags: a.tags,
+          })),
+          journalEntries: journal.entries,
+          minutesSinceLastAuto: freshnessPreview.minutesSinceLastAutoPublication,
+          freshnessStatus: freshnessPreview.freshnessStatus,
+        })
+      : undefined;
+  if (newsQuota) {
+    console.log(chalk.bold(formatNewsQuotaPolicy(newsQuota)));
+  }
+
+  let chinaDone = false;
+  if (newsQuota?.skipChina) {
+    console.log(chalk.gray('Quota behind — skip China desk; RSS news first.'));
+  } else {
+    chinaDone = await tryChinaPublishOnce({
+      ...shared,
+      chinaMaxAttempts: newsQuota?.chinaMaxAttempts ?? CHINA_MAX_QWEN,
+      allowPublishWithoutImage: newsQuota?.allowPublishWithoutImage ?? false,
+    });
+  }
   if (chinaDone) {
     console.log(chalk.bold(`Tick complete (internal desk / ${options.cycle}).`));
     if (metrics.skipReason === 'in progress') metrics.skipReason = 'none';
@@ -1588,6 +2238,7 @@ async function main(): Promise<void> {
     productIds: refreshed.productIds,
     journal: refreshed.journal,
     articles: refreshed.articles,
+    quota: newsQuota,
   });
 
   console.log(chalk.bold('Tick complete.'));

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import {
   resolveVisualFallback,
   visualFallbackToneClass,
+  type VisualCategoryKey,
   type VisualFallbackSpec,
 } from '@/lib/visual-fallback';
 
@@ -16,6 +17,13 @@ interface MediaPlaceholderProps {
   label?: string;
   tags?: string[];
   summary?: string;
+  agentId?: string;
+  /** Stable slug for hash rotation (SP-A-084). */
+  slug?: string;
+  /** Asset IDs already visible nearby — skip duplicates. */
+  avoidAssetIds?: string[];
+  /** Optional pre-resolved fallback (from assignFallbackAssets). */
+  fallbackSpec?: VisualFallbackSpec;
   aspectRatio?: string;
   className?: string;
   /** Article hero without photo: slightly shorter editorial tile. */
@@ -25,66 +33,103 @@ interface MediaPlaceholderProps {
 const IMAGE_CLASS =
   'h-full w-full object-cover brightness-[1.04] contrast-[1.02] saturate-[1.06] transition-[transform,filter] duration-500 ease-out group-hover:scale-[1.04] group-hover:brightness-110 group-hover:saturate-110';
 
+/** Atmospheric stock banner — never a gray monogram wall. */
 function FallbackTile({
   spec,
   compact,
   className = '',
   aspectRatio,
+  size = 'card',
 }: {
   spec: VisualFallbackSpec;
   compact?: boolean;
   className?: string;
   aspectRatio?: string;
+  size?: 'thumb' | 'card' | 'hero';
 }) {
   const tone = visualFallbackToneClass(spec.categoryKey);
+  const pad =
+    size === 'thumb'
+      ? 'p-1.5'
+      : compact || size === 'card'
+        ? 'p-3 sm:p-4'
+        : 'p-5 sm:p-7';
+
   return (
     <div
-      className={`visual-fallback ${tone} relative flex overflow-hidden rounded border border-[var(--border)] ${
+      className={`visual-fallback visual-fallback--stock ${tone} relative flex overflow-hidden rounded-lg border border-[var(--border)] ${
         aspectRatio || ''
       } ${className}`}
       role="img"
       aria-label={`${spec.caption}: ${spec.headline}`}
+      data-vf-kind={spec.kind}
+      data-vf-category={spec.categoryKey}
+      data-vf-asset={spec.assetId || ''}
     >
+      {spec.imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={spec.imageUrl}
+          alt=""
+          aria-hidden
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      ) : null}
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.35]"
-        style={{
-          backgroundImage:
-            'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.55), transparent 45%), radial-gradient(circle at 80% 70%, rgba(0,0,0,0.06), transparent 40%)',
-        }}
+        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-black/15"
         aria-hidden
       />
-      <div
-        className={`relative z-[1] flex h-full w-full flex-col justify-between ${
-          compact ? 'p-3 sm:p-4' : 'p-4 sm:p-5'
-        }`}
-      >
-        <div className="flex items-start justify-between gap-2">
-          <span
-            className={`visual-fallback__mark font-serif font-black leading-none text-[var(--text)] ${
-              compact ? 'text-2xl sm:text-3xl' : 'text-3xl sm:text-5xl'
-            }`}
-          >
-            {spec.mark}
+      <div className="visual-fallback__grain pointer-events-none absolute inset-0 opacity-40" aria-hidden />
+
+      <div className={`relative z-[1] flex h-full w-full flex-col justify-end ${pad}`}>
+        <div className="flex items-end justify-between gap-2">
+          <div className={`max-w-[92%] ${size === 'thumb' ? 'space-y-0' : 'space-y-1'}`}>
+            <p
+              className={`font-serif font-bold leading-[1.1] text-white drop-shadow ${
+                size === 'thumb'
+                  ? 'text-[10px] line-clamp-2'
+                  : compact
+                    ? 'text-base sm:text-lg'
+                    : 'text-xl sm:text-2xl'
+              }`}
+            >
+              {spec.headline}
+            </p>
+            {size !== 'thumb' && (
+              <p className={`line-clamp-2 text-white/80 ${compact ? 'text-[11px]' : 'text-xs sm:text-sm'}`}>
+                {spec.subtitle}
+              </p>
+            )}
+          </div>
+          <span className="shrink-0 rounded-md border border-white/25 bg-black/35 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-[0.12em] text-white/90 backdrop-blur-[2px]">
+            {spec.badge}
           </span>
-          <span className="rounded border border-[var(--border)] bg-[var(--surface)]/70 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-[var(--muted)] backdrop-blur-[2px]">
-            {spec.kind === 'brand' ? 'Brand' : spec.kind === 'organization' ? 'Lab' : 'Desk'}
-          </span>
-        </div>
-        <div className="space-y-1">
-          <p
-            className={`font-serif font-bold leading-tight text-[var(--text)] ${
-              compact ? 'text-sm sm:text-base' : 'text-base sm:text-xl'
-            }`}
-          >
-            {spec.headline}
-          </p>
-          <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--muted)]">
-            {spec.caption}
-          </p>
         </div>
       </div>
     </div>
   );
+}
+
+function useFallbackSpec(opts: {
+  title?: string;
+  category?: string;
+  tags?: string[];
+  summary?: string;
+  agentId?: string;
+  slug?: string;
+  avoidAssetIds?: string[];
+  fallbackSpec?: VisualFallbackSpec;
+}): VisualFallbackSpec {
+  if (opts.fallbackSpec) return opts.fallbackSpec;
+  return resolveVisualFallback({
+    title: opts.title,
+    category: opts.category,
+    tags: opts.tags,
+    summary: opts.summary,
+    agentId: opts.agentId,
+    slug: opts.slug,
+    avoidAssetIds: opts.avoidAssetIds,
+  });
 }
 
 /** Compact thumbnail with the same hover treatment and editorial fallback. */
@@ -94,6 +139,10 @@ export function MediaThumb({
   category,
   tags,
   summary,
+  agentId,
+  slug,
+  avoidAssetIds,
+  fallbackSpec,
   className = '',
 }: {
   imageUrl?: string;
@@ -101,16 +150,29 @@ export function MediaThumb({
   category?: string;
   tags?: string[];
   summary?: string;
+  agentId?: string;
+  slug?: string;
+  avoidAssetIds?: string[];
+  fallbackSpec?: VisualFallbackSpec;
   className?: string;
 }) {
   const [hasError, setHasError] = useState(false);
-  const spec = resolveVisualFallback({ title, category, tags, summary });
+  const spec = useFallbackSpec({
+    title,
+    category,
+    tags,
+    summary,
+    agentId,
+    slug,
+    avoidAssetIds,
+    fallbackSpec,
+  });
 
   if (!imageUrl || hasError) {
     return (
       <FallbackTile
         spec={spec}
-        compact
+        size="thumb"
         className={`shrink-0 ${className}`}
       />
     );
@@ -118,8 +180,9 @@ export function MediaThumb({
 
   return (
     <div
-      className={`relative shrink-0 overflow-hidden rounded border border-[var(--border)] bg-[var(--surface)] ${className}`}
+      className={`relative shrink-0 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)] ${className}`}
     >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={imageUrl}
         alt={title || ''}
@@ -139,23 +202,32 @@ export function MediaPlaceholder({
   label,
   tags,
   summary,
+  agentId,
+  slug,
+  avoidAssetIds,
+  fallbackSpec,
   aspectRatio = 'aspect-video',
   className = '',
   compactFallback = false,
 }: MediaPlaceholderProps) {
   const [hasError, setHasError] = useState(false);
-  const spec = resolveVisualFallback({
+  const spec = useFallbackSpec({
     title,
     category: category || label || kind,
     tags,
     summary,
+    agentId,
+    slug,
+    avoidAssetIds,
+    fallbackSpec,
   });
 
   if (imageUrl && !hasError) {
     return (
       <div
-        className={`relative overflow-hidden rounded border border-[var(--border)] bg-[var(--surface)] ${aspectRatio} ${className}`}
+        className={`relative overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)] ${aspectRatio} ${className}`}
       >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={imageUrl}
           alt={title || spec.headline}
@@ -171,10 +243,11 @@ export function MediaPlaceholder({
     <FallbackTile
       spec={spec}
       compact={compactFallback}
+      size={compactFallback ? 'card' : 'hero'}
       aspectRatio={compactFallback ? 'aspect-[16/7] sm:aspect-[16/6]' : aspectRatio}
       className={className}
     />
   );
 }
 
-export type { VisualFallbackSpec };
+export type { VisualFallbackSpec, VisualCategoryKey };

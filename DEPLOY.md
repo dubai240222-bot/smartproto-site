@@ -11,8 +11,10 @@ docker build \
 If you want SEO links, robots, and sitemap to use the production domain, pass `NEXT_PUBLIC_SITE_URL` at runtime:
 
 ```bash
-docker run -e NEXT_PUBLIC_SITE_URL=https://your-domain.com ...
+docker run -e NEXT_PUBLIC_SITE_URL=https://www.smartproto.net ...
 ```
+
+Default for SmartProto compose/Dockerfile is `https://www.smartproto.net`. Localhost values are sanitized away from public SEO helpers.
 
 ## 2) Move the image to Hetzner
 
@@ -108,11 +110,46 @@ Then add HTTPS with Let’s Encrypt or Caddy.
 1. Leave Cloudflare proxy enabled for CDN caching.
 2. Optional: turn on Brotli, HTTP/3, and Auto Minify if they fit your setup.
 
-## 6) Useful checks
+## 6) Editorial Chief PIN
+
+Primary gate for `/editorial/chief` and `/editorial/author` is `SMARTPROTO_NEWS_PIN`
+(example in `.env.example`: `098765-543210`). Server-side only — never `NEXT_PUBLIC_*`.
+Legacy `EDITORIAL_DOOR_SECRET` still works when set.
+
+On Hetzner (`/opt/apps/smartproto/app/.env`), set the PIN then recreate:
 
 ```bash
-docker logs -f smartproto
+cd /opt/apps/smartproto/app
+# ensure SMARTPROTO_NEWS_PIN=… in .env
+docker compose --env-file .env -f docker-compose.smartproto.yml -p smartproto up -d --build
+```
+
+## 6b) Daily news quota (AUTO volume)
+
+Target **5–6 news / rolling 24h** on the Hetzner worker (`smartproto-worker`).
+Enforced in `src/lib/newsroom/daily-quota.ts` during each news tick:
+
+| Env | Default | Meaning |
+| --- | --- | --- |
+| `SMARTPROTO_NEWS_DAILY_TARGET` | `6` | Publish-until target; then ease boosts |
+| `SMARTPROTO_NEWS_DAILY_MIN` | `5` | Soft floor (starvation / no-image policy) |
+| `SMARTPROTO_NEWS_QUOTA_SCOUT_RELAX` | `8` | Points below Scout floor when behind (70→62, floor min 60) |
+| `SMARTPROTO_NEWS_QUOTA_SCOUT_FLOOR_MIN` | `60` | Never relax Scout below this |
+| `SCOUT_SCORE_THRESHOLD` | `70` | Base Scout floor (compose) |
+| `SMARTPROTO_NEWS_INTERVAL_MS` | `1500000` (25m) | Cadence floor between news publishes |
+
+When **behind** target: skip China×3 burn, Scout pool ≤8 (fewer LLM calls), slight floor relax, prefer attaching thematic/stock hero over empty cards.
+When **at/over** target: normal floors, China ≤1 attempt/tick.
+
+Articles stay on the slower ~3h cadence (`SMARTPROTO_ARTICLE_INTERVAL_MS`).
+
+## 7) Useful checks
+
+```bash
+docker logs -f smartproto-worker
+docker logs -f smartproto-web
 curl -I https://your-domain.com
 curl https://your-domain.com/sitemap.xml
 curl https://your-domain.com/robots.txt
+curl -s http://127.0.0.1:3100/api/health
 ```

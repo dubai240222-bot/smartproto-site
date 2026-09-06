@@ -103,7 +103,7 @@ export const DESKS: Desk[] = [
     publishCategory: 'Гаджеты',
     sources: WORLD_TECH,
     topicPattern:
-      /\b(gadget|device|wearable|phone|smartphone|earbuds?|headphones?|tablet|camera|charger|dock|robot|smart\s*home|launch|unveils?|announces?)\b|гаджет|смартфон|наушник|запуск|анонс/i,
+      /\b(gadget|device|wearable|phone|smartphone|earbuds?|headphones?|tablet|camera|charger|dock|smart\s*home|launch|unveils?|announces?)\b|гаджет|смартфон|наушник|запуск|анонс/i,
     tags: ['технологии', 'новинка'],
   },
   {
@@ -164,18 +164,15 @@ export const DESKS: Desk[] = [
 ];
 
 /**
- * SP-A-054 — weighted rotation: AI appears 3× per round so capability news is not starved.
- * Indices map into DESKS by id (duplicates allowed here).
+ * SP-A-054 — round-robin desks. AI once per round (not 3×) so robots/AI don't starve gadgets/apps.
  */
 export const ROTATION_ORDER: DeskId[] = [
-  'ai',
   'gadgets',
   'ai',
   'apps',
   'wonder-goods',
-  'ai',
-  'world-tech',
   'health-home',
+  'world-tech',
   'games',
   'china',
 ];

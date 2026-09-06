@@ -106,10 +106,22 @@ export function isGreyGadgetNoise(title: string, text = ''): boolean {
 }
 
 /**
+ * Non-grey stories that still read as «неужели?» without an explicit door phrase
+ * (robotics / frontier AI demos). Not a scoring framework — allow-list only.
+ */
+const SHARE_WORTHY_RE =
+  /\b(robot|робот|humanoid|exoskeleton|prosthetic|протез|brain[- ]?computer|bci|llm|chatgpt|claude|gemini\s+robotics|whole[- ]body|embodied\s+ai|tactile|тактильн|manipulat|оптическ\w*\s+нейро|neural\s+interface|drone\s+swarm)\b/i;
+
+export function isShareWorthyStory(title: string, text = ''): boolean {
+  if (isGreyGadgetNoise(title, text)) return false;
+  return SHARE_WORTHY_RE.test(`${title}\n${text}`);
+}
+
+/**
  * Scout post-score gate. Does NOT change SCOUT_SCORE_THRESHOLD.
- * Grey + no door → cap ~18 (fails 70).
- * No door (even non-grey) → cap 55 (demote below 70).
- * Grey + door → allow score through (human exception).
+ * Grey + no door → cap ~18 (fails 70) / block publish.
+ * No door + not share-worthy → demote ≤55 (SKIP rather than publish for regularity).
+ * Door or share-worthy robotics/AI → keep score.
  */
 export function applyHumanPriorityGate(
   rawScore: number,
@@ -118,6 +130,7 @@ export function applyHumanPriorityGate(
 ): PriorityGateResult {
   const door = detectHumanDoor(title, text);
   const grey = isGreyGadgetNoise(title, text);
+  const shareWorthy = isShareWorthyStory(title, text);
   const scoreIn = Math.max(0, Math.min(100, Math.round(rawScore)));
 
   if (grey && door === 'none') {
@@ -132,27 +145,38 @@ export function applyHumanPriorityGate(
     };
   }
 
-  if (door === 'none') {
+  if (door === 'none' && !shareWorthy) {
     const score = Math.min(scoreIn, 55);
     return {
       score,
       penalty: Math.max(0, scoreIn - score),
-      reason: 'SP-A-071 no human door — demote',
+      reason: 'SP-A-071B no human door / not share-worthy — SKIP over regularity',
       door,
       grey,
       blockPublish: false,
     };
   }
 
-  // Human door present: do not grey-cap; keep score (and note door).
   return {
     score: scoreIn,
     penalty: 0,
-    reason: grey ? `SP-A-071 grey cleared by human door (${door})` : `SP-A-071 human door (${door})`,
+    reason: grey
+      ? `SP-A-071 grey cleared by human door (${door})`
+      : door !== 'none'
+        ? `SP-A-071 human door (${door})`
+        : 'SP-A-071B share-worthy (robotics/AI) — allow',
     door,
     grey,
     blockPublish: false,
   };
+}
+
+/** True when Scout may mark interesting (threshold still applied separately). */
+export function passesEditorialPriority(title: string, text = ''): boolean {
+  if (shouldHardRejectGreyNoise(title, text)) return false;
+  const door = detectHumanDoor(title, text);
+  if (door !== 'none') return true;
+  return isShareWorthyStory(title, text);
 }
 
 /** Hard-reject helper: grey noise only when no human door. */

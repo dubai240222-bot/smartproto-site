@@ -33,6 +33,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -45,9 +46,13 @@ next-env.d.ts
 
 .vercel
 .env*
+!.env.example
 
 # SP-A-056 — Hetzner runtime data lives outside git in /opt/apps/smartproto/data
 data/*.db
 data/*.db-*
 data/worker-mode.json
 data/worker-state.json
+data/prod-retention-snap/
+data/prod-media-snap/
+data/spa072-test.db*

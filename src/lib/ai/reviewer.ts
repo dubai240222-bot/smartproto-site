@@ -13,6 +13,14 @@ export interface ReviewResult {
 
 const REVIEW_MODEL = process.env.OPENROUTER_REVIEW_MODEL ?? 'google/gemini-2.5-flash-lite';
 
+/** Light soft-flag for formula "imagine that" ledes (Editor soft-retries; not a hard REJECT). */
+const STOCK_OPENER_LEAD_RE =
+  /^(?:представьте(?:\s*,?\s*что)?|представь(?:те)?(?:\s+себе)?|а\s+что\s+если|что\s+если|забудьте\s+о(?:б)?|вообразите|imagine(?:\s+that)?|what\s+if)\b/i;
+function looksStockOpenerLead(text: string): boolean {
+  const lead = text.trim().replace(/^[\s"'«»„“”‘’`]+/, '');
+  return STOCK_OPENER_LEAD_RE.test(lead);
+}
+
 /** Blogger / ad headline — return to Editor (SP-A-030-U1). */
 const BLOGGER_TONE_RE =
   /ребята|друзья|вы\s+только\s+посмотрите|ваш\s+спаситель|этот\s+малыш|просто\s+находка|это\s+же\s+не\s+просто|забудьте\s+про|вы\s+будете\s+в\s+восторге|берите,?\s+пока|маст-?хэв|идеальный\s+выбор|стильный\s+аксессуар|!\s*$/im;
@@ -26,7 +34,12 @@ const REVIEW_SYSTEM_PROMPT_GADGET = [
   'заголовок-реклама; блогерский тон; Trump/политика; celebrities; writers; кино; wildlife; музеи;',
   'Docker/DevOps/SmartProto-internal/API libs;',
   'нишевый PC/engineering компонент без сильного consumer-angle (SP-A-039-ALT).',
-  'AI research/demo OK если grounded (реальный результат, польза людям) — не кликбейт про «сверхразум завтра».',
+  'AI research/demo OK если grounded (модель, приложение, польза людям) — не кликбейт про «сверхразум завтра».',
+  'REJECT robotics flood: humanoid / robot hand / lab robot / industrial robot как основная тема — сайт не про роботов.',
+  'Предпочитай разнообразие столов: gadgets / apps / AI capability / inventions — не flood robotics.',
+  'SOFT FLAG лида: если текст начинается с «Представьте…» / «Представь себе…» / «А что если…» / imagine-that — отметь в technicalVerdict префиксом SOFT: (не REJECT), Editor должен сменить открытие.',
+  'SOFT FLAG шаблона: если текст выглядит как один заводской скелет из 3 одинаковых абзацев или штампует «Что изменилось… / Для обычного человека… / В ближайшем будущем…» — SOFT: formulaic skeleton (не REJECT).',
+  'Editor должен варьировать тон (alert / explain / contrast / how-it-helps) и ритм абзацев.',
   'keyAspects — 3 коротких пункта про возможность/новизну/пользу (не про цену).',
   'Иначе подтверди достоверность и 3 аспекта.',
 ].join(' ');
@@ -184,8 +197,15 @@ export async function reviewArticle(articleData: object): Promise<ReviewResult> 
     }
   }
 
-  // After Scout already passed: do not abort the tick on flaky Reviewer JSON.
-  return result ?? fallbackReview(title, text);
+  // Soft flag only — do not hard-reject for formula ledes (Editor soft-retries).
+  const out = result ?? fallbackReview(title, text);
+  if (looksStockOpenerLead(text) && !/^REJECT\b/i.test(out.technicalVerdict) && !/^SOFT:/i.test(out.technicalVerdict)) {
+    return {
+      ...out,
+      technicalVerdict: `SOFT: штампованная открывалка лида — переписать вход. | ${out.technicalVerdict}`,
+    };
+  }
+  return out;
 }
 
 /** Deterministic Reviewer gate for tests (no OpenRouter). */

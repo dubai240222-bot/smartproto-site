@@ -7,8 +7,6 @@
  * still reject SEO spam, gambling, crypto pumps, generic roundups.
  */
 
-import { shouldHardRejectGreyNoise } from './human-priority-gate';
-
 export type MarketSaturation = 'low' | 'medium' | 'high';
 export type EditorialMode = 'gadget' | 'app' | 'ai_radar';
 
@@ -341,58 +339,21 @@ const COMMODITY_LOW_WOW_PATTERNS: RegExp[] = [
 ];
 
 /**
- * SP-A-073 — gray everyday clutter readers should not spend time on.
- * Always rejected in gadget mode (no «для дома» salvage).
- * Mice, boomboxes/speakers/subwoofers, Indian budget phones, dull PC junk, cars-as-news.
+ * SP-A-055 — robotics / humanoid / robot-hand flood. SmartProto is not a robot blog.
+ * Allow rare consumer home robots (vacuum/lawn/pet companion) with clear everyday use.
  */
-const GRAY_COMMODITY_HARD_PATTERNS: RegExp[] = [
-  // Mice as the product (not “replaces your mouse”)
-  /\b(gaming|wireless|wired|optical)?\s*(gaming\s+)?mouse\b|\b(игров\w*\s+)?мышь\b|\bмыши\b|\bмышек\b/i,
-  /\b(aula|logitech|razer|steelseries|glorious|lamzu)\b.{0,40}\b(mouse|мышь)/i,
-  /\b(sc\d{2,4}|g\s*pro|deathadder|viper)\b.{0,30}\b(mouse|мышь|dpi|polling)/i,
-  // Speakers / boomboxes / subwoofers / party audio
-  /\b(bluetooth\s+)?speaker\b|\bboombox\b|\bxboom\b|\bsubwoofer\b|\bсабвуфер/i,
-  /\bпортативн\w*\s+(колонк|акустик)|\bколонк[аиуе]?\b|\bакустическ\w*\s+систем/i,
-  /\bjbl\s*(pulse|flip|charge|boombox|xtreme)/i,
-  /\blg\s+xboom|\bxboom\s+blast/i,
-  // Indian / ultra-budget phone churn
-  /\b(lava|micromax|itel)\b.{0,50}\b(phone|smartphone|smart\s*\d|мобил|смартфон)/i,
-  /\blava\s+smart\b|\bmicromax\s+in\b/i,
-  /\b(tecno|infinix)\b.{0,40}\b(spark|hot|camon|smart\s*\d|бюджетн)/i,
-  /\b(бюджетн\w*\s+смартфон|budget\s+smartphone)\b/i,
-  // Dull storage / dock clutter
-  /\b(ssd\s*enclosure|nvme\s*(box|enclosure|корпус)|внешн\w*\s+ssd[- ]?бокс)\b/i,
-  /\busb[- ]?hub\b|\bcard\s*reader\b|\bкардридер\b/i,
-  // Cars / MPV as consumer “gadget” noise
-  /\b(mpv|suv|седан|кроссовер)\b/i,
-  /\b(автомобил|family\s+mpv|dongfeng|xinghai)\b/i,
-  // Generic mechanical / gaming keyboards (Altar-class ultra-thin still needs KEEP or fail — treat as gray)
-  /\b(mechanical|gaming|мембранн\w*)\s+keyboard\b|\bмеханическ\w*\s+клавиатур/i,
-  // Generic TWS earbuds
-  /\b(tws|true\s+wireless)\b.{0,40}\b(earbuds|наушник)/i,
-  /\bopen[- ]?(fit|ear)\s*2?\b.{0,40}\b(наушник|earbuds|headphones|shokz)\b/i,
-  /\bshokz\s+openfit\b/i,
-];
+const ROBOTICS_HEAVY_RE =
+  /\b(humanoid|robot\s*hand|robotic\s*hand|bipedal\s*robot|industrial\s*robot|manipulator|actuator|end[- ]effector|quadruped\s*robot|robotaxi|loyal\s*wingman|autonomous\s*vtol|bioflexbot|aibo|camera\s*robot)\b|гуманоид|робот[- ]?рук|промышленн\w*\s*робот|роботакси/i;
+const CONSUMER_HOME_ROBOT_OK_RE =
+  /\b(robot\s*vacuum|robotic\s*vacuum|lawn\s*mower\s*robot|robot\s*lawn|pet\s*robot|companion\s*robot|робот[- ]?пылесос|газонокосил)\b/i;
 
-/** “Replaces mouse/keyboard” inventions are NOT gray commodity. */
-const REPLACES_PERIPHERAL_RE =
-  /\b(replace|replaces|вместо|без\s+необходимости|отказаться\s+от)\b[\s\S]{0,40}\b(mouse|мыши|мышь|keyboard|клавиатур)/i;
-
-export function isGrayCommodityHard(title: string, text = ''): boolean {
-  if (isKeepWowException(title, text)) return false;
+export function isRoboticsHeavyTopic(title: string, text = ''): boolean {
   const hay = `${title}\n${text}`;
-  if (REPLACES_PERIPHERAL_RE.test(hay)) {
-    // Only speakers/phones/cars/ssd still apply
-    return GRAY_COMMODITY_HARD_PATTERNS.filter((re) => {
-      const s = re.source.toLowerCase();
-      return !/mouse|мышь|мыши|keyboard|клавиатур|aula|razer|logitech|sc\\d/i.test(s);
-    }).some((re) => re.test(hay));
-  }
-  return GRAY_COMMODITY_HARD_PATTERNS.some((re) => re.test(hay));
+  if (CONSUMER_HOME_ROBOT_OK_RE.test(hay)) return false;
+  return ROBOTICS_HEAVY_RE.test(hay) || (/\brobot\b/i.test(hay) && !CONSUMER_HOME_ROBOT_OK_RE.test(hay));
 }
 
-/**
- * SP-A-054 — editorial ALERT mode: interesting AI capability / invention / useful software
+/** SP-A-054 — editorial ALERT mode: interesting AI capability / invention / useful software
  * may pass without a buyable SKU (no prices/links in public copy).
  */
 const AI_OR_INVENTION_ALERT_RE =
@@ -400,6 +361,30 @@ const AI_OR_INVENTION_ALERT_RE =
 
 export function isAiOrInventionAlert(title: string, text = ''): boolean {
   return AI_OR_INVENTION_ALERT_RE.test(`${title}\n${text}`);
+}
+
+/**
+ * SP-A-093 — SmartProto is not a shop. Strong capability / consequence stories
+ * may reach Scout without BUY/PREORDER. Still face Scout 70 → Reviewer → Editor
+ * → Photo → commodity final gate. Does NOT unlock ordinary mouse/phone SKUs.
+ */
+const CAPABILITY_EDITORIAL_RE =
+  /\b(solar[- ]?powered|ambulance|smart\s+clothing|smart\s+textile|finger\s+movements?|memory\s+(architecture|prototype|device|chip)|denser\s+data|non[- ]?binary\s+memory|new\s+human\s+capability|human\s+capability|capability\s+breakthrough|assistive|independence|prosthetic|clinic\s*→\s*home|clinic\s+to\s+home|medical\s+(device|prototype|robot|imaging)|surgical\s+robot|major\s+autonomy|fully\s+autonomous|future\s+mobility|evtol|air\s+taxi|solid[- ]?state\s+battery|grid[- ]?scale|major\s+energy|novel\s+material|new\s+material|dramatic\s+cost|cost\s+reduction|\d{2,3}\s*%\s*(cheaper|fewer|less)|direct\s+access|disintermediat|brain[- ]?computer|bci\b|exoskeleton|humanoid\s+(robot|prototype)|robotics?\s+(prototype|demo|capability)|research\s+prototype|lab[- ]?to[- ]?life)\b|солнечн\w*\s+машин|умн\w*\s+(одежд|ткан)|памят\w*\s+архитектур|медицинск|протез|автономн|воздушн\w*\s+такси|новый\s+материал|снижен\w*\s+стоим/i;
+
+/** Titles that remain shop/SKU-shaped even if a capability keyword appears. */
+const ORDINARY_SKU_TITLE_RE =
+  /\b(gaming\s+)?(mouse|keyboard|monitor|earbuds?|headphones?|headset|psu|power\s*supply|gpu\s*cooler)\b|\b(iphone|galaxy\s*s\d+|pixel\s*\d+)\b.{0,40}\b(refresh|color|colour|leak|rumor)\b|\b(ordinary|generic)\s+(phone|smartphone|laptop)\b|игров\w*\s+мышь|обычн\w*\s+(мышь|клавиатур|монитор|наушник)/i;
+
+export function isCapabilityEditorialStory(title: string, text = ''): boolean {
+  const hay = `${title}\n${text}`;
+  if (ORDINARY_SKU_TITLE_RE.test(title)) return false;
+  if (isAiOrInventionAlert(title, text)) return true;
+  return CAPABILITY_EDITORIAL_RE.test(hay);
+}
+
+/** True when buy/preorder is not required (AI/invention alert OR capability story). */
+export function allowsWithoutBuyPreorder(title: string, text = ''): boolean {
+  return isCapabilityEditorialStory(title, text);
 }
 
 /** KEEP reference — unusual wearables must not be killed by commodity rules. */
@@ -470,7 +455,7 @@ const STRONG_CONSUMER_ANGLE: RegExp[] = [
 
 /** Preferred SmartProto categories (scout/reviewer guidance + local hints). SP-A-039-ALT */
 export const PREFERRED_GADGET_CATEGORIES =
-  'unusual smartphones, game controllers, wearables, smart rings, smart home, travel gadgets, AI hardware, home robots, cameras, audio gadgets, phone accessories, power banks/chargers, mini projectors, portable displays, car gadgets, translators, health/sleep devices, kitchen gadgets, children/education gadgets';
+  'unusual smartphones, wearables, smart rings, travel gadgets, useful apps, AI tools/capability news for people (not lab robots), cameras, audio, phone accessories, mini projectors, portable displays, health/sleep, kitchen, smart home, game controllers, translators, everyday inventions — mix desks broadly; NOT a robotics-only site; humanoid/industrial/robot-hand stories are rare exceptions';
 
 /** Preferred app desks — life improvement / learning / rare finds / wonderful games. */
 export const PREFERRED_APP_CATEGORIES =
@@ -620,10 +605,23 @@ export function hardRejectTopic(
     if (re.test(hay)) {
       // SP-A-065C: AI cyber/preparedness stories often say "deployment" — not infra news.
       if (
-        /\bdeployment\b/i.test(re.source) &&
+        /deployment/i.test(re.source) &&
         isAiOrInventionAlert(title, text) &&
         /\b(cyber|preparedness|frontier|capability|safety\s+incident|model\s+risk)\b/i.test(hay)
       ) {
+        continue;
+      }
+      // SP-A-093: "memory architecture" / chip architecture ≠ building architecture.
+      if (
+        /architecture/i.test(re.source) &&
+        /\b(memory|chip|cpu|gpu|computer|software|system)\s+architecture\b|\barchitecture\s+(prototype|design)\b/i.test(
+          hay,
+        )
+      ) {
+        continue;
+      }
+      // SP-A-093: capability editorial stories should not die on architecture false hits.
+      if (allowsWithoutBuyPreorder(title, text) && /architecture/i.test(re.source)) {
         continue;
       }
       return {
@@ -635,8 +633,8 @@ export function hardRejectTopic(
   }
   for (const re of NON_BUYABLE_RESEARCH) {
     if (re.test(hay)) {
-      // Allow grounded AI capability / autonomy milestone alerts (owner: invent + AI news).
-      if (isAiOrInventionAlert(title, text)) {
+      // SP-A-093: capability / AI stories may reach Scout without a consumer SKU.
+      if (allowsWithoutBuyPreorder(title, text)) {
         break;
       }
       return {
@@ -690,14 +688,13 @@ export function hardRejectTopic(
     };
   }
 
-  // SP-A-071 Human Priority Gate: grey gadget noise without a human door → reject.
-  // Assistive / democratizing exceptions pass when detectHumanDoor ≠ none.
-  if (shouldHardRejectGreyNoise(title, text)) {
+  // SP-A-055: SmartProto is not a robotics blog — reject humanoid/lab/robot-hand flood.
+  if (isRoboticsHeavyTopic(title, text) && !hasStrongConsumerAngle(title, text)) {
     return {
       reject: true,
       reason:
-        'Жёсткий reject: grey gadget noise без человеческой двери (мышь/аудио/spec refresh/factory arm) — SP-A-071.',
-      rejectCode: 'GRAY_COMMODITY',
+        'Жёсткий reject: узкая робототехника/гуманоид/робот-рука без явной бытовой пользы — сайт не про роботов.',
+      rejectCode: 'ROBOTICS_NARROW',
     };
   }
 
@@ -722,11 +719,11 @@ export function hardRejectTopic(
       rejectCode: 'NICHE_NO_CONSUMER_ANGLE',
     };
   }
-  // SP-A-054 alert mode: AI capability / invention / useful software news may pass
-  // without buy/preorder signal (no prices/links in public copy anyway).
+  // SP-A-054 / SP-A-093: AI / capability / invention stories may pass without BUY/PREORDER.
+  // Ordinary commodity SKUs still die later at Scout/commodity final gate.
   if (!BUYABLE_PRODUCT_PATTERNS.some((re) => re.test(hay))) {
-    if (isAiOrInventionAlert(title, text)) {
-      // allow through — novelty check still applies below with softer AI path
+    if (allowsWithoutBuyPreorder(title, text)) {
+      // allow through — novelty check still applies below with softer capability path
     } else {
       return {
         reject: true,
@@ -736,7 +733,7 @@ export function hardRejectTopic(
     }
   }
   const novelty = assessNovelty(title, text, { sourceName, mode: 'gadget' });
-  if (!novelty.isActuallyNew && !isAiOrInventionAlert(title, text)) {
+  if (!novelty.isActuallyNew && !allowsWithoutBuyPreorder(title, text)) {
     return {
       reject: true,
       reason: 'Жёсткий reject: NOT_ACTUALLY_NEW — нет новизны / массовый старый товар / только косметика.',
@@ -796,8 +793,8 @@ export function looksBuyableGadget(title: string, text = '', sourceName = ''): b
     gate.rejectCode === 'NON_BUYABLE_RESEARCH' ||
     gate.rejectCode === 'NICHE_NO_CONSUMER_ANGLE' ||
     gate.rejectCode === 'COMMODITY_LOW_WOW' ||
-    gate.rejectCode === 'GRAY_COMMODITY' ||
-    gate.rejectCode === 'OVERPLAYED_MASS'
+    gate.rejectCode === 'OVERPLAYED_MASS' ||
+    gate.rejectCode === 'ROBOTICS_NARROW'
   ) {
     return false;
   }
