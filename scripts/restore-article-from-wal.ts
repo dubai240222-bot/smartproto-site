@@ -24,7 +24,7 @@ import { gateProductPhotoMatch } from '../src/lib/collectors/product-photo-gate'
 
 const SLUG_DEFAULT = 'neakasa-riko-fresh-made-wet-meal-feeder';
 const HERO_DEFAULT =
-  'https://cdn.shopify.com/s/files/1/0600/4736/0185/files/neakasa_riko_main_2.webp
+  'https://cdn.shopify.com/s/files/1/0600/4736/0185/files/neakasa_riko_main_2.webp';
 
 type ArticleRow = {
   slug: string;
