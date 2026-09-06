@@ -141,13 +141,13 @@ export function buildSubtopicLists(
 function chipClass(active: boolean, variant: 'main' | 'sub'): string {
   const base =
     variant === 'main'
-      ? 'px-2.5 py-1 rounded-md text-[11px] sm:text-xs font-semibold tracking-wide transition-colors'
-      : 'px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors';
+      ? 'px-2 py-1 text-[11px] sm:text-xs font-medium tracking-wide transition-colors'
+      : 'px-1.5 py-0.5 text-[11px] font-normal transition-colors';
 
   if (active) {
-    return `${base} bg-[var(--accent)] text-white`;
+    return `${base} border border-[var(--accent)] bg-[var(--accent)] text-white`;
   }
-  return `${base} text-[var(--text)] border border-[var(--border)] bg-[var(--bg)] hover:border-[var(--accent)] hover:text-[var(--accent)]`;
+  return `${base} border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] hover:border-[var(--accent)] hover:text-[var(--accent)]`;
 }
 
 export function ThematicNavigator({
@@ -166,23 +166,20 @@ export function ThematicNavigator({
   const isSubActive = (tag: string) => activeNorm === tag.toLowerCase();
 
   return (
-    <section className="border-b border-[var(--border)] pb-5 space-y-3">
+    <section className="space-y-2.5 border-b border-[var(--border)] pb-3">
       <div className="flex items-center justify-between gap-3">
-        <span className="text-xs font-mono font-bold uppercase tracking-wider text-[var(--muted)]">
-          Тематический навигатор
-        </span>
-        {activeCategory && (
+        <span className="text-[12px] font-medium tracking-wide text-[var(--muted)]">Темы</span>
+        {activeCategory ? (
           <Link
             href="/"
-            className="text-xs text-[var(--accent)] hover:underline font-medium shrink-0"
+            className="shrink-0 text-[12px] font-normal text-[var(--muted)] transition hover:text-[var(--accent)]"
           >
-            Сбросить фильтр
+            Сбросить
           </Link>
-        )}
+        ) : null}
       </div>
 
-      {/* Level 1 — main rubrics */}
-      <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
         <Link
           href="/"
           className={chipClass(!activeCategory, 'main')}
@@ -208,46 +205,43 @@ export function ThematicNavigator({
         </Link>
       </div>
 
-      {/* Level 2 — subtopics (compact); rare tags behind «Ещё» */}
       {(visible.length > 0 || rare.length > 0) && (
-        <div className="space-y-2 pt-0.5">
-          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-            {visible.map((topic) => {
-              const active = isSubActive(topic);
-              return (
-                <Link
-                  key={topic}
-                  href={`/?category=${encodeURIComponent(topic)}`}
-                  className={chipClass(active, 'sub')}
-                  aria-current={active ? 'page' : undefined}
-                >
-                  {topic}
-                </Link>
-              );
-            })}
-            {rare.length > 0 && (
-              <details className="group relative">
-                <summary className="list-none cursor-pointer select-none px-2 py-0.5 rounded-md text-[11px] font-medium text-[var(--muted)] border border-dashed border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors [&::-webkit-details-marker]:hidden">
-                  Ещё · Все темы
-                </summary>
-                <div className="mt-2 flex flex-wrap items-center gap-1.5 sm:gap-2 max-w-full">
-                  {rare.map((topic) => {
-                    const active = isSubActive(topic);
-                    return (
-                      <Link
-                        key={topic}
-                        href={`/?category=${encodeURIComponent(topic)}`}
-                        className={chipClass(active, 'sub')}
-                        aria-current={active ? 'page' : undefined}
-                      >
-                        {topic}
-                      </Link>
-                    );
-                  })}
-                </div>
-              </details>
-            )}
-          </div>
+        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+          {visible.map((topic) => {
+            const active = isSubActive(topic);
+            return (
+              <Link
+                key={topic}
+                href={`/?category=${encodeURIComponent(topic)}`}
+                className={chipClass(active, 'sub')}
+                aria-current={active ? 'page' : undefined}
+              >
+                {topic}
+              </Link>
+            );
+          })}
+          {rare.length > 0 ? (
+            <details className="group relative">
+              <summary className="list-none cursor-pointer select-none border border-dashed border-[var(--border)] px-1.5 py-0.5 text-[11px] font-normal text-[var(--muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)] [&::-webkit-details-marker]:hidden">
+                Ещё
+              </summary>
+              <div className="mt-2 flex max-w-full flex-wrap items-center gap-1.5">
+                {rare.map((topic) => {
+                  const active = isSubActive(topic);
+                  return (
+                    <Link
+                      key={topic}
+                      href={`/?category=${encodeURIComponent(topic)}`}
+                      className={chipClass(active, 'sub')}
+                      aria-current={active ? 'page' : undefined}
+                    >
+                      {topic}
+                    </Link>
+                  );
+                })}
+              </div>
+            </details>
+          ) : null}
         </div>
       )}
     </section>

@@ -178,7 +178,9 @@ export function InterestRating({ slug, title, summary = '' }: Props) {
 
   return (
     <section className="mt-10 border-t border-[var(--border)] pt-6" aria-label="Обратная связь читателя">
-      <p className="font-serif text-sm font-bold text-[var(--text)]">Насколько вам было интересно?</p>
+      <p className="text-sm font-semibold tracking-tight text-[var(--text)]">
+        Насколько вам было интересно?
+      </p>
       <div role="group" aria-label="Оценка от 1 до 10" className="mt-3 flex flex-wrap gap-1.5">
         {INTEREST_SCORES.map((score) => (
           <button

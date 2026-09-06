@@ -4,7 +4,7 @@
  * Режимы (файл /opt/apps/smartproto/data/worker-mode.json, переживает reboot):
  *   off     — циклы полностью остановлены, AI не расходуется, сайт работает
  *   single  — ровно один тик, затем автоматически off
- *   auto    — тики по расписанию (news ~25 мин, article ~3 часа), без GitHub/Vercel
+ *   auto    — тики по расписанию (news ~150 мин / 120–180 band, article ~3 часа), без GitHub/Vercel
  *   test-auto — observation: interval 20 мин, scout=40, auto-OFF after 3h
  *   forced  — SP-A-063: back-to-back ticks with very low scout until N publishes, then test-auto
  *
@@ -22,7 +22,8 @@ const DATA_DIR = process.env.SMARTPROTO_DATA_DIR || path.resolve(process.cwd(), 
 const MODE_FILE = path.join(DATA_DIR, 'worker-mode.json');
 const STATE_FILE = path.join(DATA_DIR, 'worker-state.json');
 
-const NEWS_INTERVAL_MS = Number(process.env.SMARTPROTO_NEWS_INTERVAL_MS || 25 * 60 * 1000);
+/** SP-A-100F — default 150m (120–180 band). Override via SMARTPROTO_NEWS_INTERVAL_MS. */
+const NEWS_INTERVAL_MS = Number(process.env.SMARTPROTO_NEWS_INTERVAL_MS || 150 * 60 * 1000);
 const ARTICLE_INTERVAL_MS = Number(process.env.SMARTPROTO_ARTICLE_INTERVAL_MS || 3 * 60 * 60 * 1000);
 /** SP-A-063 — TEST-AUTO observation window: full cycle every 20 minutes. */
 const TEST_AUTO_INTERVAL_MS = Number(process.env.SMARTPROTO_TEST_AUTO_INTERVAL_MS || 20 * 60 * 1000);
@@ -427,6 +428,18 @@ async function loopOnce(): Promise<void> {
 async function main() {
   if (!existsSync(MODE_FILE)) writeMode('off');
   log(`SmartProto Hetzner worker started. Mode file: ${MODE_FILE}`);
+  // SP-A-100F — purge removed-slug rows + bad heroes (e.g. Neakasa e-bike mismatch).
+  try {
+    const { scrubRemovedSlugs } = await import('./scrub-removed-slugs');
+    const scrub = scrubRemovedSlugs();
+    if (scrub.deletedDb.length || scrub.deletedMedia.length) {
+      log(
+        `Scrubbed removed slugs: db=${scrub.deletedDb.join(',') || '—'} media=${scrub.deletedMedia.join(',') || '—'}`,
+      );
+    }
+  } catch (err) {
+    log(`Scrub skipped: ${err instanceof Error ? err.message : String(err)}`);
+  }
   for (;;) {
     try {
       await loopOnce();
