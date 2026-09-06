@@ -25,6 +25,7 @@ import {
   extractPhotoEntityHeuristic,
   type PhotoEntity,
 } from './photo-entity';
+import { gateProductPhotoMatch } from './product-photo-gate';
 import { getOpenRouterClient, parseJsonObject, clampText } from '../ai/shared';
 
 export interface ScoutImage {
@@ -393,6 +394,17 @@ export async function minePhotoCandidates(opts: {
       rejected.push({ url: c.url, reason: 'entity mismatch / screenshot markers' });
       continue;
     }
+    // SP-A-100F — reject product-family clashes (pet feeder ≠ e-bike, etc.).
+    const familyGate = gateProductPhotoMatch({
+      articleTitle: opts.title,
+      articleText: opts.text,
+      photoUrl: c.url,
+      photoContext: c.context,
+    });
+    if (!familyGate.ok) {
+      rejected.push({ url: c.url, reason: familyGate.reason });
+      continue;
+    }
     // eslint-disable-next-line no-await-in-loop
     const ok = await passesImageQualityGate(c.url);
     if (!ok) {
@@ -466,6 +478,7 @@ export async function editPhotoSelection(opts: {
             'WRONG IMAGE or empty brand illustration is worse than NO IMAGE.',
             'Pick at most 3 photos. Prefer: clear full product/device shot, second angle, meaningful detail.',
             'HARD REJECT: logos, icons, wordmarks, Google/G letter tiles, SVG, UI screenshots, social banners, price tables, watermarks, wrong model, near-duplicates, abstract brand art with no device.',
+            'HARD REJECT product-category mismatch: if the article is about a pet feeder / cat food maker, NEVER pick an e-bike, motorcycle, car, or unrelated gadget. Wrong product photo is worse than NO IMAGE.',
             'If only logo/brand tiles remain → return all null (NO IMAGE).',
             'Return ONLY compact JSON: {"hero":url|null,"secondary":url|null,"detail":url|null,"rejected":[{"url":"...","reason":"..."}],"reason":"..."}',
             'URLs MUST be copied exactly from candidates. Do not invent URLs. Keep rejected ≤6.',
@@ -827,17 +840,29 @@ export async function resolveArticlePhotos(opts: {
     }
   }
 
-  // Drop screenshot / UI leftovers and weak logo tiles even if an editor picked them.
+  // Drop screenshot / UI leftovers, weak logo tiles, and product-family clashes
+  // even if an editor picked them (Neakasa e-bike class failure).
   edited = {
     ...edited,
-    picks: edited.picks.filter(
-      (p) =>
-        !/screenshot|screen%20shot|screen_shot|ui.?capture|comments?/i.test(p.url) &&
-        !isWeakIllustrationUrl(p.url),
-    ),
+    picks: edited.picks.filter((p) => {
+      if (/screenshot|screen%20shot|screen_shot|ui.?capture|comments?/i.test(p.url)) return false;
+      if (isWeakIllustrationUrl(p.url)) return false;
+      const g = gateProductPhotoMatch({
+        articleTitle: opts.title,
+        articleText: opts.text,
+        photoUrl: p.url,
+        photoContext: '',
+      });
+      if (!g.ok) {
+        edited.rejected.push({ url: p.url, reason: g.reason });
+        notes.push(`photo desk product-gate: ${g.reason}`);
+        return false;
+      }
+      return true;
+    }),
   };
   if (!edited.picks.length && mined.candidates.length) {
-    notes.push('photo desk post-filter removed weak logo/UI picks');
+    notes.push('photo desk post-filter removed weak logo/UI / mismatched product picks');
   }
 
   const selected = edited.picks.length

@@ -1,16 +1,17 @@
 /**
- * SP-A-054 — News cadence + temporary warmup ramp.
+ * SP-A-054 / SP-A-100F — News cadence + temporary warmup ramp.
  *
- * Normal: ~25 min between news ticks (~2–3/hour, max 1/tick).
- * Warmup: 4× slower (~95–100 min) until SMARTPROTO_NEWS_WARMUP_UNTIL (ISO),
+ * Normal: ~150 min between news ticks (120–180 band, max 1/tick).
+ * Warmup: ~180 min until SMARTPROTO_NEWS_WARMUP_UNTIL (ISO),
  * then automatically returns to normal. Articles stay ~3h.
  *
- * GHA keeps schedule every 25 minutes; tick/workflow skip when floor not met (cheap idle).
+ * GHA / worker may poll more often; tick skips when floor not met (cheap idle).
  */
 
-export const NEWS_NORMAL_INTERVAL_MS = 25 * 60 * 1000;
-/** ~90–100 min — 4× vs 25m; mid-band ≈95m */
-export const NEWS_WARMUP_INTERVAL_MS = 95 * 60 * 1000;
+/** SP-A-100F — production cadence 120–180 min (mid-band 150m). Was 25m. */
+export const NEWS_NORMAL_INTERVAL_MS = 150 * 60 * 1000;
+/** Warmup still slower than normal (~3h) until SMARTPROTO_NEWS_WARMUP_UNTIL. */
+export const NEWS_WARMUP_INTERVAL_MS = 180 * 60 * 1000;
 export const ARTICLE_INTERVAL_MS = 3 * 60 * 60 * 1000;
 
 export function parseWarmupUntilMs(
