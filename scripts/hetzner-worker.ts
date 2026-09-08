@@ -3,13 +3,19 @@
  *
  * Режимы (файл /opt/apps/smartproto/data/worker-mode.json, переживает reboot):
  *   off     — циклы полностью остановлены, AI не расходуется, сайт работает
- *   single  — ровно один тик, затем автоматически off
+ *             (manual `smartproto off` sets holdOff=true so stall-recover will not flip it)
+ *   single  — ровно один тик, затем автоматически off (holdOff)
  *   auto    — тики по расписанию (news ~150 мин / 120–180 band, article ~3 часа), без GitHub/Vercel
- *   test-auto — observation: interval 20 мин, scout=40, auto-OFF after 3h
+ *   test-auto — observation: interval ~20 мин; after duration → AUTO (not OFF) — SP-A-101
  *   forced  — SP-A-063: back-to-back ticks with very low scout until N publishes, then test-auto
  *
  * Управление: bash-обёртка /usr/local/bin/smartproto {off|single|auto|test-auto|forced|status}
  * просто перезаписывает mode-файл; воркер перечитывает его каждые несколько секунд.
+ *
+ * SP-A-101 — publish stall harden:
+ *   - test-auto expires into AUTO (production stays live)
+ *   - OFF without holdOff auto-recovers to AUTO after SMARTPROTO_STALL_RECOVER_OFF_MS
+ *   - default missing mode file → AUTO
  */
 import 'dotenv/config';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -58,6 +64,33 @@ const TRANSLATE_DRIP_ENABLED =
 const RETENTION_ENABLED = (process.env.SMARTPROTO_RETENTION_ENABLED ?? 'true').toLowerCase() !== 'false';
 const RETENTION_HOUR = Number(process.env.SMARTPROTO_RETENTION_HOUR ?? 1);
 
+/** SP-A-101 — production default is AUTO so a missing mode file does not silent-stall. */
+const DEFAULT_MODE: Mode = (() => {
+  const raw = (process.env.SMARTPROTO_DEFAULT_MODE || 'auto').trim().toLowerCase();
+  if (raw === 'off' || raw === 'single' || raw === 'auto' || raw === 'test-auto' || raw === 'forced') {
+    return raw;
+  }
+  return 'auto';
+})();
+
+/**
+ * SP-A-101 — after TEST-AUTO window ends, land in AUTO (not OFF).
+ * Override with SMARTPROTO_TEST_AUTO_EXPIRE_MODE=off only for deliberate lab stops.
+ */
+const TEST_AUTO_EXPIRE_MODE: Mode = (() => {
+  const raw = (process.env.SMARTPROTO_TEST_AUTO_EXPIRE_MODE || 'auto').trim().toLowerCase();
+  if (raw === 'off' || raw === 'auto') return raw;
+  return 'auto';
+})();
+
+/** SP-A-101 — recover accidental OFF (no holdOff) after this many ms. Default 3h. */
+const STALL_RECOVER_ENABLED =
+  (process.env.SMARTPROTO_STALL_RECOVER ?? 'true').toLowerCase() !== 'false';
+const STALL_RECOVER_OFF_MS = (() => {
+  const n = Number(process.env.SMARTPROTO_STALL_RECOVER_OFF_MS || 3 * 60 * 60 * 1000);
+  return Number.isFinite(n) && n > 0 ? n : 3 * 60 * 60 * 1000;
+})();
+
 mkdirSync(DATA_DIR, { recursive: true });
 
 function readMode(): Mode {
@@ -67,7 +100,7 @@ function readMode(): Mode {
   } catch {
     /* default below */
   }
-  return 'off';
+  return DEFAULT_MODE;
 }
 
 function readModeFile(): Record<string, unknown> {
@@ -294,6 +327,20 @@ async function logFreshnessHealth(publishedThisTick: boolean): Promise<void> {
   }
 }
 
+function maybeRecoverStalledOff(): boolean {
+  if (!STALL_RECOVER_ENABLED) return false;
+  const meta = readModeFile();
+  if (meta.holdOff === true || meta.holdOff === 'true') return false;
+  const setAt = meta.setAt ? Date.parse(String(meta.setAt)) : NaN;
+  const ageMs = Number.isFinite(setAt) ? Date.now() - setAt : STALL_RECOVER_OFF_MS;
+  if (ageMs < STALL_RECOVER_OFF_MS) return false;
+  log(
+    `SP-A-101 STALL RECOVER — mode OFF without holdOff for ${Math.round(ageMs / 60000)}m (≥${Math.round(STALL_RECOVER_OFF_MS / 60000)}m) — switching to AUTO.`,
+  );
+  writeMode('auto', { recoveredFrom: 'off-stall', previousSetAt: meta.setAt || null });
+  return true;
+}
+
 async function loopOnce(): Promise<void> {
   // Retention runs even when editorial mode is OFF so disk stays bounded
   // without requiring AUTO ticks — still only once per night.
@@ -304,6 +351,7 @@ async function loopOnce(): Promise<void> {
   const mode = readMode();
 
   if (mode === 'off') {
+    maybeRecoverStalledOff();
     return;
   }
 
@@ -315,8 +363,8 @@ async function loopOnce(): Promise<void> {
       lastRunStatus: ok ? 'ok' : 'error',
       ...(ok ? { lastNewsAt: new Date().toISOString() } : {}),
     });
-    writeMode('off');
-    log('Single cycle done — mode set back to OFF.');
+    writeMode('off', { holdOff: true, reason: 'single-complete' });
+    log('Single cycle done — mode set back to OFF (holdOff).');
     return;
   }
 
@@ -360,13 +408,15 @@ async function loopOnce(): Promise<void> {
   }
 
   if (mode === 'test-auto') {
-    // SP-A-063: expire after TEST_AUTO_DURATION_MS from setAt, then OFF.
+    // SP-A-063 + SP-A-101: expire after TEST_AUTO_DURATION_MS from setAt, then AUTO (not OFF).
     try {
       const raw = readModeFile();
       const setAt = raw.setAt ? Date.parse(String(raw.setAt)) : NaN;
       if (Number.isFinite(setAt) && Date.now() - setAt >= TEST_AUTO_DURATION_MS) {
-        log(`TEST-AUTO duration ${TEST_AUTO_DURATION_MS}ms elapsed — switching to OFF.`);
-        writeMode('off');
+        log(
+          `TEST-AUTO duration ${TEST_AUTO_DURATION_MS}ms elapsed — switching to ${TEST_AUTO_EXPIRE_MODE.toUpperCase()}.`,
+        );
+        writeMode(TEST_AUTO_EXPIRE_MODE, { reason: 'test-auto-expired' });
         return;
       }
       const state0 = readState();
@@ -374,8 +424,10 @@ async function loopOnce(): Promise<void> {
         writeState({ testAutoTicks: 0, testAutoSetAt: String(raw.setAt || '') });
       }
       if (TEST_AUTO_MAX_TICKS > 0 && Number(readState().testAutoTicks || 0) >= TEST_AUTO_MAX_TICKS) {
-        log(`TEST-AUTO max ticks ${TEST_AUTO_MAX_TICKS} reached — switching to OFF.`);
-        writeMode('off');
+        log(
+          `TEST-AUTO max ticks ${TEST_AUTO_MAX_TICKS} reached — switching to ${TEST_AUTO_EXPIRE_MODE.toUpperCase()}.`,
+        );
+        writeMode(TEST_AUTO_EXPIRE_MODE, { reason: 'test-auto-max-ticks' });
         return;
       }
     } catch {
@@ -395,8 +447,10 @@ async function loopOnce(): Promise<void> {
         ...(ok ? { lastNewsAt: new Date().toISOString() } : {}),
       });
       if (TEST_AUTO_MAX_TICKS > 0 && tickNo >= TEST_AUTO_MAX_TICKS) {
-        log(`TEST-AUTO max ticks ${TEST_AUTO_MAX_TICKS} reached after this tick — switching to OFF.`);
-        writeMode('off');
+        log(
+          `TEST-AUTO max ticks ${TEST_AUTO_MAX_TICKS} reached after this tick — switching to ${TEST_AUTO_EXPIRE_MODE.toUpperCase()}.`,
+        );
+        writeMode(TEST_AUTO_EXPIRE_MODE, { reason: 'test-auto-max-ticks' });
       }
     }
     return;
@@ -426,8 +480,10 @@ async function loopOnce(): Promise<void> {
 }
 
 async function main() {
-  if (!existsSync(MODE_FILE)) writeMode('off');
-  log(`SmartProto Hetzner worker started. Mode file: ${MODE_FILE}`);
+  if (!existsSync(MODE_FILE)) writeMode(DEFAULT_MODE, { reason: 'boot-default' });
+  log(
+    `SmartProto Hetzner worker started. Mode file: ${MODE_FILE} (default=${DEFAULT_MODE}, test-auto-expire=${TEST_AUTO_EXPIRE_MODE}, stall-recover=${STALL_RECOVER_ENABLED}/${STALL_RECOVER_OFF_MS}ms)`,
+  );
   // SP-A-100F — purge removed-slug rows + bad heroes (e.g. Neakasa e-bike mismatch).
   try {
     const { scrubRemovedSlugs } = await import('./scrub-removed-slugs');
