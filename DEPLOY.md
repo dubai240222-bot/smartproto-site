@@ -91,7 +91,24 @@ server {
 
 Then add HTTPS with Let’s Encrypt or Caddy.
 
-## 5) Cloudflare setup
+## 5) Canonical host (www) — SP-A-103
+
+SmartProto SEO surfaces use `https://www.smartproto.net` only.
+Next middleware issues a **308** from `smartproto.net` → `www.smartproto.net`.
+Also add an Nginx apex redirect so bots never see a second 200 host:
+
+```nginx
+server {
+  listen 443 ssl http2;
+  server_name smartproto.net;
+  return 308 https://www.smartproto.net$request_uri;
+}
+```
+
+`robots.txt` allows `/api/media/` (article heroes) while disallowing other `/api/`.
+Empty EN/TR homes and empty category hubs are `noindex`; `/editorial` stays out of the sitemap.
+
+## 6) Cloudflare setup
 
 ### DNS
 
@@ -110,7 +127,7 @@ Then add HTTPS with Let’s Encrypt or Caddy.
 1. Leave Cloudflare proxy enabled for CDN caching.
 2. Optional: turn on Brotli, HTTP/3, and Auto Minify if they fit your setup.
 
-## 6) Editorial Chief PIN
+## 7) Editorial Chief PIN
 
 Primary gate for `/editorial/chief` and `/editorial/author` is `SMARTPROTO_NEWS_PIN`
 (example in `.env.example`: `098765-543210`). Server-side only — never `NEXT_PUBLIC_*`.

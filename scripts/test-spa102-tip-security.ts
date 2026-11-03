@@ -44,9 +44,23 @@ assert.match(
   require('fs').readFileSync(require('path').resolve(__dirname, '../src/lib/editorial/reader-scout.ts'), 'utf8'),
   /isPrivateOrLocalHost|ownerNotifiedAt|markChallengeUsed/,
 );
-assert.match(
-  require('fs').readFileSync(require('path').resolve(__dirname, '../src/lib/editorial/owner-notify.ts'), 'utf8'),
-  /notifyOwnerOfSafeTip/,
+const ownerNotify = require('fs').readFileSync(
+  require('path').resolve(__dirname, '../src/lib/editorial/owner-notify.ts'),
+  'utf8',
+);
+assert.match(ownerNotify, /notifyOwnerOfSafeTip/);
+assert.match(ownerNotify, /delivered/);
+assert.match(ownerNotify, /no-delivery-channel/);
+assert.doesNotMatch(
+  ownerNotify,
+  /return \{ ok: true, persisted, emailed, webhooked \};/,
 );
 
-console.log('SP-A-102 tip security probes passed.');
+const robots = require('fs').readFileSync(
+  require('path').resolve(__dirname, '../src/app/robots.ts'),
+  'utf8',
+);
+assert.match(robots, /\/api\/media\//);
+assert.match(robots, /disallow: \['\/api\/'/);
+
+console.log('SP-A-102/103 tip security + SEO contract probes passed.');

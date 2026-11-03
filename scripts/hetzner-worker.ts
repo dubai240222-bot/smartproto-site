@@ -294,12 +294,26 @@ async function logFreshnessHealth(publishedThisTick: boolean): Promise<void> {
   }
 }
 
+async function maybeRetryOwnerNotify(): Promise<void> {
+  try {
+    const { retryUndeliveredOwnerNotifies } = await import('../src/lib/editorial/owner-notify');
+    const r = await retryUndeliveredOwnerNotifies(5);
+    if (r.attempted) {
+      log(`SP-A-103 owner-notify retry: attempted=${r.attempted} delivered=${r.delivered}`);
+    }
+  } catch (err) {
+    log(`Owner-notify retry skipped: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
 async function loopOnce(): Promise<void> {
   // Retention runs even when editorial mode is OFF so disk stays bounded
   // without requiring AUTO ticks — still only once per night.
   await maybeRetentionCleanup();
   // Translation drip also runs in OFF so EN/TR catch up without a factory burst.
   await maybeTranslateDrip();
+  // SP-A-103 — retry SAFE tip emails that failed delivery (never mark sent on disk-only).
+  await maybeRetryOwnerNotify();
 
   const mode = readMode();
 

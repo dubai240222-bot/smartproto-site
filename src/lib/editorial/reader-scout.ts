@@ -345,15 +345,26 @@ export async function moderateReaderScoutSubmission(
     moderationReason: `SAFE→queued_editorial:${verdict.reason}`.slice(0, 400),
     rejectReason: undefined,
   });
-  // SP-A-102 — owner mail only AFTER SAFE (never on raw intake).
+  // SP-A-102/103 — owner mail only AFTER SAFE; mark notified ONLY if delivered.
   if (promoted && !promoted.ownerNotifiedAt) {
     try {
       const { notifyOwnerOfSafeTip } = await import('@/lib/editorial/owner-notify');
       const notify = await notifyOwnerOfSafeTip(promoted);
-      if (notify.ok) {
+      if (notify.delivered) {
         return (
           (await patchReaderScoutSubmission(id, {
             ownerNotifiedAt: new Date().toISOString(),
+          })) || promoted
+        );
+      }
+      // Persist failure hint for ops — do NOT set ownerNotifiedAt (allows retry).
+      if (notify.reason) {
+        return (
+          (await patchReaderScoutSubmission(id, {
+            moderationReason: `${promoted.moderationReason || 'SAFE'}|notify:${notify.reason}`.slice(
+              0,
+              400,
+            ),
           })) || promoted
         );
       }

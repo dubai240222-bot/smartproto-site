@@ -93,6 +93,7 @@ export async function localizedArticleMetadata(
   alternates.canonical = `/${language}/articles/${loc.localizedSlug}`;
 
   const ogImage = absoluteMediaUrl(canonicalHeroUrl(canon));
+  const path = `/${language}/articles/${loc.localizedSlug}`;
 
   return {
     title: `${loc.localizedTitle} | SmartProto`,
@@ -101,9 +102,18 @@ export async function localizedArticleMetadata(
     openGraph: {
       title: loc.localizedTitle,
       description: loc.localizedExcerpt,
+      url: path,
+      siteName: 'SmartProto',
       locale: LOCALE_UI[language].ogLocale,
       type: 'article',
-      ...(ogImage ? { images: [{ url: ogImage }] } : {}),
+      publishedTime: canon.publishedAt,
+      ...(ogImage ? { images: [{ url: ogImage, alt: loc.localizedTitle }] } : {}),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: loc.localizedTitle,
+      description: loc.localizedExcerpt,
+      ...(ogImage ? { images: [ogImage] } : {}),
     },
   };
 }

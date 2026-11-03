@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getAllArticles, type Article } from '@/data/articles';
 import { ThematicNavigator } from '@/components/thematic-navigator';
@@ -148,6 +149,35 @@ function filterArticlesByCategory(categoryName: string, list: Article[]): Articl
       summary.includes(norm)
     );
   });
+}
+
+/** SP-A-103 — empty category hubs must not be indexed as thin pages. */
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ category?: string; page?: string }>;
+}): Promise<Metadata> {
+  const params = await searchParams;
+  const activeCategory = params.category?.trim();
+  if (!activeCategory) {
+    return {
+      alternates: { canonical: '/' },
+    };
+  }
+  const sortedArticles = sortArticlesByPublishedDate(getAllArticles());
+  const filtered = filterArticlesByCategory(activeCategory, sortedArticles);
+  if (filtered.length === 0) {
+    return {
+      title: `${activeCategory} | SmartProto`,
+      robots: { index: false, follow: true },
+      alternates: { canonical: '/' },
+    };
+  }
+  return {
+    title: `${activeCategory} | SmartProto`,
+    robots: { index: true, follow: true },
+    alternates: { canonical: `/?category=${encodeURIComponent(activeCategory)}` },
+  };
 }
 
 export default async function HomePage({
