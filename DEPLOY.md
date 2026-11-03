@@ -141,7 +141,7 @@ cd /opt/apps/smartproto/app
 docker compose --env-file .env -f docker-compose.smartproto.yml -p smartproto up -d --build
 ```
 
-## 6b) Daily news quota (AUTO volume)
+## 8) Daily news quota (AUTO volume)
 
 Target **5–6 news / rolling 24h** on the Hetzner worker (`smartproto-worker`).
 Enforced in `src/lib/newsroom/daily-quota.ts` during each news tick:
@@ -160,7 +160,7 @@ When **at/over** target: normal floors, China ≤1 attempt/tick.
 
 Articles stay on the slower ~3h cadence (`SMARTPROTO_ARTICLE_INTERVAL_MS`).
 
-## 7) Useful checks
+## 9) Useful checks
 
 ```bash
 docker logs -f smartproto-worker
