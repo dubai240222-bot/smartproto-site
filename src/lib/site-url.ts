@@ -1,6 +1,7 @@
 /**
  * SP-A-097F1 — public site URL for canonical / sitemap / metadata.
  * Never emit localhost in production SEO surfaces.
+ * SP-A-103 — always prefer www.smartproto.net (apex redirects there).
  */
 const PRODUCTION_SITE_URL = 'https://www.smartproto.net';
 
@@ -18,6 +19,10 @@ export function getPublicSiteUrl(): string {
       host.endsWith('.local')
     ) {
       // Misconfigured deploy (compose default was localhost:3100) — fall back to public host.
+      return PRODUCTION_SITE_URL;
+    }
+    // Collapse apex → www so canonicals / OG / sitemap stay on one host.
+    if (host === 'smartproto.net') {
       return PRODUCTION_SITE_URL;
     }
     return `${u.protocol}//${u.host}`;

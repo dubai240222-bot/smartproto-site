@@ -60,6 +60,8 @@ export type ReaderScoutSubmission = {
   createdAt: string;
   updatedAt: string;
   attempts?: number;
+  /** SP-A-102 — set when owner inbox was notified after SAFE. */
+  ownerNotifiedAt?: string;
 };
 
 export type ReaderScoutAcceptResult =
@@ -97,14 +99,40 @@ export function stripUserText(raw: unknown, max: number): string {
     .slice(0, max);
 }
 
-/** Strict http(s) URL validation — no javascript:/data:/file:. */
+const MAX_URL_LEN = 2048;
+
+function isPrivateOrLocalHost(hostname: string): boolean {
+  const h = hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  if (h === 'localhost' || h.endsWith('.localhost') || h === '0.0.0.0') return true;
+  if (h === '::1' || h === '0:0:0:0:0:0:0:1') return true;
+  // IPv4 literals
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(h)) {
+    const parts = h.split('.').map(Number);
+    if (parts.some((n) => !Number.isFinite(n) || n < 0 || n > 255)) return true;
+    const [a, b] = parts;
+    if (a === 10 || a === 127 || a === 0) return true;
+    if (a === 169 && b === 254) return true; // link-local / cloud metadata
+    if (a === 192 && b === 168) return true;
+    if (a === 172 && b >= 16 && b <= 31) return true;
+    if (a === 100 && b >= 64 && b <= 127) return true; // CGNAT
+  }
+  // IPv6 local / link-local / ULA
+  if (h.includes(':')) {
+    if (h.startsWith('fc') || h.startsWith('fd') || h.startsWith('fe80')) return true;
+    if (h === '::' || h.startsWith('::ffff:127.') || h.startsWith('::ffff:10.')) return true;
+  }
+  return false;
+}
+
+/** Strict http(s) URL validation — no javascript:/data:/file:, no creds, no private hosts. */
 export function validateScoutUrl(
   raw: string,
 ): { ok: true; url: string; normalized: string } | { ok: false; message: string } {
   const trimmed = (raw || '').trim();
   if (!trimmed) return { ok: false, message: 'Укажите ссылку.' };
+  if (trimmed.length > MAX_URL_LEN) return { ok: false, message: 'Ссылка слишком длинная.' };
   if (/\s/.test(trimmed)) return { ok: false, message: 'Ссылка содержит пробелы.' };
-  if (/^(javascript|data|file|vbscript|about):/i.test(trimmed)) {
+  if (/^(javascript|data|file|vbscript|about|blob):/i.test(trimmed)) {
     return { ok: false, message: 'Недопустимый тип ссылки.' };
   }
   let parsed: URL;
@@ -116,11 +144,19 @@ export function validateScoutUrl(
   if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
     return { ok: false, message: 'Разрешены только http/https ссылки.' };
   }
-  if (!parsed.hostname || parsed.hostname.length < 3 || !parsed.hostname.includes('.')) {
+  // Block credential injection / phishing via user:pass@host
+  if (parsed.username || parsed.password) {
+    return { ok: false, message: 'Ссылка с логином/паролем не принимается.' };
+  }
+  if (!parsed.hostname || parsed.hostname.length < 3) {
     return { ok: false, message: 'Некорректный адрес сайта.' };
   }
-  if (/^(localhost|127\.|0\.0\.0\.0|10\.|192\.168\.|169\.254\.)/i.test(parsed.hostname)) {
-    return { ok: false, message: 'Локальные адреса не принимаются.' };
+  // Require a dot for normal hosts (blocks single-label + most IP edge cases handled below)
+  if (!parsed.hostname.includes('.') && !parsed.hostname.includes(':')) {
+    return { ok: false, message: 'Некорректный адрес сайта.' };
+  }
+  if (isPrivateOrLocalHost(parsed.hostname)) {
+    return { ok: false, message: 'Локальные и служебные адреса не принимаются.' };
   }
   const normalized = normalizeUrl(parsed.toString());
   if (!normalized) return { ok: false, message: 'Некорректная ссылка.' };
@@ -304,11 +340,39 @@ export async function moderateReaderScoutSubmission(
       moderationReason: verdict.reason.slice(0, 400),
     });
   }
-  return patchReaderScoutSubmission(id, {
+  const promoted = await patchReaderScoutSubmission(id, {
     status: 'queued_editorial',
     moderationReason: `SAFE→queued_editorial:${verdict.reason}`.slice(0, 400),
     rejectReason: undefined,
   });
+  // SP-A-102/103 — owner mail only AFTER SAFE; mark notified ONLY if delivered.
+  if (promoted && !promoted.ownerNotifiedAt) {
+    try {
+      const { notifyOwnerOfSafeTip } = await import('@/lib/editorial/owner-notify');
+      const notify = await notifyOwnerOfSafeTip(promoted);
+      if (notify.delivered) {
+        return (
+          (await patchReaderScoutSubmission(id, {
+            ownerNotifiedAt: new Date().toISOString(),
+          })) || promoted
+        );
+      }
+      // Persist failure hint for ops — do NOT set ownerNotifiedAt (allows retry).
+      if (notify.reason) {
+        return (
+          (await patchReaderScoutSubmission(id, {
+            moderationReason: `${promoted.moderationReason || 'SAFE'}|notify:${notify.reason}`.slice(
+              0,
+              400,
+            ),
+          })) || promoted
+        );
+      }
+    } catch {
+      /* notify failure must not block editorial queue */
+    }
+  }
+  return promoted;
 }
 
 /**
@@ -353,9 +417,13 @@ export async function acceptReaderScoutSubmission(opts: {
   email?: string;
   /** Honeypot — if filled, fake OK without queueing. */
   honeypot?: string;
+  /** SP-A-102 — signed challenge from GET /api/scout */
+  challenge?: string;
+  /** SP-A-102 — client form-open timestamp (ms); soft time-trap */
+  openedAt?: number | string;
   ip?: string;
 }): Promise<ReaderScoutAcceptResult> {
-  // Soft spam trap
+  // Soft spam trap — look like success, never queue, never notify owner.
   if (stripUserText(opts.honeypot, 200)) {
     return {
       ok: true,
@@ -363,6 +431,55 @@ export async function acceptReaderScoutSubmission(opts: {
       status: 'queued',
       message: 'Спасибо. Находка передана в редакцию SmartProto.',
     };
+  }
+
+  // Challenge + time window (bots / scripted floods).
+  const { verifyScoutChallenge, wasChallengeUsed, markChallengeUsed } = await import(
+    '@/lib/editorial/scout-challenge'
+  );
+  const challengeCheck = verifyScoutChallenge(opts.challenge);
+  if (!challengeCheck.ok) {
+    const msg =
+      challengeCheck.reason === 'too_fast'
+        ? 'Подождите секунду и отправьте ещё раз.'
+        : challengeCheck.reason === 'expired' || challengeCheck.reason === 'missing'
+          ? 'Обновите страницу и отправьте ссылку снова.'
+          : 'Не удалось проверить форму. Обновите страницу.';
+    return { ok: false, status: 'rejected', code: 'VALIDATION', message: msg };
+  }
+  if (await wasChallengeUsed(String(opts.challenge))) {
+    return {
+      ok: false,
+      status: 'rejected',
+      code: 'VALIDATION',
+      message: 'Обновите страницу и отправьте ссылку снова.',
+    };
+  }
+
+  const openedAtNum =
+    typeof opts.openedAt === 'number'
+      ? opts.openedAt
+      : typeof opts.openedAt === 'string'
+        ? Number(opts.openedAt)
+        : NaN;
+  if (Number.isFinite(openedAtNum)) {
+    const fillMs = Date.now() - openedAtNum;
+    if (fillMs < 2_000) {
+      return {
+        ok: false,
+        status: 'rejected',
+        code: 'VALIDATION',
+        message: 'Подождите секунду и отправьте ещё раз.',
+      };
+    }
+    if (fillMs > 6 * 60 * 60 * 1000) {
+      return {
+        ok: false,
+        status: 'rejected',
+        code: 'VALIDATION',
+        message: 'Обновите страницу и отправьте ссылку снова.',
+      };
+    }
   }
 
   const urlCheck = validateScoutUrl(opts.url);
@@ -386,6 +503,8 @@ export async function acceptReaderScoutSubmission(opts: {
       message: 'Слишком много отправок. Попробуйте позже.',
     };
   }
+
+  await markChallengeUsed(String(opts.challenge));
 
   if ((await countOpenQueue()) >= READER_SCOUT_MAX_OPEN_QUEUE) {
     return {
@@ -529,6 +648,8 @@ export async function loadQueuedReaderScoutForTick(
     text: string;
     publishedAt: string;
     sourceName: string;
+    /** SP-A-102 — for byline + stringer board when tip is published */
+    submitterName?: string;
   }>
 > {
   // Ensure quarantine is drained with cheap filter before seating.
@@ -562,6 +683,7 @@ export async function loadQueuedReaderScoutForTick(
       text,
       publishedAt: s.createdAt,
       sourceName: READER_SCOUT_SOURCE_NAME,
+      submitterName: s.submitterName,
     };
   });
 }

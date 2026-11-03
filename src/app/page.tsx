@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getAllArticles, type Article } from '@/data/articles';
 import { ThematicNavigator } from '@/components/thematic-navigator';
@@ -10,6 +11,8 @@ import {
   QuickNewsBlock,
   QuickUpdateItem,
 } from '@/components/article-card';
+import { TipCtaBanner } from '@/components/tip-cta-banner';
+import { StringerBoardSection } from '@/components/stringer-board';
 
 const FRONT_SLOT_COUNT = 14; // lead + rail5 + grid4 + quick4
 const PAST_PAGE_SIZE = 10;
@@ -148,6 +151,35 @@ function filterArticlesByCategory(categoryName: string, list: Article[]): Articl
   });
 }
 
+/** SP-A-103 — empty category hubs must not be indexed as thin pages. */
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ category?: string; page?: string }>;
+}): Promise<Metadata> {
+  const params = await searchParams;
+  const activeCategory = params.category?.trim();
+  if (!activeCategory) {
+    return {
+      alternates: { canonical: '/' },
+    };
+  }
+  const sortedArticles = sortArticlesByPublishedDate(getAllArticles());
+  const filtered = filterArticlesByCategory(activeCategory, sortedArticles);
+  if (filtered.length === 0) {
+    return {
+      title: `${activeCategory} | SmartProto`,
+      robots: { index: false, follow: true },
+      alternates: { canonical: '/' },
+    };
+  }
+  return {
+    title: `${activeCategory} | SmartProto`,
+    robots: { index: true, follow: true },
+    alternates: { canonical: `/?category=${encodeURIComponent(activeCategory)}` },
+  };
+}
+
 export default async function HomePage({
   searchParams,
 }: {
@@ -185,6 +217,8 @@ export default async function HomePage({
 
   return (
     <main className="home-editorial min-h-screen bg-[var(--bg)] text-[var(--text)] transition-colors">
+      {/* SP-A-102 — tip CTA first, before the editorial grid */}
+      {!activeCategory ? <TipCtaBanner locale="ru" /> : null}
       <div className="mx-auto max-w-[1440px] space-y-3 px-2 py-2.5 sm:space-y-4 sm:px-4 sm:py-3 lg:px-5">
         {activeCategory ? (
           <>
@@ -284,6 +318,9 @@ export default async function HomePage({
                 </div>
               </section>
             ) : null}
+
+            {/* SP-A-102 — freelance stringer leaderboard */}
+            <StringerBoardSection limit={5} compact />
 
             {/* Past news with numbered pages */}
             <section id="past-news">

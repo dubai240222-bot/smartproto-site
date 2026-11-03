@@ -9,6 +9,7 @@ import { getAllArticles } from '@/data/articles';
 import { toLocaleSearchItems } from '@/data/localizations';
 import { getPublicSiteUrl } from '@/lib/site-url';
 import { isAppLocale, LOCALE_UI, type AppLocale } from '@/lib/i18n/locales';
+import { publicEditorialEmail } from '@/lib/site-contact';
 import './globals.css';
 
 const siteUrl = getPublicSiteUrl();
@@ -60,6 +61,7 @@ export default async function RootLayout({
 }>) {
   const locale = await requestLocale();
   const ui = LOCALE_UI[locale];
+  const contactEmail = publicEditorialEmail();
   const articles = getAllArticles();
   const byId = new Map(
     articles.map((a) => [a.id, { category: a.category, publishedAt: a.publishedAt }]),
@@ -74,6 +76,7 @@ export default async function RootLayout({
     <html lang={ui.htmlLang} className="h-full antialiased" suppressHydrationWarning data-locale={locale}>
       <head>
         <meta charSet="utf-8" />
+        {contactEmail ? <meta name="smartproto-contact" content={contactEmail} /> : null}
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -99,7 +102,7 @@ export default async function RootLayout({
           <HtmlLang />
           <Header ruArticles={ruArticles} enItems={enItems} trItems={trItems} />
           <div className="flex-1">{children}</div>
-          <SiteFooter />
+          <SiteFooter contactEmail={contactEmail} />
         </LocaleSwitcherProvider>
       </body>
     </html>

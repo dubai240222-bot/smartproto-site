@@ -46,6 +46,7 @@ export type LocaleUi = {
   navNews: string;
   navArchive: string;
   navScout: string;
+  navStringers: string;
   backHome: string;
   contents: string;
   category: string;
@@ -77,7 +78,8 @@ export const LOCALE_UI: Record<AppLocale, LocaleUi> = {
     navHome: 'Главная',
     navNews: 'Новости',
     navArchive: 'Архив',
-    navScout: 'Прислать находку',
+    navScout: 'Прислать новость',
+    navStringers: 'Внештатные',
     backHome: 'На главную',
     contents: 'Содержание',
     category: 'Категория',
@@ -92,7 +94,7 @@ export const LOCALE_UI: Record<AppLocale, LocaleUi> = {
     emptyCategory: 'В этой рубрике пока нет материалов.',
     localizationUnavailable: 'Перевод недоступен',
     footerEditorial: 'Редакция и сотрудничество',
-    footerScout: 'Прислать находку → /scout',
+    footerScout: 'Прислать крутую новость',
     footerRights: 'Все права защищены.',
     siteDescription:
       'SmartProto — интернет-издание о ранних технологиях, прототипах, инженерных решениях и научных открытиях.',
@@ -108,7 +110,8 @@ export const LOCALE_UI: Record<AppLocale, LocaleUi> = {
     navHome: 'Home',
     navNews: 'News',
     navArchive: 'Archive',
-    navScout: 'Tip a find',
+    navScout: 'Send a tip',
+    navStringers: 'Stringers',
     backHome: 'Back to home',
     contents: 'Contents',
     category: 'Category',
@@ -123,7 +126,7 @@ export const LOCALE_UI: Record<AppLocale, LocaleUi> = {
     emptyCategory: 'No stories in this section yet.',
     localizationUnavailable: 'Translation unavailable',
     footerEditorial: 'Editorial & collaboration',
-    footerScout: 'Tip a find → /scout',
+    footerScout: 'Send a cool tip',
     footerRights: 'All rights reserved.',
     siteDescription:
       'SmartProto covers early technology, prototypes, engineering, and scientific discoveries.',
@@ -139,7 +142,8 @@ export const LOCALE_UI: Record<AppLocale, LocaleUi> = {
     navHome: 'Ana sayfa',
     navNews: 'Haberler',
     navArchive: 'Arşiv',
-    navScout: 'Bulgu gönder',
+    navScout: 'Haber gönder',
+    navStringers: 'Muhabirler',
     backHome: 'Ana sayfaya dön',
     contents: 'İçindekiler',
     category: 'Kategori',
@@ -154,7 +158,7 @@ export const LOCALE_UI: Record<AppLocale, LocaleUi> = {
     emptyCategory: 'Bu bölümde henüz yazı yok.',
     localizationUnavailable: 'Çeviri yok',
     footerEditorial: 'Editöryel ve iş birliği',
-    footerScout: 'Bulgu gönder → /scout',
+    footerScout: 'Haber gönder',
     footerRights: 'Tüm hakları saklıdır.',
     siteDescription:
       'SmartProto; erken teknoloji, prototipler, mühendislik ve bilimsel keşifler hakkında yayın yapar.',

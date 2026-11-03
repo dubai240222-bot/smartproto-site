@@ -1,10 +1,11 @@
 'use client';
 
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { detectLocaleFromPath } from '@/components/language-switcher';
 import { LOCALE_UI } from '@/lib/i18n/locales';
 
-export function SiteFooter() {
+export function SiteFooter({ contactEmail }: { contactEmail?: string | null }) {
   const pathname = usePathname() || '/';
   const locale = detectLocaleFromPath(pathname);
   const ui = LOCALE_UI[locale];
@@ -18,10 +19,32 @@ export function SiteFooter() {
           <p className="text-[11px] uppercase tracking-wide text-[var(--muted)]">
             {ui.footerEditorial}
           </p>
-          <p>
-            <a href="/scout" className="text-[var(--text)] transition hover:text-[var(--accent)]">
+          <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+            <Link href="/scout" className="text-[var(--text)] transition hover:text-[var(--accent)]">
               {ui.footerScout}
-            </a>
+            </Link>
+            <span aria-hidden className="text-[var(--border)]">
+              ·
+            </span>
+            <Link
+              href="/stringers"
+              className="text-[var(--text)] transition hover:text-[var(--accent)]"
+            >
+              {ui.navStringers}
+            </Link>
+            {contactEmail ? (
+              <>
+                <span aria-hidden className="text-[var(--border)]">
+                  ·
+                </span>
+                <a
+                  href={`mailto:${contactEmail}?subject=${encodeURIComponent('SmartProto')}`}
+                  className="text-[var(--text)] transition hover:text-[var(--accent)]"
+                >
+                  {contactEmail}
+                </a>
+              </>
+            ) : null}
           </p>
         </div>
         <p className="mt-4 text-[11px]">

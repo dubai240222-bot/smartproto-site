@@ -6,6 +6,7 @@ import { sortArticlesByPublishedDate } from '@/lib/article-utils';
 export const metadata = {
   title: 'Темы | SmartProto',
   description: 'Роботы, AI, гаджеты, наука и производство — тематические подборки SmartProto.',
+  robots: { index: false, follow: false },
 };
 
 export const dynamic = 'force-dynamic';

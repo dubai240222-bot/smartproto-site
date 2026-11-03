@@ -17,6 +17,7 @@ import { displayHeroUrl } from '@/lib/homepage-editorial-mix';
 import { disclosureSources } from '@/lib/source-label';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { articleSwitcherLinks, buildArticleLanguageAlternates } from '@/lib/i18n/article-alternates';
+import { articleOgImage } from '@/lib/seo/absolute-url';
 
 // SP-A-056: render per request (both storage modes) so a newly published
 // article — from SQLite on Hetzner, or freshly rebuilt JSON on Vercel — is
@@ -40,8 +41,12 @@ export async function generateMetadata({
   if (!article) {
     return {
       title: 'Материал не найден',
+      robots: { index: false, follow: false },
     };
   }
+
+  const ogImage = articleOgImage(article);
+  const path = `/articles/${article.slug}`;
 
   return {
     title: `${article.title} | SmartProto`,
@@ -50,6 +55,22 @@ export async function generateMetadata({
       articleId: article.id,
       ruSlug: article.slug,
     }),
+    openGraph: {
+      title: article.title,
+      description: article.summary,
+      url: path,
+      siteName: 'SmartProto',
+      locale: 'ru_RU',
+      type: 'article',
+      publishedTime: article.publishedAt,
+      ...(ogImage ? { images: [{ url: ogImage, alt: article.title }] } : {}),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: article.title,
+      description: article.summary,
+      ...(ogImage ? { images: [ogImage] } : {}),
+    },
   };
 }
 
