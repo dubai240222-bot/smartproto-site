@@ -270,9 +270,15 @@ export function Header({
           ) : null}
           <Link
             href={scoutHref}
-            className="text-[var(--muted)] transition hover:text-[var(--accent)]"
+            className="bg-[var(--accent)] px-2.5 py-1 text-[var(--surface)] transition hover:opacity-90 dark:text-[#111]"
           >
             {ui.navScout}
+          </Link>
+          <Link
+            href="/stringers"
+            className="text-[var(--muted)] transition hover:text-[var(--accent)]"
+          >
+            {ui.navStringers}
           </Link>
         </nav>
       </div>

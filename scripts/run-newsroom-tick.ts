@@ -1284,6 +1284,8 @@ async function publishRssOnce(opts: {
     channelHint?: 'rss' | 'ai-radar' | 'reader-scout' | 'staff-author-link';
     submissionId?: string;
     staffAuthorName?: string;
+    /** SP-A-102 — Reader Scout submitter display name */
+    submitterName?: string;
   };
   let mergedPool: PoolItem[] = scoutPool.pool.map((p) => ({
     ...p,
@@ -1348,6 +1350,7 @@ async function publishRssOnce(opts: {
         scoutMode: 'gadget' as EditorialMode,
         channelHint: 'reader-scout' as const,
         submissionId: q.submissionId,
+        submitterName: q.submitterName,
       }));
     if (readerItems.length) {
       console.log(
@@ -1888,6 +1891,15 @@ async function publishRssOnce(opts: {
                 author: item.staffAuthorName.trim(),
                 authorDesk: 'Staff Author / Journalist',
                 agentId: STAFF_AUTHOR_LINK_AGENT_ID,
+              };
+            }
+            // SP-A-102: Reader Scout stringer byline + leaderboard credit.
+            if (isReader && item.submitterName?.trim()) {
+              return {
+                ...stamped,
+                author: item.submitterName.trim(),
+                authorDesk: 'Reader Scout / внештатный',
+                agentId: READER_SCOUT_AGENT_ID,
               };
             }
             return stamped;

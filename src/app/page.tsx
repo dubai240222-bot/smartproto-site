@@ -10,6 +10,8 @@ import {
   QuickNewsBlock,
   QuickUpdateItem,
 } from '@/components/article-card';
+import { TipCtaBanner } from '@/components/tip-cta-banner';
+import { StringerBoardSection } from '@/components/stringer-board';
 
 const FRONT_SLOT_COUNT = 14; // lead + rail5 + grid4 + quick4
 const PAST_PAGE_SIZE = 10;
@@ -185,6 +187,8 @@ export default async function HomePage({
 
   return (
     <main className="home-editorial min-h-screen bg-[var(--bg)] text-[var(--text)] transition-colors">
+      {/* SP-A-102 — tip CTA first, before the editorial grid */}
+      {!activeCategory ? <TipCtaBanner locale="ru" /> : null}
       <div className="mx-auto max-w-[1440px] space-y-3 px-2 py-2.5 sm:space-y-4 sm:px-4 sm:py-3 lg:px-5">
         {activeCategory ? (
           <>
@@ -284,6 +288,9 @@ export default async function HomePage({
                 </div>
               </section>
             ) : null}
+
+            {/* SP-A-102 — freelance stringer leaderboard */}
+            <StringerBoardSection limit={5} compact />
 
             {/* Past news with numbered pages */}
             <section id="past-news">
