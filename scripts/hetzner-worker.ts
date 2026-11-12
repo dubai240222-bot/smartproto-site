@@ -187,7 +187,7 @@ function retentionDueToday(lastRetentionAt?: string, now = new Date()): boolean 
 function runRetentionCleanup(): Promise<{ ok: boolean }> {
   return new Promise((resolve) => {
     log(
-      `SP-A-074 retention cleanup (hour=${RETENTION_HOUR}, days=${process.env.SMARTPROTO_RETENTION_DAYS || 10}, min=${process.env.SMARTPROTO_MIN_ARTICLES || 100}, max=${process.env.SMARTPROTO_MAX_DELETE_PER_RUN || 25})…`,
+      `SP-A-074 retention cleanup (hour=${RETENTION_HOUR}, days=${process.env.SMARTPROTO_RETENTION_DAYS || 90}, min=${process.env.SMARTPROTO_MIN_ARTICLES || 500}, max=${process.env.SMARTPROTO_MAX_DELETE_PER_RUN || 25})…`,
     );
     const child = spawn('npx', ['tsx', 'scripts/run-retention-cleanup.ts', '--execute'], {
       cwd: process.cwd(),
