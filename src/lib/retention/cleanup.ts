@@ -1,8 +1,11 @@
 /**
- * SP-A-074 — SmartProto retention / night cleanup.
+ * SP-A-074 / SP-A-104 — SmartProto retention / night cleanup.
  *
  * Delete oldest articles only when ALL hold:
  *   age > RETENTION_DAYS AND remaining >= MIN_ARTICLES AND run deletes < MAX_DELETE_PER_RUN
+ *
+ * Defaults (SP-A-104): keep ≥500 articles, age out after 90 days.
+ * The old 100/10d pair pinned the live archive at ~100 (one-in/one-out).
  */
 
 import fs from 'node:fs';
@@ -58,12 +61,12 @@ export type RetentionPlan = {
 };
 
 export function loadRetentionConfig(env: NodeJS.ProcessEnv = process.env): RetentionConfig {
-  const retentionDays = Number(env.SMARTPROTO_RETENTION_DAYS ?? 10);
-  const minArticles = Number(env.SMARTPROTO_MIN_ARTICLES ?? 100);
+  const retentionDays = Number(env.SMARTPROTO_RETENTION_DAYS ?? 90);
+  const minArticles = Number(env.SMARTPROTO_MIN_ARTICLES ?? 500);
   const maxDeletePerRun = Number(env.SMARTPROTO_MAX_DELETE_PER_RUN ?? 25);
   return {
-    retentionDays: Number.isFinite(retentionDays) && retentionDays > 0 ? retentionDays : 10,
-    minArticles: Number.isFinite(minArticles) && minArticles > 0 ? minArticles : 100,
+    retentionDays: Number.isFinite(retentionDays) && retentionDays > 0 ? retentionDays : 90,
+    minArticles: Number.isFinite(minArticles) && minArticles > 0 ? minArticles : 500,
     maxDeletePerRun:
       Number.isFinite(maxDeletePerRun) && maxDeletePerRun > 0 ? Math.floor(maxDeletePerRun) : 25,
   };
