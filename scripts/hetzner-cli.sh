@@ -10,12 +10,17 @@ STATE_FILE="$DATA_DIR/worker-state.json"
 mkdir -p "$DATA_DIR"
 
 case "${1:-}" in
-  off|single|auto|test-auto)
+  off)
+    # SP-A-101 — holdOff prevents stall-recover from flipping back to AUTO.
+    printf '{"mode":"off","setAt":"%s","holdOff":true,"reason":"manual"}\n' "$(date -u +%FT%TZ)" > "$MODE_FILE"
+    echo "SmartProto worker mode set to: off (holdOff — will not auto-recover)"
+    ;;
+  single|auto|test-auto)
     printf '{"mode":"%s","setAt":"%s"}\n' "$1" "$(date -u +%FT%TZ)" > "$MODE_FILE"
     echo "SmartProto worker mode set to: $1"
     ;;
   forced)
-    # SP-A-063 — temporary burst for layout/image live check, then worker auto → test-auto.
+    # SP-A-063 — temporary burst for layout/image live check, then worker auto → test-auto → AUTO.
     TARGET="${2:-2}"
     printf '{"mode":"forced","setAt":"%s","target":%s}\n' "$(date -u +%FT%TZ)" "$TARGET" > "$MODE_FILE"
     # Reset forced counter so a new burst starts clean.
@@ -31,7 +36,7 @@ s["forcedPublished"]=0
 open(p,"w").write(json.dumps(s,indent=2)+"\n")
 PY
     fi
-    echo "SmartProto worker mode set to: forced (target=$TARGET publishes, then test-auto)"
+    echo "SmartProto worker mode set to: forced (target=$TARGET publishes, then test-auto → auto)"
     ;;
   status)
     echo "=== mode ==="
