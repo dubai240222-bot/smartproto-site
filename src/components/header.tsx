@@ -85,7 +85,7 @@ export function Header({
   }, [locale]);
 
   const newsHref = locale === 'ru' ? '/all' : homeHref;
-  const scoutHref = '/scout';
+  const scoutHref = locale === 'ru' ? '/scout' : `/${locale}/scout`;
 
   return (
     <header className="border-b border-[var(--border)] bg-[var(--surface)] text-[var(--text)] transition-colors">
