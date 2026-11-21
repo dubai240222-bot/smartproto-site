@@ -23,6 +23,12 @@ import 'dotenv/config';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
+import {
+  loadCreditCooldownMs,
+  nextNewsTickDecision,
+  patchStateAfterNewsTick,
+  shouldRecoverStalledOff,
+} from '../src/lib/newsroom/worker-control';
 
 type Mode = 'off' | 'single' | 'auto' | 'test-auto' | 'forced';
 
@@ -347,10 +353,15 @@ async function logFreshnessHealth(publishedThisTick: boolean): Promise<void> {
 function maybeRecoverStalledOff(): boolean {
   if (!STALL_RECOVER_ENABLED) return false;
   const meta = readModeFile();
-  if (meta.holdOff === true || meta.holdOff === 'true') return false;
-  const setAt = meta.setAt ? Date.parse(String(meta.setAt)) : NaN;
-  const ageMs = Number.isFinite(setAt) ? Date.now() - setAt : STALL_RECOVER_OFF_MS;
-  if (ageMs < STALL_RECOVER_OFF_MS) return false;
+  if (
+    !shouldRecoverStalledOff({
+      holdOff: meta.holdOff,
+      setAt: meta.setAt,
+      recoverAfterMs: STALL_RECOVER_OFF_MS,
+    })
+  ) {
+    return false;
+  }
   log(
     `SP-A-101 STALL RECOVER — mode OFF without holdOff for ${Math.round(ageMs / 60000)}m (≥${Math.round(STALL_RECOVER_OFF_MS / 60000)}m) — switching to AUTO.`,
   );
@@ -363,8 +374,7 @@ async function maybeReleaseReserve(reason: string): Promise<boolean> {
     const {
       countReserveItems,
       shouldReleaseReserve,
-      takeOldestReserve,
-      publishReserveItemLive,
+      releaseOldestReserveSafely,
     } = await import('../src/lib/newsroom/reserve-shelf');
     const shelf = countReserveItems();
     if (shelf <= 0) return false;
@@ -390,9 +400,17 @@ async function maybeReleaseReserve(reason: string): Promise<boolean> {
     ) {
       return false;
     }
-    const item = takeOldestReserve();
-    if (!item) return false;
-    const published = await publishReserveItemLive(item);
+    const released = await releaseOldestReserveSafely();
+    if (released.status === 'stale') {
+      log(`SP-A-105 RESERVE STALE skipped (${reason}): ${released.slug}`);
+      return false;
+    }
+    if (released.status === 'failed' || released.status === 'empty') {
+      if (released.status === 'failed') {
+        log(`SP-A-105 RESERVE RELEASE FAILED (${reason}): ${released.slug} ${released.error || ''}`);
+      }
+      return false;
+    }
     writeState({
       lastReserveReleaseAt: new Date().toISOString(),
       lastNewsAt: new Date().toISOString(),
@@ -400,9 +418,9 @@ async function maybeReleaseReserve(reason: string): Promise<boolean> {
       lastRunStatus: 'ok',
     });
     log(
-      `SP-A-105 RESERVE RELEASE (${reason}): ${published.slug} — shelf left=${countReserveItems()}`,
+      `SP-A-105 RESERVE RELEASE (${reason}/${released.status}): ${released.slug} — shelf left=${released.reservedLeft}`,
     );
-    return published.ok;
+    return true;
   } catch (err) {
     log(`Reserve release skipped: ${err instanceof Error ? err.message : String(err)}`);
     return false;
@@ -536,23 +554,29 @@ async function loopOnce(): Promise<void> {
 
   // AUTO
   const state = readState();
-  const creditAt = state.lastCreditErrorAt ? Date.parse(state.lastCreditErrorAt) : NaN;
-  const creditCooldown =
-    Number.isFinite(creditAt) && Date.now() - creditAt < 30 * 60 * 1000;
-  if (creditCooldown) {
-    log('OpenRouter credit error recently — skip AI tick (30m cooldown); reserve carousel may release.');
+  const tickDecision = nextNewsTickDecision({
+    lastNewsAt: state.lastNewsAt,
+    lastCreditErrorAt: state.lastCreditErrorAt,
+    lastRunStatus: state.lastRunStatus,
+    newsIntervalMs: NEWS_INTERVAL_MS,
+    creditCooldownMs: loadCreditCooldownMs(),
+  });
+  if (tickDecision === 'wait-credit-cooldown') {
+    log(
+      'OpenRouter credit error recently — skip AI tick (credit cooldown); reserve carousel may release.',
+    );
     return;
   }
-  if (isDue(state.lastNewsAt, NEWS_INTERVAL_MS)) {
-    const { ok, published, creditError } = await runTick('news');
-    writeState({
-      lastRunAt: new Date().toISOString(),
-      lastRunStatus: creditError ? 'credit_error' : ok ? 'ok' : 'error',
-      ...(creditError
-        ? { lastCreditErrorAt: new Date().toISOString(), lastCreditError: 'openrouter' }
-        : {}),
-      ...(ok || creditError ? { lastNewsAt: new Date().toISOString() } : {}),
-    });
+  if (tickDecision === 'run') {
+    const { ok, published, reserved, creditError } = await runTick('news');
+    writeState(
+      patchStateAfterNewsTick({
+        ok,
+        published,
+        reserved,
+        creditError,
+      }),
+    );
     if (!published) {
       await maybeReleaseReserve(creditError ? 'credit-error' : 'idle-tick');
     }

@@ -15,6 +15,7 @@ assert.match(workerSrc, /maybeRecoverStalledOff/);
 assert.match(workerSrc, /holdOff: true, reason: 'single-complete'/);
 assert.match(workerSrc, /writeMode\(TEST_AUTO_EXPIRE_MODE/);
 assert.match(workerSrc, /DEFAULT_MODE/);
+assert.match(workerSrc, /shouldRecoverStalledOff/);
 assert.doesNotMatch(workerSrc, /TEST-AUTO duration .* — switching to OFF\./);
 
 assert.match(cliSrc, /holdOff":true/);

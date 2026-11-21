@@ -31,6 +31,10 @@ export async function GET() {
     const stateFile = readJsonFile(path.join(dir, 'worker-state.json'));
     const reserveCount = countReserveItems();
 
+    const mode =
+      typeof modeFile?.mode === 'string' && modeFile.mode.trim()
+        ? String(modeFile.mode)
+        : 'UNKNOWN';
     const base: Record<string, unknown> = {
       status: 'ok',
       store: process.env.ARTICLES_STORE === 'sqlite' ? 'sqlite' : 'json',
@@ -53,14 +57,15 @@ export async function GET() {
       const latest = articles[0];
       base.articles = countArticles();
       base.auto_publish = {
-        mode: typeof modeFile?.mode === 'string' ? modeFile.mode : null,
-        holdOff: Boolean(modeFile?.holdOff),
-        modeSetAt: typeof modeFile?.setAt === 'string' ? modeFile.setAt : null,
-        lastRunAt: typeof stateFile?.lastRunAt === 'string' ? stateFile.lastRunAt : null,
-        lastRunStatus: typeof stateFile?.lastRunStatus === 'string' ? stateFile.lastRunStatus : null,
-        lastNewsAt: typeof stateFile?.lastNewsAt === 'string' ? stateFile.lastNewsAt : null,
+        mode,
+        holdOff: modeFile ? Boolean(modeFile.holdOff) : 'UNKNOWN',
+        modeSetAt: typeof modeFile?.setAt === 'string' ? modeFile.setAt : 'UNKNOWN',
+        lastRunAt: typeof stateFile?.lastRunAt === 'string' ? stateFile.lastRunAt : 'UNKNOWN',
+        lastRunStatus:
+          typeof stateFile?.lastRunStatus === 'string' ? stateFile.lastRunStatus : 'UNKNOWN',
+        lastNewsAt: typeof stateFile?.lastNewsAt === 'string' ? stateFile.lastNewsAt : 'UNKNOWN',
         lastArticleAt:
-          typeof stateFile?.lastArticleAt === 'string' ? stateFile.lastArticleAt : null,
+          typeof stateFile?.lastArticleAt === 'string' ? stateFile.lastArticleAt : 'UNKNOWN',
         lastCreditErrorAt:
           typeof stateFile?.lastCreditErrorAt === 'string' ? stateFile.lastCreditErrorAt : null,
         freshnessStatus: freshness.freshnessStatus,
@@ -69,12 +74,14 @@ export async function GET() {
         publicationsLast24h: freshness.publicationsLast24h,
         latestPublishedAt: latest?.publishedAt ?? null,
         latestSlug: latest?.slug ?? null,
+        workerState: stateFile ? 'present' : 'UNKNOWN',
       };
     } else {
       base.auto_publish = {
-        mode: typeof modeFile?.mode === 'string' ? modeFile.mode : null,
-        holdOff: Boolean(modeFile?.holdOff),
-        modeSetAt: typeof modeFile?.setAt === 'string' ? modeFile.setAt : null,
+        mode,
+        holdOff: modeFile ? Boolean(modeFile.holdOff) : 'UNKNOWN',
+        modeSetAt: typeof modeFile?.setAt === 'string' ? modeFile.setAt : 'UNKNOWN',
+        workerState: stateFile ? 'present' : 'UNKNOWN',
       };
     }
 

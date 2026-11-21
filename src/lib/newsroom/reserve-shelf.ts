@@ -25,8 +25,18 @@ export type ReserveItem = {
   channel: string;
   cycle: 'news' | 'article';
   storedAt: string;
+  /** Original story time from the gated article (not the site go-live stamp). */
+  sourcePublishedAt?: string;
+  lastError?: string;
+  attempts?: number;
   article: Record<string, unknown>;
 };
+
+/** Drop from auto-release after this age (still kept on disk until ack/quarantine). */
+export const RESERVE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+export const RESERVE_FAST_DECAY_MS = 36 * 60 * 60 * 1000;
+const FAST_DECAY_RE =
+  /\b(breaking|сегодня|сегодня ночью|tonight|just announced|hours ago|минуту назад|только что)\b/i;
 
 function dataRoot(): string {
   return process.env.SMARTPROTO_DATA_DIR || path.resolve(process.cwd(), 'data');
@@ -67,7 +77,11 @@ export function listReserveItems(): ReserveItem[] {
         /* skip */
       }
     }
-    out.sort((a, b) => String(a.storedAt).localeCompare(String(b.storedAt)));
+    out.sort((a, b) => {
+      const t = String(a.storedAt).localeCompare(String(b.storedAt));
+      if (t !== 0) return t;
+      return String(a.id).localeCompare(String(b.id));
+    });
     return out;
   } catch {
     return [];
@@ -106,10 +120,14 @@ export async function saveReserveItem(item: Omit<ReserveItem, 'id' | 'storedAt'>
   ensureDirSync();
   const storedAt = new Date().toISOString();
   const id = item.id || `reserve-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+  const sourcePublishedAt =
+    item.sourcePublishedAt ||
+    (typeof item.article.publishedAt === 'string' ? item.article.publishedAt : storedAt);
   const rec: ReserveItem = {
     ...item,
     id,
     storedAt,
+    sourcePublishedAt,
   };
   await fs.writeFile(path.join(reserveDir(), `${id}.json`), `${JSON.stringify(rec, null, 2)}\n`);
   return rec;
@@ -119,11 +137,54 @@ export function peekOldestReserve(): ReserveItem | null {
   return listReserveItems()[0] || null;
 }
 
+export function reserveFilePath(id: string): string {
+  return path.join(reserveDir(), `${id}.json`);
+}
+
+/** Remove only after a verified live write (or verified duplicate). */
+export function ackReserveItem(id: string): boolean {
+  const file = reserveFilePath(id);
+  if (!existsSync(file)) return false;
+  unlinkSync(file);
+  return true;
+}
+
+export function recordReserveFailure(item: ReserveItem, error: string): void {
+  const next: ReserveItem = {
+    ...item,
+    attempts: (item.attempts || 0) + 1,
+    lastError: String(error).slice(0, 400),
+  };
+  writeFileSync(reserveFilePath(item.id), `${JSON.stringify(next, null, 2)}\n`);
+}
+
+export function quarantineReserveItem(item: ReserveItem, reason: string): void {
+  ensureDirSync();
+  const staleDir = path.join(reserveDir(), 'stale');
+  mkdirSync(staleDir, { recursive: true });
+  const next: ReserveItem = {
+    ...item,
+    lastError: reason.slice(0, 400),
+  };
+  writeFileSync(path.join(staleDir, `${item.id}.json`), `${JSON.stringify(next, null, 2)}\n`);
+  ackReserveItem(item.id);
+}
+
+export function isReserveTooStale(item: ReserveItem, now = Date.now()): boolean {
+  const stored = Date.parse(item.storedAt);
+  if (!Number.isFinite(stored)) return true;
+  const age = now - stored;
+  if (age >= RESERVE_MAX_AGE_MS) return true;
+  const hay = `${item.article.title || ''} ${item.article.summary || ''} ${item.channel || ''}`;
+  if (FAST_DECAY_RE.test(hay) && age >= RESERVE_FAST_DECAY_MS) return true;
+  return false;
+}
+
+/** @deprecated unsafe — deletes before publish. Use peek → publish → ack. */
 export function takeOldestReserve(): ReserveItem | null {
   const oldest = peekOldestReserve();
   if (!oldest) return null;
-  const file = path.join(reserveDir(), `${oldest.id}.json`);
-  if (existsSync(file)) unlinkSync(file);
+  ackReserveItem(oldest.id);
   return oldest;
 }
 
@@ -157,23 +218,107 @@ export function freshnessForReserve(articles: Array<{ publishedAt?: string; agen
   return buildFreshnessReport({ articles });
 }
 
-/** Cheap live publish of a parked story. No Scout/Reviewer/Editor. */
+export type ReservePublishResult = {
+  ok: boolean;
+  already?: boolean;
+  slug: string;
+  error?: string;
+};
+
+export type ReservePublisher = {
+  getBySlug?: (slug: string) => { slug: string } | undefined | null;
+  upsert?: (article: Record<string, unknown>) => void;
+};
+
+async function defaultPublisher(): Promise<ReservePublisher> {
+  if (process.env.ARTICLES_STORE !== 'sqlite') return {};
+  const repo = await import('@/lib/data-store/articles-repo');
+  return {
+    getBySlug: (slug) => repo.getArticleBySlugFromDb(slug),
+    upsert: (article) =>
+      repo.upsertArticle(article as unknown as import('@/lib/data-store/articles-repo').StoredArticle, {
+        skipPostPublishTranslation: true,
+      }),
+  };
+}
+
+/**
+ * Cheap live publish of a parked story. No Scout/Reviewer/Editor.
+ * Does NOT delete the reserve file — caller must ack after verify.
+ */
 export async function publishReserveItemLive(
   item: ReserveItem,
-): Promise<{ ok: boolean; slug: string }> {
+  publisher?: ReservePublisher,
+): Promise<ReservePublishResult> {
+  const pub = publisher && (publisher.getBySlug || publisher.upsert) ? publisher : await defaultPublisher();
+  const existing = pub.getBySlug?.(item.slug);
+  if (existing) {
+    return { ok: true, already: true, slug: item.slug };
+  }
   const publishedAt = new Date().toISOString();
   const article = {
     ...item.article,
+    slug: item.slug,
+    sourceUrl: item.sourceUrl || item.article.sourceUrl,
     publishedAt,
+    sourcePublishedAt: item.sourcePublishedAt || item.article.publishedAt,
   };
-  if (process.env.ARTICLES_STORE === 'sqlite') {
-    const { upsertArticle } = await import('@/lib/data-store/articles-repo');
-    upsertArticle(
-      article as import('@/lib/data-store/articles-repo').StoredArticle,
-      { skipPostPublishTranslation: true },
-    );
+  try {
+    if (!pub.upsert) {
+      return { ok: false, slug: item.slug, error: 'no-publisher' };
+    }
+    pub.upsert(article);
+    const verify = pub.getBySlug?.(item.slug);
+    if (pub.getBySlug && !verify) {
+      return { ok: false, slug: item.slug, error: 'verify-failed' };
+    }
+    return { ok: true, slug: item.slug };
+  } catch (err) {
+    return {
+      ok: false,
+      slug: item.slug,
+      error: err instanceof Error ? err.message : String(err),
+    };
   }
-  return { ok: true, slug: item.slug };
+}
+
+export type SafeReleaseResult = {
+  status: 'published' | 'already' | 'failed' | 'stale' | 'empty';
+  slug?: string;
+  error?: string;
+  reservedLeft: number;
+};
+
+/**
+ * PEEK → VALIDATE → PUBLISH → VERIFY → ACK.
+ * Never deletes the reserve file before a verified write or duplicate.
+ */
+export async function releaseOldestReserveSafely(
+  publisher?: ReservePublisher,
+  now = Date.now(),
+): Promise<SafeReleaseResult> {
+  const item = peekOldestReserve();
+  if (!item) return { status: 'empty', reservedLeft: 0 };
+  if (isReserveTooStale(item, now)) {
+    quarantineReserveItem(item, 'stale-for-auto-release');
+    return { status: 'stale', slug: item.slug, reservedLeft: countReserveItems() };
+  }
+  const result = await publishReserveItemLive(item, publisher);
+  if (result.ok) {
+    ackReserveItem(item.id);
+    return {
+      status: result.already ? 'already' : 'published',
+      slug: result.slug,
+      reservedLeft: countReserveItems(),
+    };
+  }
+  recordReserveFailure(item, result.error || 'publish-failed');
+  return {
+    status: 'failed',
+    slug: item.slug,
+    error: result.error,
+    reservedLeft: countReserveItems(),
+  };
 }
 
 export function looksLikeCreditError(text: string): boolean {
