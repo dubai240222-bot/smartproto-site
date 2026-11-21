@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft, Clock } from 'lucide-react';
 import { getAllArticles, getArticleBySlug, type Article } from '@/data/articles';
 import { MediaPlaceholder, MediaThumb } from '@/components/media-placeholder';
+import { ArticleGallery, ArticleHeroImage } from '@/components/article-gallery';
 import { InterestRating } from '@/components/interest-rating';
 import { formatPublishedAt, getRelatedArticles } from '@/lib/article-utils';
 import { formatAuthorCredit, resolveAuthorForArticle } from '@/lib/authors';
@@ -13,7 +14,8 @@ import {
   resolveVisualFallback,
 } from '@/lib/visual-fallback';
 import { inferPublicCategory } from '@/lib/public-labels';
-import { displayHeroUrl } from '@/lib/homepage-editorial-mix';
+import { displayHeroUrl, isWeakHeroUrl } from '@/lib/homepage-editorial-mix';
+import { getArticleMediaSlides } from '@/lib/article-media';
 import { disclosureSources } from '@/lib/source-label';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { articleSwitcherLinks, buildArticleLanguageAlternates } from '@/lib/i18n/article-alternates';
@@ -263,44 +265,33 @@ export default async function ArticlePage({
             </span>
           </div>
 
-          {/* 5. Hero image — real photo when present; compact editorial fallback when not. */}
+          {/* 5. Hero / Bianchi gallery — only when ≥2 real media slides exist. */}
           {(() => {
-            const hero = article.images?.find((i) => i.role === 'hero')?.url || article.imageUrl;
-            const extras = (article.images || []).filter((i) => i.role !== 'hero');
+            const slides = getArticleMediaSlides(article, (url) => {
+              if (!url || isWeakHeroUrl(url)) return undefined;
+              return url;
+            });
+            if (slides.length >= 2) {
+              return <ArticleGallery slides={slides} fallbackAlt={article.title} priority />;
+            }
+            const hero = slides[0];
+            if (hero) {
+              return <ArticleHeroImage slide={hero} fallbackAlt={article.title} priority />;
+            }
             return (
-              <>
-                <div className={hero ? 'my-8' : 'my-5'}>
-                  <MediaPlaceholder
-                    slug={article.slug}
-                    category={article.category}
-                    title={article.title}
-                    tags={article.tags}
-                    summary={article.summary}
-                    agentId={article.agentId}
-                    imageUrl={hero ? displayHeroUrl(article) || hero : undefined}
-                    description={hero ? 'Иллюстрация к материалу' : undefined}
-                    aspectRatio={hero ? 'aspect-[16/8]' : 'aspect-[16/7]'}
-                    compactFallback={!hero}
-                  />
-                </div>
-                {/* Mobile: secondary/detail sequentially under hero (desktop uses right rail). */}
-                {extras.length > 0 && (
-                  <div className="mb-8 space-y-4 lg:hidden">
-                    {extras.map((img) => (
-                      <div
-                        key={img.url}
-                        className="overflow-hidden rounded border border-[var(--border)] bg-[var(--surface)]"
-                      >
-                        <img
-                          src={img.url}
-                          alt={article.title}
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
+              <div className="my-5">
+                <MediaPlaceholder
+                  slug={article.slug}
+                  category={article.category}
+                  title={article.title}
+                  tags={article.tags}
+                  summary={article.summary}
+                  agentId={article.agentId}
+                  imageUrl={undefined}
+                  aspectRatio="aspect-[16/7]"
+                  compactFallback
+                />
+              </div>
             );
           })()}
 
@@ -386,90 +377,74 @@ export default async function ArticlePage({
               })()}
             </div>
 
-            {/* 10. Right rail — secondary/detail on desktop + related. */}
+            {/* 10. Right rail — related only (gallery thumbs live under hero when ≥2 media). */}
             {(() => {
-              const extraImages = (article.images || []).filter((i) => i.role !== 'hero');
-              if (!extraImages.length && relatedArticles.length === 0) return null;
+              if (relatedArticles.length === 0) return null;
               return (
                 <aside className="lg:sticky lg:top-20 lg:self-start">
-                  {extraImages.length > 0 && (
-                    <div className="mb-8 hidden space-y-4 lg:block">
-                      {extraImages.map((img) => (
-                        <div key={img.url} className="overflow-hidden rounded border border-[var(--border)] bg-[var(--surface)]">
-                          <img src={img.url} alt={article.title} className="h-full w-full object-cover" />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {relatedArticles.length > 0 && (
-                    <>
-                      <h2 className="font-serif text-lg font-bold text-[var(--text)] mb-4">
-                        Читайте также
-                      </h2>
-                      <div className="space-y-5">
-                        {(() => {
-                          // SP-A-084 — unique stock assets across related thumbs.
-                          const fallbackMap = assignFallbackAssets(relatedArticles);
-                          const usedExact = new Set<string>();
-                          return relatedArticles.map((rel) => {
-                            const rawUrl =
-                              rel.images?.find((i) => i.role === 'hero')?.url || rel.imageUrl;
-                            const display = displayHeroUrl(rel);
-                            let imageUrl = display || undefined;
-                            if (imageUrl) {
-                              if (usedExact.has(imageUrl)) imageUrl = undefined;
-                              else usedExact.add(imageUrl);
-                            }
-                            const fb =
-                              fallbackMap.get(rel.slug) ||
-                              resolveVisualFallback({
-                                slug: rel.slug,
-                                title: rel.title,
-                                category: rel.category,
-                                tags: rel.tags,
-                                summary: rel.summary,
-                                agentId: rel.agentId,
-                              });
-                            return (
-                              <Link
-                                key={rel.slug}
-                                href={`/articles/${rel.slug}`}
-                                className="group flex gap-3 border-b border-[var(--border)] pb-5 last:border-b-0"
-                              >
-                                <MediaThumb
-                                  imageUrl={imageUrl}
-                                  slug={rel.slug}
-                                  title={rel.title}
-                                  category={rel.category}
-                                  tags={rel.tags}
-                                  summary={rel.summary}
-                                  agentId={rel.agentId}
-                                  fallbackSpec={imageUrl ? undefined : fb}
-                                  className="h-16 w-16 aspect-square"
-                                />
-                                <div className="min-w-0">
-                                  <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--accent)]">
-                                    {inferPublicCategory({
-                                      category: rel.category,
-                                      title: rel.title,
-                                      tags: rel.tags,
-                                      summary: rel.summary,
-                                    })}
-                                  </div>
-                                  <h3 className="mt-0.5 font-serif text-sm font-bold leading-snug text-[var(--text)] group-hover:text-[var(--accent)] line-clamp-2">
-                                    {rel.title}
-                                  </h3>
-                                  <div className="mt-1 text-[10px] text-[var(--muted)]">
-                                    {formatPublishedAt(rel.publishedAt)} • {rel.readTime}
-                                  </div>
-                                </div>
-                              </Link>
-                            );
+                  <h2 className="mb-4 font-serif text-lg font-bold text-[var(--text)]">
+                    Читайте также
+                  </h2>
+                  <div className="space-y-5">
+                    {(() => {
+                      // SP-A-084 — unique stock assets across related thumbs.
+                      const fallbackMap = assignFallbackAssets(relatedArticles);
+                      const usedExact = new Set<string>();
+                      return relatedArticles.map((rel) => {
+                        const display = displayHeroUrl(rel);
+                        let imageUrl = display || undefined;
+                        if (imageUrl) {
+                          if (usedExact.has(imageUrl)) imageUrl = undefined;
+                          else usedExact.add(imageUrl);
+                        }
+                        const fb =
+                          fallbackMap.get(rel.slug) ||
+                          resolveVisualFallback({
+                            slug: rel.slug,
+                            title: rel.title,
+                            category: rel.category,
+                            tags: rel.tags,
+                            summary: rel.summary,
+                            agentId: rel.agentId,
                           });
-                        })()}
-                      </div>
-                    </>
-                  )}
+                        return (
+                          <Link
+                            key={rel.slug}
+                            href={`/articles/${rel.slug}`}
+                            className="group flex gap-3 border-b border-[var(--border)] pb-5 last:border-b-0"
+                          >
+                            <MediaThumb
+                              imageUrl={imageUrl}
+                              slug={rel.slug}
+                              title={rel.title}
+                              category={rel.category}
+                              tags={rel.tags}
+                              summary={rel.summary}
+                              agentId={rel.agentId}
+                              fallbackSpec={imageUrl ? undefined : fb}
+                              className="h-16 w-16 aspect-square"
+                            />
+                            <div className="min-w-0">
+                              <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--accent)]">
+                                {inferPublicCategory({
+                                  category: rel.category,
+                                  title: rel.title,
+                                  tags: rel.tags,
+                                  summary: rel.summary,
+                                })}
+                              </div>
+                              <h3 className="mt-0.5 line-clamp-2 font-serif text-sm font-bold leading-snug text-[var(--text)] group-hover:text-[var(--accent)]">
+                                {rel.title}
+                              </h3>
+                              <div className="mt-1 text-[10px] text-[var(--muted)]">
+                                {formatPublishedAt(rel.publishedAt)} • {rel.readTime}
+                              </div>
+                            </div>
+                          </Link>
+                        );
+                      });
+                    })()}
+                  </div>
                 </aside>
               );
             })()}
