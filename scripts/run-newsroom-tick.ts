@@ -18,6 +18,7 @@ import dotenv from 'dotenv';
 import chalk from 'chalk';
 import { fetchRssFeed, type RssItem } from '../src/lib/collectors/rss';
 import { extractArticleImage, passesImageQualityGate, getThematicFallback } from '../src/lib/collectors/image-extractor';
+import { magazineHeroGate } from '../src/lib/collectors/editorial-photo-gate';
 import {
   discoveryRankFor,
   enabledRssSources,
@@ -199,9 +200,23 @@ async function ensureSoftHeroImages(opts: {
   };
 
   const fb = (opts.fallbackUrl || '').trim();
-  if (fb && /^https?:\/\//i.test(fb) && (await passesImageQualityGate(fb))) {
+  const fbMagazine = magazineHeroGate({
+    articleTitle: opts.title,
+    articleTags: opts.tags,
+    articleCategory: opts.category,
+    heroUrl: fb,
+    photoSourceUrls: [fb],
+  });
+  if (
+    fb &&
+    /^https?:\/\//i.test(fb) &&
+    fbMagazine.ok &&
+    (await passesImageQualityGate(fb))
+  ) {
     const got = await tryDownload(fb, 'source/og');
     if (got.length) return got;
+  } else if (fb && !fbMagazine.ok) {
+    console.log(chalk.gray(`[photo-soft] skip source/og (${fbMagazine.reason})`));
   }
 
   const thematic = getThematicFallback(opts.title, opts.category || '', {

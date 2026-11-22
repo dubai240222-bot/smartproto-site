@@ -392,6 +392,13 @@ export function resolveVisualCategory(opts: {
     return 'ai_future';
   }
   if (
+    /\b(oled|microled|flexible\s+display|near[- ]?infrared|near[- ]?ir\b|bilingual\s+display|гибк\w*\s+диспле|двуязычн\w*\s+диспле)\b/i.test(
+      hay,
+    )
+  ) {
+    return 'future_tech';
+  }
+  if (
     /\b(health|medical|wearable|sleep|bassinet|cry|здоров|капсул|гастро|диагност|breast cancer|медицин)\b|здоров/i.test(
       hay,
     )
