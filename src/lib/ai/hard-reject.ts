@@ -1,7 +1,9 @@
 /**
  * HARD editorial gate for SmartProto:
- * ONLY publish what ordinary people can BUY / PREORDER and USE
- * to improve life or work. Everything else is rejected.
+ * Kill politics / celebrity / wildlife / shop-junk / ordinary SKUs.
+ * Do NOT require a shop SKU for the magazine: prototypes, research,
+ * unusual engineering, future medicine, and AI capability may reach Scout
+ * (SP-A-093 / SP-A-106). Public copy still has no prices or shop URLs.
  *
  * Mode `app` (Mobile Apps desk): digital apps/games that help daily life OK;
  * still reject SEO spam, gambling, crypto pumps, generic roundups.
@@ -262,13 +264,8 @@ const BUYABLE_PRODUCT_PATTERNS: RegExp[] = [
   /\bpreorder\b/i,
   /\bpre-order\b/i,
   /\bavailable (to )?buy\b/i,
-  /\bfor \$/i,
-  /\bpriced at\b/i,
-  /\bon sale\b/i,
-  /\bamazon\b/i,
-  /\btemu\b/i,
-  /\btaobao\b/i,
-  /\baliexpress\b/i,
+  /\bkickstarter\b/i,
+  /\bindiegogo\b/i,
   /гаджет/i,
   /устройств/i,
   /можно купить/i,
@@ -371,6 +368,14 @@ export function isAiOrInventionAlert(title: string, text = ''): boolean {
 const CAPABILITY_EDITORIAL_RE =
   /\b(solar[- ]?powered|ambulance|smart\s+clothing|smart\s+textile|finger\s+movements?|memory\s+(architecture|prototype|device|chip)|denser\s+data|non[- ]?binary\s+memory|new\s+human\s+capability|human\s+capability|capability\s+breakthrough|assistive|independence|prosthetic|clinic\s*→\s*home|clinic\s+to\s+home|medical\s+(device|prototype|robot|imaging)|surgical\s+robot|major\s+autonomy|fully\s+autonomous|future\s+mobility|evtol|air\s+taxi|solid[- ]?state\s+battery|grid[- ]?scale|major\s+energy|novel\s+material|new\s+material|dramatic\s+cost|cost\s+reduction|\d{2,3}\s*%\s*(cheaper|fewer|less)|direct\s+access|disintermediat|brain[- ]?computer|bci\b|exoskeleton|humanoid\s+(robot|prototype)|robotics?\s+(prototype|demo|capability)|research\s+prototype|lab[- ]?to[- ]?life)\b|солнечн\w*\s+машин|умн\w*\s+(одежд|ткан)|памят\w*\s+архитектур|медицинск|протез|автономн|воздушн\w*\s+такси|новый\s+материал|снижен\w*\s+стоим/i;
 
+/**
+ * SP-A-106 — magazine subjects that are not shop SKUs: prototype, research,
+ * unusual engineering, future medicine. Still blocked if HARD_TOPIC / commodity.
+ * Does NOT unlock Amazon roundups or ordinary mouse/phone SKUs.
+ */
+const SMARTPROTO_EARLY_TECH_RE =
+  /\b(prototype|prototyping|working\s+prototype|experimental\s+(device|method|material|therapy|diagnostic|camera|sensor)|not\s+yet\s+(commercially\s+)?available|engineering\s+(prototype|breakthrough|solution|mechanism)|unusual\s+(mechanism|invention|material|engineering)|thermoelectric|energy[- ]harvest(?:ing)?|diagnostic\s+(imaging|device|method)|early[- ]?detection|future\s+(medicine|medical|energy)|scientific\s+(discovery|breakthrough)|researchers?\s+(developed|created|unveil|demonstrate)|lab[- ]?to[- ]?life|изобретен|прототип|экспериментальн|научн\w*\s+(открыт|метод)|ещё\s+нельзя\s+купить)\b/i;
+
 /** Titles that remain shop/SKU-shaped even if a capability keyword appears. */
 const ORDINARY_SKU_TITLE_RE =
   /\b(gaming\s+)?(mouse|keyboard|monitor|earbuds?|headphones?|headset|psu|power\s*supply|gpu\s*cooler)\b|\b(iphone|galaxy\s*s\d+|pixel\s*\d+)\b.{0,40}\b(refresh|color|colour|leak|rumor)\b|\b(ordinary|generic)\s+(phone|smartphone|laptop)\b|игров\w*\s+мышь|обычн\w*\s+(мышь|клавиатур|монитор|наушник)/i;
@@ -379,7 +384,8 @@ export function isCapabilityEditorialStory(title: string, text = ''): boolean {
   const hay = `${title}\n${text}`;
   if (ORDINARY_SKU_TITLE_RE.test(title)) return false;
   if (isAiOrInventionAlert(title, text)) return true;
-  return CAPABILITY_EDITORIAL_RE.test(hay);
+  if (CAPABILITY_EDITORIAL_RE.test(hay)) return true;
+  return SMARTPROTO_EARLY_TECH_RE.test(hay);
 }
 
 /** True when buy/preorder is not required (AI/invention alert OR capability story). */
@@ -622,6 +628,13 @@ export function hardRejectTopic(
       }
       // SP-A-093: capability editorial stories should not die on architecture false hits.
       if (allowsWithoutBuyPreorder(title, text) && /architecture/i.test(re.source)) {
+        continue;
+      }
+      // SP-A-106: a prototype/concept device is magazine material, not a HARD_TOPIC.
+      if (
+        allowsWithoutBuyPreorder(title, text) &&
+        /concept \(keyboard\|device\|product\)|designer \(presented\|unveiled\) a concept/i.test(re.source)
+      ) {
         continue;
       }
       return {
