@@ -267,6 +267,17 @@ async function main() {
     }).run,
     false,
   );
+  assert.equal(
+    shouldCatchUp({
+      lastAutoPublicationAt: new Date(catchupNow - 5 * 24 * 60 * 60 * 1000).toISOString(),
+      lastRunAt: new Date(catchupNow - 40 * 60 * 1000).toISOString(),
+      catchupWindowStart: new Date(catchupNow - 2 * 60 * 60 * 1000).toISOString(),
+      catchupPublished: 0,
+      catchupTicks: 6,
+      now: catchupNow,
+    }).run,
+    true,
+  );
 
   console.log('SP-A-42 reserve + cadence tests passed.');
 }

@@ -36,6 +36,16 @@ assert.equal(behind.skipChina, true);
 assert.equal(behind.scoutLimit, 8);
 assert.equal(applyQuotaScoutFloor(70, behind), 62);
 
+const critical = resolveNewsQuotaPolicy({
+  now,
+  articles: [],
+  freshnessStatus: 'CRITICAL',
+  minutesSinceLastAuto: 7689,
+});
+assert.equal(critical.behind, true);
+assert.equal(critical.skipChina, false);
+assert.equal(critical.chinaMaxAttempts, 2);
+
 const met = resolveNewsQuotaPolicy({
   now,
   articles: Array.from({ length: 6 }, (_, i) => ({
