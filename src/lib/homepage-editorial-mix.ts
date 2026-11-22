@@ -6,6 +6,7 @@
 import type { Article } from '@/data/articles';
 import { inferEditorialFocus, type EditorialFocus } from '@/lib/newsroom/diversity-guard';
 import { sortArticlesByPublishedDate } from '@/lib/article-utils';
+import { looksLikeStaleBreadboardPhoto, resolveVisualCategory } from '@/lib/visual-fallback';
 
 export type MixBucket =
   | 'ai_models'
@@ -95,6 +96,19 @@ export function hasDisplayWorthyImage(article: Article): boolean {
 export function displayHeroUrl(article: Article): string | undefined {
   const url = articleHeroUrl(article);
   if (!url || isWeakHeroUrl(url)) return undefined;
+  const sources = (article.images || []).map((i) => i.sourceUrl || i.url).join('\n');
+  const cat = resolveVisualCategory({
+    title: article.title,
+    category: article.category,
+    tags: article.tags,
+    summary: article.summary,
+  });
+  if (
+    (cat === 'ai_future' || cat === 'open_source' || cat === 'future_work') &&
+    looksLikeStaleBreadboardPhoto(url, sources)
+  ) {
+    return undefined;
+  }
   return url;
 }
 

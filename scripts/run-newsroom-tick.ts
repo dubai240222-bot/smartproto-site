@@ -204,7 +204,10 @@ async function ensureSoftHeroImages(opts: {
     if (got.length) return got;
   }
 
-  const thematic = getThematicFallback(opts.title, opts.category || '');
+  const thematic = getThematicFallback(opts.title, opts.category || '', {
+    slug: opts.slug,
+    tags: opts.tags,
+  });
   if (thematic) {
     const got = await tryDownload(thematic, 'thematic');
     if (got.length) return got;

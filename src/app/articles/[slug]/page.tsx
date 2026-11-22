@@ -265,7 +265,7 @@ export default async function ArticlePage({
 
           {/* 5. Hero image — real photo when present; compact editorial fallback when not. */}
           {(() => {
-            const hero = article.images?.find((i) => i.role === 'hero')?.url || article.imageUrl;
+            const hero = displayHeroUrl(article);
             const extras = (article.images || []).filter((i) => i.role !== 'hero');
             return (
               <>
@@ -277,7 +277,7 @@ export default async function ArticlePage({
                     tags={article.tags}
                     summary={article.summary}
                     agentId={article.agentId}
-                    imageUrl={hero ? displayHeroUrl(article) || hero : undefined}
+                    imageUrl={hero}
                     description={hero ? 'Иллюстрация к материалу' : undefined}
                     aspectRatio={hero ? 'aspect-[16/8]' : 'aspect-[16/7]'}
                     compactFallback={!hero}

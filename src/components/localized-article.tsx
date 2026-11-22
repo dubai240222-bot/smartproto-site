@@ -173,7 +173,7 @@ export function LocalizedArticlePage({
 
       {/* SP-A-100F: same story → same media from canonical RU article. */}
       {(() => {
-        const hero = canonicalHeroUrl(canon);
+        const hero = displayHeroUrl(canon);
         return (
           <div className={hero ? 'my-8' : 'my-5'}>
             <MediaPlaceholder
@@ -183,7 +183,7 @@ export function LocalizedArticlePage({
               tags={canon.tags}
               summary={loc.localizedExcerpt || canon.summary}
               agentId={canon.agentId}
-              imageUrl={hero ? displayHeroUrl(canon) || hero : undefined}
+              imageUrl={hero}
               aspectRatio={hero ? 'aspect-[16/8]' : 'aspect-[16/7]'}
               compactFallback={!hero}
             />

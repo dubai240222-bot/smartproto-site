@@ -88,6 +88,11 @@ function main() {
     { title: 'Battery works at -30°C', category: 'Энергия', expect: 'energy' },
     { title: 'Nintendo Switch 2 leak', category: 'Гаджеты', expect: 'gaming' },
     { title: 'RGB gaming headset review', category: 'Игры', expect: 'gaming' },
+    {
+      title: 'Bilibili бьет тревогу: AI-боты заполонили комментарии, платформа ищет выход',
+      category: 'Роботы',
+      expect: 'ai_future',
+    },
   ];
 
   let wrongGadget = 0;
