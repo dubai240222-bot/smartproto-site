@@ -60,7 +60,7 @@ export interface VisualFallbackSpec {
   imageUrl?: string;
 }
 
-export const MIN_TEMPLATES_PER_CATEGORY = 5;
+export const MIN_TEMPLATES_PER_CATEGORY = 8;
 
 /** Subject brands only — not news outlets. */
 const BRAND_RULES: { re: RegExp; name: string; mark?: string; cat?: VisualCategoryKey }[] = [
@@ -214,10 +214,13 @@ function stock(id: string, photoId: string, scene: string): VisualStockAsset {
 export const CATEGORY_STOCK: Record<VisualCategoryKey, VisualStockAsset[]> = {
   ai_future: [
     stock('ai_future-1', 'photo-1677442136019-21780ecad995', 'neural glow desk'),
-    stock('ai_future-2', 'photo-1620712943543-bcc4688e7485', 'robot face close'),
-    stock('ai_future-3', 'photo-1485827404703-89b55fcc595e', 'white studio robot'),
-    stock('ai_future-4', 'photo-1676299080920-8ac4c4c0d0e8', 'circuit light trails'),
-    stock('ai_future-5', 'photo-1655720828018-edd2daec9349', 'ai headset collab'),
+    stock('ai_future-2', 'photo-1526374965328-7f61d4dc18c5', 'code rain screen'),
+    stock('ai_future-3', 'photo-1550751827-4bd374c3f58b', 'server aisle lights'),
+    stock('ai_future-4', 'photo-1573164713714-d95e436ab8d6', 'person laptop work'),
+    stock('ai_future-5', 'photo-1611162617474-5b21e879e113', 'phone social feed'),
+    stock('ai_future-6', 'photo-1516321318423-f06f85e504b3', 'pair at screens'),
+    stock('ai_future-7', 'photo-1555949963-aa79dcee981c', 'developer terminal'),
+    stock('ai_future-8', 'photo-1451187580459-43490279c0fa', 'earth night grid'),
   ],
   robotics: [
     stock('robotics-1', 'photo-1485827404703-89b55fcc595e', 'friendly lab robot'),
@@ -225,6 +228,9 @@ export const CATEGORY_STOCK: Record<VisualCategoryKey, VisualStockAsset[]> = {
     stock('robotics-3', 'photo-1518314916381-77a37c2a49ae', 'humanoid silhouette'),
     stock('robotics-4', 'photo-1581091226825-a6a2a5aee158', 'engineer + robot'),
     stock('robotics-5', 'photo-1589254065878-42c9da997008', 'precision gripper'),
+    stock('robotics-6', 'photo-1507146426996-ef05306b995a', 'small robot toy'),
+    stock('robotics-7', 'photo-1531746794731-2f2be125cdbc', 'workshop machine'),
+    stock('robotics-8', 'photo-1581092918056-0c4c3acd3789', 'factory robot cell'),
   ],
   healthtech: [
     stock('healthtech-1', 'photo-1576091160399-112ba8d25d1d', 'clinic tablet'),
@@ -232,6 +238,9 @@ export const CATEGORY_STOCK: Record<VisualCategoryKey, VisualStockAsset[]> = {
     stock('healthtech-3', 'photo-1584982751601-97dcc096659c', 'diagnostics light'),
     stock('healthtech-4', 'photo-1579684385127-1ef15d508118', 'care tech scene'),
     stock('healthtech-5', 'photo-1631217868264-e5b90bb7e629', 'medical research'),
+    stock('healthtech-6', 'photo-1579684453423-f84349ef60b0', 'hospital corridor'),
+    stock('healthtech-7', 'photo-1581595220892-b7bdf56d0c3f', 'lab sample'),
+    stock('healthtech-8', 'photo-1576091160550-2173dba999ef', 'doctor tablet'),
   ],
   mobility: [
     stock('mobility-1', 'photo-1558618666-fcd25c85cd64', 'ev city dusk'),
@@ -239,6 +248,9 @@ export const CATEGORY_STOCK: Record<VisualCategoryKey, VisualStockAsset[]> = {
     stock('mobility-3', 'photo-1492144534655-ae79c964c9d7', 'sport car front'),
     stock('mobility-4', 'photo-1474302770737-173ee21bab63', 'drone sky'),
     stock('mobility-5', 'photo-1449965408869-eaa3f722e40d', 'highway motion'),
+    stock('mobility-6', 'photo-1486262715619-67b85e0b08d3', 'car workshop'),
+    stock('mobility-7', 'photo-1493232072175-d5a9bd0299c8', 'classic car street'),
+    stock('mobility-8', 'photo-1502877338535-766e1452684a', 'silver car street'),
   ],
   energy: [
     stock('energy-1', 'photo-1509391366360-2e959784a276', 'solar field'),
@@ -246,6 +258,9 @@ export const CATEGORY_STOCK: Record<VisualCategoryKey, VisualStockAsset[]> = {
     stock('energy-3', 'photo-1466611653911-95081537e5b7', 'grid sunset'),
     stock('energy-4', 'photo-1497435334941-8c899ee9e8e9', 'battery pack glow'),
     stock('energy-5', 'photo-1569017388730-020d5f2d0624', 'hydro power'),
+    stock('energy-6', 'photo-1508514177221-188b1cf16e9d', 'rooftop solar'),
+    stock('energy-7', 'photo-1548337138-e87d889cc369', 'wind close'),
+    stock('energy-8', 'photo-1473340081958-73b10ad34799', 'substation dusk'),
   ],
   smart_home: [
     stock('smart_home-1', 'photo-1558002038-1055907df827', 'living room glow'),
@@ -253,6 +268,9 @@ export const CATEGORY_STOCK: Record<VisualCategoryKey, VisualStockAsset[]> = {
     stock('smart_home-3', 'photo-1556912173-46c336c7fd55', 'kitchen tech'),
     stock('smart_home-4', 'photo-1560448204-e02f11c3d0e2', 'apartment evening'),
     stock('smart_home-5', 'photo-1600607687939-ce8a6c25118c', 'home architecture'),
+    stock('smart_home-6', 'photo-1560448075-bb485b067938', 'living sofa light'),
+    stock('smart_home-7', 'photo-1484154218962-a197022b5858', 'kitchen window'),
+    stock('smart_home-8', 'photo-1505691938895-1758d7afb8f5', 'bedroom lamp'),
   ],
   research: [
     stock('research-1', 'photo-1532094349884-543bc11b234d', 'lab glassware'),
@@ -260,6 +278,9 @@ export const CATEGORY_STOCK: Record<VisualCategoryKey, VisualStockAsset[]> = {
     stock('research-3', 'photo-1507413245164-6160d8298b31', 'science bench'),
     stock('research-4', 'photo-1576086213369-97a306d36557', 'research notes'),
     stock('research-5', 'photo-1532187863486-abf9dbad1b69', 'pipette close'),
+    stock('research-6', 'photo-1579154204601-01588f351e67', 'dna helix light'),
+    stock('research-7', 'photo-1530026405186-ed1f139313f8', 'scientist goggles'),
+    stock('research-8', 'photo-1576086170292-17474bd2c0d0', 'whiteboard lab'),
   ],
   business: [
     stock('business-1', 'photo-1460925895917-afdab827c52f', 'analytics desk'),
@@ -267,6 +288,9 @@ export const CATEGORY_STOCK: Record<VisualCategoryKey, VisualStockAsset[]> = {
     stock('business-3', 'photo-1556761175-5973dc0f32e7', 'startup huddle'),
     stock('business-4', 'photo-1507679799987-c73779587ccf', 'executive focus'),
     stock('business-5', 'photo-1454165804606-c3d57bc86b40', 'workspace laptop'),
+    stock('business-6', 'photo-1556761175-b41336c97b56', 'office glass'),
+    stock('business-7', 'photo-1522202176988-66273c2fd55f', 'team laptops'),
+    stock('business-8', 'photo-1553877522-43269d4ea984', 'standup meeting'),
   ],
   open_source: [
     stock('open_source-1', 'photo-1517694712202-14dd9538aa97', 'code keyboard'),
@@ -274,6 +298,9 @@ export const CATEGORY_STOCK: Record<VisualCategoryKey, VisualStockAsset[]> = {
     stock('open_source-3', 'photo-1498050108023-c5249f4df085', 'dev desk'),
     stock('open_source-4', 'photo-1555066931-4365d14bab8c', 'dark IDE'),
     stock('open_source-5', 'photo-1516321318423-f06f85e504b3', 'pairing session'),
+    stock('open_source-6', 'photo-1515879218367-8466d910aaa4', 'python code'),
+    stock('open_source-7', 'photo-1551650975-87deedd944c3', 'mobile code'),
+    stock('open_source-8', 'photo-1605379399642-870669d6d0c3', 'dual monitor code'),
   ],
   future_tech: [
     stock('future_tech-1', 'photo-1451187580459-43490279c0fa', 'earth night grid'),
@@ -281,6 +308,9 @@ export const CATEGORY_STOCK: Record<VisualCategoryKey, VisualStockAsset[]> = {
     stock('future_tech-3', 'photo-1526374965328-7f61d4dc18c5', 'matrix light'),
     stock('future_tech-4', 'photo-1504639725590-34d0984388bd', 'hologram hands'),
     stock('future_tech-5', 'photo-1635070041078-e363dbe005cb', 'abstract tech orb'),
+    stock('future_tech-6', 'photo-1485827404703-89b55fcc595e', 'studio robot light'),
+    stock('future_tech-7', 'photo-1488590528505-98d2b5aba04b', 'laptop code dark'),
+    stock('future_tech-8', 'photo-1518773553398-650c184e0bb3', 'chip macro'),
   ],
   gadget: [
     stock('gadget-1', 'photo-1519389950473-47ba0277781c', 'desk gadgets'),
@@ -288,6 +318,9 @@ export const CATEGORY_STOCK: Record<VisualCategoryKey, VisualStockAsset[]> = {
     stock('gadget-3', 'photo-1468495244123-6c6c332eeece', 'wearable watch'),
     stock('gadget-4', 'photo-1505740420928-5e560c06d30e', 'headphones product'),
     stock('gadget-5', 'photo-1526170375885-4d8ecf77b99f', 'camera gear'),
+    stock('gadget-6', 'photo-1510557880182-3d4d3cba35a5', 'iphone in hand'),
+    stock('gadget-7', 'photo-1593642632823-8f785ba67e45', 'laptop desk kit'),
+    stock('gadget-8', 'photo-1484704849700-f032a568e944', 'white headphones'),
   ],
   gaming: [
     stock('gaming-1', 'photo-1542751371-adc38448a05e', 'esports RGB'),
@@ -295,6 +328,9 @@ export const CATEGORY_STOCK: Record<VisualCategoryKey, VisualStockAsset[]> = {
     stock('gaming-3', 'photo-1493711662062-fa541adb3fc8', 'console living'),
     stock('gaming-4', 'photo-1552820728-8b83bb6b773f', 'arcade neon'),
     stock('gaming-5', 'photo-1606144042614-b2417e99c4e3', 'handheld play'),
+    stock('gaming-6', 'photo-1593305841991-05c297ba4575', 'tv game night'),
+    stock('gaming-7', 'photo-1511882150382-421056c89033', 'arcade cabinet'),
+    stock('gaming-8', 'photo-1612287230202-1ff1d85d1bdf', 'pc gaming setup'),
   ],
   china_tech: [
     stock('china_tech-1', 'photo-1512941937669-90a1b58e7e9c', 'phone showcase'),
@@ -302,6 +338,9 @@ export const CATEGORY_STOCK: Record<VisualCategoryKey, VisualStockAsset[]> = {
     stock('china_tech-3', 'photo-1563013544-824ae1b704d3', 'urban night tech'),
     stock('china_tech-4', 'photo-1550009158-9ebf69173e03', 'electronics aisle'),
     stock('china_tech-5', 'photo-1580910051074-3eb694886505', 'smartphone hand'),
+    stock('china_tech-6', 'photo-1511707171634-5f897ff02aa9', 'phone dark'),
+    stock('china_tech-7', 'photo-1556656793-08538906a9f8', 'phone desk'),
+    stock('china_tech-8', 'photo-1486312338219-ce68d2c6f44d', 'laptop work cafe'),
   ],
   future_work: [
     stock('future_work-1', 'photo-1497366216548-37526070297c', 'bright office'),
@@ -309,6 +348,9 @@ export const CATEGORY_STOCK: Record<VisualCategoryKey, VisualStockAsset[]> = {
     stock('future_work-3', 'photo-1517245386807-bb43f82c33c4', 'workshop board'),
     stock('future_work-4', 'photo-1600880292203-757bb62b4baf', 'remote desk'),
     stock('future_work-5', 'photo-1553877522-43269d4ea984', 'standup meeting'),
+    stock('future_work-6', 'photo-1521737604893-d14cc237f11d', 'open office talk'),
+    stock('future_work-7', 'photo-1497215728101-856f4ea42174', 'office desks'),
+    stock('future_work-8', 'photo-1519389950473-47ba0277781c', 'team desk devices'),
   ],
 };
 
@@ -333,7 +375,40 @@ export function resolveVisualCategory(opts: {
   const hay = haystack(opts);
   const publicCat = (opts.category || '').toLowerCase();
 
-  if (/\b(robot|humanoid|exoskeleton|manipulat|tacta|unitree|optimus|soft\s+robot)\b|робот/i.test(hay)) {
+  const physicalRobot =
+    /\b(humanoid|exoskeleton|manipulat|tacta|unitree|optimus|soft\s+robot|industrial\s+robot|робот[- ]?рук|промышленн\w*\s*робот)\b/i.test(
+      hay,
+    );
+  const aiStory =
+    /\b(ai|a\.i\.|llm|gpt|openai|gemini|claude|model|agentic|ии|нейро|perplexity|grok)\b/i.test(hay) ||
+    publicCat === 'ai' ||
+    publicCat === 'ии';
+  const platformAi =
+    /\b(bilibili|youtube|tiktok|комментари|comment|модерац|соцсет|платформ|\bботы?\b|ai[- ]?bots?|заполонил)/i.test(
+      hay,
+    );
+  // Comment-bots / platform AI is not a lab robot and must not get a 1990s PCB.
+  if (aiStory && platformAi && !physicalRobot) {
+    return 'ai_future';
+  }
+  if (
+    /\b(oled|microled|flexible\s+display|near[- ]?infrared|near[- ]?ir\b|bilingual\s+display|гибк\w*\s+диспле|двуязычн\w*\s+диспле)\b/i.test(
+      hay,
+    )
+  ) {
+    return 'future_tech';
+  }
+  if (
+    /\b(health|medical|wearable|sleep|bassinet|cry|здоров|капсул|гастро|диагност|breast cancer|медицин)\b|здоров/i.test(
+      hay,
+    )
+  ) {
+    return 'healthtech';
+  }
+  if (aiStory && !physicalRobot) {
+    return 'ai_future';
+  }
+  if (physicalRobot || (/\b(robot|робот)/i.test(hay) && !platformAi)) {
     return 'robotics';
   }
   if (
@@ -346,13 +421,6 @@ export function resolveVisualCategory(opts: {
   }
   if (/\b(solar|battery|energy|grid|power|окон.*энерг|счет за свет|энерг|аккумулятор)\b|энерг/i.test(hay)) {
     return 'energy';
-  }
-  if (
-    /\b(health|medical|wearable|sleep|bassinet|cry|здоров|капсул|гастро|диагност|breast cancer|медицин)\b|здоров/i.test(
-      hay,
-    )
-  ) {
-    return 'healthtech';
   }
   if (/\b(smart\s*home|watering|soil|thermostat|умн\w*\s*дом|полив|3d\s*print.*house|дом из|печат.*жил)\b/i.test(hay)) {
     return 'smart_home';
@@ -381,11 +449,7 @@ export function resolveVisualCategory(opts: {
   if (/\b(xiaomi|huawei|iqoo|oppo|vivo|oneplus)\b/i.test(hay)) {
     return 'china_tech';
   }
-  if (
-    /\b(ai|a\.i\.|llm|gpt|openai|gemini|claude|model|agentic|ии|нейро|perplexity|grok)\b/i.test(hay) ||
-    publicCat === 'ai' ||
-    publicCat === 'ии'
-  ) {
+  if (aiStory) {
     return 'ai_future';
   }
   if (
@@ -456,6 +520,14 @@ export function pickStockAsset(opts: {
 export function isStockFallbackUrl(url: string | undefined | null): boolean {
   if (!url) return false;
   return /[?&]spfb=1(?:&|$)/.test(url) || /\/media\/fallbacks\//i.test(url);
+}
+
+/** 1990s jumper-PCB / muddy circuit shots — never use as an AI-story hero. */
+export const STALE_BREADBOARD_PHOTO_RE =
+  /photo-1558346490|photo-1518770660439-4636190af475|photo-1518773553398-650c184e0bb3/i;
+
+export function looksLikeStaleBreadboardPhoto(...parts: Array<string | undefined | null>): boolean {
+  return STALE_BREADBOARD_PHOTO_RE.test(parts.filter(Boolean).join('\n'));
 }
 
 function withStock(

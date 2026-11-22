@@ -17,6 +17,7 @@ import {
   type VisualCategoryKey,
 } from '../src/lib/visual-fallback';
 import { inferPublicCategory } from '../src/lib/public-labels';
+import { magazineHeroGate } from '../src/lib/collectors/editorial-photo-gate';
 
 type Row = {
   slug: string;
@@ -72,6 +73,35 @@ function main() {
     }
   }
 
+  const uglySkin = magazineHeroGate({
+    articleTitle: 'Двуязычный дисплей: как люди и роботы научатся говорить на одном языке',
+    articleSummary: 'Гибкий дисплей на коже светится в цвете и в ближнем ИК.',
+    heroUrl: '/api/media/a-shared-signal-for-humans-and-robots-flexible-display-uses-both-color-and-near/hero.jpg',
+    photoSourceUrls: ['https://www.nature.com/articles/s41528-024-01234-x/figures/1'],
+  });
+  if (uglySkin.ok) {
+    console.error('FAIL: on-skin Nature figure must not be a magazine hero');
+    process.exit(1);
+  }
+  const pcbOnAi = magazineHeroGate({
+    articleTitle: 'Bilibili бьет тревогу: AI-боты заполонили комментарии',
+    heroUrl: 'https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?auto=format&fit=crop&w=1600&q=80',
+  });
+  if (pcbOnAi.ok) {
+    console.error('FAIL: jumper PCB must not hero an AI story');
+    process.exit(1);
+  }
+  const cleanRobot = magazineHeroGate({
+    articleTitle: 'Humanoid robot walks upstairs',
+    heroUrl: 'https://cdn.example.com/unitree-g1-full-body-demo.jpg',
+    photoSourceUrls: ['https://www.unitree.com/images/g1-hero.jpg'],
+  });
+  if (!cleanRobot.ok) {
+    console.error(`FAIL: clean robot product shot rejected (${'reason' in cleanRobot ? cleanRobot.reason : ''})`);
+    process.exit(1);
+  }
+  console.log('MAGAZINE_HERO_GATE ok (skin/PCB rejected, product kept)');
+
   // Synthetic control set
   const controls: { title: string; category: string; expect: VisualCategoryKey }[] = [
     { title: 'OpenAI agent assistant ships new tools', category: 'Гаджеты', expect: 'ai_future' },
@@ -88,6 +118,16 @@ function main() {
     { title: 'Battery works at -30°C', category: 'Энергия', expect: 'energy' },
     { title: 'Nintendo Switch 2 leak', category: 'Гаджеты', expect: 'gaming' },
     { title: 'RGB gaming headset review', category: 'Игры', expect: 'gaming' },
+    {
+      title: 'Bilibili бьет тревогу: AI-боты заполонили комментарии, платформа ищет выход',
+      category: 'Роботы',
+      expect: 'ai_future',
+    },
+    {
+      title: 'Двуязычный дисплей: как люди и роботы научатся говорить на одном языке',
+      category: 'Роботы',
+      expect: 'future_tech',
+    },
   ];
 
   let wrongGadget = 0;

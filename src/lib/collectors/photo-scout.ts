@@ -26,6 +26,7 @@ import {
   type PhotoEntity,
 } from './photo-entity';
 import { gateProductPhotoMatch } from './product-photo-gate';
+import { magazineHeroGate } from './editorial-photo-gate';
 import { getOpenRouterClient, parseJsonObject, clampText } from '../ai/shared';
 
 export interface ScoutImage {
@@ -478,6 +479,8 @@ export async function editPhotoSelection(opts: {
             'WRONG IMAGE or empty brand illustration is worse than NO IMAGE.',
             'Pick at most 3 photos. Prefer: clear full product/device shot, second angle, meaningful detail.',
             'HARD REJECT: logos, icons, wordmarks, Google/G letter tiles, SVG, UI screenshots, social banners, price tables, watermarks, wrong model, near-duplicates, abstract brand art with no device.',
+            'HARD REJECT journal figures: insets, multi-panel Science/Nature figures, supplementary graphics, uncropped on-skin / abdomen close-ups, flex-PCB taped to a body. A magazine would not run those as the hero — return null (NO IMAGE) and let the site use a category banner.',
+            'HARD REJECT muddy 1990s breadboards / jumper-wire benches on AI, software, or social-platform stories.',
             'HARD REJECT product-category mismatch: if the article is about a pet feeder / cat food maker, NEVER pick an e-bike, motorcycle, car, or unrelated gadget. Wrong product photo is worse than NO IMAGE.',
             'If only logo/brand tiles remain → return all null (NO IMAGE).',
             'Return ONLY compact JSON: {"hero":url|null,"secondary":url|null,"detail":url|null,"rejected":[{"url":"...","reason":"..."}],"reason":"..."}',
@@ -822,6 +825,14 @@ export async function resolveArticlePhotos(opts: {
         if (!isOg) return false;
         if (!looksLikeRasterPhoto(c.url) || IGNORE_SRC_RE.test(c.url)) return false;
         if (/screenshot|screen%20shot|screen_shot|ui.?capture/i.test(c.url + c.context)) return false;
+        const mag = magazineHeroGate({
+          articleTitle: opts.title,
+          articleSummary: opts.text.slice(0, 400),
+          articleSourceUrl: opts.sourceUrl,
+          heroUrl: c.url,
+          photoContext: c.context,
+        });
+        if (!mag.ok) return false;
         // Same-host source article og:image is OK for research stories.
         try {
           return new URL(c.pageUrl).hostname === new URL(opts.sourceUrl).hostname;
@@ -856,6 +867,18 @@ export async function resolveArticlePhotos(opts: {
       if (!g.ok) {
         edited.rejected.push({ url: p.url, reason: g.reason });
         notes.push(`photo desk product-gate: ${g.reason}`);
+        return false;
+      }
+      const mag = magazineHeroGate({
+        articleTitle: opts.title,
+        articleSummary: opts.text.slice(0, 400),
+        articleSourceUrl: opts.sourceUrl,
+        heroUrl: p.url,
+        photoSourceUrls: [p.url],
+      });
+      if (!mag.ok) {
+        edited.rejected.push({ url: p.url, reason: mag.reason });
+        notes.push(`photo desk magazine-gate: ${mag.reason}`);
         return false;
       }
       return true;
