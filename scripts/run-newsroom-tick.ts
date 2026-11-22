@@ -1490,8 +1490,9 @@ async function publishRssOnce(opts: {
       } else {
         console.log(chalk.gray('AI_RADAR best: (none this tick)'));
       }
+      // Do not drop PRIMARY AI events just because RSS already put the URL in the journal.
       const aiItems: PoolItem[] = strong
-        .filter((n) => n.url && !opts.urls.has(n.url) && !opts.ids.has(`ai-radar:${n.url}`))
+        .filter((n) => Boolean(n.url) && !opts.ids.has(`ai-radar:${n.url}`))
         .slice(0, 3)
         .map((n) => ({
           id: `ai-radar:${n.url}`,
