@@ -81,6 +81,12 @@ import {
   type NewsQuotaPolicy,
 } from '../src/lib/newsroom/daily-quota';
 import { resolveVisualFallback, getCategoryStock } from '../src/lib/visual-fallback';
+import {
+  countReserveItems,
+  loadReserveTarget,
+  saveReserveItem,
+  shouldHoldForReserve,
+} from '../src/lib/newsroom/reserve-shelf';
 
 /**
  * SP-A-056 — on the Hetzner worker (ARTICLES_STORE=sqlite) also persist the
@@ -358,6 +364,7 @@ interface TickMetrics {
   sentToGemini: number;
   draftsCreated: number;
   articlesPublished: number;
+  articlesReserved: number;
   aiStarted: boolean;
   collectorStarted: boolean;
   publisherStarted: boolean;
@@ -373,6 +380,7 @@ function emptyTickMetrics(reason = '', skipReason = ''): TickMetrics {
     sentToGemini: 0,
     draftsCreated: 0,
     articlesPublished: 0,
+    articlesReserved: 0,
     aiStarted: false,
     collectorStarted: false,
     publisherStarted: false,
@@ -406,6 +414,7 @@ function printFactoryTickSummary(opts: {
   console.log(`sentToGemini: ${metrics.sentToGemini}`);
   console.log(`draftsCreated: ${metrics.draftsCreated}`);
   console.log(`articlesPublished: ${metrics.articlesPublished}`);
+  console.log(`articlesReserved: ${metrics.articlesReserved}`);
   console.log(`title: ${opts.title || '-'}`);
   console.log(`slug: ${opts.slug || '-'}`);
   console.log(`wowScore: ${opts.wowScore ?? '-'}`);
@@ -413,6 +422,45 @@ function printFactoryTickSummary(opts: {
   console.log(`pushDone: ${opts.pushDone === true}`);
   console.log(`reason: ${metrics.reason || 'n/a'}`);
   console.log(`skipReason: ${metrics.skipReason || 'none'}`);
+}
+
+/**
+ * SP-A-105 — if the homepage is already fresh, park a gated story on the
+ * reserve shelf instead of publishing (fills 5–7 day credit-outage buffer).
+ * Chief / Staff Author never parked. Returns true when parked.
+ */
+async function maybeParkOnReserve(opts: {
+  article: Record<string, unknown>;
+  channel: string;
+  cycle: 'news' | 'article';
+  sourceUrl: string;
+  articles: Array<{ publishedAt?: string; agentId?: string | null }>;
+  metrics: TickMetrics;
+}): Promise<boolean> {
+  const report = buildFreshnessReport({ articles: opts.articles });
+  const hold = shouldHoldForReserve({
+    channel: opts.channel,
+    cycle: opts.cycle,
+    freshnessStatus: report.freshnessStatus,
+    minutesSinceLastAuto: report.minutesSinceLastAutoPublication,
+  });
+  if (!hold) return false;
+  const rec = await saveReserveItem({
+    slug: String(opts.article.slug || ''),
+    sourceUrl: opts.sourceUrl,
+    channel: opts.channel,
+    cycle: opts.cycle,
+    article: opts.article,
+  });
+  opts.metrics.articlesReserved += 1;
+  opts.metrics.publisherStarted = true;
+  opts.metrics.reason = `reserved ${opts.channel}/${opts.cycle}`;
+  opts.metrics.skipReason = 'reserve shelf';
+  console.log(
+    `RESERVE SHELF parked "${String(opts.article.title || rec.slug)}" ` +
+      `(${countReserveItems()}/${loadReserveTarget()}) id=${rec.id}`,
+  );
+  return true;
 }
 
 function slugify(title: string): string {
@@ -989,6 +1037,40 @@ async function tryChinaPublishOnce(opts: {
           continue;
         }
         throw err;
+      }
+
+      if (
+        await maybeParkOnReserve({
+          article: article as Record<string, unknown>,
+          channel: 'china-qwen',
+          cycle: opts.cycle,
+          sourceUrl: c.sourceUrl,
+          articles: fresh.articles,
+          metrics: opts.metrics,
+        })
+      ) {
+        if (!fresh.journal.processedUrls.includes(c.sourceUrl)) {
+          fresh.journal.processedUrls.push(c.sourceUrl);
+        }
+        fresh.journal.processedIds.push(slug);
+        fresh.journal.entries.push({
+          id: slug,
+          url: c.sourceUrl,
+          title: draft.title,
+          processedAt: publishedAt,
+          status: 'reserved',
+          reason: 'reserve shelf',
+          slug,
+          channel: 'china-qwen',
+          cycle: opts.cycle,
+        });
+        await writeFile(opts.journalPath, JSON.stringify(fresh.journal, null, 2) + '\n', 'utf8');
+        opts.urls.add(c.sourceUrl);
+        if (opts.lastPublish) {
+          opts.lastPublish.title = draft.title;
+          opts.lastPublish.slug = slug;
+        }
+        return true;
       }
 
       const deduped = filterRemovedArticles(
@@ -1919,6 +2001,50 @@ async function publishRssOnce(opts: {
             continue;
           }
           throw err;
+        }
+
+        const itemChannelPark =
+          item.channelHint === 'staff-author-link'
+            ? 'staff-author-link'
+            : item.channelHint === 'reader-scout'
+              ? 'reader-scout'
+              : 'rss';
+        if (
+          await maybeParkOnReserve({
+            article: article as Record<string, unknown>,
+            channel: itemChannelPark,
+            cycle: opts.cycle,
+            sourceUrl: item.url,
+            articles: fresh.articles,
+            metrics: opts.metrics,
+          })
+        ) {
+          if (!fresh.journal.processedUrls.includes(item.url)) {
+            fresh.journal.processedUrls.push(item.url);
+          }
+          if (!fresh.journal.processedIds.includes(item.id)) {
+            fresh.journal.processedIds.push(item.id);
+          }
+          fresh.journal.entries.push({
+            id: item.id,
+            url: item.url,
+            title: draft.title,
+            processedAt: publishedAt,
+            status: 'reserved',
+            scoutScore: scout.score,
+            reason: 'reserve shelf',
+            slug,
+            channel: itemChannelPark,
+            cycle: opts.cycle,
+          });
+          await writeFile(opts.journalPath, JSON.stringify(fresh.journal, null, 2) + '\n', 'utf8');
+          opts.urls.add(item.url);
+          if (opts.lastPublish) {
+            opts.lastPublish.title = draft.title;
+            opts.lastPublish.slug = slug;
+            opts.lastPublish.wowScore = scout.score;
+          }
+          return true;
         }
 
         const deduped = filterRemovedArticles(
