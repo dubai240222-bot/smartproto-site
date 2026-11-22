@@ -24,6 +24,41 @@ export function shouldRecoverStalledOff(opts: {
 
 export type NewsTickDecision = 'run' | 'wait-cadence' | 'wait-credit-cooldown';
 
+/** After a long silence, AUTO may tick more often — production Scout floor unchanged. */
+export const CATCHUP_STALE_MS_DEFAULT = 12 * 60 * 60 * 1000;
+export const CATCHUP_WINDOW_MS_DEFAULT = 10 * 60 * 60 * 1000;
+export const CATCHUP_TICK_GAP_MS_DEFAULT = 25 * 60 * 1000;
+export const CATCHUP_MAX_PUBLISHES_DEFAULT = 3;
+export const CATCHUP_MAX_TICKS_DEFAULT = 6;
+
+export function shouldCatchUp(opts: {
+  lastAutoPublicationAt?: string | null;
+  lastRunAt?: string | null;
+  catchupWindowStart?: string | null;
+  catchupPublished?: number;
+  catchupTicks?: number;
+  now?: number;
+}): { active: boolean; run: boolean } {
+  const now = opts.now ?? Date.now();
+  const lastPub = opts.lastAutoPublicationAt ? Date.parse(opts.lastAutoPublicationAt) : NaN;
+  const stale =
+    !Number.isFinite(lastPub) || now - lastPub >= CATCHUP_STALE_MS_DEFAULT;
+  if (!stale) return { active: false, run: false };
+
+  const winStart = opts.catchupWindowStart ? Date.parse(opts.catchupWindowStart) : NaN;
+  const inWindow = Number.isFinite(winStart) && now - winStart < CATCHUP_WINDOW_MS_DEFAULT;
+  const published = inWindow ? Number(opts.catchupPublished || 0) : 0;
+  const ticks = inWindow ? Number(opts.catchupTicks || 0) : 0;
+  if (published >= CATCHUP_MAX_PUBLISHES_DEFAULT) return { active: false, run: false };
+  if (ticks >= CATCHUP_MAX_TICKS_DEFAULT) return { active: false, run: false };
+
+  const lastRun = opts.lastRunAt ? Date.parse(opts.lastRunAt) : NaN;
+  if (Number.isFinite(lastRun) && now - lastRun < CATCHUP_TICK_GAP_MS_DEFAULT) {
+    return { active: true, run: false };
+  }
+  return { active: true, run: true };
+}
+
 /**
  * lastNewsAt = last successful news tick (publish, reserve, or idle-ok).
  * lastCreditErrorAt = last OpenRouter credit failure.

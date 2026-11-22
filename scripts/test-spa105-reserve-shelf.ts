@@ -21,6 +21,7 @@ import {
 import {
   nextNewsTickDecision,
   patchStateAfterNewsTick,
+  shouldCatchUp,
   shouldRecoverStalledOff,
 } from '../src/lib/newsroom/worker-control';
 
@@ -240,6 +241,33 @@ async function main() {
   assert.match(workerSrc, /holdOff: true, reason: 'single-complete'/);
 
   ackReserveItem('missing-noop');
+
+  const catchupNow = Date.parse('2026-11-22T04:00:00.000Z');
+  assert.equal(
+    shouldCatchUp({
+      lastAutoPublicationAt: new Date(catchupNow - 5 * 24 * 60 * 60 * 1000).toISOString(),
+      lastRunAt: new Date(catchupNow - 40 * 60 * 1000).toISOString(),
+      now: catchupNow,
+    }).run,
+    true,
+  );
+  assert.equal(
+    shouldCatchUp({
+      lastAutoPublicationAt: new Date(catchupNow - 30 * 60 * 1000).toISOString(),
+      now: catchupNow,
+    }).active,
+    false,
+  );
+  assert.equal(
+    shouldCatchUp({
+      lastAutoPublicationAt: new Date(catchupNow - 5 * 24 * 60 * 60 * 1000).toISOString(),
+      catchupWindowStart: new Date(catchupNow - 60 * 60 * 1000).toISOString(),
+      catchupPublished: 3,
+      now: catchupNow,
+    }).run,
+    false,
+  );
+
   console.log('SP-A-42 reserve + cadence tests passed.');
 }
 

@@ -27,6 +27,8 @@ import {
   loadCreditCooldownMs,
   nextNewsTickDecision,
   patchStateAfterNewsTick,
+  CATCHUP_MAX_PUBLISHES_DEFAULT,
+  shouldCatchUp,
   shouldRecoverStalledOff,
 } from '../src/lib/newsroom/worker-control';
 
@@ -146,6 +148,9 @@ interface WorkerState {
   lastReserveReleaseAt?: string;
   lastCreditErrorAt?: string;
   lastCreditError?: string;
+  catchupWindowStart?: string;
+  catchupPublished?: number;
+  catchupTicks?: number;
 }
 
 function readState(): WorkerState {
@@ -561,22 +566,46 @@ async function loopOnce(): Promise<void> {
     newsIntervalMs: NEWS_INTERVAL_MS,
     creditCooldownMs: loadCreditCooldownMs(),
   });
+  const catchup = shouldCatchUp({
+    lastAutoPublicationAt: state.lastAutoPublicationAt,
+    lastRunAt: state.lastRunAt,
+    catchupWindowStart: state.catchupWindowStart,
+    catchupPublished: state.catchupPublished,
+    catchupTicks: state.catchupTicks,
+  });
   if (tickDecision === 'wait-credit-cooldown') {
     log(
       'OpenRouter credit error recently — skip AI tick (credit cooldown); reserve carousel may release.',
     );
     return;
   }
-  if (tickDecision === 'run') {
+  if (tickDecision === 'run' || catchup.run) {
+    if (catchup.run && tickDecision !== 'run') {
+      log(
+        `CATCH-UP tick — homepage stale ≥12h, aiming ≤${CATCHUP_MAX_PUBLISHES_DEFAULT} publishes / 10h (production Scout floor).`,
+      );
+    }
     const { ok, published, reserved, creditError } = await runTick('news');
-    writeState(
-      patchStateAfterNewsTick({
+    const nowIso = new Date().toISOString();
+    const winStart = state.catchupWindowStart ? Date.parse(state.catchupWindowStart) : NaN;
+    const windowFresh =
+      !Number.isFinite(winStart) || Date.now() - winStart >= 10 * 60 * 60 * 1000;
+    writeState({
+      ...patchStateAfterNewsTick({
         ok,
         published,
         reserved,
         creditError,
       }),
-    );
+      ...(catchup.active || catchup.run
+        ? {
+            catchupWindowStart: windowFresh ? nowIso : state.catchupWindowStart,
+            catchupPublished:
+              (windowFresh ? 0 : Number(state.catchupPublished || 0)) + (published ? 1 : 0),
+            catchupTicks: (windowFresh ? 0 : Number(state.catchupTicks || 0)) + 1,
+          }
+        : {}),
+    });
     if (!published) {
       await maybeReleaseReserve(creditError ? 'credit-error' : 'idle-tick');
     }
