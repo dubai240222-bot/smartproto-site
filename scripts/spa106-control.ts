@@ -29,6 +29,10 @@ expectPass(
   'Thermoelectric fabric harvests body heat to power sensors',
   'Researchers created a thermoelectric energy-harvesting textile. Not yet commercially available.',
 );
+expectPass(
+  'Taming blue light: Researchers bring precision lasers onto a chip',
+  'Researchers bring precision lasers onto a chip for photonic on-chip sources.',
+);
 
 expectCode(
   'Best USB-C cables on Amazon this week',

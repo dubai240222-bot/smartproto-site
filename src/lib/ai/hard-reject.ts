@@ -374,7 +374,7 @@ const CAPABILITY_EDITORIAL_RE =
  * Does NOT unlock Amazon roundups or ordinary mouse/phone SKUs.
  */
 const SMARTPROTO_EARLY_TECH_RE =
-  /\b(prototype|prototyping|working\s+prototype|experimental\s+(device|method|material|therapy|diagnostic|camera|sensor)|not\s+yet\s+(commercially\s+)?available|engineering\s+(prototype|breakthrough|solution|mechanism)|unusual\s+(mechanism|invention|material|engineering)|thermoelectric|energy[- ]harvest(?:ing)?|diagnostic\s+(imaging|device|method)|early[- ]?detection|future\s+(medicine|medical|energy)|scientific\s+(discovery|breakthrough)|researchers?\s+(developed|created|unveil|demonstrate)|lab[- ]?to[- ]?life|изобретен|прототип|экспериментальн|научн\w*\s+(открыт|метод)|ещё\s+нельзя\s+купить)\b/i;
+  /\b(prototype|prototyping|working\s+prototype|experimental\s+(device|method|material|therapy|diagnostic|camera|sensor)|not\s+yet\s+(commercially\s+)?available|engineering\s+(prototype|breakthrough|solution|mechanism)|unusual\s+(mechanism|invention|material|engineering)|thermoelectric|energy[- ]harvest(?:ing)?|diagnostic\s+(imaging|device|method)|early[- ]?detection|future\s+(medicine|medical|energy)|scientific\s+(discovery|breakthrough)|researchers?\s+(developed|created|unveil|demonstrate|bring|show)|on[- ]chip|photonic|precision\s+lasers?|lab[- ]?to[- ]?life|изобретен|прототип|экспериментальн|научн\w*\s+(открыт|метод)|ещё\s+нельзя\s+купить)\b/i;
 
 /** Titles that remain shop/SKU-shaped even if a capability keyword appears. */
 const ORDINARY_SKU_TITLE_RE =
