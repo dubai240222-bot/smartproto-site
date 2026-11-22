@@ -1,8 +1,10 @@
 /**
  * Daily news volume quota — aim for ~5–6 AUTO news publishes / rolling 24h.
  *
- * When behind: slight Scout floor relax + smaller Scout window (fewer LLM calls,
- * better prefilter) + skip China×3 burn so RSS news can land.
+ * When behind but not starved: slight Scout floor relax + smaller Scout window
+ * (fewer LLM calls) + skip China×3 burn so RSS news can land.
+ * When CRITICAL/starved: do NOT skip China — RSS is mostly NO_PRODUCT and
+ * China is the buyable-gadget desk. Gates/thresholds unchanged.
  * When at/over target: ease boosts (normal floors; China at most 1 attempt).
  *
  * Env knobs (documented in DEPLOY.md / compose):
@@ -149,6 +151,9 @@ export function resolveNewsQuotaPolicy(opts: {
   }
 
   const relax = getNewsQuotaScoutRelax();
+  // CRITICAL/starved: keep China on. Skipping it leaves only RSS, which
+  // hard-rejects as NO_PRODUCT and the site goes silent for days.
+  const skipChina = !starved;
   return {
     newsPublishedLast24h: count,
     target,
@@ -158,10 +163,12 @@ export function resolveNewsQuotaPolicy(opts: {
     scoutFloorRelax: relax,
     // Fewer Scout LLM calls; rely on cheap pre-rank + slightly lower floor.
     scoutLimit: 8,
-    skipChina: true,
-    chinaMaxAttempts: 0,
+    skipChina,
+    chinaMaxAttempts: starved ? 2 : 0,
     allowPublishWithoutImage: starved && count < min,
-    reason: `behind quota ${count}/${target} (min ${min}${starved ? ', starved' : ''}) — relax Scout −${relax}, scout≤8, skip China`,
+    reason: starved
+      ? `behind quota ${count}/${target} CRITICAL — keep China≤2, relax Scout −${relax}, scout≤8`
+      : `behind quota ${count}/${target} (min ${min}) — relax Scout −${relax}, scout≤8, skip China`,
   };
 }
 
