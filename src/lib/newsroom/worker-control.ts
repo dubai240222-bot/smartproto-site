@@ -50,7 +50,8 @@ export function shouldCatchUp(opts: {
   const published = inWindow ? Number(opts.catchupPublished || 0) : 0;
   const ticks = inWindow ? Number(opts.catchupTicks || 0) : 0;
   if (published >= CATCHUP_MAX_PUBLISHES_DEFAULT) return { active: false, run: false };
-  if (ticks >= CATCHUP_MAX_TICKS_DEFAULT) return { active: false, run: false };
+  // 0 publishes: do not stop after 6 idle ticks — homepage is still dead.
+  if (published > 0 && ticks >= CATCHUP_MAX_TICKS_DEFAULT) return { active: false, run: false };
 
   const lastRun = opts.lastRunAt ? Date.parse(opts.lastRunAt) : NaN;
   if (Number.isFinite(lastRun) && now - lastRun < CATCHUP_TICK_GAP_MS_DEFAULT) {
