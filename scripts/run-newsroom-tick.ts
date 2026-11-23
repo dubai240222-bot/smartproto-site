@@ -77,10 +77,12 @@ import {
 } from '../src/lib/newsroom/freshness';
 import {
   applyQuotaScoutFloor,
+  countAutoPublishedLast24h,
   formatNewsQuotaPolicy,
   resolveNewsQuotaPolicy,
   type NewsQuotaPolicy,
 } from '../src/lib/newsroom/daily-quota';
+import { isLightMode, LIGHT_DAILY_CAP } from '../src/lib/newsroom/light-mode';
 import { resolveVisualFallback, getCategoryStock } from '../src/lib/visual-fallback';
 import {
   countReserveItems,
@@ -1435,12 +1437,16 @@ async function publishRssOnce(opts: {
   // SP-A-090/096 — SAFE Reader Scout only; bounded seats (must not starve AUTO / AI budget).
   // SP-A-106: when the homepage is CRITICAL, do not spend the first two Scout
   // slots on reader-door tests — AUTO/China/AI radar must run first.
-  const skipReaderSeats = freshness.freshnessStatus === 'CRITICAL';
+  const skipReaderSeats = freshness.freshnessStatus === 'CRITICAL' || isLightMode();
   let readerItems: PoolItem[] = [];
   try {
     if (skipReaderSeats) {
       console.log(
-        chalk.gray('CRITICAL — skip Reader Scout seats this tick (must not starve AUTO).'),
+        chalk.gray(
+          isLightMode()
+            ? 'LIGHT — skip Reader Scout seats this tick.'
+            : 'CRITICAL — skip Reader Scout seats this tick (must not starve AUTO).',
+        ),
       );
     }
     const queued = skipReaderSeats
@@ -2241,8 +2247,10 @@ async function main(): Promise<void> {
     process.env.SMARTPROTO_CYCLE_TYPE === 'article'
   ) {
     process.env.SMARTPROTO_FACTORY_ENABLED = 'true';
-    process.env.CHINA_DEPARTMENT_ENABLED = 'true';
-    process.env.CHINA_ALLOW_RECOMMEND = 'true';
+    if (!isLightMode()) {
+      process.env.CHINA_DEPARTMENT_ENABLED = 'true';
+      process.env.CHINA_ALLOW_RECOMMEND = 'true';
+    }
   }
   const options = parseArgs(process.argv.slice(2));
   const event =
@@ -2312,6 +2320,22 @@ async function main(): Promise<void> {
     force: options.force,
   });
   console.log(`Cadence: ${cadence.reason}`);
+  if (isLightMode()) {
+    const autoToday = countAutoPublishedLast24h({ articles });
+    console.log(`LIGHT mode: AUTO last 24h ${autoToday}/${LIGHT_DAILY_CAP}`);
+    if (autoToday >= LIGHT_DAILY_CAP) {
+      metrics.skipReason = 'light daily cap';
+      metrics.reason = `LIGHT cap ${autoToday}/${LIGHT_DAILY_CAP} — skip`;
+      printFactoryTickSummary({
+        factoryEnabled: true,
+        event,
+        metrics,
+        commitCreated: false,
+        pushDone: false,
+      });
+      return;
+    }
+  }
   if (!cadence.allow) {
     metrics.skipReason = cadence.reason;
     metrics.reason = 'cadence floor skip';

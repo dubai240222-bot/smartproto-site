@@ -31,6 +31,13 @@ import {
   shouldCatchUp,
   shouldRecoverStalledOff,
 } from '../src/lib/newsroom/worker-control';
+import {
+  isLightMode,
+  LIGHT_ARTICLE_INTERVAL_MS,
+  LIGHT_NEWS_INTERVAL_MS,
+  LIGHT_POLL_MS,
+  LIGHT_TRANSLATE_DRIP_MS,
+} from '../src/lib/newsroom/light-mode';
 
 type Mode = 'off' | 'single' | 'auto' | 'test-auto' | 'forced';
 
@@ -38,9 +45,15 @@ const DATA_DIR = process.env.SMARTPROTO_DATA_DIR || path.resolve(process.cwd(), 
 const MODE_FILE = path.join(DATA_DIR, 'worker-mode.json');
 const STATE_FILE = path.join(DATA_DIR, 'worker-state.json');
 
-/** SP-A-100F — default 150m (120–180 band). Override via SMARTPROTO_NEWS_INTERVAL_MS. */
-const NEWS_INTERVAL_MS = Number(process.env.SMARTPROTO_NEWS_INTERVAL_MS || 150 * 60 * 1000);
-const ARTICLE_INTERVAL_MS = Number(process.env.SMARTPROTO_ARTICLE_INTERVAL_MS || 3 * 60 * 60 * 1000);
+/** SP-A-100F — default 150m (120–180 band). Override via SMARTPROTO_NEWS_INTERVAL_MS. LIGHT: 12h. */
+const NEWS_INTERVAL_MS = Number(
+  process.env.SMARTPROTO_NEWS_INTERVAL_MS ||
+    (isLightMode() ? LIGHT_NEWS_INTERVAL_MS : 150 * 60 * 1000),
+);
+const ARTICLE_INTERVAL_MS = Number(
+  process.env.SMARTPROTO_ARTICLE_INTERVAL_MS ||
+    (isLightMode() ? LIGHT_ARTICLE_INTERVAL_MS : 3 * 60 * 60 * 1000),
+);
 /** SP-A-063 — TEST-AUTO observation window: full cycle every 20 minutes. */
 const TEST_AUTO_INTERVAL_MS = Number(process.env.SMARTPROTO_TEST_AUTO_INTERVAL_MS || 20 * 60 * 1000);
 /** SP-A-063 — auto-expire TEST-AUTO after this many ms (default 3h). */
@@ -62,10 +75,11 @@ const FORCED_TARGET = Number(process.env.SMARTPROTO_FORCED_TARGET || 2);
 const FORCED_DEADLINE_MS = Number(process.env.SMARTPROTO_FORCED_DEADLINE_MS || 10 * 60 * 1000);
 /** Temporary Scout floor for forced live visual check only. Production stays 70. */
 const FORCED_SCOUT_THRESHOLD = process.env.SMARTPROTO_FORCED_SCOUT_THRESHOLD || '25';
-const POLL_MS = 15_000;
-/** SP-A-098F — translate at most 1 missing RU→EN/TR pair every N ms (default 45m). */
+const POLL_MS = isLightMode() ? LIGHT_POLL_MS : 15_000;
+/** SP-A-098F — translate at most 1 missing RU→EN/TR pair every N ms (default 45m). LIGHT: 12h. */
 const TRANSLATE_DRIP_INTERVAL_MS = Number(
-  process.env.SMARTPROTO_TRANSLATE_DRIP_INTERVAL_MS || 45 * 60 * 1000,
+  process.env.SMARTPROTO_TRANSLATE_DRIP_INTERVAL_MS ||
+    (isLightMode() ? LIGHT_TRANSLATE_DRIP_MS : 45 * 60 * 1000),
 );
 const TRANSLATE_DRIP_ENABLED =
   (process.env.SMARTPROTO_TRANSLATE_ENABLED ?? 'true').toLowerCase() !== 'false';
@@ -444,8 +458,15 @@ async function loopOnce(): Promise<void> {
   const holdOff = modeMeta.holdOff === true || modeMeta.holdOff === 'true';
 
   // Carousel can still keep the homepage alive during credit outages / accidental OFF.
-  if (!holdOff) {
+  // LIGHT: no catch-up releases.
+  if (!holdOff && !isLightMode()) {
     await maybeReleaseReserve(mode === 'off' ? 'mode-off-stale' : 'pre-tick');
+  }
+
+  if (isLightMode() && (mode === 'forced' || mode === 'test-auto')) {
+    log('LIGHT — burst modes disabled, switching to AUTO.');
+    writeMode('auto', { reason: 'light-no-burst' });
+    return;
   }
 
   if (mode === 'off') {
@@ -606,7 +627,7 @@ async function loopOnce(): Promise<void> {
           }
         : {}),
     });
-    if (!published) {
+    if (!published && !isLightMode()) {
       await maybeReleaseReserve(creditError ? 'credit-error' : 'idle-tick');
     }
     await logFreshnessHealth(published);
@@ -629,7 +650,10 @@ async function loopOnce(): Promise<void> {
 async function main() {
   if (!existsSync(MODE_FILE)) writeMode(DEFAULT_MODE, { reason: 'boot-default' });
   log(
-    `SmartProto Hetzner worker started. Mode file: ${MODE_FILE} (default=${DEFAULT_MODE}, test-auto-expire=${TEST_AUTO_EXPIRE_MODE}, stall-recover=${STALL_RECOVER_ENABLED}/${STALL_RECOVER_OFF_MS}ms)`,
+    `SmartProto Hetzner worker started. Mode file: ${MODE_FILE} (default=${DEFAULT_MODE}, test-auto-expire=${TEST_AUTO_EXPIRE_MODE}, stall-recover=${STALL_RECOVER_ENABLED}/${STALL_RECOVER_OFF_MS}ms)` +
+      (isLightMode()
+        ? ` LIGHT news=${Math.round(NEWS_INTERVAL_MS / 3600000)}h article=${Math.round(ARTICLE_INTERVAL_MS / 3600000)}h poll=${Math.round(POLL_MS / 60000)}m cap=2/day`
+        : ''),
   );
   // SP-A-100F — purge removed-slug rows + bad heroes (e.g. Neakasa e-bike mismatch).
   try {
