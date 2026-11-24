@@ -1,12 +1,23 @@
 /**
  * Single-flight lock so a slow --once tick cannot overlap the next wake.
- * Same container: recover only if holder pid is dead (do not steal a live tick).
- * New Docker container: hostname changes, leftover lock is recovered even if
- * that pid number is alive in the new namespace.
+ *
+ * SP49-LOCK-REPRO:
+ * 1) Empty file between openSync(wx) and writeSync is "pending", not stealable.
+ * 2) A live pid is busy even when hostname differs (do not treat other host as dead).
+ *
+ * Recover leftover volume locks only when the recorded pid is dead, the file is
+ * empty longer than pendingMs, or a live pid's lock is older than staleMs
+ * (Docker pid reuse after recreate). Alpine worker image has no flock; do not unlink
+ * a live holder.
  */
-import { closeSync, openSync, readFileSync, unlinkSync, writeSync } from 'node:fs';
+import { closeSync, openSync, readFileSync, statSync, unlinkSync, writeSync } from 'node:fs';
 import { hostname } from 'node:os';
 import path from 'node:path';
+
+/** Empty wx file is pending this long before recovery (covers the writeSync race). */
+export const LOCK_PENDING_MS = 5_000;
+/** Live pid leftover (container recreate / pid reuse) may be recovered after this. */
+export const LOCK_STALE_MS = Number(process.env.SMARTPROTO_LOCK_STALE_MS || 45 * 60 * 1000);
 
 export function workerLockPath(dataDir: string): string {
   return path.join(dataDir, 'worker-once.lock');
@@ -40,10 +51,40 @@ export function readLockRecord(lockFile: string): { pid: number | null; host: st
   }
 }
 
+export function lockAgeMs(lockFile: string, now = Date.now()): number {
+  try {
+    return Math.max(0, now - statSync(lockFile).mtimeMs);
+  } catch {
+    return Number.POSITIVE_INFINITY;
+  }
+}
+
+function mayRecover(
+  lockFile: string,
+  holder: { pid: number | null },
+  now: number,
+  pendingMs: number,
+  staleMs: number,
+): { ok: true } | { ok: false; reason: string } {
+  const age = lockAgeMs(lockFile, now);
+  if (holder.pid == null) {
+    if (age < pendingMs) return { ok: false, reason: 'lock-pending' };
+    return { ok: true };
+  }
+  if (isPidAlive(holder.pid)) {
+    if (age < staleMs) return { ok: false, reason: `busy pid=${holder.pid}` };
+    return { ok: true };
+  }
+  return { ok: true };
+}
+
 export function tryAcquireWorkerLock(
   lockFile: string,
   now = Date.now(),
+  opts?: { pendingMs?: number; staleMs?: number },
 ): { ok: true; fd: number } | { ok: false; reason: string } {
+  const pendingMs = opts?.pendingMs ?? LOCK_PENDING_MS;
+  const staleMs = opts?.staleMs ?? LOCK_STALE_MS;
   const stamp = `${process.pid}\n${hostname()}\n${new Date(now).toISOString()}\n`;
   try {
     const fd = openSync(lockFile, 'wx');
@@ -55,10 +96,8 @@ export function tryAcquireWorkerLock(
       return { ok: false, reason: `lock-open ${(err as Error).message}` };
     }
     const holder = readLockRecord(lockFile);
-    const sameHost = !holder.host || holder.host === hostname();
-    if (sameHost && holder.pid != null && isPidAlive(holder.pid)) {
-      return { ok: false, reason: `busy pid=${holder.pid}` };
-    }
+    const recover = mayRecover(lockFile, holder, now, pendingMs, staleMs);
+    if (!recover.ok) return recover;
     try {
       unlinkSync(lockFile);
       const fd = openSync(lockFile, 'wx');

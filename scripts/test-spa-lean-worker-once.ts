@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import {
@@ -33,11 +33,31 @@ const recovered = tryAcquireWorkerLock(stale);
 assert.equal(recovered.ok, true, 'dead pid lock must recover');
 if (recovered.ok) releaseWorkerLock(stale, recovered.fd);
 
-const dockerDir = mkdtempSync(path.join(tmpdir(), 'sp-lean-host-'));
+const hostDir = mkdtempSync(path.join(tmpdir(), 'sp-lean-host-'));
+const hostLock = workerLockPath(hostDir);
+writeFileSync(hostLock, `${process.pid}\nother-container-hostname\n`);
+const liveOtherHost = tryAcquireWorkerLock(hostLock);
+assert.equal(liveOtherHost.ok, false, 'SP49-LOCK-REPRO: live pid stays busy across hostname');
+
+const emptyDir = mkdtempSync(path.join(tmpdir(), 'sp-lean-empty-'));
+const emptyLock = workerLockPath(emptyDir);
+writeFileSync(emptyLock, '');
+const pending = tryAcquireWorkerLock(emptyLock, Date.now(), { pendingMs: 5_000 });
+assert.equal(pending.ok, false, 'SP49-LOCK-REPRO: empty wx file is pending, not stolen');
+
+const old = new Date(Date.now() - 30_000);
+utimesSync(emptyLock, old, old);
+const emptyStale = tryAcquireWorkerLock(emptyLock, Date.now(), { pendingMs: 5_000 });
+assert.equal(emptyStale.ok, true, 'empty leftover older than pendingMs recovers');
+if (emptyStale.ok) releaseWorkerLock(emptyLock, emptyStale.fd);
+
+const dockerDir = mkdtempSync(path.join(tmpdir(), 'sp-lean-docker-'));
 const dockerLock = workerLockPath(dockerDir);
 writeFileSync(dockerLock, `${process.pid}\nother-container-hostname\n`);
-const afterRestart = tryAcquireWorkerLock(dockerLock);
-assert.equal(afterRestart.ok, true, 'new Docker hostname must recover leftover lock');
+const dockerOld = new Date(Date.now() - 60_000);
+utimesSync(dockerLock, dockerOld, dockerOld);
+const afterRestart = tryAcquireWorkerLock(dockerLock, Date.now(), { staleMs: 45_000 });
+assert.equal(afterRestart.ok, true, 'stale live pid leftover after container recreate recovers');
 if (afterRestart.ok) releaseWorkerLock(dockerLock, afterRestart.fd);
 
 console.log('test-spa-lean-worker-once: PASS');

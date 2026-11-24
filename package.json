@@ -33,7 +33,8 @@
     "hetzner-worker": "tsx scripts/hetzner-worker.ts",
     "retention:dry-run": "tsx scripts/run-retention-cleanup.ts --dry-run",
     "retention:run": "tsx scripts/run-retention-cleanup.ts --execute",
-    "test:retention": "tsx scripts/test-spa074-retention.ts"
+    "test:retention": "tsx scripts/test-spa074-retention.ts",
+    "test:lean-worker-once": "tsx scripts/test-spa-lean-worker-once.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
