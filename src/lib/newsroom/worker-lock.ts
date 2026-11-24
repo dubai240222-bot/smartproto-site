@@ -1,11 +1,10 @@
 /**
- * Single-flight lock so a slow newsroom tick cannot overlap the next --once.
- * File lock (wx): no extra package. Stale after 3h is treated as a crashed tick.
+ * Single-flight lock so a slow --once tick cannot overlap the next wake.
+ * Recover only if the recorded pid is dead (mtime-only steal can interrupt a
+ * live photo-scout tick).
  */
-import { closeSync, openSync, statSync, unlinkSync, writeSync } from 'node:fs';
+import { closeSync, openSync, readFileSync, unlinkSync, writeSync } from 'node:fs';
 import path from 'node:path';
-
-export const WORKER_LOCK_STALE_MS = 3 * 60 * 60 * 1000;
 
 export function workerLockPath(dataDir: string): string {
   return path.join(dataDir, 'worker-once.lock');
@@ -13,6 +12,25 @@ export function workerLockPath(dataDir: string): string {
 
 export function parseWorkerArgv(argv: string[]): { once: boolean } {
   return { once: argv.includes('--once') };
+}
+
+export function isPidAlive(pid: number): boolean {
+  if (!Number.isFinite(pid) || pid <= 0) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function readLockPid(lockFile: string): number | null {
+  try {
+    const n = parseInt(readFileSync(lockFile, 'utf8').split(/\s+/)[0] || '', 10);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  } catch {
+    return null;
+  }
 }
 
 export function tryAcquireWorkerLock(
@@ -28,17 +46,17 @@ export function tryAcquireWorkerLock(
     if (code !== 'EEXIST') {
       return { ok: false, reason: `lock-open ${(err as Error).message}` };
     }
+    const holder = readLockPid(lockFile);
+    if (holder != null && isPidAlive(holder)) {
+      return { ok: false, reason: `busy pid=${holder}` };
+    }
     try {
-      const age = now - statSync(lockFile).mtimeMs;
-      if (age >= WORKER_LOCK_STALE_MS) {
-        unlinkSync(lockFile);
-        const fd = openSync(lockFile, 'wx');
-        writeSync(fd, `${process.pid}\n${new Date(now).toISOString()}\nstale-recovered\n`);
-        return { ok: true, fd };
-      }
-      return { ok: false, reason: `busy ageMs=${Math.round(age)}` };
+      unlinkSync(lockFile);
+      const fd = openSync(lockFile, 'wx');
+      writeSync(fd, `${process.pid}\n${new Date(now).toISOString()}\ndead-pid-recovered\n`);
+      return { ok: true, fd };
     } catch (inner) {
-      return { ok: false, reason: `lock-busy ${(inner as Error).message}` };
+      return { ok: false, reason: `lock-recover ${(inner as Error).message}` };
     }
   }
 }
