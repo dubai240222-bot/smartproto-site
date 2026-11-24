@@ -38,6 +38,12 @@ import {
   LIGHT_POLL_MS,
   LIGHT_TRANSLATE_DRIP_MS,
 } from '../src/lib/newsroom/light-mode';
+import {
+  parseWorkerArgv,
+  releaseWorkerLock,
+  tryAcquireWorkerLock,
+  workerLockPath,
+} from '../src/lib/newsroom/worker-lock';
 
 type Mode = 'off' | 'single' | 'auto' | 'test-auto' | 'forced';
 
@@ -647,34 +653,58 @@ async function loopOnce(): Promise<void> {
   }
 }
 
-async function main() {
-  if (!existsSync(MODE_FILE)) writeMode(DEFAULT_MODE, { reason: 'boot-default' });
-  log(
-    `SmartProto Hetzner worker started. Mode file: ${MODE_FILE} (default=${DEFAULT_MODE}, test-auto-expire=${TEST_AUTO_EXPIRE_MODE}, stall-recover=${STALL_RECOVER_ENABLED}/${STALL_RECOVER_OFF_MS}ms)` +
-      (isLightMode()
-        ? ` LIGHT news=${Math.round(NEWS_INTERVAL_MS / 3600000)}h article=${Math.round(ARTICLE_INTERVAL_MS / 3600000)}h poll=${Math.round(POLL_MS / 60000)}m cap=2/day`
-        : ''),
-  );
-  // SP-A-100F — purge removed-slug rows + bad heroes (e.g. Neakasa e-bike mismatch).
-  try {
-    const { scrubRemovedSlugs } = await import('./scrub-removed-slugs');
-    const scrub = scrubRemovedSlugs();
-    if (scrub.deletedDb.length || scrub.deletedMedia.length) {
-      log(
-        `Scrubbed removed slugs: db=${scrub.deletedDb.join(',') || '—'} media=${scrub.deletedMedia.join(',') || '—'}`,
-      );
-    }
-  } catch (err) {
-    log(`Scrub skipped: ${err instanceof Error ? err.message : String(err)}`);
+async function runLockedLoopOnce(): Promise<void> {
+  const lockFile = workerLockPath(DATA_DIR);
+  const lock = tryAcquireWorkerLock(lockFile);
+  if (!lock.ok) {
+    log(`Skip overlapping tick (${lock.reason})`);
+    return;
   }
-  for (;;) {
-    try {
-      await loopOnce();
-    } catch (err) {
-      log(`Worker loop error: ${err instanceof Error ? err.message : String(err)}`);
-    }
-    await new Promise((r) => setTimeout(r, POLL_MS));
+  try {
+    await loopOnce();
+  } finally {
+    releaseWorkerLock(lockFile, lock.fd);
   }
 }
 
-main();
+async function main() {
+  const { once } = parseWorkerArgv(process.argv.slice(2));
+  if (!existsSync(MODE_FILE)) writeMode(DEFAULT_MODE, { reason: 'boot-default' });
+  log(
+    `SmartProto Hetzner worker ${once ? '--once' : 'daemon'}. Mode file: ${MODE_FILE} (default=${DEFAULT_MODE}, test-auto-expire=${TEST_AUTO_EXPIRE_MODE}, stall-recover=${STALL_RECOVER_ENABLED}/${STALL_RECOVER_OFF_MS}ms)` +
+      (isLightMode()
+        ? ` LIGHT news=${Math.round(NEWS_INTERVAL_MS / 3600000)}h article=${Math.round(ARTICLE_INTERVAL_MS / 3600000)}h idle-poll-legacy=${Math.round(POLL_MS / 60000)}m cap=2/day`
+        : ''),
+  );
+  if (!once) {
+    try {
+      const { scrubRemovedSlugs } = await import('./scrub-removed-slugs');
+      const scrub = scrubRemovedSlugs();
+      if (scrub.deletedDb.length || scrub.deletedMedia.length) {
+        log(
+          `Scrubbed removed slugs: db=${scrub.deletedDb.join(',') || '—'} media=${scrub.deletedMedia.join(',') || '—'}`,
+        );
+      }
+    } catch (err) {
+      log(`Scrub skipped: ${err instanceof Error ? err.message : String(err)}`);
+    }
+    for (;;) {
+      try {
+        await runLockedLoopOnce();
+      } catch (err) {
+        log(`Worker loop error: ${err instanceof Error ? err.message : String(err)}`);
+      }
+      await new Promise((r) => setTimeout(r, POLL_MS));
+    }
+    return;
+  }
+
+  try {
+    await runLockedLoopOnce();
+  } catch (err) {
+    log(`Worker --once error: ${err instanceof Error ? err.message : String(err)}`);
+    process.exitCode = 1;
+  }
+}
+
+void main();

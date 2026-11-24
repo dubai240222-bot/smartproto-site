@@ -56,7 +56,14 @@ services:
         NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://www.smartproto.net}
     container_name: smartproto-worker
     restart: unless-stopped
-    command: ["npx", "tsx", "scripts/hetzner-worker.ts"]
+    # LEAN-001-02: Node runs one tick then exits; shell sleeps. Full AUTO cadence
+    # stays in hetzner-worker (150m news / 3h article). No 15s resident poll.
+    command:
+      [
+        "/bin/sh",
+        "-c",
+        "while true; do npx tsx scripts/hetzner-worker.ts --once || true; sleep $${SMARTPROTO_WORKER_IDLE_SEC:-600}; done",
+      ]
     environment:
       ARTICLES_STORE: sqlite
       SMARTPROTO_DB_PATH: /app/data/smartproto.db
@@ -64,6 +71,7 @@ services:
       # Same bind as web: ../images → /app/public/media (Neakasa scrub deletes here).
       SMARTPROTO_MEDIA_DIR: /app/public/media
       SMARTPROTO_FACTORY_ENABLED: "true"
+      SMARTPROTO_WORKER_IDLE_SEC: "${SMARTPROTO_WORKER_IDLE_SEC:-600}"
       # SP-LIGHT-001 — VPS economy. Rollback: SMARTPROTO_LIGHT=false + restore 6/5/150m/China on.
       SMARTPROTO_LIGHT: "${SMARTPROTO_LIGHT:-true}"
       CHINA_DEPARTMENT_ENABLED: "${CHINA_DEPARTMENT_ENABLED:-false}"
