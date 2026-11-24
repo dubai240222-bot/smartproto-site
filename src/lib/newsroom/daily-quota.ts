@@ -15,6 +15,7 @@
  */
 
 import { isAutoPublicationAgent } from './freshness';
+import { isLightMode, LIGHT_DAILY_CAP, LIGHT_SCOUT_LIMIT } from './light-mode';
 
 export const NEWS_DAILY_TARGET_DEFAULT = 6;
 export const NEWS_DAILY_MIN_DEFAULT = 5;
@@ -62,6 +63,19 @@ export function isNewsCycleArticle(a: NewsQuotaArticleLike): boolean {
   if (tags.some((t) => t === 'новость' || t === 'news' || t === 'новинка')) return true;
   // Legacy AUTO rows without tags — count toward news quota (safer for volume).
   return true;
+}
+
+export function countAutoPublishedLast24h(opts: {
+  articles?: NewsQuotaArticleLike[];
+  now?: Date;
+}): number {
+  const nowMs = (opts.now || new Date()).getTime();
+  const dayAgo = nowMs - 24 * 60 * 60 * 1000;
+  return (opts.articles || []).filter((a) => {
+    if (!isAutoPublicationAgent(a.agentId)) return false;
+    const t = Date.parse(a.publishedAt || '');
+    return Number.isFinite(t) && t >= dayAgo;
+  }).length;
 }
 
 export function countNewsPublishedLast24h(opts: {
@@ -124,6 +138,26 @@ export function resolveNewsQuotaPolicy(opts: {
   minutesSinceLastAuto?: number | null;
   freshnessStatus?: 'OK' | 'WARNING' | 'CRITICAL';
 }): NewsQuotaPolicy {
+  if (isLightMode()) {
+    const auto = countAutoPublishedLast24h(opts);
+    const target = Math.min(getNewsDailyTarget(), LIGHT_DAILY_CAP);
+    const atOrOverTarget = auto >= target;
+    return {
+      newsPublishedLast24h: auto,
+      target,
+      min: 1,
+      behind: false,
+      atOrOverTarget,
+      scoutFloorRelax: 0,
+      scoutLimit: LIGHT_SCOUT_LIMIT,
+      skipChina: true,
+      chinaMaxAttempts: 0,
+      allowPublishWithoutImage: false,
+      reason: atOrOverTarget
+        ? `LIGHT cap ${auto}/${target} — no more AUTO publishes today`
+        : `LIGHT ${auto}/${target} — quality only, no catch-up, China off, scout≤${LIGHT_SCOUT_LIMIT}`,
+    };
+  }
   const target = getNewsDailyTarget();
   const min = Math.min(getNewsDailyMin(), target);
   const count = countNewsPublishedLast24h(opts);

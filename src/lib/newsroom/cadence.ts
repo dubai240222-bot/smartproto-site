@@ -8,7 +8,10 @@
  * then automatically returns to normal. Articles stay ~3h.
  *
  * GHA / worker may poll more often; tick skips when floor not met (cheap idle).
+ * SP-LIGHT-001: SMARTPROTO_LIGHT uses 12h news / 24h article unless env override.
  */
+
+import { isLightMode, LIGHT_ARTICLE_INTERVAL_MS, LIGHT_NEWS_INTERVAL_MS } from './light-mode';
 
 /** SP-A-100F — production cadence 120–180 min (mid-band 150m). Was 25m. */
 export const NEWS_NORMAL_INTERVAL_MS = 150 * 60 * 1000;
@@ -39,12 +42,14 @@ export function getNewsWarmupUntilIso(): string | null {
 export function getNewsIntervalMs(now = Date.now()): number {
   const override = Number(process.env.SMARTPROTO_NEWS_INTERVAL_MS);
   if (Number.isFinite(override) && override > 0) return Math.floor(override);
+  if (isLightMode()) return LIGHT_NEWS_INTERVAL_MS;
   return isNewsWarmupActive(now) ? NEWS_WARMUP_INTERVAL_MS : NEWS_NORMAL_INTERVAL_MS;
 }
 
 export function getArticleIntervalMs(): number {
   const override = Number(process.env.SMARTPROTO_ARTICLE_INTERVAL_MS);
   if (Number.isFinite(override) && override > 0) return Math.floor(override);
+  if (isLightMode()) return LIGHT_ARTICLE_INTERVAL_MS;
   return ARTICLE_INTERVAL_MS;
 }
 

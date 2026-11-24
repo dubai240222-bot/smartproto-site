@@ -2,6 +2,8 @@
  * SP-A-42 — worker mode / credit cadence helpers (no OpenRouter, no newsroom prompts).
  */
 
+import { isLightMode } from './light-mode';
+
 export const CREDIT_COOLDOWN_MS_DEFAULT = 30 * 60 * 1000;
 
 export function loadCreditCooldownMs(): number {
@@ -39,6 +41,7 @@ export function shouldCatchUp(opts: {
   catchupTicks?: number;
   now?: number;
 }): { active: boolean; run: boolean } {
+  if (isLightMode()) return { active: false, run: false };
   const now = opts.now ?? Date.now();
   const lastPub = opts.lastAutoPublicationAt ? Date.parse(opts.lastAutoPublicationAt) : NaN;
   const stale =

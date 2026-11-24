@@ -4,6 +4,8 @@
  * Does NOT lower Scout/commodity/Editor floors — only expands bounded search.
  */
 
+import { isLightMode, LIGHT_PIPELINE_BUDGET } from './light-mode';
+
 export const FRESHNESS_WARNING_MS = 90 * 60 * 1000;
 export const FRESHNESS_CRITICAL_MS = 180 * 60 * 1000;
 
@@ -138,7 +140,9 @@ export function buildFreshnessReport(opts: {
     ticksWithZeroPublish,
     topZeroPublishReasons,
     freshnessStatus: status,
-    pipelineCandidateBudget: pipelineBudgetForStatus(status),
+    pipelineCandidateBudget: isLightMode()
+      ? LIGHT_PIPELINE_BUDGET
+      : pipelineBudgetForStatus(status),
   };
 }
 
