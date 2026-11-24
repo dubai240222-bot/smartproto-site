@@ -31,6 +31,12 @@ import {
   shouldCatchUp,
   shouldRecoverStalledOff,
 } from '../src/lib/newsroom/worker-control';
+import {
+  parseWorkerArgv,
+  releaseWorkerLock,
+  tryAcquireWorkerLock,
+  workerLockPath,
+} from '../src/lib/newsroom/worker-lock';
 
 type Mode = 'off' | 'single' | 'auto' | 'test-auto' | 'forced';
 
@@ -151,6 +157,7 @@ interface WorkerState {
   catchupWindowStart?: string;
   catchupPublished?: number;
   catchupTicks?: number;
+  lastScrubAt?: string;
 }
 
 function readState(): WorkerState {
@@ -168,6 +175,28 @@ function writeState(patch: Partial<WorkerState>) {
 
 function log(msg: string) {
   console.log(`[${new Date().toISOString()}] ${msg}`);
+}
+
+const SCRUB_INTERVAL_MS = 24 * 60 * 60 * 1000;
+let activeLock: { file: string; fd: number } | null = null;
+
+async function maybeScrubRemovedSlugs(): Promise<void> {
+  const last = readState().lastScrubAt;
+  if (last && Number.isFinite(Date.parse(last)) && Date.now() - Date.parse(last) < SCRUB_INTERVAL_MS) {
+    return;
+  }
+  try {
+    const { scrubRemovedSlugs } = await import('./scrub-removed-slugs');
+    const scrub = scrubRemovedSlugs();
+    writeState({ lastScrubAt: new Date().toISOString() });
+    if (scrub.deletedDb.length || scrub.deletedMedia.length) {
+      log(
+        `Scrubbed removed slugs: db=${scrub.deletedDb.join(',') || '—'} media=${scrub.deletedMedia.join(',') || '—'}`,
+      );
+    }
+  } catch (err) {
+    log(`Scrub skipped: ${err instanceof Error ? err.message : String(err)}`);
+  }
 }
 
 function runTick(
@@ -433,6 +462,7 @@ async function maybeReleaseReserve(reason: string): Promise<boolean> {
 }
 
 async function loopOnce(): Promise<void> {
+  await maybeScrubRemovedSlugs();
   // Retention runs even when editorial mode is OFF so disk stays bounded
   // without requiring AUTO ticks — still only once per night.
   await maybeRetentionCleanup();
@@ -626,31 +656,55 @@ async function loopOnce(): Promise<void> {
   }
 }
 
-async function main() {
-  if (!existsSync(MODE_FILE)) writeMode(DEFAULT_MODE, { reason: 'boot-default' });
-  log(
-    `SmartProto Hetzner worker started. Mode file: ${MODE_FILE} (default=${DEFAULT_MODE}, test-auto-expire=${TEST_AUTO_EXPIRE_MODE}, stall-recover=${STALL_RECOVER_ENABLED}/${STALL_RECOVER_OFF_MS}ms)`,
-  );
-  // SP-A-100F — purge removed-slug rows + bad heroes (e.g. Neakasa e-bike mismatch).
-  try {
-    const { scrubRemovedSlugs } = await import('./scrub-removed-slugs');
-    const scrub = scrubRemovedSlugs();
-    if (scrub.deletedDb.length || scrub.deletedMedia.length) {
-      log(
-        `Scrubbed removed slugs: db=${scrub.deletedDb.join(',') || '—'} media=${scrub.deletedMedia.join(',') || '—'}`,
-      );
-    }
-  } catch (err) {
-    log(`Scrub skipped: ${err instanceof Error ? err.message : String(err)}`);
+async function runLockedLoopOnce(): Promise<void> {
+  const lockFile = workerLockPath(DATA_DIR);
+  const lock = tryAcquireWorkerLock(lockFile);
+  if (!lock.ok) {
+    log(`Skip overlapping tick (${lock.reason})`);
+    return;
   }
-  for (;;) {
-    try {
-      await loopOnce();
-    } catch (err) {
-      log(`Worker loop error: ${err instanceof Error ? err.message : String(err)}`);
-    }
-    await new Promise((r) => setTimeout(r, POLL_MS));
+  activeLock = { file: lockFile, fd: lock.fd };
+  try {
+    await loopOnce();
+  } finally {
+    releaseWorkerLock(lockFile, lock.fd);
+    activeLock = null;
   }
 }
 
-main();
+function installExitHandlers(): void {
+  const stop = (sig: string) => {
+    log(`${sig} — release lock and exit`);
+    if (activeLock) releaseWorkerLock(activeLock.file, activeLock.fd);
+    activeLock = null;
+    process.exit(0);
+  };
+  process.once('SIGTERM', () => stop('SIGTERM'));
+  process.once('SIGINT', () => stop('SIGINT'));
+}
+
+async function main() {
+  const { once } = parseWorkerArgv(process.argv.slice(2));
+  installExitHandlers();
+  if (!existsSync(MODE_FILE)) writeMode(DEFAULT_MODE, { reason: 'boot-default' });
+  log(
+    `SmartProto Hetzner worker ${once ? '--once' : 'daemon'}. Mode file: ${MODE_FILE} (default=${DEFAULT_MODE}, test-auto-expire=${TEST_AUTO_EXPIRE_MODE}, stall-recover=${STALL_RECOVER_ENABLED}/${STALL_RECOVER_OFF_MS}ms)`,
+  );
+  try {
+    await runLockedLoopOnce();
+  } catch (err) {
+    log(`Worker tick error: ${err instanceof Error ? err.message : String(err)}`);
+    if (once) process.exitCode = 1;
+  }
+  if (once) return;
+  for (;;) {
+    await new Promise((r) => setTimeout(r, POLL_MS));
+    try {
+      await runLockedLoopOnce();
+    } catch (err) {
+      log(`Worker loop error: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+}
+
+void main();
