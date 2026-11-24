@@ -1,9 +1,11 @@
 /**
  * Single-flight lock so a slow --once tick cannot overlap the next wake.
- * Recover only if the recorded pid is dead (mtime-only steal can interrupt a
- * live photo-scout tick).
+ * Same container: recover only if holder pid is dead (do not steal a live tick).
+ * New Docker container: hostname changes, leftover lock is recovered even if
+ * that pid number is alive in the new namespace.
  */
 import { closeSync, openSync, readFileSync, unlinkSync, writeSync } from 'node:fs';
+import { hostname } from 'node:os';
 import path from 'node:path';
 
 export function workerLockPath(dataDir: string): string {
@@ -24,12 +26,17 @@ export function isPidAlive(pid: number): boolean {
   }
 }
 
-export function readLockPid(lockFile: string): number | null {
+export function readLockRecord(lockFile: string): { pid: number | null; host: string | null } {
   try {
-    const n = parseInt(readFileSync(lockFile, 'utf8').split(/\s+/)[0] || '', 10);
-    return Number.isFinite(n) && n > 0 ? n : null;
+    const [pidLine, hostLine] = readFileSync(lockFile, 'utf8').split('\n');
+    const n = parseInt((pidLine || '').trim(), 10);
+    const host = (hostLine || '').trim();
+    return {
+      pid: Number.isFinite(n) && n > 0 ? n : null,
+      host: host && !host.includes('T') ? host : null,
+    };
   } catch {
-    return null;
+    return { pid: null, host: null };
   }
 }
 
@@ -37,23 +44,25 @@ export function tryAcquireWorkerLock(
   lockFile: string,
   now = Date.now(),
 ): { ok: true; fd: number } | { ok: false; reason: string } {
+  const stamp = `${process.pid}\n${hostname()}\n${new Date(now).toISOString()}\n`;
   try {
     const fd = openSync(lockFile, 'wx');
-    writeSync(fd, `${process.pid}\n${new Date(now).toISOString()}\n`);
+    writeSync(fd, stamp);
     return { ok: true, fd };
   } catch (err) {
     const code = (err as NodeJS.ErrnoException).code;
     if (code !== 'EEXIST') {
       return { ok: false, reason: `lock-open ${(err as Error).message}` };
     }
-    const holder = readLockPid(lockFile);
-    if (holder != null && isPidAlive(holder)) {
-      return { ok: false, reason: `busy pid=${holder}` };
+    const holder = readLockRecord(lockFile);
+    const sameHost = !holder.host || holder.host === hostname();
+    if (sameHost && holder.pid != null && isPidAlive(holder.pid)) {
+      return { ok: false, reason: `busy pid=${holder.pid}` };
     }
     try {
       unlinkSync(lockFile);
       const fd = openSync(lockFile, 'wx');
-      writeSync(fd, `${process.pid}\n${new Date(now).toISOString()}\ndead-pid-recovered\n`);
+      writeSync(fd, `${stamp}recovered host=${holder.host || '?'} pid=${holder.pid || '?'}\n`);
       return { ok: true, fd };
     } catch (inner) {
       return { ok: false, reason: `lock-recover ${(inner as Error).message}` };

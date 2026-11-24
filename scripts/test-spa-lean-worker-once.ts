@@ -33,4 +33,11 @@ const recovered = tryAcquireWorkerLock(stale);
 assert.equal(recovered.ok, true, 'dead pid lock must recover');
 if (recovered.ok) releaseWorkerLock(stale, recovered.fd);
 
+const dockerDir = mkdtempSync(path.join(tmpdir(), 'sp-lean-host-'));
+const dockerLock = workerLockPath(dockerDir);
+writeFileSync(dockerLock, `${process.pid}\nother-container-hostname\n`);
+const afterRestart = tryAcquireWorkerLock(dockerLock);
+assert.equal(afterRestart.ok, true, 'new Docker hostname must recover leftover lock');
+if (afterRestart.ok) releaseWorkerLock(dockerLock, afterRestart.fd);
+
 console.log('test-spa-lean-worker-once: PASS');
