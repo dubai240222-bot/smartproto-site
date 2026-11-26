@@ -96,6 +96,15 @@ import {
  * SP-A-098F — await EN/TR translation here. The tick runs as a short-lived
  * child of hetzner-worker; fire-and-forget inside upsert was killed on exit.
  */
+function isDailyMaxError(err: unknown): boolean {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    ((err as { name?: string }).name === 'DailyMaxError' ||
+      String((err as { message?: string }).message || '').startsWith('DAILY_MAX:'))
+  );
+}
+
 async function maybeSyncToSqlite(article: Record<string, unknown>): Promise<void> {
   if (process.env.ARTICLES_STORE !== 'sqlite') return;
   const { upsertArticle, getArticleBySlugFromDb } = await import(
@@ -544,6 +553,21 @@ async function ensureDraftMinWords(opts: {
   return { draft, ok: true, retried: true, wordsFirst, wordsAfter };
 }
 
+
+async function persistLiveArticle(
+  articlesPath: string,
+  deduped: Article[],
+  article: Article | Record<string, unknown>,
+): Promise<void> {
+  if (process.env.ARTICLES_STORE === 'sqlite') {
+    await maybeSyncToSqlite(article as Record<string, unknown>);
+  }
+  await writeFile(articlesPath, JSON.stringify(deduped, null, 2) + '\n', 'utf8');
+  if (process.env.ARTICLES_STORE !== 'sqlite') {
+    await maybeSyncToSqlite(article as Record<string, unknown>);
+  }
+}
+
 async function loadState(journalPath: string, articlesPath: string) {
   const urls = new Set<string>();
   const ids = new Set<string>();
@@ -551,23 +575,26 @@ async function loadState(journalPath: string, articlesPath: string) {
   let journal: JournalData = { processedUrls: [], processedIds: [], entries: [] };
   let articles: Article[] = [];
 
-  try {
-    const raw = await readFile(articlesPath, 'utf8');
-    const parsed = JSON.parse(raw.replace(/^\uFEFF/, ''));
-    if (Array.isArray(parsed)) {
-      articles = parsed as Article[];
-      for (const a of articles) {
-        if (a.sourceUrl) urls.add(a.sourceUrl);
-        if (a.id) ids.add(String(a.id));
-        if (a.slug) ids.add(String(a.slug));
-        const nameId = normalizeProductIdentity(a.title || '');
-        const slugId = normalizeProductIdentity((a.slug || '').replace(/-/g, ' '));
-        if (nameId) productIds.add(nameId);
-        if (slugId) productIds.add(slugId);
-      }
+  if (process.env.ARTICLES_STORE === 'sqlite') {
+    const { getAllArticlesFromDb } = await import('../src/lib/data-store/articles-repo');
+    articles = getAllArticlesFromDb() as Article[];
+  } else {
+    try {
+      const raw = await readFile(articlesPath, 'utf8');
+      const parsed = JSON.parse(raw.replace(/^\uFEFF/, ''));
+      if (Array.isArray(parsed)) articles = parsed as Article[];
+    } catch {
+      /* empty */
     }
-  } catch {
-    /* empty */
+  }
+  for (const a of articles) {
+    if (a.sourceUrl) urls.add(a.sourceUrl);
+    if (a.id) ids.add(String(a.id));
+    if (a.slug) ids.add(String(a.slug));
+    const nameId = normalizeProductIdentity(a.title || '');
+    const slugId = normalizeProductIdentity((a.slug || '').replace(/-/g, ' '));
+    if (nameId) productIds.add(nameId);
+    if (slugId) productIds.add(slugId);
   }
 
   try {
@@ -1079,8 +1106,15 @@ async function tryChinaPublishOnce(opts: {
         ),
       );
       deduped.unshift(article);
-      await writeFile(opts.articlesPath, JSON.stringify(deduped, null, 2) + '\n', 'utf8');
-      await maybeSyncToSqlite(article);
+      try {
+        await persistLiveArticle(opts.articlesPath, deduped, article);
+      } catch (err) {
+        if (isDailyMaxError(err)) {
+          console.log(chalk.yellow(`DAILY_MAX — sqlite refused china publish: ${(err as Error).message}`));
+          return false;
+        }
+        throw err;
+      }
 
       await mkdir(opts.draftsDir, { recursive: true });
       await writeFile(
@@ -2068,8 +2102,15 @@ async function publishRssOnce(opts: {
           ),
         );
         deduped.unshift(article);
-        await writeFile(opts.articlesPath, JSON.stringify(deduped, null, 2) + '\n', 'utf8');
-        await maybeSyncToSqlite(article);
+        try {
+          await persistLiveArticle(opts.articlesPath, deduped, article);
+        } catch (err) {
+          if (isDailyMaxError(err)) {
+            console.log(chalk.yellow(`DAILY_MAX — sqlite refused rss publish: ${(err as Error).message}`));
+            return false;
+          }
+          throw err;
+        }
 
         await mkdir(opts.draftsDir, { recursive: true });
         await writeFile(
