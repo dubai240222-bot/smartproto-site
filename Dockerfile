@@ -1,10 +1,11 @@
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 ARG NEXT_PUBLIC_SITE_URL=https://www.smartproto.net
 ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
 # better-sqlite3 needs a native build toolchain on alpine (musl).
-RUN apk add --no-cache python3 make g++
+# wget is the compose healthcheck binary (node:20-alpine does not ship it).
+RUN apk add --no-cache python3 make g++ wget
 
 FROM base AS deps
 COPY package.json package-lock.json ./
@@ -24,11 +25,13 @@ ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
 COPY package.json package-lock.json ./
+# typescript stays in devDependencies. next.config.mjs so `next start` does not
+# try a runtime `npm install typescript` (LW-SP-01 health timeout on :3100).
 RUN npm ci --omit=dev
 
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/next.config.ts ./next.config.ts
+COPY --from=builder /app/next.config.mjs ./next.config.mjs
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/scripts ./scripts
 COPY --from=builder /app/tsconfig.json ./tsconfig.json

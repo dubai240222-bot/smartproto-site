@@ -207,6 +207,24 @@ export function countArticles(): number {
   return row.n;
 }
 
+/** Cheap health snapshot — no full table load (docker wget timeout is 5–10s). */
+export function getArticleHealthSnapshot(): {
+  count: number;
+  latestPublishedAt: string | null;
+  latestSlug: string | null;
+} {
+  const db = getDb();
+  const count = (db.prepare('SELECT COUNT(*) AS n FROM articles').get() as { n: number }).n;
+  const latest = db
+    .prepare('SELECT slug, publishedAt FROM articles ORDER BY publishedAt DESC LIMIT 1')
+    .get() as { slug: string; publishedAt: string } | undefined;
+  return {
+    count,
+    latestPublishedAt: latest?.publishedAt ?? null,
+    latestSlug: latest?.slug ?? null,
+  };
+}
+
 /** One-time idempotent seed from the existing articles.json (safe to re-run). */
 export function migrateFromJson(articles: StoredArticle[]): { inserted: number; total: number } {
   const before = countArticles();
