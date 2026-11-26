@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import {
   applyQuotaScoutFloor,
   countNewsPublishedLast24h,
+  countPublicPublishedLast24h,
   isNewsCycleArticle,
   resolveNewsQuotaPolicy,
 } from '../src/lib/newsroom/daily-quota';
@@ -31,6 +32,8 @@ const behind = resolveNewsQuotaPolicy({
   minutesSinceLastAuto: 120,
 });
 assert.equal(behind.newsPublishedLast24h, 1);
+assert.equal(behind.publicPublishedLast24h, 2);
+assert.equal(behind.hardStop, false);
 assert.equal(behind.behind, true);
 assert.equal(behind.skipChina, true);
 assert.equal(behind.scoutLimit, 8);
@@ -58,6 +61,35 @@ assert.equal(met.behind, false);
 assert.equal(met.atOrOverTarget, true);
 assert.equal(met.chinaMaxAttempts, 1);
 assert.equal(met.scoutFloorRelax, 0);
+assert.equal(met.hardStop, false);
+assert.equal(met.publicPublishedLast24h, 6);
+assert.equal(met.max, 7);
+
+const capped = resolveNewsQuotaPolicy({
+  now,
+  articles: [
+    ...Array.from({ length: 4 }, (_, i) => ({
+      publishedAt: `2026-08-16T0${i}:00:00.000Z`,
+      agentId: 'newsroom-scout',
+      tags: ['новость'],
+    })),
+    ...Array.from({ length: 3 }, (_, i) => ({
+      publishedAt: `2026-08-16T1${i}:00:00.000Z`,
+      agentId: 'chief-fast-lane',
+      tags: ['новость'],
+    })),
+  ],
+});
+assert.equal(capped.publicPublishedLast24h, 7);
+assert.equal(capped.hardStop, true);
+assert.equal(capped.newsPublishedLast24h, 4);
+assert.equal(
+  countPublicPublishedLast24h({
+    now,
+    articles: [{ publishedAt: '2026-08-16T10:00:00.000Z' }, { publishedAt: '2026-08-15T10:00:00.000Z' }],
+  }),
+  1,
+);
 
 assert.equal(
   countNewsPublishedLast24h({

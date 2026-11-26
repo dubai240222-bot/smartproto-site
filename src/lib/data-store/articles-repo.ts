@@ -7,12 +7,24 @@
  * Chief / Author / existing-row updates / explicit skip are not blocked.
  */
 import { getDb } from './db';
+import { getNewsDailyMax } from '../newsroom/daily-quota';
 import {
   FinalAutoGateError,
   assertFinalAutoPublishAllowed,
 } from '../ai/final-auto-commodity-gate';
 
 export { FinalAutoGateError };
+
+export class DailyMaxError extends Error {
+  readonly code = 'DAILY_MAX';
+  constructor(
+    readonly count: number,
+    readonly max: number,
+  ) {
+    super(`DAILY_MAX: ${count}/${max} public articles in 24h`);
+    this.name = 'DailyMaxError';
+  }
+}
 
 export interface ArticleImage {
   url: string;
@@ -109,6 +121,8 @@ export function getArticleBySlugFromDb(slug: string): StoredArticle | undefined 
 export type UpsertArticleOptions = {
   /** Photo backfill / migration / explicit ops — skip SP-A-082 gate. */
   skipFinalAutoGate?: boolean;
+  /** JSON seed / migrate — do not apply rolling 24h public cap. */
+  skipDailyMax?: boolean;
   /** Skip SP-A-098 post-publish EN/TR translation (backfill/migrate/re-edit). */
   skipPostPublishTranslation?: boolean;
 };
@@ -122,21 +136,9 @@ export type UpsertArticleOptions = {
  * SP-A-098: brand-new publishes schedule isolated EN/TR translation (never throws).
  */
 export function upsertArticle(article: StoredArticle, opts?: UpsertArticleOptions): void {
-  const existing = getArticleBySlugFromDb(article.slug);
-  if (!opts?.skipFinalAutoGate) {
-    if (!existing) {
-      assertFinalAutoPublishAllowed({
-        title: article.title,
-        summary: article.summary,
-        content: article.content,
-        tags: article.tags,
-        category: article.category,
-        agentId: article.agentId,
-      });
-    }
-  }
-
-  const stmt = getDb().prepare(`
+  const dbh = getDb();
+  const max = getNewsDailyMax();
+  const stmt = dbh.prepare(`
     INSERT INTO articles
       (slug, id, title, category, tags, summary, content, sourceUrl, publishedAt, readTime, imageUrl, images, author, authorDesk, agentId, updatedAt)
     VALUES
@@ -149,7 +151,28 @@ export function upsertArticle(article: StoredArticle, opts?: UpsertArticleOption
       author=excluded.author, authorDesk=excluded.authorDesk, agentId=excluded.agentId,
       updatedAt=strftime('%Y-%m-%dT%H:%M:%fZ','now')
   `);
-  const tx = getDb().transaction((a: StoredArticle) => {
+  const bySlug = dbh.prepare('SELECT slug FROM articles WHERE slug = ?');
+  const countStmt = dbh.prepare('SELECT COUNT(*) AS n FROM articles WHERE publishedAt >= ?');
+
+  const run = dbh.transaction((a: StoredArticle) => {
+    const existing = bySlug.get(a.slug) as { slug: string } | undefined;
+    if (!existing) {
+      if (!opts?.skipDailyMax) {
+        const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        const n = (countStmt.get(dayAgo) as { n: number }).n;
+        if (n >= max) throw new DailyMaxError(n, max);
+      }
+      if (!opts?.skipFinalAutoGate) {
+        assertFinalAutoPublishAllowed({
+          title: a.title,
+          summary: a.summary,
+          content: a.content,
+          tags: a.tags,
+          category: a.category,
+          agentId: a.agentId,
+        });
+      }
+    }
     stmt.run({
       slug: a.slug,
       id: a.id,
@@ -167,12 +190,12 @@ export function upsertArticle(article: StoredArticle, opts?: UpsertArticleOption
       authorDesk: a.authorDesk ?? null,
       agentId: a.agentId ?? null,
     });
+    return Boolean(existing);
   });
-  tx(article);
+  const wasExisting = run.immediate(article) as boolean;
 
-  // SP-A-098 — only first-time publishes (not photo backfill / migrate / updates).
   const shouldTranslate =
-    !existing &&
+    !wasExisting &&
     !opts?.skipFinalAutoGate &&
     !opts?.skipPostPublishTranslation;
   if (shouldTranslate) {
@@ -229,7 +252,7 @@ export function getArticleHealthSnapshot(): {
 export function migrateFromJson(articles: StoredArticle[]): { inserted: number; total: number } {
   const before = countArticles();
   const tx = getDb().transaction((items: StoredArticle[]) => {
-    for (const a of items) upsertArticle(a, { skipFinalAutoGate: true });
+    for (const a of items) upsertArticle(a, { skipFinalAutoGate: true, skipDailyMax: true });
   });
   tx(articles);
   const after = countArticles();

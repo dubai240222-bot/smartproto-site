@@ -132,6 +132,7 @@ Enforced in `src/lib/newsroom/daily-quota.ts` during each news tick:
 | Env | Default | Meaning |
 | --- | --- | --- |
 | `SMARTPROTO_NEWS_DAILY_TARGET` | `6` | Publish-until target; then ease boosts |
+| `SMARTPROTO_NEWS_DAILY_MAX` | `7` | Hard cap on all public publishes (AUTO+Chief+Author) / 24h |
 | `SMARTPROTO_NEWS_DAILY_MIN` | `5` | Soft floor (starvation / no-image policy) |
 | `SMARTPROTO_NEWS_QUOTA_SCOUT_RELAX` | `8` | Points below Scout floor when behind (70→62, floor min 60) |
 | `SMARTPROTO_NEWS_QUOTA_SCOUT_FLOOR_MIN` | `60` | Never relax Scout below this |
