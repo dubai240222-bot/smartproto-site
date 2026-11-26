@@ -136,7 +136,7 @@ Enforced in `src/lib/newsroom/daily-quota.ts` during each news tick:
 | `SMARTPROTO_NEWS_QUOTA_SCOUT_RELAX` | `8` | Points below Scout floor when behind (70→62, floor min 60) |
 | `SMARTPROTO_NEWS_QUOTA_SCOUT_FLOOR_MIN` | `60` | Never relax Scout below this |
 | `SCOUT_SCORE_THRESHOLD` | `70` | Base Scout floor (compose) |
-| `SMARTPROTO_NEWS_INTERVAL_MS` | `1500000` (25m) | Cadence floor between news publishes |
+| `SMARTPROTO_NEWS_INTERVAL_MS` | `14400000` (4h) | Cadence floor between news publishes |
 
 When **behind** target: skip China×3 burn, Scout pool ≤8 (fewer LLM calls), slight floor relax, prefer attaching thematic/stock hero over empty cards.
 When **at/over** target: normal floors, China ≤1 attempt/tick.
