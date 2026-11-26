@@ -1415,9 +1415,19 @@ async function publishRssOnce(opts: {
   }
 
   // SP-A-090/096 — SAFE Reader Scout only; bounded seats (must not starve AUTO / AI budget).
+  // SP-A-106: when the homepage is CRITICAL, do not spend the first two Scout
+  // slots on reader-door tests — AUTO/China/AI radar must run first.
+  const skipReaderSeats = freshness.freshnessStatus === 'CRITICAL';
   let readerItems: PoolItem[] = [];
   try {
-    const queued = await loadQueuedReaderScoutForTick(READER_SCOUT_SEATS_PER_TICK);
+    if (skipReaderSeats) {
+      console.log(
+        chalk.gray('CRITICAL — skip Reader Scout seats this tick (must not starve AUTO).'),
+      );
+    }
+    const queued = skipReaderSeats
+      ? []
+      : await loadQueuedReaderScoutForTick(READER_SCOUT_SEATS_PER_TICK);
     readerItems = queued
       .filter((q) => q.url && !opts.urls.has(q.url))
       .map((q) => ({
@@ -1480,9 +1490,10 @@ async function publishRssOnce(opts: {
       } else {
         console.log(chalk.gray('AI_RADAR best: (none this tick)'));
       }
-      const gadgetUrls = new Set(mergedPool.map((p) => p.url));
+      // Do not drop PRIMARY AI events just because RSS already put the URL in the journal.
       const aiItems: PoolItem[] = strong
-        .filter((n) => n.url && !gadgetUrls.has(n.url) && !opts.urls.has(n.url) && !opts.ids.has(`ai-radar:${n.url}`))
+        .filter((n) => Boolean(n.url) && !opts.ids.has(`ai-radar:${n.url}`))
+        .slice(0, 3)
         .map((n) => ({
           id: `ai-radar:${n.url}`,
           title: n.title,
@@ -1497,6 +1508,9 @@ async function publishRssOnce(opts: {
           channelHint: 'ai-radar' as const,
         }));
       // Staff Author > Reader Scout > AI radar > RSS (still max 1 publish; full gates apply).
+      // Do not drop AI radar just because the same URL also appeared in RSS.
+      const aiUrls = new Set(aiItems.map((x) => x.url));
+      mergedPool = mergedPool.filter((p) => !aiUrls.has(p.url));
       mergedPool = [...staffAuthorItems, ...readerItems, ...aiItems, ...mergedPool].slice(
         0,
         scoutLimit +
