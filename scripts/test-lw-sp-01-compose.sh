@@ -6,6 +6,15 @@ f="$ROOT/docker-compose.leaseweb.yml"
 grep -q 'SMARTPROTO_HTTP_BIND:-127.0.0.1' "$f"
 grep -q 'profiles: \["worker"\]' "$f"
 grep -q '/srv/projects/smartproto' "$f"
+grep -q 'start_period: 90s' "$f"
+df="$ROOT/Dockerfile"
+grep -q 'apk add --no-cache python3 make g++ wget' "$df"
+grep -q 'next.config.mjs' "$df"
+test -f "$ROOT/next.config.mjs"
+if grep -q 'next.config.ts' "$df"; then
+  echo "Dockerfile still copies next.config.ts (runtime TypeScript install)" >&2
+  exit 1
+fi
 snap="$ROOT/scripts/lw-sp-01-snapshot.sh"
 grep -q 's.backup(d)' "$snap"
 grep -q "exclude '.env'" "$snap"
