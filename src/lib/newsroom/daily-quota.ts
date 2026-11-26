@@ -1,22 +1,22 @@
 /**
- * Daily news volume quota — aim for ~5–6 AUTO news publishes / rolling 24h.
+ * Daily news volume: AUTO target ~6, hard public max 7 / rolling 24h.
  *
- * When behind but not starved: slight Scout floor relax + smaller Scout window
- * (fewer LLM calls) + skip China×3 burn so RSS news can land.
- * When CRITICAL/starved: do NOT skip China — RSS is mostly NO_PRODUCT and
- * China is the buyable-gadget desk. Gates/thresholds unchanged.
- * When at/over target: ease boosts (normal floors; China at most 1 attempt).
+ * When behind target: Scout relax + skip China×3 so RSS can land.
+ * When at/over target: ease boosts (China ≤1).
+ * When public stream (AUTO+Chief+Author) hits SMARTPROTO_NEWS_DAILY_MAX: hard stop.
  *
- * Env knobs (documented in DEPLOY.md / compose):
+ * Env:
  *   SMARTPROTO_NEWS_DAILY_TARGET   default 6
- *   SMARTPROTO_NEWS_DAILY_MIN      default 5  (soft floor for “behind”)
- *   SMARTPROTO_NEWS_QUOTA_SCOUT_RELAX  default 8  (points below base floor when behind)
+ *   SMARTPROTO_NEWS_DAILY_MAX      default 7
+ *   SMARTPROTO_NEWS_DAILY_MIN      default 5
+ *   SMARTPROTO_NEWS_QUOTA_SCOUT_RELAX  default 8
  *   SMARTPROTO_NEWS_QUOTA_SCOUT_FLOOR_MIN  default 60
  */
 
 import { isAutoPublicationAgent } from './freshness';
 
 export const NEWS_DAILY_TARGET_DEFAULT = 6;
+export const NEWS_DAILY_MAX_DEFAULT = 7;
 export const NEWS_DAILY_MIN_DEFAULT = 5;
 export const NEWS_QUOTA_SCOUT_RELAX_DEFAULT = 8;
 export const NEWS_QUOTA_SCOUT_FLOOR_MIN_DEFAULT = 60;
@@ -24,6 +24,13 @@ export const NEWS_QUOTA_SCOUT_FLOOR_MIN_DEFAULT = 60;
 export function getNewsDailyTarget(): number {
   const n = Number(process.env.SMARTPROTO_NEWS_DAILY_TARGET || NEWS_DAILY_TARGET_DEFAULT);
   return Number.isFinite(n) && n >= 1 ? Math.floor(n) : NEWS_DAILY_TARGET_DEFAULT;
+}
+
+/** Hard public-stream cap (AUTO + Chief + Author). Default 7. */
+export function getNewsDailyMax(): number {
+  const n = Number(process.env.SMARTPROTO_NEWS_DAILY_MAX || NEWS_DAILY_MAX_DEFAULT);
+  const max = Number.isFinite(n) && n >= 1 ? Math.floor(n) : NEWS_DAILY_MAX_DEFAULT;
+  return Math.max(max, getNewsDailyTarget());
 }
 
 export function getNewsDailyMin(): number {
@@ -55,13 +62,24 @@ export type NewsQuotaJournalLike = {
   cycle?: string;
 };
 
-/** True when article looks like a news-cycle piece (not fuller article review). */
 export function isNewsCycleArticle(a: NewsQuotaArticleLike): boolean {
   const tags = (a.tags || []).map((t) => String(t).toLowerCase().replace(/^#/, ''));
   if (tags.some((t) => t === 'обзор' || t === 'review' || t === 'full-review')) return false;
   if (tags.some((t) => t === 'новость' || t === 'news' || t === 'новинка')) return true;
-  // Legacy AUTO rows without tags — count toward news quota (safer for volume).
   return true;
+}
+
+/** Every homepage article in the last 24h — AUTO, Chief, Author. */
+export function countPublicPublishedLast24h(opts: {
+  articles?: Array<{ publishedAt?: string }>;
+  now?: Date;
+}): number {
+  const nowMs = (opts.now || new Date()).getTime();
+  const dayAgo = nowMs - 24 * 60 * 60 * 1000;
+  return (opts.articles || []).filter((a) => {
+    const t = Date.parse(a.publishedAt || '');
+    return Number.isFinite(t) && t >= dayAgo;
+  }).length;
 }
 
 export function countNewsPublishedLast24h(opts: {
@@ -81,7 +99,6 @@ export function countNewsPublishedLast24h(opts: {
 
   if (fromArticles > 0) return fromArticles;
 
-  // Fallback: journal cycle=news publishes (or legacy omitted cycle).
   return (opts.journalEntries || []).filter((e) => {
     if (e.status !== 'published') return false;
     if (e.cycle === 'article') return false;
@@ -92,83 +109,97 @@ export function countNewsPublishedLast24h(opts: {
 
 export type NewsQuotaPolicy = {
   newsPublishedLast24h: number;
+  publicPublishedLast24h: number;
   target: number;
+  max: number;
   min: number;
   behind: boolean;
   atOrOverTarget: boolean;
-  /** Points to subtract from Scout floor when behind (0 when eased). */
+  hardStop: boolean;
   scoutFloorRelax: number;
-  /** Effective Scout pool size — smaller when behind (cost-aware). */
   scoutLimit: number;
-  /** Skip China desk this tick so news RSS can publish. */
   skipChina: boolean;
-  /** Cap China Qwen attempts (1 when eased / at target). */
   chinaMaxAttempts: number;
-  /**
-   * When true, allow publishing a news piece with no hero after all image
-   * fallbacks (only when critically starved). Prefer attaching thematic stock.
-   */
   allowPublishWithoutImage: boolean;
   reason: string;
 };
 
-/**
- * Resolve boost / ease policy for a news tick.
- * Articles cycle callers should ignore (or pass cycle=article and get no boost).
- */
 export function resolveNewsQuotaPolicy(opts: {
   articles?: NewsQuotaArticleLike[];
   journalEntries?: NewsQuotaJournalLike[];
   now?: Date;
-  /** Minutes since last AUTO publish — from freshness report. */
   minutesSinceLastAuto?: number | null;
   freshnessStatus?: 'OK' | 'WARNING' | 'CRITICAL';
 }): NewsQuotaPolicy {
   const target = getNewsDailyTarget();
+  const max = getNewsDailyMax();
   const min = Math.min(getNewsDailyMin(), target);
   const count = countNewsPublishedLast24h(opts);
+  const publicCount = countPublicPublishedLast24h(opts);
   const atOrOverTarget = count >= target;
+  const hardStop = publicCount >= max;
   const starved =
     opts.freshnessStatus === 'CRITICAL' ||
     (opts.minutesSinceLastAuto != null && opts.minutesSinceLastAuto >= 180);
-  // Publish-until-target: boost while under daily target, then ease.
   const behind = count < target;
+
+  if (hardStop) {
+    return {
+      newsPublishedLast24h: count,
+      publicPublishedLast24h: publicCount,
+      target,
+      max,
+      min,
+      behind: false,
+      atOrOverTarget: true,
+      hardStop: true,
+      scoutFloorRelax: 0,
+      scoutLimit: 12,
+      skipChina: true,
+      chinaMaxAttempts: 0,
+      allowPublishWithoutImage: false,
+      reason: `hard stop ${publicCount}/${max} public / 24h (AUTO news ${count}/${target})`,
+    };
+  }
 
   if (!behind) {
     return {
       newsPublishedLast24h: count,
+      publicPublishedLast24h: publicCount,
       target,
+      max,
       min,
       behind: false,
       atOrOverTarget: true,
+      hardStop: false,
       scoutFloorRelax: 0,
       scoutLimit: 12,
       skipChina: false,
       chinaMaxAttempts: 1,
       allowPublishWithoutImage: false,
-      reason: `quota met ${count}/${target} — ease boosts; China≤1`,
+      reason: `quota met ${count}/${target} public ${publicCount}/${max} — ease boosts; China≤1`,
     };
   }
 
   const relax = getNewsQuotaScoutRelax();
-  // CRITICAL/starved: keep China on. Skipping it leaves only RSS, which
-  // hard-rejects as NO_PRODUCT and the site goes silent for days.
   const skipChina = !starved;
   return {
     newsPublishedLast24h: count,
+    publicPublishedLast24h: publicCount,
     target,
+    max,
     min,
     behind: true,
     atOrOverTarget: false,
+    hardStop: false,
     scoutFloorRelax: relax,
-    // Fewer Scout LLM calls; rely on cheap pre-rank + slightly lower floor.
     scoutLimit: 8,
     skipChina,
     chinaMaxAttempts: starved ? 2 : 0,
     allowPublishWithoutImage: starved && count < min,
     reason: starved
-      ? `behind quota ${count}/${target} CRITICAL — keep China≤2, relax Scout −${relax}, scout≤8`
-      : `behind quota ${count}/${target} (min ${min}) — relax Scout −${relax}, scout≤8, skip China`,
+      ? `behind quota ${count}/${target} public ${publicCount}/${max} CRITICAL — keep China≤2, relax Scout −${relax}`
+      : `behind quota ${count}/${target} public ${publicCount}/${max} (min ${min}) — relax Scout −${relax}, skip China`,
   };
 }
 
@@ -182,7 +213,9 @@ export function formatNewsQuotaPolicy(p: NewsQuotaPolicy): string {
   return [
     'NEWS_DAILY_QUOTA',
     `NEWS LAST 24H: ${p.newsPublishedLast24h}`,
-    `TARGET: ${p.target} (min ${p.min})`,
+    `PUBLIC LAST 24H: ${p.publicPublishedLast24h}`,
+    `TARGET: ${p.target} (max ${p.max}, min ${p.min})`,
+    `HARD STOP: ${p.hardStop ? 'yes' : 'no'}`,
     `BEHIND: ${p.behind ? 'yes' : 'no'}`,
     `AT/OVER TARGET: ${p.atOrOverTarget ? 'yes' : 'no'}`,
     `SCOUT RELAX: ${p.scoutFloorRelax}`,

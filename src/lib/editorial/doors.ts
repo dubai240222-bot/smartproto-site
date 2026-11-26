@@ -12,6 +12,7 @@ import { downloadImagesLocally, resolveArticlePhotos } from '@/lib/collectors/ph
 import { stampAuthorForPipeline } from '@/lib/authors';
 import { toPublicCategory, toPublicTags } from '@/lib/public-labels';
 import type { StoredArticle } from '@/lib/data-store/articles-repo';
+import { countPublicPublishedLast24h, getNewsDailyMax } from '@/lib/newsroom/daily-quota';
 
 /* ─── Auth (PIN primary; legacy token kept) ─── */
 
@@ -401,6 +402,11 @@ function estimateReadTime(text: string): string {
 }
 
 async function publishArticle(article: Article): Promise<void> {
+  const max = getNewsDailyMax();
+  const public24h = countPublicPublishedLast24h({ articles: getAllArticles() });
+  if (public24h >= max) {
+    throw new Error(`DAILY_MAX: ${public24h}/${max} public articles in 24h`);
+  }
   if (process.env.ARTICLES_STORE === 'sqlite') {
     const { upsertArticle } = await import('@/lib/data-store/articles-repo');
     // SP-A-098 translation is scheduled inside upsertArticle for new rows.

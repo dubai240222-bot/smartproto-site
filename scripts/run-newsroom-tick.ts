@@ -2327,21 +2327,31 @@ async function main(): Promise<void> {
     articles: articles.map((a) => ({ publishedAt: a.publishedAt, agentId: a.agentId })),
     journalEntries: journal.entries,
   });
-  const newsQuota =
-    options.cycle === 'news'
-      ? resolveNewsQuotaPolicy({
-          articles: articles.map((a) => ({
-            publishedAt: a.publishedAt,
-            agentId: a.agentId,
-            tags: a.tags,
-          })),
-          journalEntries: journal.entries,
-          minutesSinceLastAuto: freshnessPreview.minutesSinceLastAutoPublication,
-          freshnessStatus: freshnessPreview.freshnessStatus,
-        })
-      : undefined;
+  const newsQuota = resolveNewsQuotaPolicy({
+    articles: articles.map((a) => ({
+      publishedAt: a.publishedAt,
+      agentId: a.agentId,
+      tags: a.tags,
+    })),
+    journalEntries: journal.entries,
+    minutesSinceLastAuto: freshnessPreview.minutesSinceLastAutoPublication,
+    freshnessStatus: freshnessPreview.freshnessStatus,
+  });
   if (newsQuota) {
     console.log(chalk.bold(formatNewsQuotaPolicy(newsQuota)));
+  }
+  if (newsQuota?.hardStop) {
+    console.log(chalk.yellow(`DAILY_MAX — skip tick (${newsQuota.reason})`));
+    metrics.skipReason = newsQuota.reason;
+    metrics.reason = 'daily-max';
+    printFactoryTickSummary({
+      factoryEnabled: true,
+      event,
+      metrics,
+      commitCreated: false,
+      pushDone: false,
+    });
+    return;
   }
 
   let chinaDone = false;
