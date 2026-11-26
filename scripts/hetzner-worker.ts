@@ -5,7 +5,7 @@
  *   off     — циклы полностью остановлены, AI не расходуется, сайт работает
  *             (manual `smartproto off` sets holdOff=true so stall-recover will not flip it)
  *   single  — ровно один тик, затем автоматически off (holdOff)
- *   auto    — тики по расписанию (news ~150 мин / 120–180 band, article ~3 часа), без GitHub/Vercel
+ *   auto    — тики по расписанию (news 4h, article ~3 часа), без GitHub/Vercel
  *   test-auto — observation: interval ~20 мин; after duration → AUTO (not OFF) — SP-A-101
  *   forced  — SP-A-063: back-to-back ticks with very low scout until N publishes, then test-auto
  *
@@ -38,8 +38,8 @@ const DATA_DIR = process.env.SMARTPROTO_DATA_DIR || path.resolve(process.cwd(), 
 const MODE_FILE = path.join(DATA_DIR, 'worker-mode.json');
 const STATE_FILE = path.join(DATA_DIR, 'worker-state.json');
 
-/** SP-A-100F — default 150m (120–180 band). Override via SMARTPROTO_NEWS_INTERVAL_MS. */
-const NEWS_INTERVAL_MS = Number(process.env.SMARTPROTO_NEWS_INTERVAL_MS || 150 * 60 * 1000);
+/** Default 4h news floor. Override via SMARTPROTO_NEWS_INTERVAL_MS. */
+const NEWS_INTERVAL_MS = Number(process.env.SMARTPROTO_NEWS_INTERVAL_MS || 4 * 60 * 60 * 1000);
 const ARTICLE_INTERVAL_MS = Number(process.env.SMARTPROTO_ARTICLE_INTERVAL_MS || 3 * 60 * 60 * 1000);
 /** SP-A-063 — TEST-AUTO observation window: full cycle every 20 minutes. */
 const TEST_AUTO_INTERVAL_MS = Number(process.env.SMARTPROTO_TEST_AUTO_INTERVAL_MS || 20 * 60 * 1000);

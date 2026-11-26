@@ -1,19 +1,19 @@
 /**
  * SP-A-054 / SP-A-100F — News cadence + temporary warmup ramp.
  *
- * Normal: ~150 min between news ticks (120–180 band, max 1/tick).
+ * Normal: 4h between news ticks (owner floor 3–4h, max 1/tick).
  * Daily volume target: SMARTPROTO_NEWS_DAILY_TARGET (default 6) via daily-quota.ts
  * (behind → Scout relax + skip China; at target → ease) — still respects interval floor.
- * Warmup: ~180 min until SMARTPROTO_NEWS_WARMUP_UNTIL (ISO),
+ * Warmup: 4h until SMARTPROTO_NEWS_WARMUP_UNTIL (ISO),
  * then automatically returns to normal. Articles stay ~3h.
  *
  * GHA / worker may poll more often; tick skips when floor not met (cheap idle).
  */
 
-/** SP-A-100F — production cadence 120–180 min (mid-band 150m). Was 25m. */
-export const NEWS_NORMAL_INTERVAL_MS = 150 * 60 * 1000;
-/** Warmup still slower than normal (~3h) until SMARTPROTO_NEWS_WARMUP_UNTIL. */
-export const NEWS_WARMUP_INTERVAL_MS = 180 * 60 * 1000;
+/** Production news floor: 4h (owner: not faster than 3–4h). Override via SMARTPROTO_NEWS_INTERVAL_MS. */
+export const NEWS_NORMAL_INTERVAL_MS = 4 * 60 * 60 * 1000;
+/** Warmup matches the 4h floor until SMARTPROTO_NEWS_WARMUP_UNTIL. */
+export const NEWS_WARMUP_INTERVAL_MS = 4 * 60 * 60 * 1000;
 export const ARTICLE_INTERVAL_MS = 3 * 60 * 60 * 1000;
 
 export function parseWarmupUntilMs(
