@@ -1,0 +1,96 @@
+# LW-SP-01 — SmartProto on Leaseweb. Current working release (same stack as Hetzner
+# docker-compose.smartproto.yml). Registered paths: /srv/projects/smartproto/{app,data,images}.
+# Hetzner source: /opt/apps/smartproto/{data,images}. Snapshot (sqlite+images, no .env):
+#   scripts/lw-sp-01-snapshot.sh snapshot|restore — local only; host transfer is ENGINEERING.
+# Default `up -d` starts WEB ONLY. Worker is profile `worker` so Hetzner polling
+# is not duplicated with live credentials.
+#
+# From /srv/projects/smartproto/app:
+#   docker compose -f docker-compose.leaseweb.yml -p smartproto up -d --build smartproto-web
+# Worker only after OWNER GO to stop Hetzner worker:
+#   docker compose -f docker-compose.leaseweb.yml -p smartproto --profile worker up -d smartproto-worker
+#
+# HTTP bind is loopback; public traffic via host Nginx. Port claim with ENGINEERING.
+
+name: smartproto
+
+services:
+  smartproto-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ARTICLES_STORE: sqlite
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://www.smartproto.net}
+    container_name: smartproto-web
+    restart: unless-stopped
+    environment:
+      ARTICLES_STORE: sqlite
+      SMARTPROTO_DB_PATH: /app/data/smartproto.db
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://www.smartproto.net}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      EDITORIAL_DOOR_SECRET: ${EDITORIAL_DOOR_SECRET}
+      SMARTPROTO_NEWS_PIN: ${SMARTPROTO_NEWS_PIN}
+    volumes:
+      - ../data:/app/data
+      - ../images:/app/public/media
+    ports:
+      - "${SMARTPROTO_HTTP_BIND:-127.0.0.1}:${SMARTPROTO_HTTP_PORT:-3100}:3000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 8
+      start_period: 90s
+    mem_limit: 512m
+
+  smartproto-worker:
+    profiles: ["worker"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ARTICLES_STORE: sqlite
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://www.smartproto.net}
+    container_name: smartproto-worker
+    restart: unless-stopped
+    command: ["npx", "tsx", "scripts/hetzner-worker.ts"]
+    environment:
+      ARTICLES_STORE: sqlite
+      SMARTPROTO_DB_PATH: /app/data/smartproto.db
+      SMARTPROTO_DATA_DIR: /app/data
+      SMARTPROTO_MEDIA_DIR: /app/public/media
+      SMARTPROTO_FACTORY_ENABLED: "true"
+      CHINA_DEPARTMENT_ENABLED: "true"
+      CHINA_ALLOW_RECOMMEND: "true"
+      SCOUT_SCORE_THRESHOLD: "70"
+      SMARTPROTO_NEWS_DAILY_TARGET: "${SMARTPROTO_NEWS_DAILY_TARGET:-6}"
+      SMARTPROTO_NEWS_DAILY_MIN: "${SMARTPROTO_NEWS_DAILY_MIN:-5}"
+      SMARTPROTO_NEWS_QUOTA_SCOUT_RELAX: "${SMARTPROTO_NEWS_QUOTA_SCOUT_RELAX:-8}"
+      SMARTPROTO_NEWS_QUOTA_SCOUT_FLOOR_MIN: "${SMARTPROTO_NEWS_QUOTA_SCOUT_FLOOR_MIN:-60}"
+      SMARTPROTO_AI_RADAR_ENABLED: "${SMARTPROTO_AI_RADAR_ENABLED:-true}"
+      SMARTPROTO_TEST_AUTO_DURATION_MS: "${SMARTPROTO_TEST_AUTO_DURATION_MS:-7200000}"
+      SMARTPROTO_TEST_AUTO_SCOUT_THRESHOLD: "${SMARTPROTO_TEST_AUTO_SCOUT_THRESHOLD:-70}"
+      SMARTPROTO_TEST_AUTO_INTERVAL_MS: "${SMARTPROTO_TEST_AUTO_INTERVAL_MS:-1200000}"
+      SMARTPROTO_TEST_AUTO_MAX_TICKS: "${SMARTPROTO_TEST_AUTO_MAX_TICKS:-0}"
+      SMARTPROTO_DEFAULT_MODE: "${SMARTPROTO_DEFAULT_MODE:-auto}"
+      SMARTPROTO_TEST_AUTO_EXPIRE_MODE: "${SMARTPROTO_TEST_AUTO_EXPIRE_MODE:-auto}"
+      SMARTPROTO_STALL_RECOVER: "${SMARTPROTO_STALL_RECOVER:-true}"
+      SMARTPROTO_STALL_RECOVER_OFF_MS: "${SMARTPROTO_STALL_RECOVER_OFF_MS:-10800000}"
+      SMARTPROTO_RESERVE_TARGET: "${SMARTPROTO_RESERVE_TARGET:-8}"
+      SMARTPROTO_RESERVE_RELEASE_INTERVAL_MS: "${SMARTPROTO_RESERVE_RELEASE_INTERVAL_MS:-28800000}"
+      SMARTPROTO_NEWS_INTERVAL_MS: "${SMARTPROTO_NEWS_INTERVAL_MS:-9000000}"
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      EDITORIAL_DOOR_SECRET: ${EDITORIAL_DOOR_SECRET}
+      SMARTPROTO_NEWS_PIN: ${SMARTPROTO_NEWS_PIN}
+      SMARTPROTO_RETENTION_ENABLED: "${SMARTPROTO_RETENTION_ENABLED:-true}"
+      SMARTPROTO_RETENTION_DAYS: "${SMARTPROTO_RETENTION_DAYS:-10}"
+      SMARTPROTO_MIN_ARTICLES: "${SMARTPROTO_MIN_ARTICLES:-100}"
+      SMARTPROTO_MAX_DELETE_PER_RUN: "${SMARTPROTO_MAX_DELETE_PER_RUN:-25}"
+      SMARTPROTO_RETENTION_HOUR: "${SMARTPROTO_RETENTION_HOUR:-1}"
+      SMARTPROTO_TRANSLATE_ENABLED: "${SMARTPROTO_TRANSLATE_ENABLED:-true}"
+      OPENROUTER_TRANSLATE_MODEL: "${OPENROUTER_TRANSLATE_MODEL:-}"
+    volumes:
+      - ../data:/app/data
+      - ../images:/app/public/media
+    mem_limit: 768m

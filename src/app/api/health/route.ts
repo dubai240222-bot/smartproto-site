@@ -45,17 +45,15 @@ export async function GET() {
     };
 
     if (process.env.ARTICLES_STORE === 'sqlite') {
-      const { countArticles, getAllArticlesFromDb } = await import('@/lib/data-store/articles-repo');
-      const articles = getAllArticlesFromDb();
+      const { getArticleHealthSnapshot } = await import('@/lib/data-store/articles-repo');
+      const snap = getArticleHealthSnapshot();
       const freshness = buildFreshnessReport({
-        articles: articles.map((a) => ({ publishedAt: a.publishedAt, agentId: a.agentId })),
         lastAutoPublicationAt:
           typeof stateFile?.lastAutoPublicationAt === 'string'
             ? stateFile.lastAutoPublicationAt
-            : null,
+            : snap.latestPublishedAt,
       });
-      const latest = articles[0];
-      base.articles = countArticles();
+      base.articles = snap.count;
       base.auto_publish = {
         mode,
         holdOff: modeFile ? Boolean(modeFile.holdOff) : 'UNKNOWN',
@@ -72,8 +70,8 @@ export async function GET() {
         lastAutoPublicationAt: freshness.lastAutoPublicationAt,
         minutesSinceLastAutoPublication: freshness.minutesSinceLastAutoPublication,
         publicationsLast24h: freshness.publicationsLast24h,
-        latestPublishedAt: latest?.publishedAt ?? null,
-        latestSlug: latest?.slug ?? null,
+        latestPublishedAt: snap.latestPublishedAt,
+        latestSlug: snap.latestSlug,
         workerState: stateFile ? 'present' : 'UNKNOWN',
       };
     } else {

@@ -489,7 +489,39 @@ export async function writeDraft(articleData: object, reviewData: object): Promi
   }
 
   if (containsPublicPriceOrLink(draft.title, draft.text)) {
-    throw new Error('Editor draft fails policy gate (public price or outbound/shop link).');
+    const retry = await client.chat.completions.create({
+      model: EDITOR_MODEL,
+      temperature: 0.3,
+      top_p: 0.9,
+      max_tokens: format === 'news' ? 1100 : 1500,
+      messages: [
+        { role: 'system', content: EDITOR_SYSTEM_PROMPT },
+        {
+          role: 'user',
+          content: [
+            'В черновике есть публичная цена или внешняя/магазинная ссылка.',
+            'Перепиши: убери все цены, валюты, URL и призывы купить. Факты и смысл сохрани.',
+            'Не добавляй новые факты. Верни тот же JSON-формат.',
+            '',
+            'Входные данные:',
+            clampText(JSON.stringify(articleData, null, 2), 10000),
+            '',
+            'Черновик:',
+            clampText(draft.text, 4000),
+          ].join('\n'),
+        },
+      ],
+    });
+    const retryRaw = retry.choices[0]?.message?.content;
+    const retried = await parseEditorJson(typeof retryRaw === 'string' ? retryRaw.trim() : '');
+    if (
+      retried.title.trim().toUpperCase() !== 'REJECT' &&
+      !containsPublicPriceOrLink(retried.title, retried.text)
+    ) {
+      draft = retried;
+    } else {
+      throw new Error('Editor draft fails policy gate (public price or outbound/shop link).');
+    }
   }
 
   if (draft.toneCheck.clickbait || draft.toneCheck.hype || draft.toneCheck.unsupportedClaims) {
