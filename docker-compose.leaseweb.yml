@@ -1,5 +1,7 @@
 # LW-SP-01 — SmartProto on Leaseweb. Current working release (same stack as Hetzner
-# docker-compose.smartproto.yml). Paths: /srv/projects/smartproto/{app,data,images}.
+# docker-compose.smartproto.yml). Registered paths: /srv/projects/smartproto/{app,data,images}.
+# Hetzner source: /opt/apps/smartproto/{data,images}. Snapshot (sqlite+images, no .env):
+#   scripts/lw-sp-01-snapshot.sh snapshot|restore — local only; host transfer is ENGINEERING.
 # Default `up -d` starts WEB ONLY. Worker is profile `worker` so Hetzner polling
 # is not duplicated with live credentials.
 #
